@@ -1,13 +1,22 @@
 {
 	"network": {
-		"passthroughHeaders": [],
+		"remoteRequests": {
+			"headers": []
+		},
 		"remoteNodes": [
 			{
-				"graphqlUrl": "",
+				"displayName": "",
 				"documentType": "",
-				"displayName": ""
+				"graphqlUrl": "",
+				"nodeId": "",
+				"requests": {
+					"headers": []
+				}
 			}
 		],
-		"localNode": { "displayName": "" }
+		"localNode": {
+			"displayName": "",
+			"nodeId": ""
+		}
 	}
 }

@@ -27,6 +27,7 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.28.0",
+		"@overture-stack/arranger-types": "*",
 		"@storybook/addon-docs": "^9.0.5",
 		"@storybook/addon-onboarding": "^9.0.5",
 		"@storybook/react-vite": "^9.0.5",

@@ -7,6 +7,25 @@ import { failure, success, type Result } from '#network/result.js';
 import { type RequestedFieldsMap } from '#network/utils/gql.js';
 
 /**
+ * Ensure we query each node with the required properties to be able to perform aggregations:
+ * - to calculate bucket_count correctly, we will need to query buckets { key }
+ * - to aggregate buckets, we require buckets { key }
+ */
+const withMinimumAggregationFields = (field: object): object => {
+	if (field) {
+		// if field has bucket_count, it must also have buckets so we can aggregate across multiple nodes
+		if ('bucket_count' in field || 'buckets' in field) {
+			const existingBuckets = 'buckets' in field && field.buckets ? field.buckets : {};
+			const buckets = { ...existingBuckets, key: {}, doc_count: {}, __typename: {} };
+			const output = { ...field, buckets };
+			return output;
+		}
+	}
+	// field is null, or does not have buckets or bucket_count
+	return field;
+};
+
+/**
  * Converts info field object into string
  *
  * @param requestedFields - Query fields object
@@ -62,7 +81,7 @@ export const createRemoteNodeGQLQuery = (documentName: string, requestedFields: 
 		: '';
 	const fieldQueryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
 	const aggregationsString = !isEmpty(fields) ? `aggregations${fieldQueryArgs} ${fields}` : '';
-	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits { total } ${aggregationsString} }}`;
+	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits (filters: $filters) { total } ${aggregationsString} }}`;
 	return gqlString;
 };
 
@@ -83,8 +102,12 @@ export const createNetworkQuery = (
 	// ensure requested field is available to query on node
 	const fieldsToRequest = Object.keys(requestedFields).reduce((fields, requestedFieldKey) => {
 		const field = requestedFields[requestedFieldKey];
-		if (aggregations.some((field) => field.name === requestedFieldKey)) {
-			return { ...fields, [requestedFieldKey]: field };
+		if (aggregations.some((aggregation) => aggregation.name === requestedFieldKey)) {
+			const fieldsWithRequiredProperties = withMinimumAggregationFields(field ?? {});
+			return {
+				...fields,
+				[requestedFieldKey]: fieldsWithRequiredProperties,
+			};
 		} else {
 			return fields;
 		}

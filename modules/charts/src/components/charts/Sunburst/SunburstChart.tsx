@@ -6,6 +6,8 @@ import { ChartContainer } from '#components/ChartContainer';
 import { ChartRenderer } from '#components/ChartRenderer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
+import { aggregationsTypenames } from '../../../arranger';
+import { success } from '../../../utils/result';
 import { validateQueryProps } from '../validate';
 import { ChartInput, createSunburstSegments, SunburstMappingFn } from './dataTransform';
 import { SunburstView } from './View';
@@ -15,7 +17,9 @@ import { SunburstView } from './View';
  * Creates hierarchical visualizations from multiple related fields using user-provided mapping.
  *
  * @param props - Sunburst chart configuration
- * @param props.mapper - Mapper function to map outer rings to inner rings, specific to broad
+ * @param props.fieldName - Name of the field that this chart will show aggregation data for
+ * @param props.isNetworkAggregation - If true, this chart will use a network aggregation query as its data source
+ * @param props.mapper - Mapper function to map outer rings to inner rings
  * @param props.handlers - Event handlers for chart interactions
  * @param props.maxSegments - Max number of segments shown
  * @param props.theme - Arranger theme configuration
@@ -23,12 +27,14 @@ import { SunburstView } from './View';
  */
 export const SunburstChart = ({
 	fieldName,
+	isNetworkAggregation = false,
 	mapper,
 	handlers,
 	maxSegments,
 	theme,
 }: {
 	fieldName: string;
+	isNetworkAggregation?: boolean;
 	mapper: SunburstMappingFn;
 	maxSegments: ChartInput['maxSegments'];
 	theme?: any;
@@ -44,26 +50,31 @@ export const SunburstChart = ({
 	}
 
 	const { extendedMapping } = useArrangerData();
-	const { registerChart, deregisterChart, getChartData } = useChartsContext();
+	const { registerChart, deregisterChart, getChartData, getNetworkChartData } = useChartsContext();
 
-	const validationResult = useMemo(
-		() => validateQueryProps({ fieldName, extendedMapping }),
-		[fieldName, extendedMapping],
-	);
+	const validationResult = isNetworkAggregation
+		? success({ fieldName, gqlTypename: aggregationsTypenames.Aggregations, isNetworkAggregation: true })
+		: useMemo(
+				() => validateQueryProps({ fieldName, variables: {}, extendedMapping }),
+				[fieldName, extendedMapping],
+			);
 
 	useEffect(() => {
 		if (!validationResult.success) {
 			logger.log(validationResult.message);
-			return null;
+			return undefined;
 		}
 
 		registerChart(validationResult.data);
-		return () => deregisterChart(validationResult.data.fieldName);
+		return () => deregisterChart({ fieldName: validationResult.data.fieldName, isNetworkAggregation });
 	}, [fieldName, extendedMapping]);
 
-	const colorMapRef = useRef();
+	const colorMapRef = useRef<Map<string, string>>(null);
 
-	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
+	const chartData = isNetworkAggregation ? getNetworkChartData(fieldName) : getChartData(fieldName);
+	const isLoading = chartData.state === 'LOADING';
+	const isError = chartData.state === 'ERROR';
+	const gqlData = chartData.state === 'SUCCESS' ? chartData.data : null;
 
 	// create mapping between api data and provided mapping
 	const sunburstData = createSunburstSegments({ data: gqlData, mapper, maxSegments });

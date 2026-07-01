@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
 
-export const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
+export const Legend = ({ data, colorMap }: { data: { label: string }[]; colorMap?: Map<string, string> }) => {
 	return (
 		<div
 			css={css({
@@ -21,7 +21,7 @@ export const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
 							css={css({
 								width: '12px',
 								height: '12px',
-								backgroundColor: colorMap.get(legend.label) || 'black',
+								backgroundColor: colorMap?.get(legend.label) ?? 'black',
 								marginRight: '8px',
 							})}
 						/>

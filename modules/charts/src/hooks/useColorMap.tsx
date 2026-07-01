@@ -20,7 +20,7 @@ const parseStoredMap = (storedValue) => {
  * @param { resolver } - Function that creates color map from chart data
  * @returns Object containing the generated color map
  */
-export const useColorMap = ({ fieldName, colorMapRef, chartData, resolver }) => {
+export const useColorMap = ({ fieldName, colorMapRef, chartData, resolver }): { colorMap: Map<string, string> } => {
 	const { colors } = useThemeContext();
 
 	const cacheKey = makeKey({ fieldName });

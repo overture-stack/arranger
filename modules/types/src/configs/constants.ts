@@ -114,6 +114,7 @@ export const facetsProperties = {
 
 export const baseNodeProperties = {
 	DISPLAY_NAME: 'displayName',
+	NODE_ID: 'nodeId',
 } as const;
 export const localNodeProperties = {
 	CATALOG_ID,

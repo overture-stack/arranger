@@ -2,11 +2,12 @@ import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo, useRef } from 'react';
 
-import { Ranges } from '#arranger';
+import { aggregationsTypenames, Ranges, type AggregationsTypename } from '#arranger';
 import { ChartContainer } from '#components/ChartContainer';
 import { ChartRenderer } from '#components/ChartRenderer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
+import { success } from '../../../utils/result.ts';
 import TopChartItemsCount from '../TopChartItemsCount.tsx';
 import { validateQueryProps } from '../validate';
 import { BarChartView } from './View';
@@ -22,6 +23,8 @@ export interface SupportedNivo {
 
 export interface BarChartProps {
 	fieldName: string;
+	isNetworkAggregation?: boolean;
+	networkAggregationType?: AggregationsTypename;
 	maxBars: number;
 	ranges?: Ranges;
 	theme: { sortByKey?: string[]; axisBottom: { customTickValueSize?: number } } & SupportedNivo;
@@ -36,6 +39,7 @@ export interface BarChartProps {
  * @param props - Bar chart configuration
  * @param props.fieldName - GraphQL field name to visualize
  * @param props.handlers - Event handlers for chart interactions
+ * @param props.isNetworkAggregation - If true, this chart will attempt a network aggregation query as its data source
  * @param props.components - Custom components for fallback states
  * @param props.theme - Chart config mostly for Nivo
  * @param props.maxBars = Required - determines how many bars to show.
@@ -46,6 +50,8 @@ export const BarChart = ({
 	disableTopBarsCount = false,
 	fieldName,
 	handlers,
+	isNetworkAggregation = false,
+	networkAggregationType = aggregationsTypenames.Aggregations,
 	maxBars,
 	ranges,
 	theme,
@@ -57,37 +63,37 @@ export const BarChart = ({
 
 	// get context
 	const { extendedMapping } = useArrangerData();
-	const { registerChart, deregisterChart, getChartData } = useChartsContext();
+	const { registerChart, deregisterChart, getChartData, getNetworkChartData } = useChartsContext();
 
 	const variables = { ranges };
 
 	// validate
-	const validationResult = useMemo(
-		() => validateQueryProps({ fieldName, variables, extendedMapping }),
-		[fieldName, variables, extendedMapping],
-	);
+	// TODO: Validate for network fields and determine gqlType (no extended mapping guarantee atm for network aggregations)
+	const validationResult = isNetworkAggregation
+		? success({ fieldName, gqlTypename: networkAggregationType, isNetworkAggregation })
+		: useMemo(
+				() => validateQueryProps({ fieldName, variables, extendedMapping }),
+				[fieldName, variables, extendedMapping],
+			);
 
+	// Setup a useEffect to deregister the chart if and when the
 	useEffect(() => {
-		// validate and register
-		const result = validateQueryProps({
-			extendedMapping,
-			fieldName,
-			variables,
-		});
-
 		if (!validationResult.success) {
 			logger.log(validationResult.message);
-			return null;
+			return undefined;
 		}
 
-		registerChart(result.data);
-		return () => deregisterChart(validationResult.data.fieldName);
+		registerChart(validationResult.data);
+		return () => deregisterChart({ fieldName: validationResult.data.fieldName, isNetworkAggregation });
 	}, [fieldName, extendedMapping]);
 
 	// persist color map across re-mounting
-	const colorMapRef = useRef();
+	const colorMapRef = useRef<Map<string, string>>(null);
 
-	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
+	const chartData = isNetworkAggregation ? getNetworkChartData(fieldName) : getChartData(fieldName);
+	const isLoading = chartData.state === 'LOADING';
+	const isError = chartData.state === 'ERROR';
+	const gqlData = chartData.state === 'SUCCESS' ? chartData.data : null;
 
 	// redundant chart emptiness check for typescript
 	const chartIsEmpty = isEmpty(gqlData);
@@ -110,7 +116,7 @@ export const BarChart = ({
 						/>
 					)}
 					<BarChartView
-						data={gqlData}
+						data={gqlData!} // Note: non-null assertion is used because this Chart component only rendered when response state is SUCCESS and we have data
 						handlers={handlers}
 						theme={theme}
 						maxBars={maxBars}

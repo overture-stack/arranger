@@ -17,8 +17,7 @@ const queryTemplateBuckets = `
  */
 export const queryTemplateAggregations = ({ fieldName }: { fieldName: string }) => {
 	return `
-  ${fieldName}
-	{
+  ${fieldName} {
 		__typename
   	${queryTemplateBuckets}
 	}
@@ -48,10 +47,10 @@ export const queryTemplateNumericAggregations = ({
 	variables,
 }: {
 	fieldName: string;
-	variables: NumericAggregationsOptions;
+	variables?: NumericAggregationsOptions;
 }) => {
 	// TODO: investigate move into variables, could use GQL client
-	const ranges = `[${(variables.ranges || []).reduce((acc, range, index, entries) => {
+	const ranges = `[${(variables?.ranges ?? []).reduce((acc, range, index, entries) => {
 		const addSeperator = index === entries.length - 1 ? '' : ',';
 		return `${acc}${gqlStringifyObject(range)}${addSeperator}`;
 	}, '')}]`;
