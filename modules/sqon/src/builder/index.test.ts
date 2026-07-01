@@ -145,26 +145,26 @@ suite('SQON builder', () => {
 			});
 		});
 
-		suite('fuzzy()', () => {
-			test('builds a filter op node from a single field name', () => {
-				const result = SqonBuilder.fuzzy('donor.name', 'jo*').toValue();
+		suite('wildcard()', () => {
+			test('builds a wildcard op node from a single field name', () => {
+				const result = SqonBuilder.wildcard('donor.name', 'jo*').toValue();
 				assert.deepEqual(result, {
-					op: 'filter',
+					op: 'wildcard',
 					content: { fieldNames: ['donor.name'], value: 'jo*' },
 				});
 			});
 
-			test('builds a filter op node from an array of field names', () => {
-				const result = SqonBuilder.fuzzy(['donor.name', 'donor.alias'], 'jo*').toValue();
+			test('builds a wildcard op node from an array of field names', () => {
+				const result = SqonBuilder.wildcard(['donor.name', 'donor.alias'], 'jo*').toValue();
 				assert.deepEqual(result, {
-					op: 'filter',
+					op: 'wildcard',
 					content: { fieldNames: ['donor.name', 'donor.alias'], value: 'jo*' },
 				});
 			});
 
-			test('underlying op is "filter" for backward compatibility with serialized SQONs', () => {
-				const result = SqonBuilder.fuzzy('name', 'jo*').toValue();
-				assert.equal(result.op, 'filter');
+			test('op is "wildcard"', () => {
+				const result = SqonBuilder.wildcard('name', 'jo*').toValue();
+				assert.equal(result.op, 'wildcard');
 			});
 		});
 	});

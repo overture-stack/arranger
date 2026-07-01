@@ -29,7 +29,7 @@ suite('sqon/jsonSchema', () => {
 		assert.ok(schema.$defs.InLike);
 		assert.ok(schema.$defs.RangeLike);
 		assert.ok(schema.$defs.Between);
-		assert.ok(schema.$defs.Fuzzy);
+		assert.ok(schema.$defs.Wildcard);
 		assert.ok(schema.$defs.All);
 		assert.equal(schema.$id.includes(`/v${SQON_SCHEMA_VERSION}.schema.json`), true);
 		assert.deepEqual(schema.$defs.SQON, {
@@ -40,7 +40,7 @@ suite('sqon/jsonSchema', () => {
 			{ $ref: '#/$defs/All' },
 			{ $ref: '#/$defs/RangeLike' },
 			{ $ref: '#/$defs/Between' },
-			{ $ref: '#/$defs/Fuzzy' },
+			{ $ref: '#/$defs/Wildcard' },
 		]);
 		assert.deepEqual(schema.$defs.Group.properties.content.items.oneOf, [
 			{ $ref: '#/$defs/Group' },

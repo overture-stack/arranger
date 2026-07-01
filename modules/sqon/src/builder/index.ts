@@ -38,8 +38,8 @@ const ARRAY_VALUE_OPS = new Set<string>(['in', 'not-in', 'some-not-in', 'all']);
 const makeFieldLeaf = (op: string, fieldName: string, value: unknown): SqonNode =>
 	({ op, content: { fieldName, value } }) as unknown as SqonNode;
 
-const makeFuzzyLeaf = (fieldNames: string | string[], value: string): SqonNode =>
-	({ op: 'filter', content: { fieldNames: asArray(fieldNames), value } }) as unknown as SqonNode;
+const makeWildcardLeaf = (fieldNames: string | string[], value: string): SqonNode =>
+	({ op: 'wildcard', content: { fieldNames: asArray(fieldNames), value } }) as unknown as SqonNode;
 
 const combine = (op: 'and' | 'or' | 'not', current: SqonNode, incoming: SqonNode | SqonNode[], pivot?: string): SqonGroup => {
 	const items = asArray(incoming);
@@ -86,14 +86,11 @@ export type SqonBuilderHandle = {
 	 */
 	between: (fieldName: string, value: [SqonScalar, SqonScalar]) => SqonBuilderHandle;
 	/**
-	 * Add a fuzzy full-text filter across one or more field names.
+	 * Add a wildcard text filter across one or more field names.
+	 * Translates to a case-insensitive ES/OS wildcard query; use `*` in `value` for substring matching.
 	 * `fieldNames` may be a single string or an array of strings.
-	 *
-	 * Note: the underlying SQON `op` value is `'filter'` for backward compatibility with
-	 * serialized SQONs. The method is named `fuzzy` to avoid collision with `Array.prototype.filter`
-	 * and to better describe its purpose. SQONs containing `op: 'filter'` continue to parse correctly.
 	 */
-	fuzzy: (fieldNames: string | string[], value: string) => SqonBuilderHandle;
+	wildcard: (fieldNames: string | string[], value: string) => SqonBuilderHandle;
 
 	/**
 	 * Add or replace a field filter. If a filter with the same `fieldName` and `op` already exists
@@ -162,7 +159,7 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 	const between = (fieldName: string, value: [SqonScalar, SqonScalar]): SqonBuilderHandle =>
 		and(makeFieldLeaf('between', fieldName, value));
 
-	const fuzzy = (fieldNames: string | string[], value: string): SqonBuilderHandle => and(makeFuzzyLeaf(fieldNames, value));
+	const wildcard = (fieldNames: string | string[], value: string): SqonBuilderHandle => and(makeWildcardLeaf(fieldNames, value));
 
 	const setFilter = <K extends SqonFieldFilterKey>(
 		fieldName: string,
@@ -280,7 +277,7 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 		lt,
 		lte,
 		between,
-		fuzzy,
+		wildcard,
 		setFilter,
 		removeFilter,
 		removeExactFilter,
@@ -365,14 +362,12 @@ export const SqonBuilder = {
 		createBuilder(emptySqon()).between(fieldName, value),
 
 	/**
-	 * Start a builder with a fuzzy full-text filter.
+	 * Start a builder with a wildcard text filter.
+	 * Translates to a case-insensitive ES/OS wildcard query; use `*` in `value` for substring matching.
 	 * `fieldNames` may be a single string or an array of strings.
-	 *
-	 * Note: the underlying SQON `op` is `'filter'` for backward compatibility.
-	 * SQONs with `op: 'filter'` (from any source) continue to parse and validate normally.
 	 */
-	fuzzy: (fieldNames: string | string[], value: string): SqonBuilderHandle =>
-		createBuilder(emptySqon()).fuzzy(fieldNames, value),
+	wildcard: (fieldNames: string | string[], value: string): SqonBuilderHandle =>
+		createBuilder(emptySqon()).wildcard(fieldNames, value),
 
 	/** Start a builder from an empty state and apply `setFilter`. */
 	setFilter: <K extends SqonFieldFilterKey>(fieldName: string, op: K, value: SqonFieldFilterTypeMap[K]): SqonBuilderHandle =>

@@ -135,7 +135,7 @@ Most leaf nodes use:
 - `fieldName`
 - `value`
 
-The `filter` operator is the exception and instead uses `fieldNames` (plural).
+The `wildcard` operator is the exception and instead uses `fieldNames` (plural).
 
 </details>
 
@@ -145,7 +145,7 @@ SQONs can apply several kinds of filtering to fields and values:
 
 - **membership** answers questions like "is this value in the allowed set?" or "is it excluded from that set?"
 - **range** compares values against bounds such as greater than, less than, or between two endpoints
-- **fuzzy** performs a broader text-style search across one or more fields instead of exact matching
+- **wildcard** performs a case-insensitive substring match across one or more fields using ES/OS wildcard queries
 
 ### Membership-style operators
 
@@ -200,16 +200,16 @@ This results in:
 
 </details>
 
-### Fuzzy operator
+### Wildcard operator
 
-- `filter`
+- `wildcard`
 
 <details>
 <summary><b>Example:</b></summary>
 
 ```json
 {
-	"op": "filter",
+	"op": "wildcard",
 	"content": {
 		"fieldNames": ["fruit.name", "fruit.nickname"],
 		"value": "*app*"
@@ -219,7 +219,9 @@ This results in:
 
 This results in:
 
-- search for text like `app` in either `fruit.name` or `fruit.nickname`
+- case-insensitive substring match for `app` in either `fruit.name` or `fruit.nickname`
+
+The wildcard operator translates to an ES/OS `wildcard` query with `case_insensitive: true`. Use `*` in the value to express substring patterns (e.g. `*apple*`, `apple*`, `*apple`). This is distinct from fuzzy (edit-distance) matching: it finds substrings, not approximate terms.
 
 </details>
 
@@ -238,6 +240,7 @@ Arranger accepts several shorthand aliases in addition to canonical operators.
 | `>=`  | `gte`              |
 | `<`   | `lt`               |
 | `<=`  | `lte`              |
+| `filter` | `wildcard`      |
 
 For interoperability, the canonical operator names are always preferred when generating new SQONs.
 

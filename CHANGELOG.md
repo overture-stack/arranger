@@ -28,10 +28,10 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 
 - **Multicatalogue support** - A single Arranger server can now serve multiple catalogues simultaneously. Organise configs in subdirectories under `CONFIGS_PATH` (one subdirectory per catalogue). Existing flat layouts continue to work as single-catalogue deployments — no migration required.
 - **Introspection API** - New REST endpoints for tooling and LLM integration:
-  - `GET /introspection` - Lists all registered catalogues with their document types, GraphQL paths, and introspection paths.
-  - `GET /introspection/:catalogueId` - Returns all fields for a catalogue, their ES types, and valid SQON operators grouped by field type.
-  - `GET /introspection/sqon` - Returns the SQON JSON Schema.
-  - See [docs/usage/04-introspection.md](docs/usage/04-introspection.md) for full API reference.
+    - `GET /introspection` - Lists all registered catalogues with their document types, GraphQL paths, and introspection paths.
+    - `GET /introspection/:catalogueId` - Returns all fields for a catalogue, their ES types, and valid SQON operators grouped by field type.
+    - `GET /introspection/sqon` - Returns the SQON JSON Schema.
+    - See [docs/usage/04-introspection.md](docs/usage/04-introspection.md) for full API reference.
 - **Network search federation** - A catalogue can federate queries across multiple remote Arranger nodes via `network.json` config. Supports passthrough headers for forwarding auth tokens to remote nodes.
 - **GraphQL query complexity limits** - Configurable alias count and query depth limits protect against abusive queries. Set via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` env vars or per-catalogue config. Unset by default.
 - **CORS configuration** - `ALLOWED_CORS_ORIGINS` env var controls which origins are permitted. Omit to allow all.
@@ -42,22 +42,22 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 ### MCP server
 
 - **New `apps/mcp-server`** - A Model Context Protocol server that exposes Arranger catalogues as LLM-queryable resources and tools. Separate Docker image: `ghcr.io/overture-stack/arranger-mcp-server`. Implements the MCP Streamable HTTP transport.
-  - Resources: server introspection, SQON schema, per-catalogue fields.
-  - Tools: `list-catalogs`, `get-sqon-schema`, `get-catalog-fields`, `search-catalog`.
+    - Resources: server introspection, SQON schema, per-catalogue fields.
+    - Tools: `list-catalogs`, `get-sqon-schema`, `get-catalog-fields`, `search-catalog`.
 
 ### Charts (`@overture-stack/arranger-charts`)
 
 The charts module was introduced in this release cycle as a new package.
 
 - **Bar chart** - Responsive bar chart with configurable colours, tooltips, and sorting. New in 3.1:
-  - Zero-value suppression: bars with a data value of exactly `0` render a small visible stub rather than being invisible.
-  - `disableIncludeMissing` option to exclude the "missing values" bucket.
-  - Configurable bottom-axis tick values.
-  - "Top X of Y" display showing how many bars are visible vs. the total bucket count.
-  - Max bars configurable.
-  - Sortable by label (in addition to by value).
-  - Tooltip text wraps on long labels.
-  - Y axis offset corrected.
+    - Zero-value suppression: bars with a data value of exactly `0` render a small visible stub rather than being invisible.
+    - `disableIncludeMissing` option to exclude the "missing values" bucket.
+    - Configurable bottom-axis tick values.
+    - "Top X of Y" display showing how many bars are visible vs. the total bucket count.
+    - Max bars configurable.
+    - Sortable by label (in addition to by value).
+    - Tooltip text wraps on long labels.
+    - Y axis offset corrected.
 - **Sunburst chart** - Hierarchical proportional chart using nivo, with mapper and max-segments support.
 - **Numeric aggregations** - Range query support and improved range handling.
 - **Theming** - Theme prop for operator customization of chart appearance.
@@ -74,6 +74,12 @@ The charts module was introduced in this release cycle as a new package.
 - **Large TSV download** - Streaming download for large result sets restored; handles files that exceed the default row limit.
 - **Accessibility improvements** - Table headers, row count selector, and pagination controls updated for keyboard navigation and screen reader compatibility.
 - **Non-SSR config compatibility** - Fixed a type error in config resolution that surfaced in non-server-rendered environments.
+
+### SQON operators
+
+- **`wildcard` is now the canonical op for text-pattern search** - The operator that performs case-insensitive substring matching across multiple fields was previously named `filter`. That name was misleading in two ways: it collides with the generic meaning of "filter" (every SQON op is a filter), and it falsely implies fuzzy/approximate matching, which is a distinct ES/OS feature (Levenshtein edit-distance) that does not exist yet. The operation is implemented with an ES/OS `wildcard` query, so `wildcard` is the name it carries going forward.
+
+    `filter` is accepted as an alias and normalizes to `wildcard` at query-build time; existing serialized SQONs continue to work without any migration. New SQONs should use `op: "wildcard"`.
 
 ### Infrastructure
 

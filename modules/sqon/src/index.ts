@@ -20,9 +20,9 @@ export type {
 export {
 	AllFilterSchema,
 	BetweenFilterSchema,
-	FuzzyFilterSchema,
 	InLikeFilterSchema,
 	RangeLikeFilterSchema,
+	WildcardFilterSchema,
 	SqonGroupSchema,
 	SqonLeafSchema,
 	SqonSchema,

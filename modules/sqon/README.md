@@ -21,14 +21,11 @@ result with `.toValue()`.
 import { SqonBuilder, type SqonNode } from '@overture-stack/sqon';
 
 function addStatusFilter(sqon: SqonNode, statuses: string[]): SqonNode {
-  return SqonBuilder.from(sqon).in('status', statuses).toValue();
+	return SqonBuilder.from(sqon).in('status', statuses).toValue();
 }
 
 function buildDefaultQuery(): SqonNode {
-  return SqonBuilder.empty()
-    .in('status', ['active'])
-    .gt('age', 18)
-    .toValue();
+	return SqonBuilder.empty().in('status', ['active']).gt('age', 18).toValue();
 }
 ```
 
@@ -47,46 +44,43 @@ where input must be validated.
 import { SqonBuilder, type SqonNode } from '@overture-stack/sqon';
 
 function parseFilter(raw: unknown): SqonNode {
-  return SqonBuilder.from(raw).toValue();
+	return SqonBuilder.from(raw).toValue();
 }
 ```
 
 ### Building filters
 
 ```ts
-SqonBuilder.in('status', ['active', 'pending'])
-SqonBuilder.notIn('type', ['internal'])
-SqonBuilder.gt('age', 18)
-SqonBuilder.between('score', [50, 100])
-SqonBuilder.fuzzy(['donor.name', 'donor.alias'], 'jo*')
+SqonBuilder.in('status', ['active', 'pending']);
+SqonBuilder.notIn('type', ['internal']);
+SqonBuilder.gt('age', 18);
+SqonBuilder.between('score', [50, 100]);
+SqonBuilder.wildcard(['donor.name', 'donor.alias'], 'jo*');
 ```
 
 ### Combining filters
 
 ```ts
-SqonBuilder.and([
-  SqonBuilder.in('status', ['active']).toValue(),
-  SqonBuilder.gt('age', 18).toValue(),
-]).toValue()
+SqonBuilder.and([SqonBuilder.in('status', ['active']).toValue(), SqonBuilder.gt('age', 18).toValue()]).toValue();
 
 // or chain them:
 SqonBuilder.in('status', ['active'])
-  .and(SqonBuilder.gt('age', 18).toValue())
-  .not(SqonBuilder.in('type', ['internal']).toValue())
-  .toValue()
+	.and(SqonBuilder.gt('age', 18).toValue())
+	.not(SqonBuilder.in('type', ['internal']).toValue())
+	.toValue();
 ```
 
 ### Type reference
 
-| Type | What it is |
-|------|------------|
-| `SqonNode` | Plain JSON-serializable SQON data. Use in function signatures. |
-| `SqonBuilder` | The factory object type. Use only when holding or passing the factory itself. |
+| Type                | What it is                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `SqonNode`          | Plain JSON-serializable SQON data. Use in function signatures.                      |
+| `SqonBuilder`       | The factory object type. Use only when holding or passing the factory itself.       |
 | `SqonBuilderHandle` | The chainable handle returned by factory methods. Rarely needs explicit annotation. |
-| `SqonFieldFilter` | A field-based leaf node (has `content.fieldName`). Used with `removeExactFilter`. |
+| `SqonFieldFilter`   | A field-based leaf node (has `content.fieldName`). Used with `removeExactFilter`.   |
 
 ## Notes
 
 - This package is intentionally both transport- and endpoint-agnostic.
 - Runtime-specific behavior (for example, warnings, normalization side-effects, ACL) belongs in consuming services.
-- The `fuzzy` builder method uses the SQON `op: 'filter'` internally for backward compatibility with serialized SQONs. Existing SQONs containing `op: 'filter'` continue to parse and validate correctly.
+- The `wildcard` builder method emits `op: 'wildcard'`. The schema also accepts `op: 'filter'` as a legacy alias, so existing serialized SQONs continue to parse and validate correctly.

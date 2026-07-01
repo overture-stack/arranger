@@ -12,7 +12,7 @@ export const generateNextSQON =
 					op: 'and',
 					content: [
 						{
-							op: 'filter',
+							op: 'wildcard',
 							content: {
 								fieldNames,
 								value,

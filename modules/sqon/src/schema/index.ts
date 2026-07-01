@@ -62,9 +62,9 @@ export const BetweenFilterSchema = zod
 	})
 	.passthrough();
 
-export const FuzzyFilterSchema = zod
+export const WildcardFilterSchema = zod
 	.object({
-		op: zod.literal('filter'),
+		op: zod.union([zod.literal('wildcard'), zod.literal('filter')]),
 		content: zod
 			.object({
 				fieldNames: zod.array(zod.string().min(1)).min(1),
@@ -80,7 +80,7 @@ export const SqonLeafSchema = zod.union([
 	AllFilterSchema,
 	RangeLikeFilterSchema,
 	BetweenFilterSchema,
-	FuzzyFilterSchema,
+	WildcardFilterSchema,
 ]);
 
 export const SqonGroupSchema: zod.ZodType<SqonGroup> = zod.lazy(() =>

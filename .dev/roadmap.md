@@ -321,6 +321,30 @@ _Low urgency unless precision bugs appear. Research-first._
 
 ## Features
 
+### Fuzzy (edit-distance) SQON operator
+
+_Priority: medium. Distinct from the `wildcard` operator already implemented._
+
+Add a `fuzzy` SQON operator that performs approximate string matching using Levenshtein edit distance, translated to an ES/OS `multi_match` query with `fuzziness: "AUTO"`. This tolerates typos and near-matches (`"jhn"` matches `"john"`) in a way that the current `wildcard`/substring operator does not.
+
+The SQON schema: same shape as `wildcard` (`fieldNames` array + `value` string), different `op`:
+
+```json
+{
+  "op": "fuzzy",
+  "content": { "fieldNames": ["donor.name"], "value": "john smit" }
+}
+```
+
+**Implementation notes:**
+- `multi_match` with `fuzziness: "AUTO"` is the natural ES/OS translation; the current `getWildcardFilter` in `graphql-router` is the reference implementation to branch from
+- Nested field grouping logic from `getWildcardFilter` carries over: nested fields must be wrapped per path
+- A new `SqonBuilder.fuzzy()` builder method and a new `FuzzyFilterSchema` in `modules/sqon` are needed; the schema change is additive
+- The `fuzzy` op name is free: it was never released under the `wildcard`-era codebase, so there are no aliases or compatibility shims to remove; just add it as a new canonical op
+- Expose `fuzziness` as an optional `content` param defaulting to `"AUTO"` for callers who need tighter or looser matching
+
+**Design question to resolve before implementing:** should `fuzzy` tolerate leading-term fuzziness only (`operator: "AND"`) or allow any-term matching (`operator: "OR"`)? AND is less surprising for search boxes; OR is more permissive. Decide at API design time.
+
 ### GA4GH Beacon v2 module
 
 _Priority: low. Design-first; no implementation until arranger-core extraction is further along._

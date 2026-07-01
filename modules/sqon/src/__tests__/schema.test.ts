@@ -259,6 +259,23 @@ suite('sqon/schema', () => {
 		assert.equal(output.success, false);
 	});
 
+	test('accepts a wildcard filter node with op "wildcard"', () => {
+		const input = {
+			op: 'wildcard',
+			content: { fieldNames: ['donor.name', 'donor.alias'], value: 'jo*' },
+		};
+		assert.equal(SqonSchema.safeParse(input).success, true);
+	});
+
+	test('accepts a wildcard filter node with op "filter" for backward compatibility', () => {
+		const input = {
+			op: 'filter',
+			content: { fieldNames: ['donor.name'], value: 'jo*' },
+		};
+		assert.equal(SqonSchema.safeParse(input).success, true);
+	});
+
+
 	test('rejects filter with an empty string in fieldNames', () => {
 		const input = {
 			content: { fieldNames: ['donor.name', ''], value: 'jo' },

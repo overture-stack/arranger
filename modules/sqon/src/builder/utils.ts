@@ -5,7 +5,7 @@ export type { SqonScalar, SqonScalarOrArray };
 
 /**
  * A SQON node whose filter content is keyed by a single `fieldName`.
- * Excludes the fuzzy (`filter` op) leaf, which uses `fieldNames` (plural).
+ * Excludes the wildcard leaf, which uses `fieldNames` (plural) instead of `fieldName`.
  * Defined as an intersection with `SqonNode` so it is assignable to `SqonNode` in type predicates.
  */
 export type SqonFieldFilter = SqonNode & {
@@ -18,7 +18,7 @@ const COMBINATION_OPS = new Set(['and', 'or', 'not']);
 /** Returns true when the node is a group (and / or / not combination). */
 export const isGroupNode = (node: SqonNode): node is SqonGroup => COMBINATION_OPS.has(node.op);
 
-/** Returns true when the node is a field-based leaf (has `content.fieldName`, not a fuzzy filter). */
+/** Returns true when the node is a field-based leaf (has `content.fieldName`, not a wildcard filter). */
 export const isFieldFilter = (node: SqonNode): node is SqonFieldFilter =>
 	!isGroupNode(node) && 'fieldName' in (node as SqonLeaf & { content: Record<string, unknown> }).content;
 

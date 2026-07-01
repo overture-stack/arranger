@@ -8,7 +8,7 @@ import noopFn, { emptyObj } from '#utils/noops.js';
 
 import EmptyMessage from './EmptyMessage.js';
 import { Op, SQONGroup, SQONValueGroup, SQONWrapper, useDataBubbles } from './helpers.js';
-import { toggleSQON, replaceFilterSQON } from './utils.js';
+import { isWildcardFilter, toggleSQON, replaceFilterSQON } from './utils.js';
 
 /**
  * @param {import('./types.js').SQONViewerProps} props
@@ -76,7 +76,7 @@ const SQONViewer = ({
 								{...themeSQONGroupProps}
 							>
 								{FieldNameCrumb({
-									fieldName: op === 'filter' ? (entity ? `${entity}.${op}` : op) : fieldName,
+									fieldName: isWildcardFilter(op) ? (entity ? `${entity}.${op}` : op) : fieldName,
 								})}
 
 								<Op
@@ -100,7 +100,7 @@ const SQONViewer = ({
 										fieldName,
 										key: value,
 										nextSQON:
-											op === 'filter'
+											isWildcardFilter(op)
 												? replaceFilterSQON(
 													{
 														op: 'and',
