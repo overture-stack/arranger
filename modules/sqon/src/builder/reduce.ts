@@ -8,7 +8,7 @@ import { asArray, isFieldFilter, isGroupNode } from '#builder/utils.js';
  * For `not-in` and `some-not-in` this is only semantically correct under `and`/`not`; under `or`
  * the merge changes semantics. This simplified rule matches the existing `in` behaviour.
  *
- * TODO (sqon-builder v2): tighten `not-in` / `some-not-in` / `all` reduction rules per combination type.
+ * TODO: tighten `not-in` / `some-not-in` / `all` reduction rules per combination type.
  */
 const MERGE_VALUES_OPS = new Set(['in', 'not-in', 'some-not-in', 'all']);
 

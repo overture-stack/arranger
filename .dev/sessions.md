@@ -6,6 +6,17 @@ Newest first.
 
 ---
 
+## 2026-07-01
+
+Began sqon-builder deprecation: confirmed the unscoped `sqon-builder` dep in components was never imported and removed it; added deprecation notice to the `@overture-stack/sqon-builder` README; documented the absorption rationale and design decisions in the sqon module.
+
+- `modules/components/package.json`: removed `sqon-builder` (dead dependency - was listed at `^2.0.1` but never imported anywhere in the source)
+- `overture/sqon-builder/README.md`: added prominent deprecation notice at the top pointing consumers to `@overture-stack/sqon`
+- `modules/sqon/docs/sqon-builder-absorption.md`: new file recording what was absorbed, why, and key design decisions (type boundary, `& SQON` anti-pattern fix, full operator coverage, what was not ported)
+- `.dev/roadmap.md`: condensed the sqon-builder absorption section to just the remaining step (publish deprecation version, run `npm deprecate`)
+
+---
+
 ## 2026-06-30
 
 Absorbed `@overture-stack/sqon-builder` functionality into `modules/sqon`, making it the single package for SQON construction and validation; `sqon-builder` is now redundant and will be deprecated separately.

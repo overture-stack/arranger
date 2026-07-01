@@ -184,6 +184,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
 **Standalone:** yes; internal refactor, no change to API output
 
+### `reduceSqon` applies the same value-merge rule for `not-in`/`some-not-in`/`all` regardless of combination type
+
+**File:** `modules/sqon/src/builder/reduce.ts` (`MERGE_VALUES_OPS`, `mergeIntoExisting`)
+**Severity:** low (only affects programmatic callers who combine `reduceSqon` with these ops under `or`)
+**Kind:** correctness gap / known simplification
+**Issue:** `MERGE_VALUES_OPS` merges value arrays for `not-in`, `some-not-in`, and `all` unconditionally, matching the behaviour for `in`. This is semantically correct under `and`/`not` but changes meaning under `or`: two `not-in` filters merged under `or` produce an exclusion of the union of both value sets, which is stricter than the OR relationship implies. The simplified rule was ported from `sqon-builder` intentionally; the correct behaviour requires defining separate merge semantics per combination type.
+**Fix:** Introduce per-op reduction rules that branch on `combinationOp`: merge value arrays for `not-in`/`some-not-in` under `and`/`not`, and either leave them separate (no reduction) or apply intersection semantics under `or`. Also define `all` reduction rules (currently unspecified). Requires a deliberate design decision before implementation.
+**Standalone:** yes; change is additive to the existing reduction function
+
 ### SQON value schema does not accept boolean values
 
 **File:** `modules/sqon/src/schema/constants.ts` (`SqonScalarValueSchema`)

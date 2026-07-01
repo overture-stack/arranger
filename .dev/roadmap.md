@@ -84,76 +84,15 @@ Once `arranger-core` exists, `graphql-router` becomes one of potentially several
 
 This is a directional goal, not an actionable item yet.
 
-### `sqon-builder` absorption into `modules/sqon`
+### Deprecate `sqon-builder`
 
-_Priority: medium. Separate repo, should be absorbed into this monorepo._
+_Priority: next. Absorption into `modules/sqon` is complete (builder API, reduceSqon, filter manipulation, from(), all operators, correct type boundary). Remaining: formal deprecation and removal._
 
-The direction is **not** a lateral merge: `modules/sqon` is the host. It grows to subsume `sqon-builder`'s capabilities, primarily the builder/chainable API and the SQON manipulation utilities, so that `modules/sqon` becomes the single package for everything SQON: validation, operator metadata, JSON Schema, and programmatic construction. `sqon-builder` is then deprecated and its consumers redirected.
+Steps:
+1. Publish a final `@overture-stack/sqon-builder` version with a deprecation notice pointing consumers at `@overture-stack/sqon`.
+2. Remove `sqon-builder` as a dependency from this monorepo.
 
-#### What sqon-builder brings that is worth keeping
-
-**Builder/chainable API**: `SQONBuilder.in('x', ['a']).and(SQONBuilder.gt('y', 5))`. Genuinely useful for programmatic SQON construction in UI code and the MCP server. Used in `graphql-router`'s `convertToSqon` path and presumably in `modules/components`.
-
-**`reduceSQON`**: a non-trivial deduplication and simplification algorithm. Merges duplicate filters under the same combination (e.g. two `gt` on `and` collapses to the greater value), unwraps single-item wrappers, removes empty combinations. No equivalent in `modules/sqon`.
-
-**Filter manipulation methods**: `removeFilter`, `removeExactFilter`, `setFilter`. These are stateful builder operations that the UI depends on for interactive SQON editing (adding/removing facet selections).
-
-**`checkMatchingFilter` / `checkMatchingArrays`**: semantic filter comparison, order-independent. Worth keeping as a utility export.
-
-**`from()` static parser**: parses a raw object into a builder. The MCP-layer `convertToSqon` already uses this.
-
-**`emptySQON()`**: trivial but a useful starting point for builder chains.
-
-#### What needs to be fixed or extended during absorption
-
-**Operator coverage gap**: the single largest issue. `sqon-builder` only implements `in`, `gt`, `lt`. It cannot build `not-in`, `some-not-in`, `all`, `gte`, `lte`, `between`, or `filter` queries. The absorbed builder must cover all operators `modules/sqon` already defines. Any SQON a consumer can _validate_ they must also be able to _build_.
-
-**MCP surface unification**: after absorption, `modules/sqon` programmatically owns all operator metadata (`getSqonFieldOperatorDetails()`, `sqonFieldOperatorProperties`). At that point, the two MCP surfaces that currently expose SQON schema data must be reconciled:
-
-- The `get-sqon-schema` tool returns a hand-maintained prose cheat sheet as its `text` content (operator list, grammar, examples).
-- The `arranger://introspection/sqon` resource returns `JSON.stringify(data, null, 2)` - the same underlying schema data as a raw JSON blob.
-
-These are the same data in two incompatible formats. Practical effect of leaving this unaddressed: any LLM or client that discovers the resource instead of calling the tool gets the raw JSON blob that the cheat sheet was introduced to replace. As the cheat sheet evolves (new operators added, WRONG-shape warnings revised), the resource becomes a stale shadow of it with no update signal. After absorption, both surfaces should derive from the same programmatic source: the resource returns machine-readable schema (unchanged), and the `text` content of `get-sqon-schema` is generated from `getSqonFieldOperatorDetails()` rather than maintained by hand - eliminating the sync risk and the format divergence simultaneously.
-
-**`reduceSQON` operator coverage gap**: the reduction logic only handles specific cases for `GT`, `LT`, and `IN`. When the builder gains the full operator set, the reduction rules for `gte`, `lte`, `between`, and `not-in` need to be defined and implemented. Some cases are clear (two `gte` on `and` keeps the greater); others need deliberate design (what does it mean to reduce two `between` ranges on `and`?).
-
-**Own Zod schema**: `sqon-builder` defines its own `ArrayFilterValue`, `ScalarFilterValue`, `SQON`, etc. which diverge from and are a strict subset of `modules/sqon`'s schema. The absorbed builder must use `modules/sqon`'s types exclusively. The builder-internal types go away.
-
-**`@ts-expect-error` in graphql-router**: `network/utils/sqon.ts` has `@ts-expect-error sqon-builder types need update` when calling `SQONBuilder.from()`. This is a type misalignment symptom that disappears once the builder's types are grounded in `modules/sqon`'s schema.
-
-**Boolean value support**: add `zod.boolean()` to `SqonScalarValueSchema` in the unified schema (see [tech-debt: boolean values](tech-debt.md#sqon-value-schema-does-not-accept-boolean-values)). The builder inherits the fix automatically.
-
-#### What to leave behind
-
-**The `& SQON` type pattern: a known design mistake.** `sqon-builder` types the builder as `SQONBuilder & SQON`, meaning the builder object _is simultaneously the data_. This is wrong. `SqonNode` (the canonical SQON type, defined in `modules/sqon`) represents a JSON-serializable query structure; it has no methods and should never have them. The builder is a separate construction tool that produces `SqonNode` values; it is not itself a `SqonNode`.
-
-The correct design is a clean wrapper: `SqonBuilder` holds a `SqonNode` internally, exposes builder methods, and has explicit extraction: `toValue(): SqonNode` and `toString(): string`. The data type and the construction API are two distinct things.
-
-The consequences of the `& SQON` anti-pattern:
-
-- `cloneDeepValues` exists only to strip builder methods before serialization; it is a workaround for the blur, not a useful utility in its own right.
-- The `StripFunctions<T>` generic is a type-level admission that the type is wrong.
-- Consumers can accidentally pass a builder where a plain `SqonNode` is expected.
-- The `@ts-expect-error` in `graphql-router`'s `sqon.ts` is a direct downstream symptom.
-
-This must be explicit in the implementation, the TypeScript types, and the JSDoc. `SqonNode` is the data type. `SqonBuilder` is a factory. They must not be conflated.
-
-**`createFilter` in its current form**: only handles `in`/`gt`/`lt` and is tightly coupled to the old type constants. Rewrite against the full operator set with the new types.
-
-**`cloneDeepValues`**: only exists because of the `& SQON` pattern. Goes away with the wrapper redesign.
-
-**sqon-builder's constants** (`FilterKeys`, `ArrayFilterKeys`, `ScalarFilterKeys`, `CombinationKeys`): `modules/sqon` already has `sqonFieldOperatorProperties`, `sqonCombinationProperties`, and `sqonAliasProperties`. One set of constants.
-
-#### Migration path
-
-1. Add the builder API and manipulation utilities to `modules/sqon`, implemented against the full operator set and the existing Zod schema. Export as `SqonBuilder` (or similar) alongside the existing exports.
-2. Add a `from()` static method to `SqonBuilder` that calls `SqonSchema.parse()` internally, replacing the sqon-builder's `SQON.parse()` call.
-3. Update `graphql-router`'s `convertToSqon` to import from `@overture-stack/arranger-sqon` instead of `@overture-stack/sqon-builder`. The `@ts-expect-error` goes away.
-4. Update `modules/components` and any other consumer of `sqon-builder`.
-5. Deprecate `sqon-builder`. Publish a final version pointing consumers at `@overture-stack/arranger-sqon`.
-6. Remove `sqon-builder` as a dependency.
-
-_Note: `sqon-builder` git history can be preserved via `git subtree add` or `git filter-repo` if desired, but this is optional; the source is small enough to port directly. The `sqon-builder` monorepo integration work described previously is superseded by this._
+**MCP surface unification** (follow-on): `modules/sqon` now owns all operator metadata via `getSqonFieldOperatorDetails()`. The `get-sqon-schema` MCP tool still returns a hand-maintained prose cheat sheet; the `arranger://introspection/sqon` resource returns raw JSON. Both should derive from `getSqonFieldOperatorDetails()` so they stay in sync automatically as operators are added. Scope this as part of the deprecation PR or immediately after.
 
 ### Consolidate field-type-to-operator rules into `modules/sqon`
 
