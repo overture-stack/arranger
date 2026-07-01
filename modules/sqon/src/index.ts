@@ -1,3 +1,5 @@
+export { SqonBuilder, type SqonBuilderHandle, type SqonFieldFilter, type SqonFieldFilterKey } from './builder/index.js';
+export { checkMatchingArrays, checkMatchingFilter, emptySqon } from './builder/utils.js';
 export { getSqonJsonSchema, getVersionedSqonJsonSchema } from './jsonSchema/index.js';
 export {
 	getSqonFieldOperatorDetails,
@@ -25,5 +27,5 @@ export {
 	SqonLeafSchema,
 	SqonSchema,
 } from './schema/index.js';
-export type { SqonNode } from './schema/index.js';
+export type { SqonNode, SqonScalar, SqonScalarOrArray } from './schema/index.js';
 export { SQON_SCHEMA_VERSION } from './version/index.js';

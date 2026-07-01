@@ -70,6 +70,38 @@ suite('sqon/schema', () => {
 		assert.equal(emptyStringValue.success, true);
 	});
 
+	test('accepts boolean true as a scalar value in an in filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'in',
+			content: { fieldName: 'sample.flagged', value: true },
+		});
+		assert.equal(output.success, true);
+	});
+
+	test('accepts boolean false as a scalar value in an in filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'in',
+			content: { fieldName: 'sample.flagged', value: false },
+		});
+		assert.equal(output.success, true);
+	});
+
+	test('accepts boolean values in an array for an in filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'in',
+			content: { fieldName: 'sample.flags', value: [true, false] },
+		});
+		assert.equal(output.success, true);
+	});
+
+	test('accepts boolean as a scalar value in a range filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'gt',
+			content: { fieldName: 'sample.flagged', value: true },
+		});
+		assert.equal(output.success, true);
+	});
+
 	test('accepts all currently supported field operators', () => {
 		const candidates = [
 			{ op: 'in', content: { fieldName: 'a', value: ['x'] } },

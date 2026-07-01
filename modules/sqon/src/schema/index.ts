@@ -7,6 +7,7 @@ import {
 	SqonScalarValueSchema,
 	GroupOpSchema,
 } from './constants.js';
+export type { SqonScalar, SqonScalarOrArray } from './constants.js';
 import type { SqonGroup, SqonNode } from './types.js';
 
 export const InLikeFilterSchema = zod

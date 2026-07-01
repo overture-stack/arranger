@@ -5,6 +5,16 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 
 ---
 
+## build tooling
+
+### Migrate from npm to pnpm
+standalone: yes
+context: npm's flat hoisting causes esbuild binary version conflicts across workspaces when multiple packages use tsup. Adding sqon as a second tsup consumer caused bundle-require's peer esbuild to be hoisted to root at a mismatched version. pnpm's strict per-package isolation would prevent this class of issue; each package sees only what it declares. Migration requires updating the Jenkins pipeline and any Dockerfiles that invoke npm.
+
+### Upgrade tsup from 6.7.0 to 8.5.1
+standalone: no
+context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm hoisting problem above: tsup@8.5.1 brings esbuild@^0.27.0, which conflicts with tsx's esbuild@~0.28.0 and bundle-require's peer dep resolution under npm. Revisit after pnpm migration.
+
 ## apps/mcp-server
 
 ### `InMemoryEventStore` is not suitable for production
@@ -313,6 +323,33 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Issue:** `resolveSetsInSqon` has two paths - SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
 **Standalone:** yes; but note the file also carries the `hackyTemporaryEsSetResolution` tech-debt entry; evaluate for removal during Sets full-feature implementation rather than investing deeply in tests for code that may be replaced
 
+### No unit tests for `convertToSqon` or other `network/utils/` functions
+
+**Files:** `modules/graphql-router/src/network/utils/sqon.ts`, `modules/graphql-router/src/network/utils/gql.ts`, `modules/graphql-router/src/network/utils/promise.ts`
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** `convertToSqon` is a pure function at a user-input boundary: it parses an unknown value and returns `Result<SqonNode, { INVALID_SQON: string }>`. Every incoming SQON passes through it, making it security-relevant, yet it has zero test coverage. The other two utils files (`gql.ts`, `promise.ts`) are also untested.
+**Fix:** Unit tests for `convertToSqon` covering: valid SQON returns `success(SqonNode)`; invalid SQON (wrong shape, missing `op`) returns failure with `INVALID_SQON`; null/undefined input returns failure; JSON string input is accepted. Add tests for `gql.ts` and `promise.ts` once their exported surface is confirmed non-trivial.
+**Standalone:** yes; pure functions, no mocking required
+
+### No unit tests for network resolvers
+
+**Files:** `modules/graphql-router/src/network/resolvers/` (aggregations.ts, fetch.ts, networkNode.ts, query.ts, response.ts)
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** The entire network resolver layer has no tests. This is the core async multi-node query execution path: aggregation response resolving, remote node data fetching, network node response building, query construction, and response transformation. Bugs here affect all multi-catalogue network searches silently.
+**Fix:** Unit tests with mocked network node responses. The pure transformation files (`response.ts`, `networkNode.ts`, `query.ts`) can be tested directly. `fetch.ts` requires HTTP-level mocking (e.g. `undici MockAgent` or similar). Cover: single-node success; partial node failure (one down, others succeed); empty response; aggregation accumulation across nodes.
+**Standalone:** partial; transformation functions are standalone; `fetch.ts` depends on establishing the HTTP mock pattern first
+
+### No unit tests for `dataToExportFormat`
+
+**File:** `modules/graphql-router/src/utils/dataToExportFormat.js`
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** `dataToExportFormat` transforms ES hit data into the export column format, handling `extendedDisplayValues` label substitution, `jsonPath` extraction, column visibility, and hit flattening. No unit tests exist.
+**Fix:** Unit tests covering: basic field mapping; `jsonPath` extraction; `extendedDisplayValues` label substitution; columns with `show: false` excluded; empty hit set returns empty array.
+**Standalone:** yes; pure transformation function
+
 ### `hackyTemporaryEsSetResolution.js`: stale ES 6.2 workaround + convention violation
 
 **File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
@@ -325,6 +362,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 ---
 
 ## modules/types
+
+### No unit tests for `tools/` utilities or `networkAggregationConfigUtils`
+
+**Files:** `modules/types/src/tools/stringFns.ts`, `modules/types/src/tools/typeFns.ts`, `modules/types/src/configs/networkAggregationConfigUtils.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** All three files are exported from the package and used across the monorepo but have zero test coverage. `stringFns.ts` and `typeFns.ts` are utility and type guard functions where a regression would propagate silently to every consumer. `networkAggregationConfigUtils.ts` contains non-trivial domain logic for network aggregation config setup.
+**Fix:** Co-located unit tests (e.g. `stringFns.test.ts` alongside `stringFns.ts`) covering each exported function. Prioritize `networkAggregationConfigUtils` as the highest-complexity target.
+**Standalone:** yes
 
 ### Config constants need reorganization (blocked on architecture work)
 
@@ -486,11 +532,11 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Files:** `integration-tests/import/test.ts`, `integration-tests/import/package.json`
 **Severity:** low (gap in regression coverage)
 **Kind:** missing test coverage
-**Issue:** `integration-tests/import` runs under Jest + ts-jest, which handles CJS and TypeScript source but cannot import pure-ESM dist packages (`.js` files with `"type": "module"` and no `"require"` export) without additional configuration. `@overture-stack/arranger-graphql-router` and `@overture-stack/sqon` are pure ESM; both are missing from the import smoke test. `@overture-stack/arranger-types` (CJS + ESM hybrid) and `@overture-stack/arranger-components` (CJS via Babel) are covered. An import regression in `graphql-router` or `sqon` would not be caught by this test.
+**Issue:** `integration-tests/import` runs under Jest + ts-jest, which handles CJS and TypeScript source but cannot import pure-ESM dist packages (`.js` files with `"type": "module"` and no `"require"` export) without additional configuration. `@overture-stack/arranger-graphql-router` is pure ESM and is missing from the import smoke test. `@overture-stack/arranger-types` (CJS + ESM hybrid), `@overture-stack/arranger-components` (CJS via Babel), and `@overture-stack/sqon` (dual ESM+CJS since 2026-06-30) are covered. An import regression in `graphql-router` would not be caught by this test.
 
 Additionally: `integration-tests/import` resolves all deps via npm workspaces symlinks (`file:` paths), so it tests local build output, not the published tarball. Publishing regressions (e.g. stale `file:` refs in `package.json`) are caught by `npm run release:check` (`scripts/verify-pack.mjs`), not by this test.
 
-**Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and `arranger-sqon` and checks their key exports.
+**Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and checks its key exports.
 
 **Additional TODOs on top of the ESM gap:**
 1. **Verify `exports` subpaths, not just package root.** The smoke test should assert each named subpath in the `exports` field (`./utils`, `./download`, etc.) resolves and exposes the expected named exports. A missing barrel re-export (e.g. `getAllData` was absent from `utils/index.ts`) causes `ERR_PACKAGE_PATH_NOT_EXPORTED` for consumers importing via a subpath, which the current test would not catch.
@@ -524,6 +570,15 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 ---
 
 ## apps/search-server
+
+### No unit tests for catalog config loading or `catalogId`
+
+**Files:** `apps/search-server/src/configs/index.ts`, `apps/search-server/src/configs/catalogId.ts`, `apps/search-server/src/configs/fromFiles/` (4 files), `apps/search-server/src/configs/fromEnv/` (3 files)
+**Severity:** high
+**Kind:** missing test coverage
+**Issue:** The catalog loading logic - recursing subdirectories, aggregating config files, generating unique IDs - has no tests. This is startup-critical: bugs cause startup failures or silent misconfiguration in multicatalog deployments. `catalogId.ts` tracks ID uniqueness across loads but is also untested. `fromFiles/` and `fromEnv/` parsing has no coverage either.
+**Fix:** Unit tests using a temporary directory fixture for flat (single-catalog) and nested (multicatalog) layouts; error handling on malformed config files; unique ID generation and collision detection in `catalogId.ts`; env var aggregation in `fromEnv/`.
+**Standalone:** yes; no running server required; mock the filesystem with a temp directory
 
 ### No README
 

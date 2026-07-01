@@ -8,6 +8,28 @@ Newest first.
 
 ## 2026-06-30
 
+Absorbed `@overture-stack/sqon-builder` functionality into `modules/sqon`, making it the single package for SQON construction and validation; `sqon-builder` is now redundant and will be deprecated separately.
+
+- `modules/sqon/src/schema/constants.ts`: added `zod.boolean()` to `SqonScalarValueSchema`; exported `SqonScalar` and `SqonScalarOrArray` types
+- `modules/sqon/src/schema/index.ts`: re-exported the two new types
+- `modules/sqon/src/builder/utils.ts`: new file - `SqonFieldFilter` type, `isGroupNode`, `isFieldFilter`, `asArray`, `emptySqon`, `checkMatchingArrays`, `checkMatchingFilter`; `SqonFieldFilter` defined as `SqonNode & { content: { fieldName: string; value: SqonScalarOrArray } }` so it satisfies the type predicate constraint
+- `modules/sqon/src/builder/reduce.ts`: new file - `reduceSqon`; merges in/not-in/some-not-in/all value arrays, applies boundary semantics to gt/gte/lt/lte, removes empty combinations, unwraps single-item and/or (except pivoted ones), flattens same-op same-pivot combinations; `between` intentionally left non-reducible (v2)
+- `modules/sqon/src/builder/index.ts`: new file - `SQON` factory and `SqonBuilder` type; covers `in`, `not-in`, `some-not-in`, `all`, `gt`, `gte`, `lt`, `lte`, `between`, `fuzzy` (op stays `'filter'` for serialized SQON compatibility), `and`, `or`, `not`, `setFilter`, `removeFilter`, `removeExactFilter`; builder is a pure wrapper over `SqonNode`, not the `& SQON` anti-pattern
+- `modules/sqon/src/index.ts`: exported `SQON`, `SqonBuilder`, `SqonFieldFilter`, `SqonFieldFilterKey`, `checkMatchingArrays`, `checkMatchingFilter`, `emptySqon`
+- `modules/sqon/src/builder/index.test.ts`, `modules/sqon/src/__tests__/schema.test.ts`: new/extended BDD tests (91 + 152 total passing)
+- `modules/graphql-router/src/network/utils/sqon.ts`: swapped `@overture-stack/sqon-builder` import for `@overture-stack/sqon`; removed `@ts-expect-error`; `convertToSqon` now returns `Result<SqonNode, ...>` via `SQON.from(filter).toValue()`
+- `modules/components/src/DataContext/types.ts`: `SQONType` now aliases `SqonNode | null` (from `@overture-stack/sqon`)
+- `modules/components/src/Table/DownloadButton/DownloadButton.tsx`: swapped `SQONBuilder.in(...)` for `SQON.in(...)`
+- `modules/graphql-router/package.json`, `modules/components/package.json`: replaced `@overture-stack/sqon-builder` dependency with `@overture-stack/sqon` (local workspace ref)
+- `modules/sqon/src/index.ts`: updated exports to use combined value+type re-export syntax
+- `modules/sqon/src/builder/index.test.ts`: updated all references to match renamed identifiers
+- `modules/graphql-router/src/network/utils/sqon.ts`, `modules/components/src/Table/DownloadButton/DownloadButton.tsx`: updated to `SqonBuilder` (was `SQON`)
+- `modules/sqon/README.md`: rewrote to document builder API; added usage section covering the recommended `SqonNode`-at-boundaries pattern, `SqonBuilder.from()` for validation, filter and combination examples, and type reference table
+- `modules/sqon/src/__tests__/buildQueryFilter.test.js`, `modules/sqon/src/builder/index.test.ts`, `modules/sqon/src/__tests__/schema.test.ts`, `modules/graphql-router/src/middleware/__tests__/buildQuery/normalizeFilter.test.js`, `modules/components/src/SQONViewer/utils.test.js`: added failing tests specifying the `'filter'` → `'fuzzy'` canonical op rename; all intentionally red pending implementation
+- `modules/sqon/package.json`, `modules/sqon/tsup.config.ts` removed in favour of CLI flags, `modules/sqon/src/version/constants.ts`: switched sqon build from `tsc` to `tsup` with dual ESM+CJS output; added conditional `exports` field so CJS consumers can `require()` the package; fixed `import.meta.url` usage to fall back gracefully in CJS context; resolves `integration-tests-import` failure where components' Babel CJS build could not load the ESM-only sqon package
+- `integration-tests/import/package.json`, `integration-tests/import/test.ts`: added `@overture-stack/sqon` as a direct dep; added test asserting `SqonBuilder`, `SqonSchema`, and `SQON_SCHEMA_VERSION` are importable from the CJS build; removed sqon from the "pure ESM" exclusion comment (graphql-router remains excluded)
+- `package.json`: added `"esbuild": "0.17.19"` to both `overrides` and `devDependencies`; the override alone is insufficient because npm does not apply overrides to peer dep auto-installation - making it an explicit devDep forces the correct version at the root where bundle-require loads it; tsup upgrade to 8.5.1 attempted and reverted (esbuild hoisting conflicts under npm); logged pnpm migration and tsup upgrade as standalone tech-debt
+
 Fact-checked the search engine permissions reference against the authoritative OpenSearch source (`static_action_groups.yml`); corrected two mistakes introduced in the 2026-06-28 session; corrected a further mistake about alias resolution permission level, verified against live cluster behaviour and OpenSearch static plugin config.
 
 - `modules/graphql-router/src/searchClient/index.ts`: fixed wrong permission name in the dual-403 error message: `cluster:monitor/nodes_info` is not a real permission; the correct transport action is `cluster:monitor/nodes/info`
@@ -31,6 +53,8 @@ Fact-checked the search engine permissions reference against the authoritative O
 - `.dev/roadmap.md`: added "Decouple startup health check from application credential" to the Deployment section; describes why the current coupling is wrong and what the correct fix is (`GET /` via `cluster:monitor/main` for liveness; remove `cluster:monitor/health` dependency)
 - `scripts/ping-elasticsearch.sh`: removed mutational engine-label logic (placeholder assignment in a `case`, conditionally overwritten later based on a string-equality check); engine detection is now a single-assignment `engine_label()` function; `if [ $? -ne 0 ]` replaced with `if ! command; then`
 - `.dev/roadmap.md`: rewrote "Decouple startup health check from application credential" with an init-container design: elevated credential (`cluster:monitor/health`) confined to an init container that owns the `wait_for_status=yellow` readiness gate and the cluster-status log output; main container runs with `cluster:monitor/main` only; scope note updated to flag the new Vault role/policy, VSO secret, and Helm `initContainers` work this requires
+- `modules/graphql-router/src/middleware/__tests__/buildQuery/buildQueryFilter.test.js`: added a failing test specifying that `op: 'fuzzy'` must produce the same ES output as `op: 'filter'`; this is the behavioral specification for the upcoming canonical-op flip; the test is intentionally red now and will go green when the flip is complete
+- `~/.claude/CLAUDE.md`, `agentics/CLAUDE.md`, `agentics/AGENTS.md`, `agentics/template/CLAUDE.md`: added "verify purpose alignment before implementing" to Interaction parameters; added to agentics CHANGELOG.md
 
 ---
 
