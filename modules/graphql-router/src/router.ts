@@ -7,10 +7,9 @@ import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes from '#graphqlRoutes.js';
-import { getIndexMapping } from '#searchClient/index.js';
 import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
-import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
+import buildSearchClient, { getIndexMapping, type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
@@ -76,7 +75,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			}));
 
 		const mappingFromIndex = await getIndexMapping({
-			enableDebug,
+			enableDebug: !!enableDebug,
 			searchClient: esClient,
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});

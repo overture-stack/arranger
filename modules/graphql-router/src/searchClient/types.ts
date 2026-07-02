@@ -1,7 +1,11 @@
 import type { Client as ElasticClient } from '@elastic/elasticsearch';
 import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
 
-export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
+export type SupportedClients = {
+	elasticsearch: ElasticClient;
+	opensearch: OpenSearchClient;
+	'opensearch-aws': OpenSearchClient;
+};
 export type SupportedClientTypes = keyof SupportedClients;
 export type SearchConfig = {
 	node: string;
@@ -40,8 +44,13 @@ export type SearchClientIndicesOpenParams = { index: string | string[] };
 export type SearchClientIndicesPutMappingsParams = { index: string; body: Record<string, any> };
 export type SearchClientIndicesPutSettingsParams = { body: Record<string, any> };
 export type SearchClientBulkParams = { body: Record<string, any>[] };
-export type SearchClientCreateParams = { id: string; index: string; body: Record<string, any> };
-export type SearchClientDeleteParams = { index: string; id: string };
+export type SearchClientCreateParams = {
+	id: string;
+	index: string;
+	body: Record<string, any>;
+	refresh?: boolean | 'false' | 'true' | 'wait_for';
+};
+export type SearchClientDeleteParams = { index: string; id: string; refresh?: boolean | 'false' | 'true' | 'wait_for' };
 export type SearchClientDeleteByQueryParams = { index: string; body: Record<string, any> };
 export type SearchClientIndexParams = { index: string; body: Record<string, any> };
 export type SearchClientUpdateParams = { id: string; index: string; body: Record<string, any> };
@@ -95,6 +104,8 @@ type SearchClientHitsResponse = SearchClientBaseResponse & {
 		hits: {
 			hits: {
 				_source: any;
+				_id: string;
+				_index: string;
 			}[];
 		};
 	};
@@ -108,8 +119,8 @@ type SearchClientAggregationsResponse = SearchClientBaseResponse & {
 export type SearchClientSearchBody = {
 	_shards: ShardData;
 	aggregations?: Record<string, any>;
-	hits?: {
-		hits: { _id: string; _index: string; _source?: any }[];
+	hits: {
+		hits: { _source?: any }[];
 	};
 	timed_out: boolean;
 	took: number;
