@@ -49,7 +49,7 @@ export const getSqonFieldOperatorDetails = (): SqonFieldOperatorDetail[] =>
 					applicableTo: [...RANGE_APPLICABLE_TYPES],
 					valueType: 'Array<number | date>',
 				};
-			case 'filter':
+			case 'wildcard':
 				return {
 					op,
 					applicableTo: 'all',

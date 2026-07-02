@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Concepts
 
-Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and OpenSearch. It turns an index configuration into a working search API and MCP server for AI agent access. A React component library is available for building search UIs on top of it. This page defines the domain terms used throughout the Arranger documentation and codebase.
+Arranger is a versatile, model-agnostic data discovery API for OpenSearch and Elasticsearch. It turns an index configuration into a working search API and MCP server for AI agent access. A React component library is available for building search UIs on top of it. This page defines the domain terms used throughout the Arranger documentation and codebase.
 
 ## Catalogues and configuration
 
@@ -65,7 +65,7 @@ The word **filter** is used two ways: as a verb ("users filter the dataset") and
 
 | Term | Meaning |
 |---|---|
-| **model-agnostic** | Arranger does not assume a specific data model or schema. Any correctly structured Elasticsearch or OpenSearch index can be used as a catalogue. |
+| **model-agnostic** | Arranger does not assume a specific data model or schema. Any correctly structured OpenSearch or Elasticsearch index can be used as a catalogue. |
 | **catalogue** | One searchable dataset in Arranger, backed by an Elasticsearch index with its own configuration directory. Canadian spelling. |
 | **configuration** | The JSON files defining a catalogue (base, extended, facets, table). Use "configuration" in prose; `config` is acceptable in code identifiers. |
 | **directory** | A filesystem directory. Not "folder". |

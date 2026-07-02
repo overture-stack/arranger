@@ -63,7 +63,7 @@ const enhance = compose(
 								fieldNames: searchFields?.map((field) => field.fieldName || field),
 								value: `*${part}*`,
 							},
-							op: 'filter',
+							op: 'wildcard',
 						})),
 					op: 'or',
 				},

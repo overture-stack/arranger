@@ -10,17 +10,7 @@ This document covers two categories of planned work: **product and architecture*
 
 ### Fix `initializeSets` startup race in multicatalog mode
 
-_Priority: high. Confirmed bug; affects any multicatalog deployment on a fresh cluster._
-
-In multicatalog mode, every catalogue's `arrangerRoutes` runs concurrently at startup and each calls `initializeSets` with the same sets index name. `initializeSets` does a check-then-act (`indices.exists` then `indices.create`): when the index does not exist yet, multiple routers pass the existence check simultaneously, one create wins, and the others throw `resource_already_exists_exception`. That exception is caught by `arrangerRoutes`' catch-all, which replaces the entire catalogue router with a permanent 500 handler. A healthy catalogue's GraphQL endpoint is dead until restart, nondeterministically, with no clear indication in logs of what happened.
-
-Two aggravating factors: `initializeSets` runs even when `disableSets: true`; and a Sets initialization failure poisons the whole router, not just the Sets feature.
-
-**Fix:** Treat `resource_already_exists_exception` as success in `initializeSets` (the race loser's goal state is already achieved). Additionally: skip `initializeSets` when `disableSets: true`, and scope the `arrangerRoutes` catch so a Sets initialization failure does not take down the catalogue's entire GraphQL endpoint.
-
-**Files:** `modules/graphql-router/src/config/utils/index.ts` (`initializeSets`); `modules/graphql-router/src/graphqlRoutes.ts` (`arrangerRoutes` catch block). Standalone: yes.
-
-_Note: confirm the exact exception name in OpenSearch before implementing the guard - it may differ from Elasticsearch's `resource_already_exists_exception`._
+_Resolved._
 
 ---
 
@@ -94,69 +84,15 @@ Once `arranger-core` exists, `graphql-router` becomes one of potentially several
 
 This is a directional goal, not an actionable item yet.
 
-### `sqon-builder` absorption into `modules/sqon`
+### Deprecate `sqon-builder`
 
-_Priority: medium. Separate repo, should be absorbed into this monorepo._
+_Priority: next. Absorption into `modules/sqon` is complete (builder API, reduceSqon, filter manipulation, from(), all operators, correct type boundary). Remaining: formal deprecation and removal._
 
-The direction is **not** a lateral merge: `modules/sqon` is the host. It grows to subsume `sqon-builder`'s capabilities, primarily the builder/chainable API and the SQON manipulation utilities, so that `modules/sqon` becomes the single package for everything SQON: validation, operator metadata, JSON Schema, and programmatic construction. `sqon-builder` is then deprecated and its consumers redirected.
+Steps:
+1. Publish a final `@overture-stack/sqon-builder` version with a deprecation notice pointing consumers at `@overture-stack/sqon`.
+2. Remove `sqon-builder` as a dependency from this monorepo.
 
-#### What sqon-builder brings that is worth keeping
-
-**Builder/chainable API**: `SQONBuilder.in('x', ['a']).and(SQONBuilder.gt('y', 5))`. Genuinely useful for programmatic SQON construction in UI code and the MCP server. Used in `graphql-router`'s `convertToSqon` path and presumably in `modules/components`.
-
-**`reduceSQON`**: a non-trivial deduplication and simplification algorithm. Merges duplicate filters under the same combination (e.g. two `gt` on `and` collapses to the greater value), unwraps single-item wrappers, removes empty combinations. No equivalent in `modules/sqon`.
-
-**Filter manipulation methods**: `removeFilter`, `removeExactFilter`, `setFilter`. These are stateful builder operations that the UI depends on for interactive SQON editing (adding/removing facet selections).
-
-**`checkMatchingFilter` / `checkMatchingArrays`**: semantic filter comparison, order-independent. Worth keeping as a utility export.
-
-**`from()` static parser**: parses a raw object into a builder. The MCP-layer `convertToSqon` already uses this.
-
-**`emptySQON()`**: trivial but a useful starting point for builder chains.
-
-#### What needs to be fixed or extended during absorption
-
-**Operator coverage gap**: the single largest issue. `sqon-builder` only implements `in`, `gt`, `lt`. It cannot build `not-in`, `some-not-in`, `all`, `gte`, `lte`, `between`, or `filter` queries. The absorbed builder must cover all operators `modules/sqon` already defines. Any SQON a consumer can _validate_ they must also be able to _build_.
-
-**`reduceSQON` operator coverage gap**: the reduction logic only handles specific cases for `GT`, `LT`, and `IN`. When the builder gains the full operator set, the reduction rules for `gte`, `lte`, `between`, and `not-in` need to be defined and implemented. Some cases are clear (two `gte` on `and` keeps the greater); others need deliberate design (what does it mean to reduce two `between` ranges on `and`?).
-
-**Own Zod schema**: `sqon-builder` defines its own `ArrayFilterValue`, `ScalarFilterValue`, `SQON`, etc. which diverge from and are a strict subset of `modules/sqon`'s schema. The absorbed builder must use `modules/sqon`'s types exclusively. The builder-internal types go away.
-
-**`@ts-expect-error` in graphql-router**: `network/utils/sqon.ts` has `@ts-expect-error sqon-builder types need update` when calling `SQONBuilder.from()`. This is a type misalignment symptom that disappears once the builder's types are grounded in `modules/sqon`'s schema.
-
-**Boolean value support**: add `zod.boolean()` to `SqonScalarValueSchema` in the unified schema (see [tech-debt: boolean values](tech-debt.md#sqon-value-schema-does-not-accept-boolean-values)). The builder inherits the fix automatically.
-
-#### What to leave behind
-
-**The `& SQON` type pattern: a known design mistake.** `sqon-builder` types the builder as `SQONBuilder & SQON`, meaning the builder object _is simultaneously the data_. This is wrong. `SqonNode` (the canonical SQON type, defined in `modules/sqon`) represents a JSON-serializable query structure; it has no methods and should never have them. The builder is a separate construction tool that produces `SqonNode` values; it is not itself a `SqonNode`.
-
-The correct design is a clean wrapper: `SqonBuilder` holds a `SqonNode` internally, exposes builder methods, and has explicit extraction: `toValue(): SqonNode` and `toString(): string`. The data type and the construction API are two distinct things.
-
-The consequences of the `& SQON` anti-pattern:
-
-- `cloneDeepValues` exists only to strip builder methods before serialization; it is a workaround for the blur, not a useful utility in its own right.
-- The `StripFunctions<T>` generic is a type-level admission that the type is wrong.
-- Consumers can accidentally pass a builder where a plain `SqonNode` is expected.
-- The `@ts-expect-error` in `graphql-router`'s `sqon.ts` is a direct downstream symptom.
-
-This must be explicit in the implementation, the TypeScript types, and the JSDoc. `SqonNode` is the data type. `SqonBuilder` is a factory. They must not be conflated.
-
-**`createFilter` in its current form**: only handles `in`/`gt`/`lt` and is tightly coupled to the old type constants. Rewrite against the full operator set with the new types.
-
-**`cloneDeepValues`**: only exists because of the `& SQON` pattern. Goes away with the wrapper redesign.
-
-**sqon-builder's constants** (`FilterKeys`, `ArrayFilterKeys`, `ScalarFilterKeys`, `CombinationKeys`): `modules/sqon` already has `sqonFieldOperatorProperties`, `sqonCombinationProperties`, and `sqonAliasProperties`. One set of constants.
-
-#### Migration path
-
-1. Add the builder API and manipulation utilities to `modules/sqon`, implemented against the full operator set and the existing Zod schema. Export as `SqonBuilder` (or similar) alongside the existing exports.
-2. Add a `from()` static method to `SqonBuilder` that calls `SqonSchema.parse()` internally, replacing the sqon-builder's `SQON.parse()` call.
-3. Update `graphql-router`'s `convertToSqon` to import from `@overture-stack/arranger-sqon` instead of `@overture-stack/sqon-builder`. The `@ts-expect-error` goes away.
-4. Update `modules/components` and any other consumer of `sqon-builder`.
-5. Deprecate `sqon-builder`. Publish a final version pointing consumers at `@overture-stack/arranger-sqon`.
-6. Remove `sqon-builder` as a dependency.
-
-_Note: `sqon-builder` git history can be preserved via `git subtree add` or `git filter-repo` if desired, but this is optional; the source is small enough to port directly. The `sqon-builder` monorepo integration work described previously is superseded by this._
+**MCP surface unification** (follow-on): `modules/sqon` now owns all operator metadata via `getSqonFieldOperatorDetails()`. The `get-sqon-schema` MCP tool still returns a hand-maintained prose cheat sheet; the `arranger://introspection/sqon` resource returns raw JSON. Both should derive from `getSqonFieldOperatorDetails()` so they stay in sync automatically as operators are added. Scope this as part of the deprecation PR or immediately after.
 
 ### Consolidate field-type-to-operator rules into `modules/sqon`
 
@@ -254,7 +190,29 @@ _Schema versioning decision gates the hits/edges/nodes redesign._
 
 ### MCP integration readiness
 
-Three targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. These arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface.
+Four targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation.
+
+#### SQON generation via `build_sqon` tool
+
+_Priority: high. Somewhat urgent: MCP SQON generation is currently hit-or-miss in practice._
+
+LLMs asked to generate SQONs by inference produce inconsistent results. The root cause is training-data staleness: operator names, value schemas, combination nesting rules, and field-type constraints in model training data are incomplete or incorrect relative to the current spec. Prompting alone cannot reliably compensate for this.
+
+The fix is to remove the LLM from the SQON synthesis loop. Add a `build_sqon` MCP tool in `apps/mcp-server` that accepts structured parameters (field, operator, value, and an optional combination operator for nesting) and calls `SqonBuilder` internally, returning a validated SQON. The LLM's responsibility becomes selecting the right field, operator, and value from the available catalogue schema - not synthesizing raw JSON. The tool is the generator; the LLM is the selector.
+
+This is also more token-efficient than the alternatives: embedding SQON documentation in a system prompt and relying on the `/introspection` endpoint as a runtime SQON guide both consume context window on every request. A tool call is cheaper and fully deterministic.
+
+**Scope:**
+
+1. **`build_sqon` tool** in `apps/mcp-server/src/mcp/tools.ts`: accepts `field`, `operator`, `value`, and optional `combination` type; calls `SqonBuilder` internally; returns a validated SQON object.
+2. **Agent-optimized tool description**: the tool schema carries descriptions that guide the LLM toward correct parameter selection - valid operators per field type (from `getSqonFieldOperatorDetails()`) and value type hints. The tool's own description is the spec; the LLM does not need SQON documentation injected into every prompt.
+3. **Versioned changelog**: as the SQON schema evolves, the tool interface is versioned and its changelog is machine-readable. Agent behaviour decouples from model training data; the tool's current description is always authoritative.
+
+**Prerequisite:** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. The current `sqon-builder` package only handles `in`, `gt`, `lt`. Full operator coverage (`not-in`, `gte`, `lte`, `between`, etc.) depends on the sqon-builder absorption into `modules/sqon` item. The tool can ship with partial coverage while absorption is in progress, then expand as operators are added to the builder.
+
+_See [sqon-builder absorption into `modules/sqon`](#sqon-builder-absorption-into-modulessqon) for the prerequisite builder work._
+
+**Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once Rakesh's MCP implementation is available and real token budgets can be measured empirically.
 
 #### Schema cache invalidation signal (ETag / schema hash)
 
@@ -301,6 +259,30 @@ _Low urgency unless precision bugs appear. Research-first._
 ---
 
 ## Features
+
+### Fuzzy (edit-distance) SQON operator
+
+_Priority: medium. Distinct from the `wildcard` operator already implemented._
+
+Add a `fuzzy` SQON operator that performs approximate string matching using Levenshtein edit distance, translated to an ES/OS `multi_match` query with `fuzziness: "AUTO"`. This tolerates typos and near-matches (`"jhn"` matches `"john"`) in a way that the current `wildcard`/substring operator does not.
+
+The SQON schema: same shape as `wildcard` (`fieldNames` array + `value` string), different `op`:
+
+```json
+{
+  "op": "fuzzy",
+  "content": { "fieldNames": ["donor.name"], "value": "john smit" }
+}
+```
+
+**Implementation notes:**
+- `multi_match` with `fuzziness: "AUTO"` is the natural ES/OS translation; the current `getWildcardFilter` in `graphql-router` is the reference implementation to branch from
+- Nested field grouping logic from `getWildcardFilter` carries over: nested fields must be wrapped per path
+- A new `SqonBuilder.fuzzy()` builder method and a new `FuzzyFilterSchema` in `modules/sqon` are needed; the schema change is additive
+- The `fuzzy` op name is free: it was never released under the `wildcard`-era codebase, so there are no aliases or compatibility shims to remove; just add it as a new canonical op
+- Expose `fuzziness` as an optional `content` param defaulting to `"AUTO"` for callers who need tighter or looser matching
+
+**Design question to resolve before implementing:** should `fuzzy` tolerate leading-term fuzziness only (`operator: "AND"`) or allow any-term matching (`operator: "OR"`)? AND is less surprising for search boxes; OR is more permissive. Decide at API design time.
 
 ### GA4GH Beacon v2 module
 
@@ -386,7 +368,7 @@ Sets are saved groupings of documents from a catalog; think "save this search re
 - **Access control:** Sets should support Attribute-Based Access Control (ABAC). A set has an owner; it can be private, shared with specific users, or public. This design needs to be done before the backend is completed, as it affects the data model.
 - **Virtual cohorts:** Rather than storing a static list of document IDs, a set can be defined as a saved filter/query that resolves dynamically at query time. This is more powerful and avoids stale sets when the underlying data changes.
 
-This is a substantial multi-sprint effort. Backend and UI work can be parallelized once the ABAC model is defined. The `DISABLE_SETS` feature flag exists precisely because this is a work in progress; it should remain until the feature is complete and stable.
+This is a substantial multi-sprint effort. Backend and UI work can be parallelized once the ABAC model is defined. The `ENABLE_SETS` feature flag exists precisely because this is a work in progress; it should remain until the feature is complete and stable.
 
 ### Admin UI replacement
 
@@ -566,6 +548,27 @@ _Needs design before implementation. Treat as a blocking design question for any
 ---
 
 ## Deployment
+
+### Decouple startup health check from application credential
+
+`scripts/ping-elasticsearch.sh` calls `GET /_cluster/health` using the application user's credentials (`ES_USER`/`ES_PASS`). This forces `cluster:monitor/health` to be granted to the application role even though no application code path ever calls `/_cluster/health`. The permission exists solely so a shell script can display a status block on startup.
+
+This violates the principle of least privilege: the application user's role carries a permission it never exercises. Any operator following the documented minimum permissions will grant `cluster:monitor/health` to their search engine user indefinitely, with no indication that it is a startup-script concern rather than an application requirement.
+
+**Correct fix:**
+
+Move the readiness gate into a Kubernetes init container that runs with its own, more privileged credential, separate from the application's runtime credential:
+
+- **Init container:** runs `ping-elasticsearch.sh` (or its successor) with an elevated credential granted `cluster:monitor/main` + `cluster:monitor/health`. It retries `GET /_cluster/health?wait_for_status=yellow&...` until the cluster is ready or the container times out, gating the pod's main container start via the normal init-container mechanism. The cluster status block (cluster name, status, node count, shards) stays as this container's log output, visible via `kubectl logs <pod> -c <init-name>`, and never needs to be a concern for the app container.
+- **Main container:** the application runs with a leaner credential, `cluster:monitor/main` only, which is all it needs for `GET /` engine auto-detection. It never holds `cluster:monitor/health`.
+
+This preserves the `wait_for_status=yellow` readiness gate (true cluster-ready signal, not just HTTP connectivity) while still removing the unused permission from the long-running application process: the actual least-privilege violation the rest of this item is about.
+
+A simpler alternative (drop the readiness gate, probe `GET /` only, no init container) was considered and rejected: it trades a real readiness check for a permissions fix, and `GET /` only confirms the process is responding, not that shards are allocated.
+
+**Related:** the script filename (`ping-elasticsearch.sh`) and env var names (`ES_HOST`, `ES_USER`, `ES_PASS`) are also Elasticsearch-first and should be renamed in the same effort. See tech-debt: "Elasticsearch-first naming in startup script and env vars".
+
+_Standalone: yes, once the approach is agreed. Needs a new Vault role/policy for the init container's elevated credential, a second VSO-injected secret, and an `initContainers` stanza added to the Helm chart, in addition to script changes. If the Helm chart lives in a separate repo from this one, that work belongs there. No application logic changes._
 
 ### Helm chart update
 

@@ -11,10 +11,17 @@
 		"type": "git",
 		"url": "git+https://github.com/overture-stack/arranger.git"
 	},
-	"main": "dist/index.js",
+	"main": "dist/index.cjs",
 	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs",
+			"types": "./dist/index.d.ts"
+		}
+	},
 	"scripts": {
-		"build": "tsc --project tsconfig.release.json",
+		"build": "tsup",
 		"clear:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
@@ -28,6 +35,7 @@
 	},
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.0",
+		"tsup": "^6.7.0",
 		"@types/node": "^22.19.13",
 		"nodemon": "^3.1.9",
 		"tsx": "^4.19.2",

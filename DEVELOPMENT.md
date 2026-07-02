@@ -47,6 +47,8 @@ make start          # starts Elasticsearch via docker-compose
 make seed-es        # seeds test documents
 ```
 
+The local stack runs without authentication. If you need to test against a secured cluster (OpenSearch or Elasticsearch with the security plugin enabled), see the [search engine permissions reference](docs/setup.md#search-engine-permissions) in the setup documentation for the minimum permissions required per feature.
+
 Start the development server (watches `sqon`, `types`, `graphql-router`, and `search-server`):
 
 ```bash
