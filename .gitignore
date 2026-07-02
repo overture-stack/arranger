@@ -17,3 +17,4 @@ lerna-debug.log
 !**/.env.schema
 
 /configs
+/modules/graphql-router/src/admin/**
