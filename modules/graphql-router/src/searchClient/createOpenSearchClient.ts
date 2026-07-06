@@ -5,7 +5,7 @@ import type { SearchClient, SearchConfig } from './types.js';
 
 export type OSClientOptions = Prettify<
 	SearchConfig & {
-		clientType: 'opensearch' | 'opensearch-aws';
+		clientType: 'opensearch';
 	}
 >;
 

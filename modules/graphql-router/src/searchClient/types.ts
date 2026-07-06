@@ -4,7 +4,6 @@ import type { Client as OpenSearchClient } from '@opensearch-project/opensearch'
 export type SupportedClients = {
 	elasticsearch: ElasticClient;
 	opensearch: OpenSearchClient;
-	'opensearch-aws': OpenSearchClient;
 };
 export type SupportedClientTypes = keyof SupportedClients;
 export type SearchConfig = {
@@ -13,6 +12,7 @@ export type SearchConfig = {
 	auth?: {
 		password: string;
 		username: string;
+		withAWS?: boolean;
 	};
 };
 export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {

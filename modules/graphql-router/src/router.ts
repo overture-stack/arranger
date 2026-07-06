@@ -74,6 +74,11 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 				username: esUser,
 			}));
 
+		if (!esClient)
+			throw new Error(
+				'Failure with buildSearchClient while initializing Arranger Server. Unable to fetch index mappings.',
+			);
+
 		const mappingFromIndex = await getIndexMapping({
 			enableDebug: !!enableDebug,
 			searchClient: esClient,

@@ -5,11 +5,7 @@ import { createElasticSearchClient, type ESClientOptions } from './createElastic
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
 import type { SearchClient, SearchConfig, SearchConfigWithClient, SupportedClientTypes } from './types.js';
 
-export const supportedClientValues = [
-	'opensearch',
-	'elasticsearch',
-	'opensearch-aws',
-] as const satisfies SupportedClientTypes[];
+export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
 
 const buildAuthHeaders = (auth: SearchConfig['auth']): Record<string, string> =>
 	auth
@@ -242,33 +238,31 @@ const createSearchEngineConfig = async ({
  * Create searchClient instance using valid configuration options
  */
 const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient | undefined => {
-	const { clientType } = clientConfig;
+	const { clientType, auth } = clientConfig;
 
 	switch (clientType) {
 		case 'opensearch': {
-			const options: OSClientOptions = { ...clientConfig, clientType };
-			return createOpenSearchClient(options);
-		}
-
-		case 'opensearch-aws': {
-			const options: OSClientOptions = {
-				...clientConfig,
-				clientType,
-				...AwsSigv4Signer({
-					region: 'us-east-1',
-					service: 'es',
-					// Must return a Promise that resolve to an AWS.Credentials object.
-					// This function is used to acquire the credentials when the client start and
-					// when the credentials are expired.
-					// The Client will refresh the Credentials only when they are expired.
-					// With AWS SDK V2, Credentials.refreshPromise is used when available to refresh the credentials.
-					getCredentials: () => {
-						// Any other method to acquire a new Credentials object can be used.
-						const credentialsProvider = defaultProvider();
-						return credentialsProvider();
-					},
-				}),
-			};
+			const defaultOptions: OSClientOptions = { ...clientConfig, clientType };
+			const options: OSClientOptions = auth?.withAWS
+				? {
+						...clientConfig,
+						clientType,
+						...AwsSigv4Signer({
+							region: 'us-east-1',
+							service: 'es',
+							// Must return a Promise that resolve to an AWS.Credentials object.
+							// This function is used to acquire the credentials when the client start and
+							// when the credentials are expired.
+							// The Client will refresh the Credentials only when they are expired.
+							// With AWS SDK V2, Credentials.refreshPromise is used when available to refresh the credentials.
+							getCredentials: () => {
+								// Any other method to acquire a new Credentials object can be used.
+								const credentialsProvider = defaultProvider();
+								return credentialsProvider();
+							},
+						}),
+					}
+				: defaultOptions;
 			return createOpenSearchClient(options);
 		}
 
