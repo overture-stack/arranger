@@ -243,6 +243,9 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 	switch (clientType) {
 		case 'opensearch': {
 			const defaultOptions: OSClientOptions = { ...clientConfig, clientType };
+			// Additional Auth config is required when using OpenSearch hosted in AWS
+			// See the OpenSearch client docs for more information:
+			// https://docs.opensearch.org/latest/clients/javascript/index#authenticating-with-amazon-opensearch-service-aws-signature-version-4
 			const options: OSClientOptions = auth?.withAWS
 				? {
 						...clientConfig,
@@ -250,13 +253,7 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 						...AwsSigv4Signer({
 							region: 'us-east-1',
 							service: 'es',
-							// Must return a Promise that resolve to an AWS.Credentials object.
-							// This function is used to acquire the credentials when the client start and
-							// when the credentials are expired.
-							// The Client will refresh the Credentials only when they are expired.
-							// With AWS SDK V2, Credentials.refreshPromise is used when available to refresh the credentials.
 							getCredentials: () => {
-								// Any other method to acquire a new Credentials object can be used.
 								const credentialsProvider = defaultProvider();
 								return credentialsProvider();
 							},
