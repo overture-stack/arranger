@@ -55,10 +55,18 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	try {
 		const aggregatedConfigs = mergeConfigs(fallbackConfigs, customConfigs);
 
-		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
-			aggregatedConfigs,
-			customEsClient,
-		);
+		const {
+			enableAdmin,
+			enableDebug,
+			esHost,
+			esPass,
+			esUser,
+			searchEngine,
+			searchEngineAuthType,
+			searchEngineAuthRegion,
+			searchEngineAuthService,
+			...configs
+		} = validateConfigs(aggregatedConfigs, customEsClient);
 
 		warnDeprecatedConfigsSource({ configsSource, enableDebug: aggregatedConfigs.enableDebug });
 
@@ -70,8 +78,13 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			(await buildSearchClient({
 				client: searchEngine,
 				node: esHost,
-				password: esPass,
-				username: esUser,
+				auth: {
+					password: esPass,
+					username: esUser,
+					type: searchEngineAuthType,
+					region: searchEngineAuthRegion,
+					service: searchEngineAuthService,
+				},
 			}));
 
 		if (!esClient)

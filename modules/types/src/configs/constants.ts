@@ -42,9 +42,11 @@ export const configOptionalProperties = {
 	GRAPHQL_MAX_ALIASES: 'maxAliases',
 	GRAPHQL_MAX_DEPTH: 'maxDepth',
 	SEARCH_ENGINE: 'searchEngine',
+	SEARCH_ENGINE_AUTH_TYPE: 'searchEngineAuthType',
+	SEARCH_ENGINE_AUTH_REGION: 'searchEngineAuthRegion',
+	SEARCH_ENGINE_AUTH_SERVICE: 'searchEngineAuthService',
 	SETS: 'sets',
 	...configFeatureFlagProperties,
-	//
 	// configs for dependent libraries
 	CHARTS: 'charts',
 	FACETS: 'facets',

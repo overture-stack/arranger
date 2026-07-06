@@ -158,6 +158,8 @@ export type NetworkConfig<Context> = {
 export type GetServerSideFilterFn<Context> = (context: Context) => SqonNode;
 
 export type SearchEngineType = 'elasticsearch' | 'opensearch';
+export type AuthTypes = 'standard' | 'AWS';
+export type AuthServices = 'es' | 'aoss';
 
 /**
  * Full config object
@@ -187,5 +189,8 @@ export type ConfigsObject<Context> = {
 		[configOptionalProperties.MATCHBOX]: MatchBoxConfigs[];
 		[configOptionalProperties.SETS]: SetsConfigs;
 		[configOptionalProperties.TABLE]: TableConfigs;
+		[configOptionalProperties.SEARCH_ENGINE_AUTH_TYPE]: AuthTypes;
+		[configOptionalProperties.SEARCH_ENGINE_AUTH_REGION]: string;
+		[configOptionalProperties.SEARCH_ENGINE_AUTH_SERVICE]: AuthServices;
 	}
 >;

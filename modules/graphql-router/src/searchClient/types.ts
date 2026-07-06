@@ -1,19 +1,34 @@
 import type { Client as ElasticClient } from '@elastic/elasticsearch';
 import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
 
+import type { AuthTypes } from '@overture-stack/arranger-types/configs';
+
+// Configuration
 export type SupportedClients = {
 	elasticsearch: ElasticClient;
 	opensearch: OpenSearchClient;
 };
 export type SupportedClientTypes = keyof SupportedClients;
+
+export type AuthTypes = 'standard' | 'AWS';
+export type BaseAuthConfig = {
+	password: string;
+	username: string;
+	type?: AuthTypes;
+};
+export type DefaultAuthConfig = BaseAuthConfig & {
+	type?: 'standard';
+};
+export type AWSAuthConfig = BaseAuthConfig & {
+	type: 'AWS';
+	region: string;
+	service?: 'es' | 'aoss';
+};
+
 export type SearchConfig = {
 	node: string;
 	clientType?: string;
-	auth?: {
-		password: string;
-		username: string;
-		withAWS?: boolean;
-	};
+	auth?: Partial<DefaultAuthConfig> | Partial<AWSAuthConfig>;
 };
 export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
 	clientType: SupportedClientTypes;
