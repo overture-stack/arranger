@@ -198,7 +198,7 @@ storiesOf('SQONView', module)
 				op: 'and',
 				content: [
 					{
-						op: 'filter',
+						op: 'wildcard',
 						content: {
 							fields: ['gender', 'state', 'country'],
 							value: 'fema',

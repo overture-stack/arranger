@@ -176,11 +176,11 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					disableDownloads: false,
 					disableFilters: false,
 					disablePlayground: false,
-					disableSets: false,
 					enableAdmin,
 					// enableDebug: true,
 					// enableLogs: true, // helpful to see test calls, etc.
 					enableNetworkAggregation: undefined,
+					enableSets: true,
 					esClient,
 					filters: () => ({
 						op: 'not',
@@ -249,11 +249,11 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					disableDownloads: false,
 					disableFilters: false,
 					disablePlayground: false,
-					disableSets: false,
 					enableAdmin,
 					enableDebug: true,
 					// enableLogs: true, // helpful to see test calls, etc.
 					enableNetworkAggregation: undefined,
+					enableSets: true,
 					esClient,
 					// FIXME: not fully integrated yet
 					// should merge across catalogs with their own serverside filters

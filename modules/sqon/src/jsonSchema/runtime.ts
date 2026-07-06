@@ -3,12 +3,12 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
 	AllFilterSchema,
 	BetweenFilterSchema,
-	FuzzyFilterSchema,
 	InLikeFilterSchema,
 	RangeLikeFilterSchema,
 	SqonGroupSchema,
 	SqonLeafSchema,
 	SqonSchema,
+	WildcardFilterSchema,
 } from '../schema/index.js';
 import { SQON_SCHEMA_VERSION } from '../version/index.js';
 
@@ -43,7 +43,7 @@ const buildRawSqonJsonSchema = () =>
 		definitions: {
 			All: AllFilterSchema,
 			Between: BetweenFilterSchema,
-			Fuzzy: FuzzyFilterSchema,
+			Wildcard: WildcardFilterSchema,
 			Group: SqonGroupSchema,
 			InLike: InLikeFilterSchema,
 			Leaf: SqonLeafSchema,

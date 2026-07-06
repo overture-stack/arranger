@@ -4,6 +4,7 @@ export const NOT_IN_OP = 'not-in';
 export const ALL_OP = 'all';
 export const SOME_NOT_IN_OP = 'some-not-in';
 export const FILTER_OP = 'filter';
+export const WILDCARD_OP = 'wildcard';
 export const AND_OP = 'and';
 export const OR_OP = 'or';
 export const NOT_OP = 'not';
@@ -20,6 +21,7 @@ export const SET_ID = 'set_id:';
 
 // sqon op aliases
 export const OP_ALIASES = {
+	filter: WILDCARD_OP,
 	'>': GT_OP,
 	'<': LT_OP,
 	'>=': GTE_OP,
