@@ -40,7 +40,7 @@ Field operators (the "op" of a Leaf):
 
 How to build a SQON:
   1. Find each field's path and its allowed operators with get-catalogue-fields.
-  2. Write every condition as a Leaf: {"op": <op>, "content": {"fieldName": <field>, "value": <value>}}.
+  2. Write every condition as a Leaf: {"op": <op>, "content": {"fieldName": "<field>", "value": <value>}}, except for `filter`, where "fieldNames" is an array of field paths instead. (See operator table below.)
   3. Wrap all the Leaves in one root Group: {"op":"and","content":[ <leaf>, <leaf>, ... ]}. Use "or" for any-of, or "not" to negate.
   Always use a Group as the root, even for a single condition.
 
