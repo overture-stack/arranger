@@ -76,7 +76,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		const esClient =
 			customEsClient ||
 			(await buildSearchClient({
-				client: searchEngine,
+				clientType: searchEngine,
 				node: esHost,
 				auth: {
 					password: esPass,

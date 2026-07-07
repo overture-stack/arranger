@@ -1,5 +1,4 @@
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
-import type { Prettify } from '@overture-stack/arranger-types/tools';
 
 import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
