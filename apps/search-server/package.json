@@ -21,7 +21,6 @@
 		"test": "tsx --test ./src/**/*.test.ts"
 	},
 	"dependencies": {
-		"@aws-sdk/credential-provider-node": "^3.972.60",
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
 		"@overture-stack/arranger-types": "file:../../modules/types",
 		"@overture-stack/sqon": "file:../../modules/sqon",

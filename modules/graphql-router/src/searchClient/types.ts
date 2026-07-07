@@ -9,8 +9,6 @@ export type SupportedClients = {
 	opensearch: OpenSearchClient;
 };
 export type SupportedClientTypes = keyof SupportedClients;
-
-export type AuthTypes = 'standard' | 'AWS';
 export type BaseAuthConfig = {
 	password: string;
 	username: string;

@@ -1,4 +1,3 @@
-import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
 
 import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
@@ -247,10 +246,6 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 							...AwsSigv4Signer({
 								region: auth.region || '',
 								service: auth.service,
-								getCredentials: () => {
-									const credentialsProvider = defaultProvider();
-									return credentialsProvider();
-								},
 							}),
 						}
 					: defaultOptions;
