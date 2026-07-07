@@ -36,7 +36,7 @@ Field operators (the "op" of a Leaf):
   in, not-in, some-not-in, all   match value(s); any field type; "value" is a scalar or array
   gt, gte, lt, lte               numeric or date fields; "value" is a single number or date string
   between                        numeric or date fields; "value" is a 2-element array, [min, max]
-  filter                         fuzzy text match; SPECIAL shape: {"op":"filter","content":{"fieldNames":["<field>"],"value":"<text>"}}  ("fieldNames" is a plural ARRAY; "value" is one string)
+  wildcard                         case-insensitive substring match; SPECIAL shape: {"op":"wildcard","content":{"fieldNames":["<field>"],"value":"<text>"}}  ("fieldNames" is a plural ARRAY; "value" is one string)
 
 How to build a SQON:
   1. Find each field's path and its allowed operators with get-catalogue-fields.
@@ -63,7 +63,7 @@ Natural language to SQON examples:
   Female or age over 65:   {"op":"or","content":[{"op":"in","content":{"fieldName":"donors.gender","value":["Female"]}},{"op":"gt","content":{"fieldName":"donors.age_at_diagnosis","value":65}}]}
   Exclude deceased:        {"op":"and","content":[{"op":"not-in","content":{"fieldName":"donors.vital_status","value":["Deceased"]}}]}
   Age between 18 and 65:   {"op":"and","content":[{"op":"between","content":{"fieldName":"donors.age_at_diagnosis","value":[18,65]}}]}
-  Fuzzy text match:        {"op":"and","content":[{"op":"filter","content":{"fieldNames":["donors.primary_site"],"value":"brain"}}]}
+  Wildcard text match:        {"op":"and","content":[{"op":"wildcard","content":{"fieldNames":["donors.primary_site"],"value":"brain"}}]}
   Everything (no filter):  {"op":"and","content":[]}`;
 
 export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
