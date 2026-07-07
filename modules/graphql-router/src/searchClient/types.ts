@@ -35,9 +35,11 @@ export type SearchConfig = {
 	node: string;
 	clientType?: string;
 };
-export type SearchConfigWithClient = SearchConfig & {
-	clientType: SupportedClientTypes;
-};
+export type SearchConfigWithClient = Prettify<
+	SearchConfig & {
+		clientType: SupportedClientTypes;
+	}
+>;
 
 export type SearchClientConfiguration = ESClientOptions | OSClientOptions;
 

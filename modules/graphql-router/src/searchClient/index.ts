@@ -301,7 +301,7 @@ const createSearchClient = (clientConfig: SearchClientConfiguration): SearchClie
 		}
 
 		default: {
-			throw new Error('No valid client search provided');
+			throw new Error('No valid search client type value provided');
 		}
 	}
 };
