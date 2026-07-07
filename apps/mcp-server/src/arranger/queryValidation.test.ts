@@ -18,6 +18,8 @@ const context: CatalogueQueryContext = {
 		diagnoses: { type: 'nested' },
 		'diagnoses.primary_site': { type: 'keyword' },
 	},
+	// Operator lists mirror the live introspection response, which still advertises the
+	// legacy `filter` alias rather than the canonical `wildcard` operator.
 	operators: {
 		keyword: ['in', 'not-in', 'some-not-in', 'all', 'filter'],
 		long: ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between'],
@@ -77,11 +79,40 @@ suite('validateSqon', () => {
 		assert.ok(!result.valid && result.errors.some((error) => error.includes('"between" is not valid')));
 	});
 
-	test('validates every field named by a fuzzy filter clause', () => {
-		const sqon = { op: 'filter', content: { fieldNames: ['donor.sex', 'bad.field'], value: 'blood' } };
+	test('accepts a wildcard clause on a field whose type permits it, even when introspection advertises the legacy "filter" operator', () => {
+		const sqon = { op: 'wildcard', content: { fieldNames: ['donor.sex'], value: 'fem*' } };
+		const result = validateSqon(sqon, context);
+		assert.equal(result.valid, true);
+	});
+
+	test('accepts the legacy "filter" alias as a wildcard clause', () => {
+		const sqon = { op: 'filter', content: { fieldNames: ['donor.sex'], value: 'fem*' } };
+		const result = validateSqon(sqon, context);
+		assert.equal(result.valid, true);
+	});
+
+	test('rejects a wildcard clause on a field whose type does not permit it', () => {
+		const sqon = { op: 'wildcard', content: { fieldNames: ['donor.age_at_diagnosis'], value: '4*' } };
+		const result = validateSqon(sqon, context);
+		assert.equal(result.valid, false);
+		assert.ok(!result.valid && result.errors.some((error) => error.includes('"wildcard" is not valid')));
+	});
+
+	test('validates every field named by a wildcard filter clause', () => {
+		const sqon = { op: 'wildcard', content: { fieldNames: ['donor.sex', 'bad.field'], value: 'blood' } };
 		const result = validateSqon(sqon, context);
 		assert.equal(result.valid, false);
 		assert.ok(!result.valid && result.errors.some((error) => error.includes('unknown field "bad.field"')));
+	});
+
+	test('lists valid operators by canonical name in operator errors', () => {
+		const sqon = { op: 'between', content: { fieldName: 'donor.sex', value: [1, 2] } };
+		const result = validateSqon(sqon, context);
+		assert.equal(result.valid, false);
+		assert.ok(
+			!result.valid &&
+				result.errors.some((error) => error.includes('Valid operators: in, not-in, some-not-in, all, wildcard.')),
+		);
 	});
 });
 

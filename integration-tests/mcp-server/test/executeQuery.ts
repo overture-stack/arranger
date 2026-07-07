@@ -328,4 +328,30 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 			await elicitingClient.close();
 		}
 	});
+
+	test('16.hits query with a canonical wildcard clause matches case-insensitively', async () => {
+		const result = await callExecuteQuery(getClient(), {
+			catalogueId: 'catalogue-a',
+			sqon: { op: 'wildcard', content: { fieldNames: ['vital_status'], value: 'ali*' } },
+			fields: ['analysis_id'],
+		});
+		const structured = getStructured(result);
+
+		assert.equal(structured.total, 2);
+		const ids = (structured.hits ?? []).map((hit) => hit.analysis_id).sort();
+		assert.deepEqual(ids, ['a-001', 'a-003']);
+	});
+
+	test("17.hits query with the legacy 'filter' alias behaves as a wildcard clause", async () => {
+		const result = await callExecuteQuery(getClient(), {
+			catalogueId: 'catalogue-a',
+			sqon: { op: 'filter', content: { fieldNames: ['vital_status'], value: 'ali*' } },
+			fields: ['analysis_id'],
+		});
+		const structured = getStructured(result);
+
+		assert.equal(structured.total, 2);
+		const ids = (structured.hits ?? []).map((hit) => hit.analysis_id).sort();
+		assert.deepEqual(ids, ['a-001', 'a-003']);
+	});
 };

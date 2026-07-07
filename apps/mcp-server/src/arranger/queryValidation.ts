@@ -30,13 +30,15 @@ const isSqonGroup = (node: SqonNode): node is SqonNode & { content: SqonNode[] }
 
 /**
  * Validates a leaf filter clause's field name(s) and operator against the catalogue context.
- * Operator aliases (e.g. `>=`) are normalized to their canonical form (`gte`) before checking.
+ * Operator aliases (e.g. `>=` → `gte`, `filter` → `wildcard`) are normalized to their canonical
+ * form before checking. The catalogue's introspected operator lists are normalized the same way,
+ * so a catalogue that still advertises the legacy `filter` operator accepts `wildcard` clauses.
  * Errors are appended to the provided accumulator.
  */
 const validateFilterClause = (leaf: SqonNode, context: CatalogueQueryContext, errors: string[]): void => {
 	const canonicalOp = normalizeSqonOp(leaf.op as SqonAcceptedOp);
 	const content = leaf.content as { fieldName?: string; fieldNames?: string[] };
-	const fieldNames = canonicalOp === 'filter' ? (content.fieldNames ?? []) : [content.fieldName ?? ''];
+	const fieldNames = canonicalOp === 'wildcard' ? (content.fieldNames ?? []) : [content.fieldName ?? ''];
 
 	for (const fieldName of fieldNames) {
 		const field = context.fields[fieldName];
@@ -45,10 +47,10 @@ const validateFilterClause = (leaf: SqonNode, context: CatalogueQueryContext, er
 			continue;
 		}
 
-		const validOperators = context.operators[field.type];
+		const validOperators = context.operators[field.type]?.map((op) => normalizeSqonOp(op as SqonAcceptedOp));
 		if (validOperators && !validOperators.includes(canonicalOp)) {
 			errors.push(
-				`SQON operator "${canonicalOp}" is not valid for field "${fieldName}" (type "${field.type}"). Valid operators: ${validOperators.join(', ')}.`,
+				`SQON operator "${canonicalOp}" is not valid for field "${fieldName}" (type "${field.type}"). Valid operators: ${[...new Set(validOperators)].join(', ')}.`,
 			);
 		}
 	}

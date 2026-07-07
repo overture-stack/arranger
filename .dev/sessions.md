@@ -6,6 +6,23 @@ Newest first.
 
 ---
 
+## 2026-07-07
+
+Updated MCP Server query validation and tests for the `filter` → `wildcard` SQON operator rename; the validator now normalizes both the incoming SQON op and the introspection-supplied operator lists, so canonical `wildcard` clauses validate against catalogues whose introspection still advertises the legacy `filter` name.
+
+- `apps/mcp-server/src/arranger/queryValidation.ts`: fixed `validateFilterClause` — the `fieldNames`-array branch now triggers on canonical `wildcard` (the old `canonicalOp === 'filter'` check could never match post-rename, so wildcard clauses were validated against a nonexistent `fieldName` key); introspection operator lists are normalized via `normalizeSqonOp` before the validity check, and operator error messages list canonical (deduped) names
+- `apps/mcp-server/src/arranger/queryValidation.test.ts`: renamed the mislabelled "fuzzy filter clause" test to wildcard (fuzzy is a distinct, unimplemented roadmap op); added cases: canonical `wildcard` accepted against legacy `filter` introspection lists, legacy `filter` alias accepted, wildcard rejected on range-typed fields, operator errors list canonical names; fixture comment notes the operator lists mirror live introspection
+- `integration-tests/mcp-server/test/executeQuery.ts`: added tests 16–17 — end-to-end `execute-query` with a canonical `wildcard` clause and with the legacy `filter` alias (case-insensitive `ali*` match against catalogue-a); rest of the suite re-evaluated, no other operator-dependent assertions found
+- All green: 71 mcp-server unit tests, 35 mcp-server integration tests, `tsc --noEmit` clean
+- `.dev/tech-debt.md`: noted on the operator-rules divergence entry that `getValidFieldOperators` still advertises legacy `filter` in introspection responses; MCP-side normalization shims this until consolidation
+
+**Open threads:**
+
+- Arranger introspection (`buildCatalogueIntrospection.ts`) still advertises `filter`, not `wildcard`, in per-type operator lists; switching it to canonical names is a client-visible change and belongs with the operator-rules consolidation roadmap item
+- `/docs` debt: the wildcard rename itself was documented on 2026-06-30 (`docs/usage/03-sqon-in-detail.md`); no new user-facing behaviour this session beyond the fix, but MCP Server docs remain part of the standing `/docs` gap
+
+---
+
 ## 2026-07-01
 
 Began sqon-builder deprecation: confirmed the unscoped `sqon-builder` dep in components was never imported and removed it; added deprecation notice to the `@overture-stack/sqon-builder` README; documented the absorption rationale and design decisions in the sqon module.
