@@ -1,5 +1,4 @@
 import { Client } from '@opensearch-project/opensearch';
-import type { Prettify } from '@overture-stack/arranger-types/tools';
 
 import type { SearchClient, SearchConfigWithClient, DefaultAuthConfig, AWSAuthConfig } from './types.js';
 

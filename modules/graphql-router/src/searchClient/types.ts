@@ -72,9 +72,9 @@ export type SearchClientCreateParams = {
 	id: string;
 	index: string;
 	body: Record<string, any>;
-	refresh?: boolean | 'false' | 'true' | 'wait_for';
+	refresh?: boolean | 'wait_for';
 };
-export type SearchClientDeleteParams = { index: string; id: string; refresh?: boolean | 'false' | 'true' | 'wait_for' };
+export type SearchClientDeleteParams = { index: string; id: string; refresh?: boolean | 'wait_for' };
 export type SearchClientDeleteByQueryParams = { index: string; body: Record<string, any> };
 export type SearchClientIndexParams = { index: string; body: Record<string, any> };
 export type SearchClientUpdateParams = { id: string; index: string; body: Record<string, any> };
