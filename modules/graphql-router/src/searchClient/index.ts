@@ -1,8 +1,15 @@
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
 import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
-import type { SearchClient, SearchConfig, SearchConfigWithClient, SupportedClientTypes } from './types.js';
+import type {
+	SearchClient,
+	SearchConfig,
+	SearchConfigWithClient,
+	SupportedClientTypes,
+	SearchClientConfiguration,
+} from './types.js';
 
 export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
 
@@ -194,18 +201,68 @@ const getClientType = async ({ auth, clientType, node }: SearchConfig): Promise<
 	}
 };
 
+const getClientOptions = ({
+	clientType,
+	auth,
+	...config
+}: SearchConfigWithClient): ESClientOptions | OSClientOptions => {
+	switch (clientType) {
+		case 'opensearch': {
+			let options: OSClientOptions;
+			switch (auth?.type) {
+				case 'standard':
+					options = { ...auth, ...config, clientType };
+					return options;
+				case 'AWS':
+					// Additional Auth config is required when using OpenSearch hosted in AWS
+					// See the OpenSearch client docs for more information:
+					// https://docs.opensearch.org/latest/clients/javascript/index#authenticating-with-amazon-opensearch-service-aws-signature-version-4
+					options = {
+						...config,
+						clientType,
+						...AwsSigv4Signer({
+							region: auth.region || '',
+							service: auth.service,
+						}),
+					};
+					return options;
+				default:
+					options = { ...config, clientType };
+					return options;
+			}
+		}
+
+		case 'elasticsearch': {
+			let options: ESClientOptions;
+			switch (auth?.type) {
+				case 'AWS':
+					throw new Error(
+						'Config provided for an unsupported auth type. Cannot use AWS credentials with Elasticsearch client.',
+					);
+				default:
+					options = { ...config, clientType };
+					return options;
+			}
+		}
+
+		default: {
+			throw new Error('No valid search client type provided');
+		}
+	}
+};
+
 /**
  * Parse and validate search client configuration.
  *
  * If the config is invalid, this will throw an error with the intention of crashing the application.
  */
-const createSearchEngineConfig = async (config: SearchConfig): Promise<SearchConfigWithClient> => {
-	const { node, auth } = config;
+const createSearchEngineConfig = async (config: SearchConfig): Promise<SearchClientConfiguration> => {
+	const { node, auth: authConfig } = config;
 
 	if (node) {
-		if (auth?.username && !auth?.password) {
+		if (authConfig?.username && !authConfig?.password) {
 			console.warn('A username was provided without a password for the search engine');
-		} else if (auth?.type === 'AWS' && !(config.clientType === 'opensearch')) {
+		} else if (authConfig?.type === 'AWS' && !(config.clientType === 'opensearch')) {
 			throw new Error(
 				'Config provided for an unsupported auth type. Cannot use AWS credentials with ElasticSearch client',
 			);
@@ -214,7 +271,8 @@ const createSearchEngineConfig = async (config: SearchConfig): Promise<SearchCon
 		const clientType = await getClientType(config);
 
 		if (clientType) {
-			return { node, auth, clientType };
+			const options = getClientOptions({ ...config, clientType });
+			return options;
 		}
 
 		const hint = clientType
@@ -230,40 +288,20 @@ const createSearchEngineConfig = async (config: SearchConfig): Promise<SearchCon
 /**
  * Create searchClient instance using valid configuration options
  */
-const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient | undefined => {
-	const { clientType, auth } = clientConfig;
+const createSearchClient = (clientConfig: SearchClientConfiguration): SearchClient | undefined => {
+	const { clientType } = clientConfig;
 
 	switch (clientType) {
 		case 'opensearch': {
-			const defaultOptions: OSClientOptions = { ...clientConfig, clientType };
-			// Additional Auth config is required when using OpenSearch hosted in AWS
-			// See the OpenSearch client docs for more information:
-			// https://docs.opensearch.org/latest/clients/javascript/index#authenticating-with-amazon-opensearch-service-aws-signature-version-4
-			const options: OSClientOptions =
-				auth && auth.type === 'AWS'
-					? {
-							...defaultOptions,
-							...AwsSigv4Signer({
-								region: auth.region || '',
-								service: auth.service,
-							}),
-						}
-					: defaultOptions;
-			return createOpenSearchClient(options);
+			return createOpenSearchClient(clientConfig);
 		}
 
 		case 'elasticsearch': {
-			if (auth?.type === 'AWS')
-				throw new Error(
-					'Config provided for an unsupported auth type. Cannot use AWS credentials with Elasticsearch client.',
-				);
-			const options: ESClientOptions = { ...clientConfig, clientType };
-			return createElasticSearchClient(options);
+			return createElasticSearchClient(clientConfig);
 		}
 
 		default: {
-			console.error('No valid client search provided');
-			return;
+			throw new Error('No valid client search provided');
 		}
 	}
 };

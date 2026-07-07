@@ -1,7 +1,10 @@
 import type { Client as ElasticClient } from '@elastic/elasticsearch';
 import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
-
 import type { AuthTypes } from '@overture-stack/arranger-types/configs';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
+
+import { type ESClientOptions } from './createElasticSearchClient.js';
+import { type OSClientOptions } from './createOpenSearchClient.js';
 
 // Configuration
 export type SupportedClients = {
@@ -11,26 +14,32 @@ export type SupportedClients = {
 export type SupportedClientTypes = keyof SupportedClients;
 export type BaseAuthConfig = {
 	password: string;
-	username: string;
 	type?: AuthTypes;
+	username: string;
 };
-export type DefaultAuthConfig = BaseAuthConfig & {
-	type?: 'standard';
-};
-export type AWSAuthConfig = BaseAuthConfig & {
-	type: 'AWS';
-	region: string;
-	service?: 'es' | 'aoss';
-};
+export type DefaultAuthConfig = Prettify<
+	BaseAuthConfig & {
+		type: 'standard';
+	}
+>;
+export type AWSAuthConfig = Prettify<
+	BaseAuthConfig & {
+		type: 'AWS';
+		region: string;
+		service?: 'es' | 'aoss';
+	}
+>;
 
 export type SearchConfig = {
+	auth?: Partial<DefaultAuthConfig> | Partial<AWSAuthConfig>;
 	node: string;
 	clientType?: string;
-	auth?: Partial<DefaultAuthConfig> | Partial<AWSAuthConfig>;
 };
-export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
+export type SearchConfigWithClient = SearchConfig & {
 	clientType: SupportedClientTypes;
 };
+
+export type SearchClientConfiguration = ESClientOptions | OSClientOptions;
 
 // Parameters
 export type SearchClientIndicesGetMappingParams = { index: string | string[] };
