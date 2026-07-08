@@ -93,7 +93,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			);
 
 		const mappingFromIndex = await getIndexMapping({
-			enableDebug: !!enableDebug,
+			enableDebug,
 			searchClient: esClient,
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});
