@@ -457,21 +457,8 @@ Examples include:
 
 These are still ordinary SQON values structurally, but Arranger may compile them into specialized Elasticsearch queries.
 
-## Recommended Generation Rules
-
-If you are generating SQON automatically, the safest defaults are:
-
-1. Prefer canonical operator names over aliases.
-2. Use leaf-root SQON only for a single simple condition.
-3. Use group-root SQON for composed logic.
-4. Use scalar values for `gt`, `gte`, `lt`, and `lte`.
-5. Use exactly 2 values for `between`.
-6. Preserve valid falsy values such as `0` and `""`.
-7. Do not invent `pivot` unless you know the nested path semantics.
-8. Treat catalog field names and allowed values as catalog-specific introspection data, not SQON syntax.
-
 ## Introspection
 
-The `GET /introspection/sqon` endpoint returns the SQON JSON Schema and operator metadata for this server — combination operators, field operators with value types and applicability, and accepted aliases. Use it to validate or describe SQON structure independently of any specific catalogue.
+The `GET /introspection/sqon` endpoint returns the SQON JSON Schema and operator metadata for this server: combination operators, field operators with value types and applicability, and accepted aliases. Use it to validate or describe SQON structure independently of any specific catalogue.
 
-For full introspection API documentation — including catalogue discovery and per-catalogue field listings — see [Introspection API](./04-introspection.md).
+For full introspection API documentation: including catalogue discovery and per-catalogue field listings: see [Introspection API](./05-introspection.md).

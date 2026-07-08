@@ -1,10 +1,10 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Introspection API
 
-Arranger exposes a set of read-only REST endpoints that describe the server's configuration and field structure at runtime. These endpoints are intended for tooling, LLM integration, and operator use — they do not require a GraphQL client and return plain JSON.
+Arranger exposes a set of read-only REST endpoints that describe the server's configuration and field structure at runtime. These endpoints are intended for tooling, LLM integration, and operator use: they do not require a GraphQL client and return plain JSON.
 
 ---
 
@@ -81,8 +81,8 @@ Note: In single-catalogue mode, `/introspection/fields` is an alias for this end
 
 ## `GET /introspection/sqon`
 
-Returns the SQON JSON Schema and operator metadata shared across all catalogues — combination operators (`and`, `or`, `not`), field operators with value types and applicability, and accepted aliases.
+Returns the SQON JSON Schema and operator metadata shared across all catalogues: combination operators (`and`, `or`, `not`), field operators with value types and applicability, and accepted aliases.
 
 Use this to validate or describe SQON structure independently of any specific catalogue's field set. For field-specific operator applicability, use `/introspection/:catalogueId` instead.
 
-See [SQONs in detail](./03-sqon-in-detail.md) for full documentation of the SQON filter language.
+See [SQONs in detail](./04-sqon-in-detail.md) for full documentation of the SQON filter language.

@@ -8,7 +8,7 @@ import {
 	GroupOpSchema,
 } from './constants.js';
 export type { SqonScalar, SqonScalarOrArray } from './constants.js';
-import type { SqonGroup, SqonNode } from './types.js';
+import type { SqonCombination, SqonNode } from './types.js';
 
 export const InLikeFilterSchema = zod
 	.object({
@@ -83,7 +83,7 @@ export const SqonLeafSchema = zod.union([
 	WildcardFilterSchema,
 ]);
 
-export const SqonGroupSchema: zod.ZodType<SqonGroup> = zod.lazy(() =>
+export const SqonCombinationSchema: zod.ZodType<SqonCombination> = zod.lazy(() =>
 	zod
 		.object({
 			op: GroupOpSchema,
@@ -93,6 +93,6 @@ export const SqonGroupSchema: zod.ZodType<SqonGroup> = zod.lazy(() =>
 		.passthrough(),
 );
 
-export const SqonSchema: zod.ZodType<SqonNode> = zod.lazy(() => zod.union([SqonGroupSchema, SqonLeafSchema]));
+export const SqonSchema: zod.ZodType<SqonNode> = zod.lazy(() => zod.union([SqonCombinationSchema, SqonLeafSchema]));
 
-export type { SqonGroup, SqonLeaf, SqonNode } from './types.js';
+export type { SqonCombination, SqonLeaf, SqonNode } from './types.js';

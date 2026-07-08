@@ -6,6 +6,44 @@ Newest first.
 
 ---
 
+## 2026-07-07
+
+Two bodies of work: `modules/sqon` API improvements (`addFilterClause`, reduction bug fix, `SqonCombination` rename); and a full `/docs` restructure establishing user-type reading pathways and filling content gaps for SQON construction and MCP server integration.
+
+- `modules/sqon/src/` (multiple files): `SqonGroup` → `SqonCombination` (and `SqonGroupSchema` → `SqonCombinationSchema`) throughout to align with `docs/concepts.md` terminology
+- `modules/sqon/src/builder/filter.ts`: new `addFilterClause` with `ScalarFilter`/`TextFilter` types; handles operator dispatch, optional negation, and combination with an existing SQON
+- `modules/sqon/src/builder/filter.test.ts`: BDD tests for all `addFilterClause` paths
+- `modules/sqon/src/builder/reduce.ts`: fixed `not-in`/`some-not-in`/`all` reduction under `or` - these ops now stay as separate nodes instead of being incorrectly merged
+- `modules/sqon/src/builder/index.test.ts`: 5 new tests covering the fixed reduction combinations
+- `modules/sqon/src/index.ts`: `addFilterClause`, `ScalarFilter`, `TextFilter`, `SqonScalarSchema`, `SqonScalarOrArraySchema`, `SqonCombination` added to public exports
+- `docs/usage/`: reordered (config context precedes query pipeline) and expanded from 6 to 7 pages; renumbered: `00-index-mappings`, `01-arranger-configs` (renamed from `02-arranger-components`), `02-query-processing`, `04-sqon-in-detail`, `05-introspection`; new: `03-building-sqon-queries.md` (human-centric SQON guide with `SqonBuilder` and `addFilterClause` patterns), `06-ai-and-automation.md` (MCP server onboarding: env vars, tools, resources, client setup)
+- `docs/usage/00-index-mappings.md`: rewritten with Arranger-specific content covering what the mapping drives (schema generation, operators, introspection, facets)
+- `docs/usage/01-arranger-configs.md`: renamed from `02-arranger-components`; H1 updated to "Catalogue configuration"; stale v3.0 framing removed; multicatalogue directory layout added
+- `docs/overview.md`: "Where to go from here" expanded into four user-type pathways covering all 7 usage pages; absolute SQON link replaced with relative link
+- `docs/usage/usage.mdx`: intro updated to point to overview pathways
+- `docs/setup.md`: search engine permissions condensed to summary plus link to `.dev/docs/search-engine-integration.md`; full GitHub URL used (relative paths break on docs.overture.bio)
+- `.dev/docs/search-engine-integration.md`: authoritative permissions reference; stale back-reference removed
+- `.dev/docs/build-sqon-tool.md`: updated for `addFilterClause` - handler simplified, Zod sketch and progress table updated
+- `.dev/tech-debt.md`: two resolved entries removed; broad "docs out of date" item replaced with specific tracked items (network/federated search, feature flags, Components docs, search-engine-integration.md visibility, query-processing cross-link)
+
+---
+
+## 2026-07-06
+
+Designed the `build_sqon` MCP tool and produced a design document for Rakesh and Mitchell; fixed a terminology gap in the concepts doc surfaced during design brainstorm.
+
+- `docs/concepts.md`: added `fieldName`/`fieldNames` distinction - both defined as filter clause content properties, not to be abbreviated as `field`; added vocabulary table entries for both
+- `.dev/docs/build-sqon-tool.md`: new design document covering problem statement (LLMs produce wrong property names, wrong operator names, wrong nesting), the form metaphor, accumulator pattern, two distinct filter shapes (ScalarFilter/TextFilter), operator reference table, phasing (v1 scalar-only, v2 text search, v3 nested), implementation guidance for Rakesh, and progress-to-date table; reviewed and corrected: operator table now includes `some-not-in` and `all` (with out-of-scope note), corrects `not-in` value type to include boolean, flags `fuzzy` as not yet a canonical op, fixes handler steps 3-5 to use the actual `SqonBuilder` API correctly (`SqonBuilder.from(existing).and(clause).toValue()` not the incorrect static two-arg form), notes that `reduceSqon` is internal to `SqonBuilder`
+- `modules/sqon/src/operators/types.ts`: added `fieldRef: 'fieldName' | 'fieldNames'` to `SqonFieldOperatorDetail` so introspection consumers can distinguish single-field from multi-field operators
+- `modules/sqon/src/operators/constants.ts`: updated `STRING_OR_NUMBER_ARRAY` to include boolean, matching `SqonScalarValueSchema`
+- `modules/sqon/src/operators/index.ts`: populated `fieldRef` in all `getSqonFieldOperatorDetails()` return cases; `wildcard` gets `'fieldNames'`, all others `'fieldName'`; renamed `STRING_OR_NUMBER_ARRAY` import to `SCALAR_OR_ARRAY_VALUE_TYPE`
+- `modules/sqon/src/operators/constants.ts`: renamed `STRING_OR_NUMBER_ARRAY` to `SCALAR_OR_ARRAY_VALUE_TYPE` (constant is internal; not in public API)
+- `modules/sqon/src/operators/index.test.ts`: moved from `src/__tests__/operators.test.ts` to co-locate with source; updated `deepEqual` expectations to include `fieldRef` and corrected `valueType` string; added `wildcard` and `all` assertions
+- `modules/sqon/src/operators/index.ts`: fixed `all` operator `valueType` in `getSqonFieldOperatorDetails()` - `all` only accepts an array, not a bare scalar; it fell through to the default case since the function was first written (commit a56f8310)
+- `.dev/docs/build-sqon-tool.md`: moved `negate` flag to top-level call parameter (alongside `combination`); clarified error architecture (SqonBuilder throws natural errors, MCP handler catches and translates); added `SQON_BUILDER_METHOD` map note (hyphenated op names vs camelCase builder methods); fixed Zod sketch (`SqonScalarSchema` defined locally, `negate` at top level, `between` tuple note, filter union discrimination note); added double-negation error example and double-negation validation note to handler step 2; fixed agentic example to use `not-in` directly; added range-operator `negate` example
+
+---
+
 ## 2026-07-01
 
 Began sqon-builder deprecation: confirmed the unscoped `sqon-builder` dep in components was never imported and removed it; added deprecation notice to the `@overture-stack/sqon-builder` README; documented the absorption rationale and design decisions in the sqon module.
