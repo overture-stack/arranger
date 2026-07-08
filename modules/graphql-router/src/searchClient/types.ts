@@ -18,12 +18,16 @@ export type StandardAuthConfig = {
 	type: 'standard';
 };
 
+type AWS_SERVICE_OPENSEARCH = 'es';
+type AWS_SERVICE_OPENSEARCH_SERVERLESS = 'aoss';
+type AwsService = AWS_SERVICE_OPENSEARCH | AWS_SERVICE_OPENSEARCH_SERVERLESS;
+
 export type AWSAuthConfig = {
 	password: string;
 	username: string;
 	type: 'AWS';
 	region: string;
-	service?: 'es' | 'aoss';
+	service?: AwsService;
 };
 
 export type SearchConfig = {
