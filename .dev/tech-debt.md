@@ -5,6 +5,14 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 
 ---
 
+## modules/sqon
+
+### Relocate remaining `__tests__/` test files to co-located positions
+standalone: yes
+context: `modules/sqon/src/__tests__/jsonSchema.test.ts` and `schema.test.ts` are the remaining files in a `__tests__/` directory after `operators.test.ts` was moved to `src/operators/index.test.ts`. Move `jsonSchema.test.ts` alongside its source and `schema.test.ts` alongside `src/schema/index.ts` (or equivalent source file) to follow the co-location convention. The `__tests__/` directory can then be removed.
+
+---
+
 ## build tooling
 
 ### Migrate from npm to pnpm
@@ -110,6 +118,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Rename `ping-elasticsearch.sh` to `ping-search-engine.sh` (or `ping-cluster.sh`) and update the reference in the Dockerfile/entrypoint. Coordinate with the chart to rename `ES_HOST`, `ES_USER`, `ES_PASS` to engine-neutral names (`SEARCH_HOST`, `SEARCH_USER`, `SEARCH_PASS` or similar). Both changes require a coordinated release since the chart and image must agree on env var names.
 **Standalone:** no; script rename is trivially standalone, but env var rename requires a matching chart release
 
+### `make start-os` and `make start-server` reference docker-compose services that don't exist
+
+**File:** `Makefile` (`start-os`, `start-server` targets); `docker-compose.yml`
+**Severity:** low (local dev/demo convenience only; no production or CI impact)
+**Kind:** stale / broken tooling
+**Issue:** `make start-os` runs `$(DC_UP_CMD) opensearch`, but `docker-compose.yml` defines no `opensearch` service at all; only `elasticsearch`, `kibana`, `server`, and `ui` exist. The target fails outright. Separately, `make start-server` runs `$(DC_UP_CMD) arranger-server`, but the compose service key is `server` (its `container_name` is `arranger-server.local`, easy to confuse with the service key itself); that target is broken the same way.
+**Fix:** Add an `opensearch` service to `docker-compose.yml`. Starting OpenSearch is functionally the same process as the existing `elasticsearch` service (single-node container, health check against `_cluster/health`, same 9200/9300 ports), so the two definitions should stay nearly identical: swap the image (`opensearchproject/opensearch` for `docker.elastic.co/elasticsearch/elasticsearch`) and reconcile whatever security-plugin config differs (OpenSearch's security plugin vs. ES's `xpack.security`/`ELASTIC_PASSWORD` env vars). Fix the `start-server` service-name mismatch (`arranger-server` to `server`) in the same pass.
+**Standalone:** yes for both fixes as stated; coordinate with [OpenSearch-first migration](roadmap.md#opensearch-first-migration) if that work also changes which engine `make start` brings up by default, since this item only makes `start-os` work, not necessarily the default.
+
 ### Inconsistent spelling of `catalogue`
 
 **File:** throughout the monorepo
@@ -128,20 +145,18 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 
 ### Inconsistent user-facing terminology: directory/folder, configuration/settings, docs prose
 
-**Files:** `README.md:13`; `docs/usage/02-arranger-components.md:29`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
+**Files:** `README.md:13`; `docs/usage/01-arranger-configs.md`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
 **Severity:** low (reader confusion, no functional impact)
 **Kind:** terminology drift
-**Issue:** Three clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`.
+**Issue:** Two clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`.
 
-1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, a mixed sentence in docs/usage/02-arranger-components.md:29 ("configs folder located within the app/modules/server/ directory"), configTemplates/configs.json.schema:6, and in code identifiers (buildCatalogsFromFolder, folderName) that surface in console output. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
+1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, `docs/usage/01-arranger-configs.md` (check after 2026-07-07 rewrite), `configTemplates/configs.json.schema:6`, and in code identifiers (buildCatalogsFromFolder, folderName) that surface in console output. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
 
 2. "settings" vs "configuration": "configuration" is canonical for Arranger-level concepts. "Settings" appears in configs.json.schema:28 ("Settings and limits for dataset downloads") and roadmap.md:191-205 (Arranger-level prose). Leave ES mapping file "settings" keys and ES-referencing prose untouched.
 
-3. "Arranger Configs" page title: docs/usage/02-arranger-components.md uses "Arranger Configs" as its page title while every section heading and body reference uses "Configuration". Title should be "Configuring Arranger".
+3. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. If the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
 
-4. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. If the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
-
-**Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
+**Fix:** (a) Docs/schema comments pass: update README.md:13, `docs/usage/01-arranger-configs.md`, configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in `docs/usage/01-arranger-configs.md`; introduce "filter clause" for leaf nodes in `docs/usage/04-sqon-in-detail.md`.
 **Standalone:** yes; (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
@@ -153,14 +168,50 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Either add a `.env.arrangerDev` template at the repo root, or rewrite step 2 to describe the actual setup process (e.g. copy from `.env.schema` and fill in values, or document required env vars inline). The `.env` content shown in the info callout in `setup.md` is a reasonable starting point for the template.
 **Standalone:** yes; documentation or file addition only
 
-### `/docs` out of date with recent functionality changes
+### Network/federated search feature is undocumented
 
-**File:** `/docs` directory
-**Severity:** high (ongoing; accumulates with every feature added)
-**Kind:** documentation debt
-**Issue:** The `/docs` directory has not been kept up to date with recent functionality changes and additions (multicatalog, network search, MCP server, config schema additions, query validation limits, etc.). This is urgent because documentation is a public-facing surface; Arranger integrators rely on it, and stale docs cause support burden and missed adoption.
-**Fix:** Audit `/docs` against the current codebase and recent git history. Update each affected page. Treat documentation updates as part of the definition of done for every feature going forward; not a separate follow-up task.
-**Standalone:** yes; can be worked on at any time, incrementally, without blocking other work
+**File:** `modules/graphql-router/src/network/` (in progress)
+**Severity:** medium (feature exists; operators and integrators have no documentation for it)
+**Kind:** missing documentation
+**Issue:** The network/federated search feature (cross-catalogue and cross-instance querying) has no published docs. "Network search" and "federated search" are synonyms for this feature; use "federated search" in consumer-facing docs.
+**Fix:** Once the feature stabilises, add a `docs/usage/` page covering configuration, query patterns, and limitations. Implementation detail belongs in `.dev/docs/`.
+**Standalone:** no; blocked on feature stabilisation
+
+### Feature flags are undocumented (security features and optional functionalities)
+
+**File:** `apps/search-server/` (env vars and config flags)
+**Severity:** medium (operators cannot discover what they can enable or disable; security flags carry real risk if unknown)
+**Kind:** missing documentation
+**Issue:** Feature flags - including query validation limits and other optional behaviours - are not documented in `/docs`. These fall into two categories that warrant separate treatment: (1) security-relevant flags (query depth/complexity limits, rate controls) that operators should be aware of for production hardening; (2) optional functionality flags that change search behaviour but have no security dimension.
+**Fix:** Add a dedicated section or page to `/docs` listing all env-var-controlled feature flags, grouped by category: security hardening vs optional functionality. Each entry should state: the env var, the default, what enabling/disabling it does, and any production recommendation.
+**Standalone:** yes; docs-only addition
+
+### Arranger Components has no published docs page
+
+**File:** `docs/setup.md` ("Running the Arranger Components" section)
+**Severity:** medium (blocks UI developers from self-serving setup)
+**Kind:** missing documentation
+**Issue:** `setup.md` has a "Coming Soon" placeholder for Arranger Components development setup and Storybook integration. No usage page exists for the React component library. UI developers and portal integrators have no documented starting point.
+**Fix:** Add a `docs/usage/` page covering component installation, the development environment setup, and Storybook integration. Remove the "Coming Soon" placeholder in `setup.md` once that page exists.
+**Standalone:** yes; independent of all other docs work
+
+### `search-engine-integration.md` is developer-only; not published on docs.overture.bio
+
+**File:** `.dev/docs/search-engine-integration.md`
+**Severity:** medium (the permission reference is complete and useful; operators cannot reach it)
+**Kind:** documentation visibility gap
+**Issue:** `docs/setup.md` now links to `.dev/docs/search-engine-integration.md` for the full permissions reference. That file is only accessible in the repository; it is not published to docs.overture.bio. Operators who are not browsing the repo directly cannot reach this reference.
+**Fix:** Promote `search-engine-integration.md` to a published page under `docs/usage/` (or a new `docs/operations/` section). Update the link in `setup.md` accordingly.
+**Standalone:** yes; content is already complete; this is a placement and linking task only
+
+### `02-query-processing.md` tip callout does not link to the practical SQON guide
+
+**File:** `docs/usage/02-query-processing.md`
+**Severity:** low (readability and navigation)
+**Kind:** cross-link gap
+**Issue:** The query processing page explains the pipeline conceptually but has no link to `03-building-sqon-queries.md`, which is the practical follow-up showing how to construct SQONs. Readers who want to go from theory to implementation have no signpost.
+**Fix:** Add a tip callout at the bottom of `02-query-processing.md` pointing to `03-building-sqon-queries.md`.
+**Standalone:** yes; one-line docs addition
 
 ---
 
@@ -183,24 +234,6 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Issue:** Two separate implementations encode which SQON operators are valid for which field types. `buildCatalogueIntrospection.ts` has a more nuanced classification (ENUM_LIKE_TYPES, RANGE_TYPES, fallback) while `modules/sqon` returns a flat list with `applicableTo: 'all'` for non-range operators. They're consistent today but maintained independently; any future operator addition requires updating both.
 **Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
 **Standalone:** yes; internal refactor, no change to API output
-
-### `reduceSqon` applies the same value-merge rule for `not-in`/`some-not-in`/`all` regardless of combination type
-
-**File:** `modules/sqon/src/builder/reduce.ts` (`MERGE_VALUES_OPS`, `mergeIntoExisting`)
-**Severity:** low (only affects programmatic callers who combine `reduceSqon` with these ops under `or`)
-**Kind:** correctness gap / known simplification
-**Issue:** `MERGE_VALUES_OPS` merges value arrays for `not-in`, `some-not-in`, and `all` unconditionally, matching the behaviour for `in`. This is semantically correct under `and`/`not` but changes meaning under `or`: two `not-in` filters merged under `or` produce an exclusion of the union of both value sets, which is stricter than the OR relationship implies. The simplified rule was ported from `sqon-builder` intentionally; the correct behaviour requires defining separate merge semantics per combination type.
-**Fix:** Introduce per-op reduction rules that branch on `combinationOp`: merge value arrays for `not-in`/`some-not-in` under `and`/`not`, and either leave them separate (no reduction) or apply intersection semantics under `or`. Also define `all` reduction rules (currently unspecified). Requires a deliberate design decision before implementation.
-**Standalone:** yes; change is additive to the existing reduction function
-
-### SQON value schema does not accept boolean values
-
-**File:** `modules/sqon/src/schema/constants.ts` (`SqonScalarValueSchema`)
-**Severity:** low-medium
-**Kind:** schema gap
-**Issue:** `SqonScalarValueSchema` is `string | number`, so `SqonScalarOrArrayValueSchema` (used by `InLikeFilterSchema` and others) rejects boolean values. Any Elasticsearch index with a `boolean` field can only be queried via SQON by passing `"true"`/`"false"` as strings; the schema will reject `true`/`false` literals. This is non-obvious and will trip up LLMs generating SQON for boolean fields (and human callers). Surfaced when reviewing the LLM evaluation fixture set.
-**Fix:** Add `zod.boolean()` to `SqonScalarValueSchema`. Verify that Arranger's ES query builder handles boolean values in a `terms` clause correctly (Elasticsearch accepts native booleans in `terms`). Update SQON documentation to clarify accepted value types.
-**Standalone:** yes; schema-only change; runtime behaviour in ES is already permissive for booleans in `terms` queries
 
 ---
 

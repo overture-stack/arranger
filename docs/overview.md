@@ -31,7 +31,7 @@ Arranger integrates with your OpenSearch or Elasticsearch cluster to generate a 
 - **Arranger Server:** The back-end search API service that:
     - Generates a GraphQL API from Elasticsearch mappings
     - Acts as middleware between the UI and Elasticsearch
-    - Simplifies querying and filtering using Serializable Query Object Notation ([SQON](https://www.overture.bio/documentation/arranger/reference/sqon/))
+    - Simplifies querying and filtering using Serializable Query Object Notation ([SQON](./usage/04-sqon-in-detail.md))
     - Provides an intermediary layer to avoid direct interaction with complex Elasticsearch queries
 
 - **Arranger Components:** A library of React components for building interactive search UIs, communicating with Arranger Server to fetch and display data.
@@ -74,26 +74,69 @@ The Arranger repository can be accessed from our Overture-Stack GitHub page [loc
     ```
 
 - **`apps/`**: Runnable server applications:
-    - **`search-server/`**: The Arranger search server — a GraphQL service that interfaces with OpenSearch/Elasticsearch and hosts the configuration API.
+    - **`search-server/`**: The Arranger search server: a GraphQL service that interfaces with OpenSearch/Elasticsearch and hosts the configuration API.
     - **`mcp-server/`**: An MCP (Model Context Protocol) server that exposes Arranger introspection as tools and resources for AI agents.
 - **`docker/`**: Dockerfiles and supporting configuration for building and running Arranger services locally and in CI.
 - **`docs/`**: Markdown files that contain instructions on how to use Arranger and its capabilities, contribution guidelines, etc.
 - **`integration-tests/`**: Full-stack integration test suites that run against a live Elasticsearch instance.
 - **`modules/`**: Shared library packages:
-    - **`admin-ui/`**: (Inactive) Administration interface — not under active development; a replacement is planned.
+    - **`admin-ui/`**: (Inactive) Administration interface: not under active development; a replacement is planned.
     - **`charts/`**: Chart visualizations library for Arranger-powered data portals.
     - **`components/`**: React components to streamline integration of search portals with an Arranger server.
-    - **`graphql-router/`**: Core GraphQL routing logic — schema generation, query handling, and introspection endpoints.
+    - **`graphql-router/`**: Core GraphQL routing logic: schema generation, query handling, and introspection endpoints.
     - **`sqon/`**: SQON parsing and validation utilities.
     - **`types/`**: Shared TypeScript types and configuration constants used across modules and apps.
 - **`scripts/`**: Utility scripts for development, deployment, and system management.
 
 ## Where to go from here
 
-**Learning what Arranger is** — [Concepts](./concepts.md) walks through the domain model: catalogues, facets, aggregations, SQONs, and how they fit together. A good read before configuration.
+Different roles interact with Arranger differently. Pick the path that matches your goal.
 
-**Setting up for the first time** — The [Setup Guide](./setup.md) covers environment requirements, configuration files, and running the server. Start here when you're ready to deploy.
+---
 
-**Upgrading from 3.0.x** — The [3.1 migration guide](./migration/v3.1.md) lists the breaking changes and what to verify before cutting over.
+**Deploying Arranger for the first time**
 
-**Consolidating multiple per-catalogue instances into one server** — See [Consolidating multiple instances](./migration/v3.1.md#consolidating-multiple-single-catalogue-instances) for a step-by-step guide to the multicatalogue directory layout, URL changes, and config migration.
+You need a running server connected to your search engine, with at least one catalogue configured.
+
+1. [Concepts](./concepts.md): the domain model: catalogues, facets, buckets, SQONs
+2. [Setup](./setup.md): prerequisites, environment variables, search engine permissions
+3. [Index mappings](./usage/00-index-mappings.md): what your ES/OS index mapping drives in Arranger
+4. [Catalogue configuration](./usage/01-arranger-configs.md): the four JSON files that define each catalogue
+
+---
+
+**Building a search interface**
+
+You're implementing a data portal using Arranger Components or writing UI code that queries Arranger.
+
+1. [Concepts](./concepts.md): understand catalogues, facets, and SQONs before writing code
+2. [Catalogue configuration](./usage/01-arranger-configs.md): configure which fields are visible and facetable
+3. [Query processing](./usage/02-query-processing.md): how a user action becomes an Elasticsearch query
+4. [Building SQON queries](./usage/03-building-sqon-queries.md): the `SqonBuilder` API and `addFilterClause`
+
+---
+
+**Querying Arranger programmatically**
+
+You're building an API client, pipeline, or script that sends queries to Arranger.
+
+1. [Query processing](./usage/02-query-processing.md): the SQON to GraphQL to ES pipeline
+2. [Building SQON queries](./usage/03-building-sqon-queries.md): constructing valid SQONs in TypeScript
+3. [SQONs in detail](./usage/04-sqon-in-detail.md): operator reference, aliases, pivot, edge cases
+4. [Introspection API](./usage/05-introspection.md): discover available fields and operators at runtime
+
+---
+
+**Integrating AI or automation**
+
+You're connecting an AI model, MCP client, or automated pipeline to Arranger.
+
+1. [AI and automation](./usage/06-ai-and-automation.md): MCP server setup, available tools, SQON generation rules
+2. [Introspection API](./usage/05-introspection.md): the live source of truth for field metadata
+
+---
+
+**Upgrading from 3.0.x or consolidating instances**
+
+- [Migrating to 3.1](./migration/v3.1.md): breaking changes (env var renames, image rename, multicatalogue layout)
+- [Consolidating multiple instances](./migration/v3.1.md#consolidating-multiple-single-catalogue-instances): step-by-step guide to the multicatalogue directory layout

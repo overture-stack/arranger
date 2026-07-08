@@ -16,11 +16,11 @@ export type SqonLeaf =
 	| zod.infer<typeof RangeLikeFilterSchema>
 	| zod.infer<typeof BetweenFilterSchema>
 	| zod.infer<typeof WildcardFilterSchema>;
-export type SqonGroup = {
+export type SqonCombination = {
 	op: zod.infer<typeof GroupOpSchema>;
 	content: SqonNode[];
 	pivot?: string | null;
 	[key: string]: unknown;
 };
 
-export type SqonNode = SqonLeaf | SqonGroup;
+export type SqonNode = SqonLeaf | SqonCombination;

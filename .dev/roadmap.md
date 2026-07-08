@@ -8,6 +8,36 @@ This document covers two categories of planned work: **product and architecture*
 
 ## Architecture
 
+### Config plan/preview CLI
+
+_Priority: high. Sequenced at the top of the roadmap: validate before build, and no open design question blocks starting this independently of the rest of this document._
+
+Arranger's catalogue configuration (`base.json`, `extended.json`, `facets.json`, `table.json`) is derived from, and must stay consistent with, a live ES/OS index mapping, but there is currently no way to see what a proposed config change would actually do before deploying it. An operator editing `facets.json` to add a field, or changing a display setting in `extended.json`, finds out whether it worked by deploying and inspecting the running server.
+
+**Proposal:** a CLI (for example `npm run config:plan`, run from `apps/search-server`) that takes a configuration directory and a target ES/OS connection (local, staging, or production, read-only) and prints a diff of what would change: which facets would appear or disappear, which table columns would change, which fields referenced in configuration are missing from the live mapping (or vice versa), and any validation errors, all without starting the GraphQL server or writing anything to the target cluster. Modelled on a "plan before apply" workflow.
+
+**Why this is well-scoped to start now:**
+- Reinforces the [Admin UI replacement](#admin-ui-replacement) direction directly: the deprecated `admin-ui` mutated configuration as live state in an ES index, which is documented as a design mistake. A plan/preview CLI is the opposite pattern (configuration as data, reviewed before being applied) and gives the eventual admin UI replacement a validation primitive to build on rather than starting from nothing.
+- Naturally absorbs [Config validation with structured errors and tests](#config-validation-with-structured-errors-and-tests): the Zod-based validation that item already calls for is exactly what a `plan` command needs before it can produce a meaningful diff. Building them together avoids writing the validation logic twice.
+- Does not need to wait for [Arranger config separation](#arranger-config-separation) or [Arranger core module extraction](#arranger-core-module-extraction): it can validate configuration in its current, coupled shape today, the same way the config-validation item is already scoped to do. It becomes cleaner to implement once those land, but nothing blocks starting now.
+
+**Open questions for design:**
+- **Read-only credential:** the CLI must never write to the target index; needs a documented minimum-permission credential (read mapping, read aliases only), consistent with the least-privilege direction in [Decouple startup health check from application credential](#decouple-startup-health-check-from-application-credential).
+- **Output format:** a human-readable terminal diff is the minimum bar. A machine-readable (JSON) output mode would let this run as a CI check on configuration pull requests (fail the build if a change would silently drop a facet, for instance), a natural follow-on once the CLI itself exists.
+- **Scope of "diff":** start with facets, columns, and fields, all directly derived from configuration plus mapping. Whether to also diff the resolved GraphQL SDL is a heavier lift and a reasonable phase two, since Arranger's schema also includes code-authored parts (Root query shape, SQON input types) that a config-vs-mapping diff alone would not cover.
+
+### Mapping-drift detector (research)
+
+_Priority: low. Research-first, and possibly not a separate implementation at all: see the scoping note below before treating this as new tooling._
+
+The problem this is aimed at: a catalogue's facets, columns, and searchable fields come from configuration files (`extended.json`, `facets.json`, `table.json`), which are supposed to match the real fields in the live ES/OS index. Nothing currently checks that they still agree. Concrete failure mode: an operator's upstream indexing pipeline (for example Maestro) adds a new field to the index; nobody remembers to add it to the catalogue's configuration; the field is then silently invisible in Arranger, with no error and no warning. The reverse also happens: a field is removed or renamed upstream while a facet still references it, and that facet quietly breaks.
+
+**Scoping note:** this is, mechanically, the same comparison the Config plan/preview CLI item above already has to make (live index mapping versus configuration files). The likely right answer is that this does not need its own tool: running that CLI on a schedule against the currently-deployed configuration, with no proposed change, and alerting if it reports any diff, is a mapping-drift detector. This entry mainly exists to record that use case (scheduled, automatic drift-checking, not just pre-deploy validation) so it isn't lost when the CLI is scoped. Whoever picks up the CLI work should read this and decide whether a "drift-check mode" (for example, a machine-readable exit code or JSON diff suitable for a cron job and an alert) is worth designing in from the start, rather than building a second tool later.
+
+**Distinct from the typed client SDK item further below:** despite sounding similar (both are "things that are supposed to match can silently drift apart"), they check different pairs of things for different people. This item is about Arranger's own configuration staying honest about the real data underneath it, an operator's concern. The typed client SDK is about a consumer's code staying honest about Arranger's current API, a downstream developer's concern. Neither substitutes for the other.
+
+---
+
 ### Fix `initializeSets` startup race in multicatalog mode
 
 _Resolved._
@@ -188,6 +218,18 @@ Two related but distinct problems:
 
 _Schema versioning decision gates the hits/edges/nodes redesign._
 
+### Typed client SDK via GraphQL Codegen (research)
+
+_Priority: low. Research-first; a developer-experience improvement for consumers, not a change to Arranger's own runtime behaviour._
+
+Consumers that build on Arranger (portal frontends, and internally `modules/charts`) currently write GraphQL queries by hand and separately hand-write the TypeScript types describing the expected response shape. Nothing connects the two: if Arranger's schema changes (a field renamed, a type changed), a consumer's hand-written types don't know about it, and the mismatch shows up as a silent runtime bug rather than a build failure.
+
+**Proposal:** adopt [GraphQL Code Generator](https://the-guild.dev/graphql/codegen) (maintained by The Guild, a natural fit alongside `@graphql-tools`, already used in this repo) to generate TypeScript types, and optionally typed query functions, directly from Arranger's schema plus a consumer's query files. A schema change that breaks an existing query becomes a build-time type error for that consumer instead of a runtime surprise.
+
+**How this differs from the mapping-drift detector earlier in this document:** both are instances of the same general problem (two representations of the same information silently drifting apart), but they check different pairs of things for different audiences. This item keeps a consumer's code in sync with whatever schema Arranger currently outputs. The mapping-drift detector keeps Arranger's own configuration in sync with the raw data underneath it. Neither substitutes for the other: perfectly synced configuration and index data doesn't help a frontend developer whose types are stale, and perfectly typed consumer code doesn't tell an operator that a field silently vanished from their own facets.
+
+**Open questions:** would Arranger publish a canonical `.graphql` schema file per release for consumers to generate against, or does this only work well once [API version exposure and schema versioning strategy](#api-version-exposure-and-schema-versioning-strategy) gives schemas a stable versioning story? Multicatalogue deployments complicate this further, since each catalogue's schema differs by index mapping; codegen would need to target one catalogue's schema at a time, not "Arranger's schema" as a singular thing.
+
 ### MCP integration readiness
 
 Four targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation.
@@ -255,6 +297,48 @@ GraphQL's built-in `Int` is 32-bit signed. `Float` is 64-bit but loses precision
 Options: (1) a custom scalar (`Long` or `BigInt`, well-supported via the `graphql-scalars` library); (2) represent as `String` where precision matters more than arithmetic; (3) accept `Float` where values are always within the safe integer range. The right answer depends on what values actually flow through in practice; a survey of real catalog data types is needed before deciding.
 
 _Low urgency unless precision bugs appear. Research-first._
+
+---
+
+### Query result caching (research)
+
+_Priority: medium-high; higher priority than the other query-economics item below. Verified absent from the codebase today (no caching layer anywhere in `graphql-router`), and the cost impact on public-facing deployments is direct and immediate rather than theoretical. Research-first: evaluate existing plugins before building anything bespoke._
+
+High-traffic public portals re-run the same default facet aggregation queries constantly, since most users land on the same default view before narrowing their search. A short-TTL cache keyed on the resolved ES/OS query DSL (not the raw GraphQL query string: the same GraphQL query with different SQON filters produces different results) plus a catalogue/index state signal would cut ES/OS load significantly for a large share of real traffic, with bounded staleness risk.
+
+**Evaluate first:** [`graphql-yoga`](https://the-guild.dev/graphql/yoga-server) (already the leading candidate to replace Apollo; see [GraphQL server migration](#graphql-server-migration-away-from-apollo)) ships an official [`@graphql-yoga/plugin-response-cache`](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching) plugin: TTL-based response caching with configurable cache keys and session-aware invalidation, maintained by the same team as the server itself. If the Apollo-to-Yoga migration lands first, this plugin should be the default answer to evaluate before considering a bespoke cache layer; it may substantially shorten this research item.
+
+**Invalidation:** ES/OS index updates (via an operator's indexing pipeline, e.g. Maestro reindexing) need to invalidate stale cache entries. Two options: (a) tie cache keys to the schema/index-state hash already planned for MCP cache invalidation (see [API version exposure and schema versioning strategy](#api-version-exposure-and-schema-versioning-strategy)), so a reindex naturally busts the cache; or (b) accept bounded staleness via a short TTL (30 to 60 seconds, for example) and skip invalidation complexity entirely. Option (b) is simpler and may be sufficient in practice; option (a) is more correct. The right choice depends on how often real deployments reindex during active-use hours.
+
+**Deployment shape matters:** the cache-layer choice (in-memory LRU versus a shared store such as Redis) depends on whether Arranger is expected to run as multiple replicas behind a load balancer. Multi-replica deployments need a shared cache for hits to be useful across instances; a single-replica deployment can use in-memory LRU. This should be a deployment-time configuration choice, not hardcoded to one approach.
+
+### Persisted queries and point-in-time export pagination (research)
+
+_Priority: low but worth tracking. Two independent, smaller-scoped research items grouped together; neither is currently implemented._
+
+**Automatic Persisted Queries (APQ).** Reduces request payload size and, combined with a server-side allow-list, acts as a second DoS-hardening layer alongside the existing alias and depth limits (see [GraphQL query complexity analysis](#graphql-query-complexity-analysis)): only known query shapes execute, and arbitrary ad-hoc queries can be rejected in hardened deployments. The protocol itself ([originally specified by Apollo](https://www.apollographql.com/docs/apollo-server/performance/apq), but server-agnostic) has the client send a SHA-256 hash first; the server looks it up and only asks for the full query text on a cache miss. If any current Arranger consumers already use Apollo Client's APQ link, that matters for sequencing this against the Apollo-to-Yoga migration. If [query result caching](#query-result-caching-research) above is also pursued, a persisted-query hash is a naturally stable cache key and may simplify that design.
+
+**Point-in-time (PIT) pagination for exports.** Confirmed: `getAllData` (`modules/graphql-router/src/utils/getAllData.js`) paginates via `search_after` with a deterministic `_id: 'asc'` tie-breaker, but never opens a Point-in-Time context. This is a correctness question, not a performance one: `search_after` alone is only guaranteed consistent across pages if the index doesn't change during the export; a long-running download that races a concurrent write or delete on the underlying index can skip or duplicate records. See the [ES Point-in-Time API](https://www.elastic.co/guide/en/elasticsearch/reference/current/point-in-time-api.html) (7.10+) and [OpenSearch's PIT API](https://opensearch.org/docs/latest/search-plugins/point-in-time-api/) (2.4+); check both against the actual minimum versions this repo targets (see [OpenSearch-first migration](#opensearch-first-migration)) before assuming PIT is universally available. Scope is narrow: this only matters for exports/downloads and any other "fetch everything matching this SQON" path, not normal paginated UI browsing, where minor staleness between pages is an accepted and unremarkable tradeoff.
+
+### Observability: metrics, tracing, and usage analytics (research)
+
+_Priority: low but important. Research-first; complements the existing structured-logging convention rather than replacing it. Confirmed absent: no OpenTelemetry, Prometheus, or `prom-client` references anywhere in the codebase today._
+
+Logging, metrics, and tracing are three distinct observability disciplines. Structured logging is already an established convention here; the other two are not addressed at all. Two related but separable threads:
+
+#### Metrics and tracing
+
+A `/metrics` endpoint (Prometheus format: query latency histograms, error rates, per-catalogue query volume) and distributed tracing spans across the request path (GraphQL resolution, query building, search client call, ES/OS response) would answer operational questions that structured logs alone answer poorly in aggregate: why a given aggregation is slow, or which catalogue is driving load on a shared deployment.
+
+Prior art: [`@opentelemetry/instrumentation-graphql`](https://www.npmjs.com/package/@opentelemetry/instrumentation-graphql) and [`@opentelemetry/instrumentation-express`](https://www.npmjs.com/package/@opentelemetry/instrumentation-express) give auto-instrumentation for most of the request path with minimal manual span creation. [`prom-client`](https://www.npmjs.com/package/prom-client) is the standard Node Prometheus client if metrics are pursued on their own, independent of full tracing.
+
+_Sequencing note: this is easiest to wire in cleanly once [Arranger core module extraction](#arranger-core-module-extraction) and the [GraphQL server migration](#graphql-server-migration-away-from-apollo) land, since both introduce clear seams (the core call boundary, the transport boundary) that are natural instrumentation points. Not blocked on them; doing this afterward just avoids instrumenting code that is about to be restructured anyway._
+
+#### Facet and field usage analytics
+
+Distinct from operational metrics above: this is about capturing which fields, operators, and facets are actually exercised in aggregate (counts only, no user identity or query content retained) to drive product decisions: which fields deserve `displayValues` next (see [`displayValues` for all aggregation types](#displayvalues-for-all-aggregation-types)), which facets should default higher in a catalogue's UI, and which configured fields are effectively dead weight. This is explicitly not the same concern as [Facet field groups: user-defined sort order](#facet-field-groups-user-defined-sort-order), which is a per-user manual preference; this is usage-informed defaults for everyone using a given catalogue.
+
+_Design question: does this live in Arranger itself (aggregated counters exposed via an admin-gated endpoint), or is it purely a log-mining exercise against the structured query logs that the metrics/tracing thread above would produce? The latter avoids adding stateful counters to Arranger and may be sufficient; building counters in-app is only clearly worth it if live facet reordering based on real-time usage is ever wanted._
 
 ---
 
@@ -356,6 +440,38 @@ might map one to `individuals`, one to `biosamples`, and one not to any Beacon e
 
 _Design-first. Define the filtering term registry schema and the entry type config surface before
 writing any query translation code._
+
+### Domain-specific search capabilities (research)
+
+_Priority: low but important. Research-first; no implementation until each sub-question below is scoped. Three related but independent tracks grouped together because they share a theme (moving beyond exact-match faceted filtering), not a timeline._
+
+#### Genomic interval and overlap operator
+
+The current SQON operator set (`all`, `between`, `gt`, `gte`, `in`, `lt`, `lte`, `not-in`, `some-not-in`, `wildcard`, and the planned `fuzzy`) has no way to express "does this record's genomic region overlap chr1:1000-2000", a foundational query pattern for variant, gene, and read-alignment data. `between` is a single-field numeric range; an overlap query compares a query range against two fields (start and end, or a single range-typed field), which is a different shape.
+
+Prior art: ES and OS both support this today via a `bool` query composing `lte`/`gte` pairs across two fields (`start <= queryEnd AND end >= queryStart`), or via the native [ES `range` field type](https://www.elastic.co/guide/en/elasticsearch/reference/current/range.html) queried with the `intersects`, `contains`, or `within` relation. OpenSearch supports the same field type and relations.
+
+This is directly relevant to the already-planned [GA4GH Beacon v2 module](#ga4gh-beacon-v2-module): region/variant search is core to the [Beacon v2 query spec](https://github.com/ga4gh-beacon/beacon-v2) for its `g_variants` entry type. Building this as a general SQON operator now means Beacon's later phases can consume it rather than reinventing region-overlap translation logic when that work starts.
+
+Open design questions: does the SQON schema need a new two-field content shape (for example `{ startField, endField, queryStart, queryEnd }`), or can it be expressed as a composition of existing `gte`/`lte` operators under `and`? Should this require catalogues to index positions using an ES/OS `range` field type, or should it also support the two-plain-numeric-fields case for catalogues that do not use range fields? The answer determines whether this is purely a `modules/sqon` and query-builder change, or also an indexing/mapping requirement that needs to be communicated to operators.
+
+#### Relevance-ranked search mode
+
+Arranger's query model today is exact-filter and aggregation-first; there is no first-class "search box" mode with ranked results. `resolveHits.js` already threads `track_scores` through to the ES/OS query, so `_score` is reachable if a caller explicitly requests `sort: [{ fieldName: '_score' }]`, but there is no per-catalogue configuration for field boosting, and no `multi_match`-style query builder for weighted matching across several fields with relevance ranking, as distinct from what `wildcard` gives today (exact substring matching, unweighted).
+
+Prior art: [`multi_match`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html) with per-field `^boost` weights (for example `title^3,description`) is the standard building block. [`function_score`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html) would allow boosts that depend on field values (for example, favouring more recent records), if that is ever wanted.
+
+Configuration surface: field boost weights would naturally live in `extended.json`, where per-field configuration already exists, as an additive property rather than a new configuration file.
+
+This is lower-risk than it looks: the response-side plumbing (`track_scores`, generic `sort`) already exists, so the actual gap is entirely in query construction and configuration surface.
+
+#### Hybrid keyword and vector (semantic) search
+
+Longer horizon; flagged clearly as a bigger bet, not a near-term build. Confirmed: neither ES nor OS vector or k-NN fields are used anywhere in the codebase today. `docs/concepts.md` already positions Arranger as "a working search API and MCP server for AI agent access"; semantic search over free-text fields (clinical notes, descriptions, publication abstracts) is a natural extension of that positioning, and is distinct from both operators above: `wildcard` and relevance-ranked search match on literal or weighted term overlap, while semantic search matches on meaning (for example, "kidney cancer" matching a record that says "renal carcinoma").
+
+Prior art: OpenSearch's [k-NN plugin](https://opensearch.org/docs/latest/search-plugins/knn/index/) (`knn_vector` field type; HNSW or IVF algorithms) and its [hybrid query feature](https://opensearch.org/docs/latest/search-plugins/hybrid-search/) (combines BM25 and k-NN scores with score normalization) are the most directly relevant references, since this already aligns with the OpenSearch-first direction. ES has an equivalent (`dense_vector` field plus `knn` query since 8.x), though Arranger's documented minimum ES support (7.0+) predates ES's native k-NN support; this would likely be an OpenSearch-only capability at first unless the ES version floor is revisited.
+
+Open design question: who generates the embeddings? Almost certainly not Arranger itself, since it doesn't own embedding-model infrastructure; an operator's indexing pipeline (for example Maestro) would populate a vector field at index time. Arranger's role would be the query side only: accepting a query vector, or text to embed at query time via a configured embedding endpoint, and fusing keyword and vector result rankings. This needs a design decision on where the embedding call happens before any implementation begins.
 
 ### Sets: full feature implementation
 

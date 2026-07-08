@@ -91,4 +91,4 @@ export const SQON_OP_ALIASES = {
 } as const;
 
 export const RANGE_APPLICABLE_TYPES = ['long', 'integer', 'float', 'double', 'date'] as const;
-export const STRING_OR_NUMBER_ARRAY = 'string | number | Array<string | number>';
+export const SCALAR_OR_ARRAY_VALUE_TYPE = 'string | number | boolean | Array<string | number | boolean>';

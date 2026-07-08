@@ -1,5 +1,5 @@
 import type { SqonScalar, SqonScalarOrArray } from '#schema/constants.js';
-import type { SqonGroup, SqonLeaf, SqonNode } from '#schema/index.js';
+import type { SqonCombination, SqonLeaf, SqonNode } from '#schema/index.js';
 
 export type { SqonScalar, SqonScalarOrArray };
 
@@ -16,7 +16,7 @@ export type SqonFieldFilter = SqonNode & {
 const COMBINATION_OPS = new Set(['and', 'or', 'not']);
 
 /** Returns true when the node is a group (and / or / not combination). */
-export const isGroupNode = (node: SqonNode): node is SqonGroup => COMBINATION_OPS.has(node.op);
+export const isGroupNode = (node: SqonNode): node is SqonCombination => COMBINATION_OPS.has(node.op);
 
 /** Returns true when the node is a field-based leaf (has `content.fieldName`, not a wildcard filter). */
 export const isFieldFilter = (node: SqonNode): node is SqonFieldFilter =>
