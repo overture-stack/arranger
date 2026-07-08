@@ -1,7 +1,7 @@
 import { Client } from '@elastic/elasticsearch';
 
 import type {
-	DefaultAuthConfig,
+	StandardAuthConfig,
 	SearchClient,
 	SearchClientAcknowledgedResponseBody,
 	SearchClientBulkResponseBody,
@@ -18,7 +18,7 @@ import type {
 
 export type ESClientOptions = SearchConfigWithClient & {
 	clientType: 'elasticsearch';
-	auth?: DefaultAuthConfig | undefined;
+	auth?: StandardAuthConfig | undefined;
 };
 
 export function createElasticSearchClient(options: ESClientOptions): SearchClient {
