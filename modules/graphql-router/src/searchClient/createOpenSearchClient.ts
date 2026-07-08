@@ -1,10 +1,10 @@
 import { Client } from '@opensearch-project/opensearch';
 
-import type { SearchClient, SearchConfigWithClient, StandardAuthConfig, AWSAuthConfig } from './types.js';
+import type { SearchClient, SearchConfigWithClient, StandardAuthConfig, AwsAuthConfig } from './types.js';
 
 export type OSClientOptions = SearchConfigWithClient & {
 	clientType: 'opensearch';
-	auth?: StandardAuthConfig | AWSAuthConfig;
+	auth?: StandardAuthConfig | AwsAuthConfig;
 };
 
 export function createOpenSearchClient(options: OSClientOptions): SearchClient {
