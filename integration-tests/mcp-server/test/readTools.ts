@@ -41,7 +41,7 @@ export default ({ getClient, configuredCatalogues, expectedFieldsByCatalogue }: 
 		assert.ok(text.includes('fieldName'), 'expected the cheat sheet to mention "fieldName"');
 
 		// The full machine-readable schema and operator metadata move to structuredContent.
-		const data = (result as { structuredContent?: Record<string, unknown> }).structuredContent;
+		const data = result.structuredContent as Record<string, unknown> | undefined;
 		assert.ok(data, "expected 'get-sqon-schema' to return structuredContent");
 		assert.equal(typeof data?.version, 'string');
 		assert.equal(typeof data?.title, 'string');
