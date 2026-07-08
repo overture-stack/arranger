@@ -22,7 +22,7 @@ type AWS_SERVICE_OPENSEARCH = 'es';
 type AWS_SERVICE_OPENSEARCH_SERVERLESS = 'aoss';
 type AwsService = AWS_SERVICE_OPENSEARCH | AWS_SERVICE_OPENSEARCH_SERVERLESS;
 
-export type AWSAuthConfig = {
+export type AwsAuthConfig = {
 	password: string;
 	username: string;
 	type: 'AWS';
@@ -31,7 +31,7 @@ export type AWSAuthConfig = {
 };
 
 export type SearchConfig = {
-	auth?: Partial<StandardAuthConfig> | Partial<AWSAuthConfig>;
+	auth?: Partial<StandardAuthConfig> | Partial<AwsAuthConfig>;
 	node: string;
 	clientType?: string;
 };
