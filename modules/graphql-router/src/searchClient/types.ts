@@ -68,13 +68,14 @@ export type SearchClientIndicesOpenParams = { index: string | string[] };
 export type SearchClientIndicesPutMappingsParams = { index: string; body: Record<string, any> };
 export type SearchClientIndicesPutSettingsParams = { body: Record<string, any> };
 export type SearchClientBulkParams = { body: Record<string, any>[] };
+export type ClientParamRefreshValues = boolean | 'wait_for';
 export type SearchClientCreateParams = {
 	id: string;
 	index: string;
 	body: Record<string, any>;
-	refresh?: boolean | 'wait_for';
+	refresh?: ClientParamRefreshValues;
 };
-export type SearchClientDeleteParams = { index: string; id: string; refresh?: boolean | 'wait_for' };
+export type SearchClientDeleteParams = { index: string; id: string; refresh?: ClientParamRefreshValues };
 export type SearchClientDeleteByQueryParams = { index: string; body: Record<string, any> };
 export type SearchClientIndexParams = { index: string; body: Record<string, any> };
 export type SearchClientUpdateParams = { id: string; index: string; body: Record<string, any> };
