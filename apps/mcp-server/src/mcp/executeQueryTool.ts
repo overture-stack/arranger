@@ -235,7 +235,7 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 				'2. call get-catalogue-fields to discover valid field names and per-type SQON operators. ' +
 				'3. call get-sqon-schema to learn how to construct valid SQON and see worked examples. ' +
 				'DO NOT guess field names, you MUST call get-catalogue-fields. ' +
-				'DO NOT construct "sqon" without callling get-sqon-schema. ' +
+				'DO NOT construct "sqon" without calling get-sqon-schema. ' +
 				'The user is asked to review and confirm the generated GraphQL query before it runs (when the client supports elicitation).',
 			inputSchema,
 			outputSchema,
