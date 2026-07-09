@@ -2,8 +2,6 @@
 
 Covers how Arranger interacts with OpenSearch and Elasticsearch: supported engines, client creation, startup sequence, query execution, downloads, Sets operations, and the permission model behind each.
 
-For the user-facing permissions quickref, see `docs/setup.md § Search engine permissions`.
-
 Permission names throughout this document are OpenSearch/Elasticsearch transport action names. The authoritative reference for what each name covers is the [OpenSearch permissions reference](https://docs.opensearch.org/latest/security/access-control/permissions/) and [default action groups](https://docs.opensearch.org/latest/security/access-control/default-action-groups/) pages. Elasticsearch does not publish a canonical transport action list in its public documentation; OpenSearch's is the verifiable source for both engines (they share the same transport action naming, as OpenSearch forked the security plugin from Elasticsearch).
 
 ---

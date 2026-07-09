@@ -297,6 +297,52 @@ suite('SQON builder', () => {
 			});
 		});
 
+		test('merges duplicate in filters on the same field under or (OR just widens the set)', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.in('status', ['active']).toValue(),
+				SqonBuilder.in('status', ['pending']).toValue(),
+			]).toValue();
+			assert.deepEqual(result, { op: 'in', content: { fieldName: 'status', value: ['active', 'pending'] } });
+		});
+
+		test('merges not-in filters on the same field under and', () => {
+			const result = SqonBuilder.notIn('status', ['deleted']).notIn('status', ['archived']).toValue();
+			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 'status', value: ['deleted', 'archived'] } });
+		});
+
+		test('keeps not-in filters on the same field separate under or', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.notIn('status', ['deleted']).toValue(),
+				SqonBuilder.notIn('status', ['archived']).toValue(),
+			]).toValue();
+			assert.deepEqual(result, {
+				op: 'or',
+				content: [
+					{ op: 'not-in', content: { fieldName: 'status', value: ['deleted'] } },
+					{ op: 'not-in', content: { fieldName: 'status', value: ['archived'] } },
+				],
+			});
+		});
+
+		test('merges all filters on the same field under and', () => {
+			const result = SqonBuilder.all('tags', ['urgent']).all('tags', ['reviewed']).toValue();
+			assert.deepEqual(result, { op: 'all', content: { fieldName: 'tags', value: ['urgent', 'reviewed'] } });
+		});
+
+		test('keeps all filters on the same field separate under or', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.all('tags', ['urgent']).toValue(),
+				SqonBuilder.all('tags', ['reviewed']).toValue(),
+			]).toValue();
+			assert.deepEqual(result, {
+				op: 'or',
+				content: [
+					{ op: 'all', content: { fieldName: 'tags', value: ['urgent'] } },
+					{ op: 'all', content: { fieldName: 'tags', value: ['reviewed'] } },
+				],
+			});
+		});
+
 		test('keeps the greater gt value under and', () => {
 			const a = SqonBuilder.gt('age', 10);
 			const b = SqonBuilder.gt('age', 20);

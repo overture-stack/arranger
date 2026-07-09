@@ -1,6 +1,3 @@
-import { SqonSchema } from '#schema/index.js';
-import type { SqonGroup, SqonNode } from '#schema/index.js';
-
 import { reduceSqon } from '#builder/reduce.js';
 import {
 	asArray,
@@ -11,6 +8,8 @@ import {
 	isGroupNode,
 } from '#builder/utils.js';
 import type { SqonFieldFilter, SqonScalar, SqonScalarOrArray } from '#builder/utils.js';
+import { SqonSchema } from '#schema/index.js';
+import type { SqonCombination, SqonNode } from '#schema/index.js';
 
 export type { SqonFieldFilter, SqonScalar, SqonScalarOrArray };
 
@@ -19,21 +18,21 @@ export type { SqonFieldFilter, SqonScalar, SqonScalarOrArray };
  * Used to type-check calls to `setFilter`.
  */
 type SqonFieldFilterTypeMap = {
-	in: SqonScalarOrArray;
-	'not-in': SqonScalarOrArray;
-	'some-not-in': SqonScalarOrArray;
 	all: SqonScalar[];
+	between: [SqonScalar, SqonScalar];
 	gt: SqonScalar;
 	gte: SqonScalar;
+	in: SqonScalarOrArray;
 	lt: SqonScalar;
 	lte: SqonScalar;
-	between: [SqonScalar, SqonScalar];
+	'not-in': SqonScalarOrArray;
+	'some-not-in': SqonScalarOrArray;
 };
 
 /** The set of SQON operators that operate on a single `fieldName`. */
 export type SqonFieldFilterKey = keyof SqonFieldFilterTypeMap;
 
-const ARRAY_VALUE_OPS = new Set<string>(['in', 'not-in', 'some-not-in', 'all']);
+const ARRAY_VALUE_OPS = new Set<string>(['all', 'in', 'not-in', 'some-not-in']);
 
 const makeFieldLeaf = (op: string, fieldName: string, value: unknown): SqonNode =>
 	({ op, content: { fieldName, value } }) as unknown as SqonNode;
@@ -41,7 +40,12 @@ const makeFieldLeaf = (op: string, fieldName: string, value: unknown): SqonNode 
 const makeWildcardLeaf = (fieldNames: string | string[], value: string): SqonNode =>
 	({ op: 'wildcard', content: { fieldNames: asArray(fieldNames), value } }) as unknown as SqonNode;
 
-const combine = (op: 'and' | 'or' | 'not', current: SqonNode, incoming: SqonNode | SqonNode[], pivot?: string): SqonGroup => {
+const combine = (
+	op: 'and' | 'not' | 'or',
+	current: SqonNode,
+	incoming: SqonNode | SqonNode[],
+	pivot?: string,
+): SqonCombination => {
 	const items = asArray(incoming);
 	const pivotProp = pivot !== undefined ? { pivot } : {};
 
@@ -59,44 +63,38 @@ const combine = (op: 'and' | 'or' | 'not', current: SqonNode, incoming: SqonNode
 export type SqonBuilderHandle = {
 	/** Combine the current SQON with `content` using an `and` operator. */
 	and: (content: SqonNode | SqonNode[], pivot?: string) => SqonBuilderHandle;
-	/** Combine the current SQON with `content` using an `or` operator. */
-	or: (content: SqonNode | SqonNode[], pivot?: string) => SqonBuilderHandle;
 	/** Negate `content` and combine with the current SQON under an `and`. */
 	not: (content: SqonNode | SqonNode[], pivot?: string) => SqonBuilderHandle;
+	/** Combine the current SQON with `content` using an `or` operator. */
+	or: (content: SqonNode | SqonNode[], pivot?: string) => SqonBuilderHandle;
 
-	/** Add an `in` filter for `fieldName` with the given value(s). */
-	in: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
-	/** Add a `not-in` filter for `fieldName` with the given value(s). */
-	notIn: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
-	/** Add a `some-not-in` filter for `fieldName` with the given value(s). */
-	someNotIn: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
 	/** Add an `all` filter requiring every listed value to be present on `fieldName`. */
 	all: (fieldName: string, value: SqonScalar[]) => SqonBuilderHandle;
-	/** Add a `gt` (greater-than) filter on `fieldName`. */
-	gt: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
-	/** Add a `gte` (greater-than-or-equal) filter on `fieldName`. */
-	gte: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
-	/** Add an `lt` (less-than) filter on `fieldName`. */
-	lt: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
-	/** Add an `lte` (less-than-or-equal) filter on `fieldName`. */
-	lte: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
 	/**
 	 * Add a `between` filter on `fieldName` with an inclusive `[min, max]` range.
 	 * Multiple `between` filters on the same field are kept as separate clauses (non-reducible).
 	 */
 	between: (fieldName: string, value: [SqonScalar, SqonScalar]) => SqonBuilderHandle;
+	/** Add a `gt` (greater-than) filter on `fieldName`. */
+	gt: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
+	/** Add a `gte` (greater-than-or-equal) filter on `fieldName`. */
+	gte: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
+	/** Add an `in` filter for `fieldName` with the given value(s). */
+	in: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
+	/** Add an `lt` (less-than) filter on `fieldName`. */
+	lt: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
+	/** Add an `lte` (less-than-or-equal) filter on `fieldName`. */
+	lte: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
+	/** Add a `not-in` filter for `fieldName` with the given value(s). */
+	notIn: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
+	/** Add a `some-not-in` filter for `fieldName` with the given value(s). */
+	someNotIn: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
 	/**
 	 * Add a wildcard text filter across one or more field names.
 	 * Translates to a case-insensitive ES/OS wildcard query; use `*` in `value` for substring matching.
 	 * `fieldNames` may be a single string or an array of strings.
 	 */
 	wildcard: (fieldNames: string | string[], value: string) => SqonBuilderHandle;
-
-	/**
-	 * Add or replace a field filter. If a filter with the same `fieldName` and `op` already exists
-	 * at the top level of the current SQON, it is replaced; otherwise the new filter is appended.
-	 */
-	setFilter: <K extends SqonFieldFilterKey>(fieldName: string, op: K, value: SqonFieldFilterTypeMap[K]) => SqonBuilderHandle;
 
 	/**
 	 * Remove filters matching `fieldName` (and optionally `op` and specific `value` entries) from
@@ -115,10 +113,20 @@ export type SqonBuilderHandle = {
 	 */
 	removeExactFilter: (filter: SqonFieldFilter) => SqonBuilderHandle;
 
-	/** Returns the underlying `SqonNode`. The returned value has no builder methods attached. */
-	toValue: () => SqonNode;
+	/**
+	 * Add or replace a field filter. If a filter with the same `fieldName` and `op` already exists
+	 * at the top level of the current SQON, it is replaced; otherwise the new filter is appended.
+	 */
+	setFilter: <K extends SqonFieldFilterKey>(
+		fieldName: string,
+		op: K,
+		value: SqonFieldFilterTypeMap[K],
+	) => SqonBuilderHandle;
+
 	/** Returns a JSON string of the underlying `SqonNode`. */
 	toString: () => string;
+	/** Returns the underlying `SqonNode`. The returned value has no builder methods attached. */
+	toValue: () => SqonNode;
 };
 
 const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
@@ -130,17 +138,33 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 	const and = (content: SqonNode | SqonNode[], pivot?: string): SqonBuilderHandle =>
 		createBuilder(combine('and', _sqon, content, pivot));
 
-	const or = (content: SqonNode | SqonNode[], pivot?: string): SqonBuilderHandle =>
-		createBuilder(combine('or', _sqon, content, pivot));
-
 	const not = (content: SqonNode | SqonNode[], pivot?: string): SqonBuilderHandle => {
-		const notNode: SqonGroup = { op: 'not', content: asArray(content) };
+		const notNode: SqonCombination = { op: 'not', content: asArray(content) };
 		if (pivot !== undefined) notNode.pivot = pivot;
 		return createBuilder(combine('and', _sqon, notNode));
 	};
 
+	const or = (content: SqonNode | SqonNode[], pivot?: string): SqonBuilderHandle =>
+		createBuilder(combine('or', _sqon, content, pivot));
+
+	const allFilter = (fieldName: string, value: SqonScalar[]): SqonBuilderHandle =>
+		and(makeFieldLeaf('all', fieldName, value));
+
+	const between = (fieldName: string, value: [SqonScalar, SqonScalar]): SqonBuilderHandle =>
+		and(makeFieldLeaf('between', fieldName, value));
+
+	const gt = (fieldName: string, value: SqonScalar): SqonBuilderHandle => and(makeFieldLeaf('gt', fieldName, value));
+
+	const gte = (fieldName: string, value: SqonScalar): SqonBuilderHandle =>
+		and(makeFieldLeaf('gte', fieldName, value));
+
 	const inFilter = (fieldName: string, value: SqonScalarOrArray): SqonBuilderHandle =>
 		and(makeFieldLeaf('in', fieldName, asArray(value as SqonScalar[])));
+
+	const lt = (fieldName: string, value: SqonScalar): SqonBuilderHandle => and(makeFieldLeaf('lt', fieldName, value));
+
+	const lte = (fieldName: string, value: SqonScalar): SqonBuilderHandle =>
+		and(makeFieldLeaf('lte', fieldName, value));
 
 	const notIn = (fieldName: string, value: SqonScalarOrArray): SqonBuilderHandle =>
 		and(makeFieldLeaf('not-in', fieldName, asArray(value as SqonScalar[])));
@@ -148,18 +172,84 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 	const someNotIn = (fieldName: string, value: SqonScalarOrArray): SqonBuilderHandle =>
 		and(makeFieldLeaf('some-not-in', fieldName, asArray(value as SqonScalar[])));
 
-	const allFilter = (fieldName: string, value: SqonScalar[]): SqonBuilderHandle =>
-		and(makeFieldLeaf('all', fieldName, value));
+	const wildcard = (fieldNames: string | string[], value: string): SqonBuilderHandle =>
+		and(makeWildcardLeaf(fieldNames, value));
 
-	const gt = (fieldName: string, value: SqonScalar): SqonBuilderHandle => and(makeFieldLeaf('gt', fieldName, value));
-	const gte = (fieldName: string, value: SqonScalar): SqonBuilderHandle => and(makeFieldLeaf('gte', fieldName, value));
-	const lt = (fieldName: string, value: SqonScalar): SqonBuilderHandle => and(makeFieldLeaf('lt', fieldName, value));
-	const lte = (fieldName: string, value: SqonScalar): SqonBuilderHandle => and(makeFieldLeaf('lte', fieldName, value));
+	const removeExactFilter = (filter: SqonFieldFilter): SqonBuilderHandle => {
+		if (isFieldFilter(_sqon)) {
+			return checkMatchingFilter(_sqon, filter) ? createBuilder(emptySqon()) : createBuilder(_sqon);
+		}
 
-	const between = (fieldName: string, value: [SqonScalar, SqonScalar]): SqonBuilderHandle =>
-		and(makeFieldLeaf('between', fieldName, value));
+		if (!isGroupNode(_sqon)) {
+			return createBuilder(_sqon);
+		}
 
-	const wildcard = (fieldNames: string | string[], value: string): SqonBuilderHandle => and(makeWildcardLeaf(fieldNames, value));
+		const updated = _sqon.content.filter((child) => !(isFieldFilter(child) && checkMatchingFilter(child, filter)));
+		return createBuilder({ ..._sqon, content: updated });
+	};
+
+	const removeFilter = (fieldName: string, op?: SqonFieldFilterKey, value?: SqonScalarOrArray): SqonBuilderHandle => {
+		const valuesToRemove = value !== undefined ? asArray(value as SqonScalar[]) : undefined;
+
+		const matchesArgs = (node: SqonNode): boolean => {
+			if (!isFieldFilter(node) || node.content.fieldName !== fieldName || (op !== undefined && node.op !== op)) {
+				return false;
+			}
+
+			if (valuesToRemove !== undefined) {
+				return checkMatchingArrays(asArray(node.content.value as SqonScalar[]), valuesToRemove);
+			}
+
+			return true;
+		};
+
+		const matchesArgsPartially = (node: SqonNode): boolean =>
+			isFieldFilter(node) && node.content.fieldName === fieldName && (op === undefined || node.op === op);
+
+		const stripValues = (node: SqonFieldFilter): SqonNode => {
+			if (!ARRAY_VALUE_OPS.has(node.op) || !Array.isArray(node.content.value)) {
+				return node;
+			}
+
+			const remaining = (node.content.value as SqonScalar[]).filter((v) => !valuesToRemove!.includes(v));
+			return { ...node, content: { ...node.content, value: remaining } } as unknown as SqonNode;
+		};
+
+		// Current node is itself a field filter
+		if (isFieldFilter(_sqon)) {
+			if (matchesArgs(_sqon)) {
+				return createBuilder(emptySqon());
+			}
+
+			if (valuesToRemove !== undefined && ARRAY_VALUE_OPS.has(_sqon.op) && matchesArgsPartially(_sqon)) {
+				return createBuilder(stripValues(_sqon));
+			}
+
+			return createBuilder(_sqon);
+		}
+
+		if (!isGroupNode(_sqon)) {
+			return createBuilder(_sqon);
+		}
+
+		// Filter out exact matches
+		const filtered = _sqon.content.filter((child) => !matchesArgs(child));
+
+		if (valuesToRemove === undefined) {
+			return createBuilder({ ..._sqon, content: filtered });
+		}
+
+		// For array-value ops with partial matches: strip specific values
+		const updated = filtered.map((child): SqonNode => {
+			if (isFieldFilter(child) && ARRAY_VALUE_OPS.has(child.op) && matchesArgsPartially(child)) {
+				return stripValues(child);
+			}
+
+			return child;
+		});
+
+		return createBuilder({ ..._sqon, content: updated });
+	};
 
 	const setFilter = <K extends SqonFieldFilterKey>(
 		fieldName: string,
@@ -193,96 +283,28 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 		return createBuilder(combine('and', _sqon, newLeaf));
 	};
 
-	const removeFilter = (fieldName: string, op?: SqonFieldFilterKey, value?: SqonScalarOrArray): SqonBuilderHandle => {
-		const valuesToRemove = value !== undefined ? asArray(value as SqonScalar[]) : undefined;
-
-		const matchesArgs = (node: SqonNode): boolean => {
-			if (!isFieldFilter(node)) return false;
-			if (node.content.fieldName !== fieldName) return false;
-			if (op !== undefined && node.op !== op) return false;
-			if (valuesToRemove !== undefined) {
-				return checkMatchingArrays(
-					asArray(node.content.value as SqonScalar[]),
-					valuesToRemove,
-				);
-			}
-			return true;
-		};
-
-		const matchesArgsPartially = (node: SqonNode): boolean =>
-			isFieldFilter(node) &&
-			node.content.fieldName === fieldName &&
-			(op === undefined || node.op === op);
-
-		const stripValues = (node: SqonFieldFilter): SqonNode => {
-			if (!ARRAY_VALUE_OPS.has(node.op) || !Array.isArray(node.content.value)) return node;
-			const remaining = (node.content.value as SqonScalar[]).filter(
-				(v) => !valuesToRemove!.includes(v),
-			);
-			return { ...node, content: { ...node.content, value: remaining } } as unknown as SqonNode;
-		};
-
-		// Current node is itself a field filter
-		if (isFieldFilter(_sqon)) {
-			if (matchesArgs(_sqon)) return createBuilder(emptySqon());
-			if (valuesToRemove !== undefined && ARRAY_VALUE_OPS.has(_sqon.op) && matchesArgsPartially(_sqon)) {
-				return createBuilder(stripValues(_sqon));
-			}
-			return createBuilder(_sqon);
-		}
-
-		if (!isGroupNode(_sqon)) return createBuilder(_sqon);
-
-		// Filter out exact matches
-		const filtered = _sqon.content.filter((child) => !matchesArgs(child));
-
-		if (valuesToRemove === undefined) {
-			return createBuilder({ ..._sqon, content: filtered });
-		}
-
-		// For array-value ops with partial matches: strip specific values
-		const updated = filtered.map((child): SqonNode => {
-			if (isFieldFilter(child) && ARRAY_VALUE_OPS.has(child.op) && matchesArgsPartially(child)) {
-				return stripValues(child);
-			}
-			return child;
-		});
-
-		return createBuilder({ ..._sqon, content: updated });
-	};
-
-	const removeExactFilter = (filter: SqonFieldFilter): SqonBuilderHandle => {
-		if (isFieldFilter(_sqon)) {
-			return checkMatchingFilter(_sqon, filter) ? createBuilder(emptySqon()) : createBuilder(_sqon);
-		}
-
-		if (!isGroupNode(_sqon)) return createBuilder(_sqon);
-
-		const updated = _sqon.content.filter(
-			(child) => !(isFieldFilter(child) && checkMatchingFilter(child, filter)),
-		);
-		return createBuilder({ ..._sqon, content: updated });
-	};
-
 	return {
 		and,
-		or,
 		not,
-		in: inFilter,
-		notIn,
-		someNotIn,
+		or,
+
 		all: allFilter,
+		between,
 		gt,
 		gte,
+		in: inFilter,
 		lt,
 		lte,
-		between,
+		notIn,
+		someNotIn,
 		wildcard,
-		setFilter,
-		removeFilter,
+
 		removeExactFilter,
-		toValue,
+		removeFilter,
+		setFilter,
+
 		toString,
+		toValue,
 	};
 };
 
@@ -332,7 +354,8 @@ export const SqonBuilder = {
 		createBuilder(emptySqon()).not(content, pivot),
 
 	/** Start a builder with an `in` filter. */
-	in: (fieldName: string, value: SqonScalarOrArray): SqonBuilderHandle => createBuilder(emptySqon()).in(fieldName, value),
+	in: (fieldName: string, value: SqonScalarOrArray): SqonBuilderHandle =>
+		createBuilder(emptySqon()).in(fieldName, value),
 
 	/** Start a builder with a `not-in` filter. */
 	notIn: (fieldName: string, value: SqonScalarOrArray): SqonBuilderHandle =>
@@ -343,7 +366,8 @@ export const SqonBuilder = {
 		createBuilder(emptySqon()).someNotIn(fieldName, value),
 
 	/** Start a builder with an `all` filter. */
-	all: (fieldName: string, value: SqonScalar[]): SqonBuilderHandle => createBuilder(emptySqon()).all(fieldName, value),
+	all: (fieldName: string, value: SqonScalar[]): SqonBuilderHandle =>
+		createBuilder(emptySqon()).all(fieldName, value),
 
 	/** Start a builder with a `gt` filter. */
 	gt: (fieldName: string, value: SqonScalar): SqonBuilderHandle => createBuilder(emptySqon()).gt(fieldName, value),
@@ -370,8 +394,11 @@ export const SqonBuilder = {
 		createBuilder(emptySqon()).wildcard(fieldNames, value),
 
 	/** Start a builder from an empty state and apply `setFilter`. */
-	setFilter: <K extends SqonFieldFilterKey>(fieldName: string, op: K, value: SqonFieldFilterTypeMap[K]): SqonBuilderHandle =>
-		createBuilder(emptySqon()).setFilter(fieldName, op, value),
+	setFilter: <K extends SqonFieldFilterKey>(
+		fieldName: string,
+		op: K,
+		value: SqonFieldFilterTypeMap[K],
+	): SqonBuilderHandle => createBuilder(emptySqon()).setFilter(fieldName, op, value),
 };
 
 /**

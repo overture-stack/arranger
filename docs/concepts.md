@@ -47,6 +47,10 @@ A **filter clause** is a single field-level condition:
 }
 ```
 
+Within a filter clause, the `content` object identifies which field the condition applies to. For most operators this is a single `fieldName` property (a string): the name of one index field. Text-search operators (`wildcard`, `fuzzy`) instead use `fieldNames` (a string array), because they match a single value against multiple fields simultaneously.
+
+`fieldName` and `fieldNames` are property names within a filter clause's `content` object - not references to a field as a catalogue-configuration concept. Do not abbreviate either to `field` in code, comments, parameters, or documentation: `field` is ambiguous, while `fieldName` and `fieldNames` are unambiguous names for specific properties in the SQON schema.
+
 A SQON wraps one or more filter clauses under a combinator:
 
 ```json
@@ -75,4 +79,6 @@ The word **filter** is used two ways: as a verb ("users filter the dataset") and
 | **SQON** | The full structured query object passed to Arranger, built from one or more filter clauses. |
 | **filter clause** | One field-level condition within a SQON (a single `{op, content}` leaf node). |
 | **filter** | (verb) To narrow a dataset by selecting facet options. (noun) A SQON, or informally a single filter clause. |
+| **`fieldName`** | The string property in a filter clause's `content` that names the single index field the condition applies to. Used by most operators. Never abbreviate to `field`. |
+| **`fieldNames`** | The string-array property used instead of `fieldName` by multi-field text operators (`wildcard`, `fuzzy`). Matches one value against all listed fields simultaneously. Never abbreviate to `fields` or `field`. |
 | **settings** | Elasticsearch's own term for index-level configuration (the ES `settings` API). Use "configuration" for Arranger-level concepts; keep "settings" when mirroring ES language. |
