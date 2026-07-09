@@ -6,6 +6,27 @@ Newest first.
 
 ---
 
+## 2026-07-09
+
+Clarified the theming engine roadmap item against the actual code state, ahead of a Tooltip theming step.
+
+- `.dev/roadmap.md`: "Extend the theming engine to all components" corrected to reflect that most Aggs components (`TermAggs`, `BooleanAggs`, `AggsGroup`, `BucketCount`, `RangeAgg`, `DatesAgg`) already participate in the theme engine; remaining gaps narrowed to `Aggregations.jsx`, `AggsQuery.jsx`, `aggComponentsMap.jsx`, `AggsPanel.jsx`, `TermAggs/SelectAllButton.jsx`, and `Tooltip/`; added Tooltip as the named next target (fold its local `TooltipThemeProperties` shape into the central `Components` type, same pattern as Table/Aggregations) with a note that this step does not require the Emotion replacement decision first; flagged the `modules/charts` `ChartsThemeProvider` split from `modules/components`' `ThemeContext` as a known, unscoped gap
+
+Bisected the SQON viewer multi-value bubble regression to its exact origin commit, using two production screenshots (demo.overture.bio) showing the old one-bubble-per-value rendering versus the current broken single-bubble rendering.
+
+- `.dev/tech-debt.md`: "SQON viewer shows multiple values in the same bubble" entry rewritten from "Fix: Unknown; needs investigation" to a confirmed root cause: commit `87b9c1da` (PR #923) changed the value array construction in `modules/components/src/SQONViewer/index.jsx:63` from a flattening `[].concat(...)` to a wrapping `content.value ? [content.value] : []`, which always produces a length-1 array for multi-value filters; this silently breaks `hasMultipleValues`, the `in`/`is` operator label, the enclosing parentheses, and per-value truncation, none of which had test coverage. Fix and regression-test guidance added; no code changed yet.
+- `.dev/tech-debt.md`: made rendering tests a required part of the bubble fix, not optional follow-up, since the same regression already shipped once with zero coverage on the code path. Added a new entry, "No rendering-level unit test coverage in `modules/components`; SQONViewer is the natural starting point": surveyed the whole module and found only five test files total, none exercising component rendering; also found a no-op test (`expect(false).toBe(false)`) in the old-style `SQONViewer/__tests__/utils.test.js`, and flagged that file's relocation collides with an existing co-located `utils.test.js` testing a different function from the same source file, so they need merging rather than a straight move.
+
+Ground-truthed four more roadmap items against actual code state (Sets, `displayValues`, Components modernization, Emotion replacement), the same treatment as the theming and SQON viewer items above.
+
+- `.dev/roadmap.md` ("Sets: full feature implementation"): confirmed only one backend operation exists end-to-end (`saveSet`, create-only; no list/delete/update); confirmed the sets ES mapping stores `userId` but nothing enforces it; confirmed `ids` is a frozen creation-time snapshot with the `sqon` stored but never re-run, so virtual cohorts is a new resolution mode, not an extension.
+- `.dev/tech-debt.md`: updated the existing `hackyTemporaryEsSetResolution.js` entry to resolve its own open question: `resolveSetsInSqon` is confirmed to run unconditionally, not gated by `enableSets`, so the file cannot be removed even if Sets is "disabled." Added a new entry, "`ENABLE_SETS` flag does not fully gate the Sets query path" (OWASP A01): the flag only gates index creation; the `set_id:` query-resolution path runs regardless, with no ownership check on `userId`, found while verifying the Sets roadmap item.
+- `.dev/roadmap.md` ("`displayValues` for all aggregation types"): confirmed accurate; added exact file/line grounding for BooleanAggs' working implementation, TermAggs' TODO-only state, and a previously undocumented gap: the Table's `cells.tsx` cell renderer also doesn't consume `displayValues` even though the same GraphQL-fetched data is already available to it.
+- `.dev/roadmap.md` ("Components module modernization"): added confirmed grep counts: `recompose` in 4 files, `component-component` in 10 (7 of which are in `AdvancedSqonBuilder/` alone), 21 class components spanning both legacy code and the already-modernized theme engine and Aggs family; named `AdvancedSqonBuilder` as the natural first target.
+- `.dev/roadmap.md` ("Replace Emotion with a less constrained styling solution"): added confirmed footprint (46 of the module's files import `@emotion/*`, 39 use the `css` prop, 6 use `styled(...)`) to make explicit that this is a module-wide migration, not a contained one.
+
+---
+
 ## 2026-07-07
 
 Two bodies of work: `modules/sqon` API improvements (`addFilterClause`, reduction bug fix, `SqonCombination` rename); and a full `/docs` restructure establishing user-type reading pathways and filling content gaps for SQON construction and MCP server integration.

@@ -107,6 +107,40 @@ If working with an AI agent, this process will be done automatically by stating 
 
 ---
 
+## Using a custom search client
+
+`arrangerRouter` accepts an optional `esClient` parameter. If you pass one in, Arranger skips its own client setup and uses yours directly. This is the right approach when you need connection behaviour Arranger does not configure itself - for example, AWS IAM authentication for Amazon OpenSearch Service.
+
+**AWS example** (in your own server, not in Arranger):
+
+```ts
+import { Client } from '@opensearch-project/opensearch';
+import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import arrangerRouter from '@overture-stack/arranger-graphql-router';
+
+const esClient = new Client({
+  ...AwsSigv4Signer({
+    region: 'us-east-1',
+    service: 'es',              // 'es' for OpenSearch Service, 'aoss' for Serverless
+    getCredentials: () => defaultProvider()(),
+  }),
+  node: 'https://your-cluster.us-east-1.es.amazonaws.com',
+});
+
+const router = await arrangerRouter({
+  esClient,
+  configs: {
+    esIndex: 'your-index',
+    documentType: 'YourType',
+  },
+});
+```
+
+`defaultProvider` resolves credentials from wherever they are available in the environment: the `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars, an IAM role attached to the instance or container, a local `~/.aws` profile, and so on. It is part of the AWS SDK v3 (`@aws-sdk/credential-provider-node`) and is a dependency of your server, not of Arranger.
+
+---
+
 ## AI coding tools
 
 This project has first-class support for AI coding assistants. Agent instruction files at the root tell each tool about project conventions, working documents, and session discipline:
