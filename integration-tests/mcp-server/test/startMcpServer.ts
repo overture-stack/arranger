@@ -1,6 +1,6 @@
 import { type Server } from 'http';
 
-import { createArrangerIntrospectionClient } from '../../../apps/mcp-server/src/arranger/client.js';
+import { createArrangerClient } from '../../../apps/mcp-server/src/arranger/client.js';
 import { validateArrangerConnection } from '../../../apps/mcp-server/src/arranger/validation.js';
 import { createHttpApp } from '../../../apps/mcp-server/src/http/app.js';
 import { createMcpServer } from '../../../apps/mcp-server/src/server.js';
@@ -24,7 +24,7 @@ export type StartedMcpServer = {
  * assertion: if the configured Arranger isn't reachable, this throws and the test fails.
  */
 export const startMcpServerForTest = async (config: ArrangerMcpConfig): Promise<StartedMcpServer> => {
-	const introspectionClient = createArrangerIntrospectionClient(config);
+	const introspectionClient = createArrangerClient(config);
 
 	await validateArrangerConnection(config, introspectionClient);
 
