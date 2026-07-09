@@ -33,7 +33,9 @@ const inputSchema = {
 	sqon: zod
 		.unknown()
 		.describe(
-			'SQON filter for the query. Required. For an unfiltered query ("show me everything"), pass the empty root SQON {"op": "and", "content": []} — never null. Use get-sqon-schema for the SQON structure and get-catalogue-fields for valid fields and per-type operators.',
+			'SQON filter for the query (required). ' +
+				'Call get-sqon-schema before using execute-query for SQON grammar, operators, and worked examples. ' +
+				'For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null.',
 		),
 	queryType: zod
 		.enum(['hits', 'aggregations', 'both'])
@@ -45,7 +47,7 @@ const inputSchema = {
 		.array(zod.string().min(1))
 		.optional()
 		.describe(
-			'Dot-notation document fields to return for each hit (e.g. "donor.age_at_diagnosis"). Do not guess field names — use get-catalogue-fields first. Omit to return only the total hit count.',
+			'Dot-notation document fields to return for each hit (e.g. "donor.age_at_diagnosis"). Do not guess field names; use get-catalogue-fields first. Omit to return only the total hit count.',
 		),
 	first: zod
 		.number()
@@ -68,7 +70,7 @@ const inputSchema = {
 		.array(zod.string().min(1))
 		.optional()
 		.describe(
-			'Fields to aggregate. Nested properties use double underscores (e.g. "donor__age_at_diagnosis"); dot notation is also accepted. Do not guess field names — use get-catalogue-fields first. Required when queryType is "aggregations" or "both".',
+			'Fields to aggregate. Nested properties use double underscores (e.g. "donor__age_at_diagnosis"); dot notation is also accepted. Do not guess field names; use get-catalogue-fields first. Required when queryType is "aggregations" or "both".',
 		),
 	includeMissing: zod
 		.boolean()
@@ -168,7 +170,7 @@ const validateRequest = ({
 /**
  * Asks the user to review and confirm the generated GraphQL request before it is executed,
  * using MCP elicitation. When the connected client does not advertise the elicitation
- * capability, confirmation is skipped and the query proceeds — the executed request is
+ * capability, confirmation is skipped and the query proceeds; the executed request is
  * always echoed in the tool response for transparency.
  * @returns `true` when execution may proceed, `false` when the user declined or cancelled.
  */
@@ -228,7 +230,12 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 			title: 'Execute Arranger Query',
 			description:
 				'Execute a SQON-filtered query against one Arranger catalogue and return matching documents (hits), per-field aggregation summaries, or both. ' +
-				'Before calling this tool: use list-catalogues to find the catalogue, then get-catalogue-fields to discover valid field names and per-type SQON operators — never guess field names. ' +
+				'Before calling this tool you MUST: ' +
+				'1. use list-catalogues to find the catalogue. ' +
+				'2. call get-catalogue-fields to discover valid field names and per-type SQON operators. ' +
+				'3. call get-sqon-schema to learn how to construct valid SQON and see worked examples. ' +
+				'DO NOT guess field names, you MUST call get-catalogue-fields. ' +
+				'DO NOT construct "sqon" without calling get-sqon-schema. ' +
 				'The user is asked to review and confirm the generated GraphQL query before it runs (when the client supports elicitation).',
 			inputSchema,
 			outputSchema,
