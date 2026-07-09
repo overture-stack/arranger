@@ -127,6 +127,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Add an `opensearch` service to `docker-compose.yml`. Starting OpenSearch is functionally the same process as the existing `elasticsearch` service (single-node container, health check against `_cluster/health`, same 9200/9300 ports), so the two definitions should stay nearly identical: swap the image (`opensearchproject/opensearch` for `docker.elastic.co/elasticsearch/elasticsearch`) and reconcile whatever security-plugin config differs (OpenSearch's security plugin vs. ES's `xpack.security`/`ELASTIC_PASSWORD` env vars). Fix the `start-server` service-name mismatch (`arranger-server` to `server`) in the same pass.
 **Standalone:** yes for both fixes as stated; coordinate with [OpenSearch-first migration](roadmap.md#opensearch-first-migration) if that work also changes which engine `make start` brings up by default, since this item only makes `start-os` work, not necessarily the default.
 
+### Audit public exports across all modules for spurious entries
+
+**Files:** `modules/sqon/src/index.ts`, `modules/graphql-router/src/index.ts`, `modules/types/src/index.ts`, `modules/components/src/index.ts`, `modules/charts/src/index.ts`
+**Severity:** low (API surface hygiene; no functional impact)
+**Kind:** API cleanliness
+**Issue:** Some exports in `modules/sqon` were added in anticipation of planned consumers (MCP handler) that don't exist yet. Across all modules, there may be exports that were added for one-off use, left over from refactors, or added speculatively. Unexported internals are easier to change without breaking callers; a clean public API surface is a forcing function for good module boundaries.
+**Fix:** For each module's `index.ts`, grep all exported names against imports across the monorepo. Remove exports with no consumer outside the module, or demote them to internal. Verify each removal does not break integration-tests or external packages (`sqon-builder` deprecation may affect this for `modules/sqon`).
+**Standalone:** yes; one module at a time; `modules/sqon` is the most active and a good starting point
+
 ### Inconsistent spelling of `catalogue`
 
 **File:** throughout the monorepo
@@ -398,8 +407,17 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Severity:** low
 **Kind:** stale code / convention violation
 **Issue:** Two related problems in one file. (1) The file header says the code is a workaround for an Elasticsearch 6.2 bug fixed in 6.3: "Once the issue is resolved by Elasticsearch in version 6.3, we no longer need these functions here." That condition was met years ago; we are on ES 7.x/OpenSearch. The function should be evaluated for removal. (2) `resolveSetIdsFromEs` reads `fallbackConfigs.sets.index` from a module-level import of the global `fallbackConfigs` object rather than receiving the sets index name as a parameter. This violates the module convention (modules receive config as typed params; they do not read from global or environment state).
-**Fix:** Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised in any real deployment or test. If the ES 6.2 workaround is still required for runtime correctness (sets membership resolution), rewrite to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. If Sets are fully gated behind `enableSets` and no path reaches this code in practice, remove the file and its import in `resolveAggregations.ts`. The Sets full-feature roadmap item is the natural moment to make this call.
-**Standalone:** no; evaluate alongside the Sets full feature implementation; do not remove without confirming sets query behaviour
+**Fix:** ~~Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised~~ Confirmed: `resolveSetsInSqon` is called unconditionally from `mapping/resolveAggregations.ts:96` on every request, regardless of `enableSets`; it is not gated and cannot be removed without breaking `set_id:` filter resolution wherever Sets is enabled. Rewrite `resolveSetIdsFromEs` to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. The ES 6.2 workaround framing in the file header is still stale and should be removed once confirmed unnecessary against current ES/OS versions, but the functions themselves stay. See also the new access-control entry below, found while confirming this.
+**Standalone:** no; evaluate alongside the Sets full feature implementation; the `fallbackConfigs` parameter fix is standalone, the ES 6.2 header cleanup is standalone, but do not remove the file
+
+### `ENABLE_SETS` flag does not fully gate the Sets query path
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js` (`resolveSetsInSqon`, called unconditionally from `mapping/resolveAggregations.ts:96`); `modules/graphql-router/src/middleware/buildQuery/index.js:214-259` (`set_id:` terms-lookup query construction)
+**Severity:** medium (OWASP A01: Broken Access Control; the risk is bounded by `setId` being an unguessable UUID, but there is no ownership check at all)
+**Kind:** design gap / feature flag does not cover its own attack surface
+**Issue:** `ENABLE_SETS` (default `false`) only gates `initializeSets`, which creates the sets ES index on startup (`config/utils/index.ts:15-17`). `resolveSetsInSqon` and the `set_id:` terms-lookup query builder run unconditionally on every request regardless of the flag. If a sets index exists in the cluster (the flag was enabled at some point, or the index is shared across deployments), any query containing `set_id:<uuid>` resolves to that set's full document ID list with no ownership check: the sets ES mapping stores `userId` per set, but nothing anywhere reads or enforces it.
+**Fix:** Short-term mitigation: gate `resolveSetsInSqon` and the `set_id:` query path on `enableSets` explicitly, so a disabled flag is a real kill switch rather than only skipping index creation. Real fix: implement the ABAC ownership check already scoped in [roadmap: Sets full feature implementation](roadmap.md#sets-full-feature-implementation) before treating any `set_id:` query as safe in a multi-tenant deployment.
+**Standalone:** yes for the flag-gating mitigation; no for the ABAC ownership check, which is the roadmap item's own scope
 
 ---
 
@@ -483,12 +501,27 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 
 ### SQON viewer shows multiple values in the same bubble [urgent]
 
-**File:** `modules/components/src/`; SQON viewer component
+**File:** `modules/components/src/SQONViewer/index.jsx:63` (value construction), `helpers.tsx` (`ValueCrumb`, truncation/tooltip)
 **Severity:** high (regression)
 **Kind:** bug
-**Issue:** The SQON viewer is showing multiple values for a single field within the same bubble, rather than as separate bubbles as it used to. This is a regression; the previous behaviour was one value per bubble.
-**Fix:** Unknown; needs investigation. Likely a rendering or data-mapping change that altered how multi-value field filters are displayed. Bisect recent changes to the SQON viewer or the SQON-to-display-model mapping.
-**Standalone:** yes; UI-only bug, no server-side involvement
+**Issue:** Root cause confirmed via bisect to commit `87b9c1da` (PR #923, "upgrade to 2025 standards"). The value array construction was changed from `const value = [].concat(valueSQON.content.value || [])` to `const value = valueSQON.content.value ? [valueSQON.content.value] : []`. The old form flattened `content.value` into a real array of N entries regardless of whether it was already an array or a bare scalar. The new form always wraps `content.value` in a single-element array, so a multi-value filter's array (e.g. `['LOSH', 'TNTS']`) becomes a one-element array containing that array, not a two-element array of strings.
+
+Downstream effects, both visible in production (demo.overture.bio):
+- `hasMultipleValues` (`value.length > 1`) is now always `false` for multi-value filters, since `value` is always length 1. This also breaks the operator label at line 88 (`op === 'in' && hasMultipleValues ? op : 'is'`): a genuine `in` filter with multiple values now displays as `is` instead of `in`, and the surrounding parentheses (`SQONValueGroup`, gated on `hasMultipleValues`) never render.
+- `ValueCrumb` (`helpers.tsx`) receives the whole array as a single `value` instead of one call per entry, so all values are joined into one bubble instead of one bubble per value.
+- The per-value character-limit truncation and hover-tooltip in `ValueCrumb` still fire, but now against the comma-joined multi-value string rather than each individual value, so a long list is silently truncated with no per-value "x" to remove one value at a time; the tooltip becomes the only way to read the full list.
+
+**Fix:** Revert `index.jsx:63` to flatten rather than wrap: `const value = [].concat(valueSQON.content.value ?? [])`. This restores one-bubble-per-value rendering, the `in`/`is` label distinction, the enclosing parentheses, and per-value truncation. **Tests are a required part of this fix, not optional follow-up**: this exact regression shipped silently once already because no test covered the rendering path. Add a co-located `SQONViewer/index.test.jsx` covering at minimum: an `in`/multi-value filter renders N separate value bubbles with the `in` label and parentheses; a single-value filter renders one bubble with the `is` label and no parentheses; a multi-value filter past the truncation limit still renders N bubbles (not one truncated joined string). Do not consider this entry resolved until the fix lands with these tests in the same change.
+**Standalone:** yes; UI-only bug, no server-side involvement; single-line fix plus tests
+
+### No rendering-level unit test coverage in `modules/components`; SQONViewer is the natural starting point
+
+**Files:** `modules/components/src/` (all rendering components); confirmed via survey: only `SQONViewer/utils.test.js`, `SQONViewer/__tests__/utils.test.js`, `TextFilter/__tests__/TextFilter.test.js`, `utils/__tests__/splitString.test.js`, `utils/uri/__tests__/uri.test.js` exist in the entire module
+**Severity:** medium (regressions in rendering logic ship silently; the SQON viewer bubble bug above is a direct instance)
+**Kind:** missing test coverage
+**Issue:** Across the whole `modules/components` package, only five test files exist, and none exercise actual component rendering; all are pure-function/utility tests. No component that renders JSX has any test. This is why the SQON viewer bubble regression (see entry above) shipped and went unnoticed for over a year: `index.jsx`'s rendering logic had zero coverage. Separately, `SQONViewer/__tests__/utils.test.js` (old-style, non-co-located) contains a no-op assertion (`it('should return the query if no base sqon', () => { expect(false).toBe(false); })`) that passes regardless of the code under test; existing coverage is thinner than the file count suggests. `SQONViewer/utils.test.js` (co-located) and `SQONViewer/__tests__/utils.test.js` (old-style) both exist side by side and test different functions, not duplicates, but the latter should be relocated per the [co-location convention](#inconsistent-unit-test-file-placement).
+**Fix:** Use the SQON viewer bubble fix above as the pilot: add `SQONViewer/index.test.jsx` with real rendering assertions (via Testing Library, already available for React 18+ components). Fix the no-op test in `__tests__/utils.test.js` while relocating it to co-located `utils.test.js` alongside the other `addInSQON`/`toggleSQON`/`mergeQuery` tests it actually covers (careful: this would collide with the existing co-located `utils.test.js`, which tests `isWildcardFilter` from the same `utils.js`; merge into one file rather than overwriting). Once the pattern is established, extend to other high-traffic rendering components (Table, Aggs family) opportunistically as they're touched.
+**Standalone:** yes; the SQONViewer pilot is standalone; broader extension to other components is opportunistic, not a blocking prerequisite
 
 ### Columns button disabled when no columns are shown by default
 

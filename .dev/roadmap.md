@@ -171,6 +171,16 @@ Catalogs can fail to load or be intentionally disabled. There is currently no ex
 
 _Design-first. Coordinate with the API version exposure entry; catalog metadata and server introspection are related surfaces._
 
+### Per-catalogue search engine credentials via env vars
+
+_Priority: medium. Config plumbing gap, not a design question._
+
+Confirmed: file-based config (a catalogue's `base.json`) already supports per-catalogue `esHost`/`esUser`/`esPass`/`searchEngine`, since `arrangerRouter()` (`modules/graphql-router/src/router.ts`) builds a fresh search client per catalogue from that catalogue's own config whenever no client is injected. Env-var configuration, the primary documented deployment path, does not: `apps/search-server/src/configs/fromEnv/localEnvs.ts` reads one global `ES_HOST`/`ES_USER`/`ES_PASS` for the whole server instance, explicitly commented as "global" Arranger config, with an existing TODO in that file to extend it to `${catalogId}_ES_HOST`-style per-catalogue env vars.
+
+Until this is closed, a multicatalog deployment configured purely by env vars (rather than per-catalogue `base.json` files) is limited to one shared search engine credential across all catalogues, even though the underlying client-construction code already supports per-catalogue separation.
+
+_Related: Multicatalog catalogue lifecycle and metadata; Arranger config separation._
+
 ### Arranger config separation
 
 _Priority: medium-high. Blocked on core module extraction._
@@ -477,12 +487,14 @@ Open design question: who generates the embeddings? Almost certainly not Arrange
 
 _Priority: active. Backend exists but the feature is incomplete._
 
-Sets are saved groupings of documents from a catalog; think "save this search result for later" or "share this selection with a colleague." The backend infrastructure exists but Sets are not yet a complete user-facing feature. The full scope includes:
+Sets are saved groupings of documents from a catalog; think "save this search result for later" or "share this selection with a colleague." Confirmed backend inventory: exactly **one** operation exists end-to-end. `saveSet` (type def `modules/graphql-router/src/schema/Root.ts:68`, resolver `mapping/resolveSets.js:58-108`) runs a SQON as an ES query, walks every matching document via `search_after` pagination, and indexes a static snapshot (`{setId, createdAt, ids, type, path, sqon, userId, size}`, mapping in `schema/index.ts:11-20`) into a dedicated sets index. There is no `listSets`, `deleteSet`, `updateSet`, or `renameSet` anywhere in the codebase, and no query to fetch a set back: a user can create a set and never see, rename, or delete it again through the API. UI-side, the only artifact is `modules/components/src/utils/saveSet.js`, a thin mutation wrapper consumed inside `Arranger/MatchBox.jsx:265-289`; there is no create/view/manage/share panel of any kind.
 
-- **Backend:** Complete resolver logic, index lifecycle management, full CRUD operations, and proper error handling.
-- **UI:** Components for creating, viewing, managing, and sharing sets. Needs to integrate with the existing filter/search UI.
-- **Access control:** Sets should support Attribute-Based Access Control (ABAC). A set has an owner; it can be private, shared with specific users, or public. This design needs to be done before the backend is completed, as it affects the data model.
-- **Virtual cohorts:** Rather than storing a static list of document IDs, a set can be defined as a saved filter/query that resolves dynamically at query time. This is more powerful and avoids stale sets when the underlying data changes.
+The full scope includes:
+
+- **Backend:** `saveSet` (create) exists; `listSets`, `deleteSet`, and `updateSet` are entirely missing, not partially built. Error handling on the existing path is unverified, since it has no test coverage (see [tech-debt: no unit tests for `resolveSetsInSqon`](tech-debt.md#no-unit-tests-for-resolvesetsinsqon-set-expansion)).
+- **UI:** Components for creating, viewing, managing, and sharing sets, integrated with the existing filter/search UI. Zero UI exists beyond the MatchBox save affordance.
+- **Access control:** Sets should support Attribute-Based Access Control (ABAC). A set has an owner; it can be private, shared with specific users, or public. This design needs to be done before the backend is completed, as it affects the data model. Confirmed: the sets ES mapping stores `userId` per set today, but nothing anywhere reads or enforces it, and the query-time resolution path (`set_id:` filter expansion) is not even gated by `ENABLE_SETS`, only index creation is (see [tech-debt: `ENABLE_SETS` flag does not fully gate the Sets query path](tech-debt.md#enable_sets-flag-does-not-fully-gate-the-sets-query-path)). This is a live gap, not only a forward-looking design question.
+- **Virtual cohorts:** Rather than storing a static list of document IDs, a set can be defined as a saved filter/query that resolves dynamically at query time. Confirmed: today's `ids` field is a frozen snapshot taken at creation time; the `sqon` is stored alongside it but never re-run. Virtual cohorts would be a genuinely new resolution mode, not an extension of the existing one.
 
 This is a substantial multi-sprint effort. Backend and UI work can be parallelized once the ABAC model is defined. The `ENABLE_SETS` feature flag exists precisely because this is a work in progress; it should remain until the feature is complete and stable.
 
@@ -540,7 +552,15 @@ _Needs interaction and data model design before implementation._
 
 _Priority: medium. Extends existing behaviour uniformly._
 
-The `displayValues` feature maps raw field values to human-readable labels (e.g. `"M"` → `"Male"`). It currently works in BooleanAggs but not TermAggs or other agg types. TermAggs should be the next target given their frequency of use, then extend to all agg types and the table column display.
+The `displayValues` feature maps raw field values to human-readable labels (e.g. `"M"` → `"Male"`). Confirmed source of truth: `extendFields` (`modules/graphql-router/src/mapping/extendMapping.ts:184-196`) populates a flat `displayValues: Record<string, string>` per field, typed as `ExtendedMappingInterface.displayValues` (`modules/components/src/DataContext/types.ts:41`) and exposed via GraphQL — the same shape is already fetched and available to every consumer regardless of agg type.
+
+**Confirmed current state, by component:**
+- **BooleanAggs — implemented.** `BooleanAggs/index.tsx:24` destructures `displayValues` (as `extendedDisplayKeys`), merges it with defaults at lines 49-57, and it drives the toggle labels at lines 131 and 152.
+- **TermAggs — not implemented.** `TermAggs/TermAggs.jsx:96` has only `// TODO: displayValues may fit here`; `decorateBuckets` maps `bucket.key_as_string ?? bucket.key` through a generic string formatter (`translateSQONValue`), not a config-driven label lookup. No `displayValues` prop is accepted anywhere in the file.
+- **RangeAgg / DatesAgg — not implemented.** No trace of `displayValues` in either component.
+- **Table column rendering — not implemented, and this is a real gap today, not speculative.** `Table/helpers/cells.tsx`'s `getDisplayValue` (lines 27-36) only special-cases `date` columns; the boolean cell type stringifies `true`/`false` directly. `displayValues` is fetched via GraphQL but never read in `cells.tsx`, `columns.tsx`, or `Row/Cell.tsx`.
+
+TermAggs remains the correct next target given their frequency of use, then RangeAgg/DatesAgg, then the table column display, in that order.
 
 _Relatively self-contained. Good TDD candidate. Start with TermAggs._
 
@@ -572,27 +592,36 @@ _Priority: medium. Ongoing maintenance cost that compounds over time._
 
 The components package still uses patterns that predate React hooks: `recompose` (an HOC composition library), `component-component` (a render-prop state machine), and class-based components throughout. These are no longer idiomatic React and make the codebase harder to read, test, and extend.
 
+**Confirmed scope, by grep:**
+- `recompose`: 4 files — `Tabs.jsx`, `Query.jsx`, `QuickSearch/QuickSearchQuery.js`, `Arranger/MatchBox.jsx`.
+- `component-component`: 10 files, concentrated in one directory — 7 of the 10 are in `AdvancedSqonBuilder/` (`index.jsx`, `SqonEntry.js`, `sqonPieces/FieldOp.jsx`, `sqonPieces/BooleanOp.jsx`, `filterComponents/BooleanFilter.jsx`, `filterComponents/RangeFilter.js`, `filterComponents/TermFilter.jsx`); the rest are `AdvancedFacetView/index.jsx`, `State.js`, and `utils/ExtendedMappingProvider.jsx`. Migrating `AdvancedSqonBuilder` alone closes most of this.
+- Class components: 21 files. Not confined to obviously-legacy code: alongside `Query.jsx`, `State.js`, and `AdvancedFacetView/*`, the pattern also cuts through the theme engine (`ThemeContext/index.tsx`, `Table/helpers/context.tsx`, `DataContext/index.tsx`) and the Aggs family (`aggregations/RangeAgg.jsx`, `aggregations/DatesAgg.jsx`, `aggregations/AggsState.ts`) — code that's otherwise already modernized in other respects.
+
 Scope:
 
 - Remove `recompose` and `component-component`; replace HOC and render-prop patterns with hooks
 - Convert remaining class components to function components
 - Simplify the aggregations components, which have accumulated redundant abstractions over time (multiple layers of HOC wrapping that add indirection without adding value)
 
-Can be done incrementally, component by component, without breaking the public API.
+Can be done incrementally, component by component, without breaking the public API. `AdvancedSqonBuilder` is the natural first target for `component-component` removal, given how concentrated that dependency is there.
 
 ### Extend the theming engine to all components
 
 _Priority: medium. Consistency issue that affects integrators._
 
-The table component introduced a theming system that lets operators customize appearance through a theme prop. This pattern should be extended to facets, aggregation components, and other UI pieces so operators have a uniform customization surface. Currently some components use the theme engine, others don't.
+The table component introduced a theming system (`modules/components/src/ThemeContext/`: `ThemeProvider`, `useThemeContext`, `withTheme`, and a `Components` type holding a per-component theme shape) that lets operators customize appearance through a theme prop. Most aggregation components already participate: `TermAggs`, `BooleanAggs`, `AggsGroup`, `BucketCount`, `RangeAgg`, and `DatesAgg` are wired in. The remaining gaps are narrower than "facets and aggregation components" suggests: `Aggregations.jsx`, `AggsQuery.jsx`, `aggComponentsMap.jsx`, `AggsPanel.jsx`, `TermAggs/SelectAllButton.jsx`, and `Tooltip/`.
 
-_Coordinate with the Emotion replacement decision before investing heavily here; the styling mechanism affects how theming is implemented._
+**Next concrete target: Tooltip.** `modules/components/src/Tooltip/` already carries its own local theme prop (`TooltipThemeProperties`: `tooltipAlign`, `tooltipFontColor`, `tooltipText`, `tooltipVisibility`), but it is a self-contained shape disconnected from the central `Components` type. Folding it in (add a `Tooltip: TooltipThemeProps` slot to `Components`, switch the component to `useThemeContext`/`withTheme`) follows the exact pattern Table and Aggregations already use. It does not require the Emotion replacement decision below: it reuses the existing mechanism rather than deepening investment in it, so it is a reasonable next step to take now.
+
+**Known unaddressed split:** `modules/charts` has its own separate `ChartsThemeProvider` (colour array, swappable `TooltipComp`/`Loader`) with no connection to `modules/components`' `ThemeContext`. Whether these should ever merge is an open question, not yet scoped.
+
+_Coordinate with the Emotion replacement decision before investing heavily beyond the Tooltip step; the styling mechanism affects how theming is implemented for anything larger._
 
 ### Replace Emotion with a less constrained styling solution
 
 _Priority: medium-high. Blocks or complicates several other component improvements._
 
-Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Two alternatives worth evaluating:
+Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Confirmed footprint: 46 files in the module import from `@emotion/*` — essentially the entire styled-component surface, not a contained corner of it — with 39 files using the `css` template-literal prop and 6 using `styled(...)`. This is a module-wide migration, not a localized swap. Two alternatives worth evaluating:
 
 - **Radix UI**: headless, unstyled accessible primitives. Provides behaviour (keyboard nav, ARIA, focus management) without imposing styles. Arranger would own all visual styling.
 - **ShadCN**: built on Radix with Tailwind CSS. Provides a starting set of styled components as copy-paste source rather than as a runtime dependency. More opinionated but faster to an initial working UI.

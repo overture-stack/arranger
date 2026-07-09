@@ -116,7 +116,7 @@ export const getIndexMapping = async ({
 	searchClient,
 	esIndex,
 }: {
-	enableDebug: boolean;
+	enableDebug?: boolean;
 	searchClient: SearchClient;
 	esIndex: string;
 }) => {
