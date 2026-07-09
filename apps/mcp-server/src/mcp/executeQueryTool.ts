@@ -33,15 +33,9 @@ const inputSchema = {
 	sqon: zod
 		.unknown()
 		.describe(
-			'SQON filter for the query (required). A SQON is a tree of two node kinds: group and leaf. ' +
-				'A GROUP combines conditions: {"op": "and" | "or" | "not", "content": [ ...child nodes... ]} (content is an ARRAY). ' +
-				'A LEAF is one field condition: {"op": "in" | "gt" | ..., "content": {"fieldName": "<field>", "value": <scalar or array>}} (content is an OBJECT). ' +
-				'Key rule: in a leaf, "fieldName" and "value" go TOGETHER inside "content", "op" stays outside, and the key is "fieldName", never "field". ' +
-				'CORRECT (donors that are Female): {"op":"and","content":[{"op":"in","content":{"fieldName":"donors.gender","value":["Female"]}}]}. ' +
-				'WRONG (rejected): {"op":"and","content":[{"fieldName":"donors.gender","op":"in","content":{"value":["Female"]}}]} (fieldName must be inside content, not beside op). ' +
-				'WRONG (rejected): {"op":"and","content":[{"field":"donors.gender","op":"in","value":["Female"]}]} ("field" should be "fieldName", and the condition is not nested). ' +
-				'Always use a group as the root, even for a single condition. For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null. ' +
-				'Call get-sqon-schema for the cheat sheet and get-catalogue-fields for valid field names and per-type operators.',
+			'SQON filter for the query (required). ' +
+				'Call get-sqon-schema before using execute-query for SQON grammar, operators, and worked examples. ' +
+				'For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null.',
 		),
 	queryType: zod
 		.enum(['hits', 'aggregations', 'both'])
@@ -236,8 +230,12 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 			title: 'Execute Arranger Query',
 			description:
 				'Execute a SQON-filtered query against one Arranger catalogue and return matching documents (hits), per-field aggregation summaries, or both. ' +
-				'Translate the user request into a SQON filter tree for the "sqon" argument; if unsure of the structure, call get-sqon-schema for the SQON cheat sheet. ' +
-				'Before calling this tool: use list-catalogues to find the catalogue, then get-catalogue-fields to discover valid field names and per-type SQON operators; never guess field names. ' +
+				'Before calling this tool you MUST: ' +
+				'1. use list-catalogues to find the catalogue. ' +
+				'2. call get-catalogue-fields to discover valid field names and per-type SQON operators. ' +
+				'3. call get-sqon-schema to learn how to construct valid SQON and see worked examples. ' +
+				'DO NOT guess field names, you MUST call get-catalogue-fields. ' +
+				'DO NOT construct "sqon" without callling get-sqon-schema. ' +
 				'The user is asked to review and confirm the generated GraphQL query before it runs (when the client supports elicitation).',
 			inputSchema,
 			outputSchema,
