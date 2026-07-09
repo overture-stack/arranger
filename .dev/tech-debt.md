@@ -47,12 +47,12 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 
 ### `NUMERIC_AGGREGATION_TYPES` in queryBuilder duplicates `esToAggTypesMap` from `modules/types`
 
-**File:** `apps/mcp-server/src/arranger/queryBuilder.ts` — `NUMERIC_AGGREGATION_TYPES`
+**File:** `apps/mcp-server/src/arranger/queryBuilder.ts` (`NUMERIC_AGGREGATION_TYPES`)
 **Severity:** low (duplication / drift risk)
 **Kind:** duplication
 **Issue:** The execute-query builder must know whether a field's generated GraphQL aggregation type is `NumericAggregations` (selected via `stats`) or `Aggregations` (selected via `buckets`). That classification lives in `esToAggTypesMap` in `modules/types/src/elastic/constants.ts`, but the MCP server does not depend on `modules/types`, so the builder carries a local `NUMERIC_AGGREGATION_TYPES` set mirroring it (plus the `number` display type used by catalogue configs). If `esToAggTypesMap` gains or corrects entries, the copy silently diverges and the builder would emit the wrong selection shape for affected field types.
 **Fix:** Either add `@overture-stack/arranger-types` as an mcp-server dependency and derive the set from `esToAggTypesMap`, or (preferred) expose each field's aggregation kind in the catalogue introspection response so MCP consumers need no local mapping at all. The latter aligns with the introspection-as-contract direction of the MCP integration readiness roadmap items.
-**Standalone:** yes — either fix is additive; no behaviour change for current field types
+**Standalone:** yes; either fix is additive; no behaviour change for current field types
 
 ### Introspection types should be Zod-first and moved to `modules/types`
 
@@ -198,7 +198,7 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Severity:** medium (feature exists; operators and integrators have no documentation for it)
 **Kind:** missing documentation
 **Issue:** The network/federated search feature (cross-catalogue and cross-instance querying) has no published docs. "Network search" and "federated search" are synonyms for this feature; use "federated search" in consumer-facing docs.
-**Fix:** Once the feature stabilises, add a `docs/usage/` page covering configuration, query patterns, and limitations. Implementation detail belongs in `.dev/docs/`.
+**Fix:** Once the feature stabilizes, add a `docs/usage/` page covering configuration, query patterns, and limitations. Implementation detail belongs in `.dev/docs/`.
 **Standalone:** no; blocked on feature stabilisation
 
 ### Feature flags are undocumented (security features and optional functionalities)
@@ -206,7 +206,7 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **File:** `apps/search-server/` (env vars and config flags)
 **Severity:** medium (operators cannot discover what they can enable or disable; security flags carry real risk if unknown)
 **Kind:** missing documentation
-**Issue:** Feature flags - including query validation limits and other optional behaviours - are not documented in `/docs`. These fall into two categories that warrant separate treatment: (1) security-relevant flags (query depth/complexity limits, rate controls) that operators should be aware of for production hardening; (2) optional functionality flags that change search behaviour but have no security dimension.
+**Issue:** Feature flags, including query validation limits and other optional behaviours, are not documented in `/docs`. These fall into two categories that warrant separate treatment: (1) security-relevant flags (query depth/complexity limits, rate controls) that operators should be aware of for production hardening; (2) optional functionality flags that change search behaviour but have no security dimension.
 **Fix:** Add a dedicated section or page to `/docs` listing all env-var-controlled feature flags, grouped by category: security hardening vs optional functionality. Each entry should state: the env var, the default, what enabling/disabling it does, and any production recommendation.
 **Standalone:** yes; docs-only addition
 
@@ -261,34 +261,25 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 
 ### Published SQON JSON Schema contains dangling `$ref` pointers after `anyOf` → `oneOf` normalization
 
-**File:** `modules/sqon/src/jsonSchema/runtime.ts` — `normalizeUnionKeywords`
+**File:** `modules/sqon/src/jsonSchema/runtime.ts` (`normalizeUnionKeywords`)
 **Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get-sqon-schema`)
 **Kind:** bug
-**Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf` — but does not rewrite the `$ref` _path strings_, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
-**Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway — see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
-**Standalone:** yes — self-contained fix in `runtime.ts` plus a resolution test
+**Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf`, but does not rewrite the `$ref` _path strings_, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
+**Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway; see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
+**Standalone:** yes; self-contained fix in `runtime.ts` plus a resolution test
 
 ---
 
 ## graphql-router
-
-### `initializeSets` startup race breaks one catalogue's GraphQL endpoint in multicatalog mode
-
-**File:** `modules/graphql-router/src/graphqlRoutes.ts` — `arrangerRoutes`; `modules/graphql-router/src/config/utils/index.ts` — `initializeSets`
-**Severity:** high (nondeterministic startup failure — a catalogue's GraphQL endpoint permanently returns 500 on a fresh cluster)
-**Kind:** bug / race condition
-**Issue:** In multicatalog mode, every catalogue's `arrangerRoutes` runs `initializeSets` concurrently at startup, and they all share one sets index. `initializeSets` does a check-then-create (`indices.exists` → `indices.create`): when the index does not exist yet, multiple routers pass the existence check, one create wins, and the others throw `resource_already_exists_exception`. That throw is caught by `arrangerRoutes`' catch-all, which replaces the **entire catalogue router** with a permanent 500 handler — so a healthy catalogue's GraphQL endpoint is dead until restart, nondeterministically. Two aggravating factors: (1) `initializeSets` runs even when `disableSets: true`; (2) a sets-index failure poisons the whole router, not just the Sets feature. Discovered while writing `execute-query` integration tests (`integration-tests/mcp-server` works around it by pre-creating the sets index before Arranger boots).
-**Fix:** Treat `resource_already_exists_exception` as success in `initializeSets` (the race loser's goal state is already achieved). Additionally: skip `initializeSets` when sets are disabled, and consider scoping the `arrangerRoutes` catch so a Sets initialization failure does not take down the catalogue's whole GraphQL endpoint. Remove the pre-create workaround from `integration-tests/mcp-server/test/index.test.ts` once fixed.
-**Standalone:** yes — self-contained fix in `initializeSets`; the catch-scoping improvement is optional follow-up
 
 ### `buildAggregations` crashes when the SQON root is a leaf filter clause
 
 **File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:88`
 **Severity:** medium (valid SQON rejected with an opaque error; hits and aggregations paths behave inconsistently)
 **Kind:** bug
-**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute-query` tool, which forwards SQONs verbatim — an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
+**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute-query` tool, which forwards SQONs verbatim: an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
 **Fix:** Normalize a root-level leaf by wrapping it in `{ op: 'and', content: [leaf] }` before (or inside) `buildAggregations`, matching the hits path's tolerance. The MCP query builder could defensively wrap root leaves too, but the canonical fix belongs in Arranger.
-**Standalone:** yes — small fix in `buildAggregations` plus a unit test for a root-leaf SQON
+**Standalone:** yes; small fix in `buildAggregations` plus a unit test for a root-leaf SQON
 
 ### `GraphQLEndpointOptions` escape hatch
 
@@ -398,7 +389,7 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **File:** `modules/graphql-router/src/searchClient/fetchMapping.ts` (`getESAliases`)
 **Severity:** low (missing test coverage)
 **Kind:** missing test coverage
-**Issue:** `getESAliases` has two distinct code paths - alias found (returns the backing index name) and no match (returns `esIndex` as-is) - neither of which has a unit test. Mock the `cat.aliases` response to cover both branches.
+**Issue:** `getESAliases` has two distinct code paths: alias found (returns the backing index name) and no match (returns `esIndex` as-is); neither has a unit test. Mock the `cat.aliases` response to cover both branches.
 **Standalone:** yes; unit test only, no application changes
 
 ### No unit tests for `getAllData` pagination
@@ -414,7 +405,7 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
 **Severity:** low (missing test coverage)
 **Kind:** missing test coverage
-**Issue:** `resolveSetsInSqon` has two paths - SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
+**Issue:** `resolveSetsInSqon` has two paths: SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
 **Standalone:** yes; but note the file also carries the `hackyTemporaryEsSetResolution` tech-debt entry; evaluate for removal during Sets full-feature implementation rather than investing deeply in tests for code that may be replaced
 
 ### No unit tests for `convertToSqon` or other `network/utils/` functions
@@ -695,7 +686,7 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 **Files:** `apps/search-server/src/configs/index.ts`, `apps/search-server/src/configs/catalogId.ts`, `apps/search-server/src/configs/fromFiles/` (4 files), `apps/search-server/src/configs/fromEnv/` (3 files)
 **Severity:** high
 **Kind:** missing test coverage
-**Issue:** The catalog loading logic - recursing subdirectories, aggregating config files, generating unique IDs - has no tests. This is startup-critical: bugs cause startup failures or silent misconfiguration in multicatalog deployments. `catalogId.ts` tracks ID uniqueness across loads but is also untested. `fromFiles/` and `fromEnv/` parsing has no coverage either.
+**Issue:** The catalog loading logic (recursing subdirectories, aggregating config files, generating unique IDs) has no tests. This is startup-critical: bugs cause startup failures or silent misconfiguration in multicatalog deployments. `catalogId.ts` tracks ID uniqueness across loads but is also untested. `fromFiles/` and `fromEnv/` parsing has no coverage either.
 **Fix:** Unit tests using a temporary directory fixture for flat (single-catalog) and nested (multicatalog) layouts; error handling on malformed config files; unique ID generation and collision detection in `catalogId.ts`; env var aggregation in `fromEnv/`.
 **Standalone:** yes; no running server required; mock the filesystem with a temp directory
 

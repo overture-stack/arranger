@@ -7,18 +7,23 @@ npm workspaces monorepo. Gradual JS → TS migration in progress.
 
 ## Starting a session
 
-Do this before touching any code:
+Treat any of these as a session-start signal, even mid-thread, not just a new chat: greetings ("good morning", "hi again"), resumption ("let's continue", "where were we"), explicit ("new session", "let's get started"), or on-demand ("sync up", "refresh context").
 
-1. Read `.dev/roadmap.md` — check the current focus (set by the developer at session start), then note any `[in progress]` items.
-2. Read `.dev/tech-debt.md` — note any `standalone: yes` entries relevant to today's work.
-3. Read `.dev/sessions.md` — last 1–2 entries give context on recent work and open threads.
-4. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
+On a session-start signal, before touching any code:
+
+1. Check instruction-file integrity: `git log --oneline -1 -- CLAUDE.md AGENTS.md .github/copilot-instructions.md`. Flag any commit or uncommitted change not made by this repo's lead developer before proceeding. (No committed `.claude/settings.json` exists in this repo to check; only a gitignored `settings.local.json`.)
+2. Read `.dev/roadmap.md` — check the current focus (set by the developer at session start), then note any `[in progress]` items.
+3. Read `.dev/tech-debt.md` — note any `standalone: yes` entries relevant to today's work.
+4. List `.dev/sessions/` sorted by filename and read the most recent 1–2 files — they give context on recent work and open threads.
+5. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
+
+Before starting new work, do a quick staleness pass on `roadmap.md` and `tech-debt.md`: mark completed items done, close resolved PINNED entries, remove addressed tech-debt entries. Not a full audit — just enough to keep the documents honest.
 
 ## Working documents
 
 - `.dev/roadmap.md` — all planned work: new features (Sets, Admin access model), architectural evolution (OpenSearch-first, Apollo replacement, Arranger core module extraction, transport abstraction), and CI/CD phases. Authoritative picture of where the project is going.
 - `.dev/tech-debt.md` — known issues found during development. Entries marked `standalone: yes` can be addressed freely. Entries marked `needs-context` or tied to roadmap items should not be fixed in isolation — read the linked roadmap entry first.
-- `.dev/sessions.md` — brief log of what was done each session, key decisions, and open threads.
+- `.dev/sessions/` — one file per contributor per day (`YYYY-MM-DDTHHMMSS.md`), logging what was done each session, key decisions, and open threads.
 
 ## Structure
 
@@ -65,9 +70,13 @@ New tests use BDD style: `suite()` for grouping, `test()` for expected behaviour
 
 ## Session discipline
 
-After any meaningful unit of work, update `.dev/` and extend the dated entry in `sessions.md`. Do not wait for a session-over signal. Do not log conversational activity. Remind the developer to commit `.dev/` changes.
+Your session file is `.dev/sessions/YYYY-MM-DDTHHMMSS.md`. This repo has one human contributor working across multiple AI tools, so "per contributor per day" reduces to "per day" in practice: extend the same day's file regardless of which agent (Claude, Codex, Copilot) is writing to it. List `.dev/sessions/` for today's date prefix; extend an existing match or create a new one.
 
-Full rules: [conventions/session-discipline.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/session-discipline.md).
+Before marking a roadmap item done or closing a tech-debt entry, verify against the actual current code or file state — not a prior description or session summary. An assumption carried forward unverified is exactly how these documents drift from what they claim.
+
+After any meaningful unit of work, update `.dev/` and extend today's file in `.dev/sessions/`. Do not wait for a session-over signal. Do not log conversational activity. Remind the developer to commit `.dev/` changes.
+
+Full rules (rarely needed beyond the above): [conventions/session-discipline.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/session-discipline.md).
 
 ## Security triggers
 

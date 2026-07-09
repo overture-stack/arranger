@@ -100,7 +100,7 @@ The `.dev/` directory is the shared context layer for this project. It is the ca
 
 - [`.dev/roadmap.md`](.dev/roadmap.md) — planned features, architectural evolution, CI/CD phases. Items are open unless marked `[done]` or `[in progress]`.
 - [`.dev/tech-debt.md`](.dev/tech-debt.md) — known issues and design weaknesses found during development. Entries marked `standalone: yes` can be picked up freely; others depend on roadmap work.
-- [`.dev/sessions.md`](.dev/sessions.md) — brief log of what was done each session, key decisions made, and open threads. Newest first.
+- [`.dev/sessions/`](.dev/sessions/) — one file per contributor per day (`YYYY-MM-DDTHHMMSS.md`), logging what was done each session, key decisions made, and open threads.
 
 **Session discipline:** at the end of any meaningful work session, update these documents to reflect what changed. This keeps the documents useful for the next person (or agent) who picks up the work.
 If working with an AI agent, this process will be done automatically by stating "we're done here" or similar (note: WIP).
@@ -151,6 +151,6 @@ This project has first-class support for AI coding assistants. Agent instruction
 
 All three cover the same ground with minor variations for tool-specific features. If you update project conventions, update all three.
 
-**Start of session:** read `roadmap.md`, `tech-debt.md`, and `sessions.md` before starting work. The agent instruction files embed a checklist for this.
+**Start of session:** read `roadmap.md`, `tech-debt.md`, and the most recent file(s) in `.dev/sessions/` before starting work. The agent instruction files embed a checklist for this.
 
-**End of session:** update the `.dev/` documents and add a dated entry to `sessions.md`. This is the handoff to the next session — whether that is you, a colleague, or an AI agent.
+**End of session:** update the `.dev/` documents and extend today's file in `.dev/sessions/`. This is the handoff to the next session — whether that is you, a colleague, or an AI agent.
