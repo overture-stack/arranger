@@ -16,7 +16,7 @@ const MERGE_VALUES_UNDER_ALL_OPS = new Set(['in']);
 /**
  * Ops where value-array merging is correct under `and`/`not` but must not happen under `or`.
  *
- * `not-in` / `some-not-in`: under `and`, merging tightens the exclusion correctly —
+ * `not-in` / `some-not-in`: under `and`, merging tightens the exclusion correctly:
  * AND(not-in:['A'], not-in:['B']) ≡ not-in:['A','B'] (exclude both). Under `or`, the two
  * clauses have independent exclusion semantics: merging would produce a stricter combined
  * exclusion than OR implies, so the clauses must stay as separate nodes.
@@ -29,13 +29,13 @@ const MERGE_VALUES_UNDER_AND_OPS = new Set(['not-in', 'some-not-in', 'all']);
 
 /**
  * Ops where two filters on the same field under `and`/`not` keep the greater bound
- * (and under `or` keep the lesser bound — the weaker constraint wins).
+ * (and under `or` keep the lesser bound: the weaker constraint wins).
  */
 const KEEP_MAX_UNDER_AND_OPS = new Set(['gt', 'gte']);
 
 /**
  * Ops where two filters on the same field under `and`/`not` keep the lesser bound
- * (and under `or` keep the greater bound — the weaker constraint wins).
+ * (and under `or` keep the greater bound: the weaker constraint wins).
  */
 const KEEP_MIN_UNDER_AND_OPS = new Set(['lt', 'lte']);
 
@@ -88,10 +88,10 @@ const mergeIntoExisting = (existing: SqonFieldFilter, incoming: SqonFieldFilter,
  *   avoid producing a stricter result than the OR relationship implies.
  *
  * - `gt`, `gte`: keep greater value under `and`/`not`; keep lesser value under `or`
- *   (the weaker constraint wins under `or` — a lower floor admits more results).
+ *   (the weaker constraint wins under `or`: a lower floor admits more results).
  *
  * - `lt`, `lte`: keep lesser value under `and`/`not`; keep greater value under `or`
- *   (same reasoning — a higher ceiling admits more results under `or`).
+ *   (same reasoning: a higher ceiling admits more results under `or`).
  *
  * - `between`: kept as-is (non-reducible; semantics to be defined separately).
  *

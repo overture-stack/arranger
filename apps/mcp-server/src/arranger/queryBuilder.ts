@@ -210,7 +210,7 @@ const buildAggregationSelection = ({
  * The generated document queries the catalogue's document type root field with a `hits`
  * selection (documents matching the SQON filter), an `aggregations` selection (bucket or
  * stats summaries per field), or both. All runtime values (the SQON filter, pagination,
- * sort, and aggregation options) are passed as GraphQL variables — never interpolated
+ * sort, and aggregation options) are passed as GraphQL variables: never interpolated
  * into the query document.
  *
  * Inputs are expected to be pre-validated against catalogue introspection (see

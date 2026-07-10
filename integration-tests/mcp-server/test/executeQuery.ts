@@ -155,7 +155,7 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		});
 		const structured = getStructured(result);
 
-		// Ages ascending are 8, 34, 45, 51, 62 — offset 1, first 2 selects 34 and 45.
+		// Ages ascending are 8, 34, 45, 51, 62: offset 1, first 2 selects 34 and 45.
 		assert.equal(structured.total, 5);
 		assert.deepEqual(
 			(structured.hits ?? []).map((hit) => hit.analysis_id),

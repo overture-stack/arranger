@@ -237,6 +237,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Add a tip callout at the bottom of `02-query-processing.md` pointing to `03-building-sqon-queries.md`.
 **Standalone:** yes; one-line docs addition
 
+### Root-level `code_of_conduct.md` added by PR #1083 duplicates the centralized Overture Code of Conduct
+
+**File:** `code_of_conduct.md` (repo root, added in PR #1083)
+**Severity:** low (no functional impact; a maintenance and consistency concern)
+**Kind:** duplicated / misplaced documentation
+**Issue:** `CONTRIBUTING.md:7` already points contributors at a centrally-maintained Code of Conduct at `https://docs.overture.bio/community/code-of-conduct`. PR #1083 (Charts documentation) added a second, local copy of the Contributor Covenant text as `code_of_conduct.md`, unrelated to the Charts docs work the PR was otherwise scoped to. It is not linked from `CONTRIBUTING.md` or anywhere else in this repo. Filename is also lowercase, so GitHub's community-profile detection would not recognize it as the health file even if it were meant to stand alone.
+**Fix:** Remove the local file from this repo; the Code of Conduct should stay centralized. This is not an Arranger-specific decision: see the `overture/docs` roadmap for how consolidation across Overture repos should be handled.
+**Standalone:** yes; deletion only, no dependency on other Charts docs work in the PR
+
 ---
 
 ## modules/sqon

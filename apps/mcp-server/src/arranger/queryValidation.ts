@@ -106,7 +106,7 @@ export const validateSqon = (rawSqon: unknown, context: CatalogueQueryContext): 
 
 /**
  * Validates dot-notation field names requested for the hits selection. Fields must exist in
- * the catalogue and must be leaf fields — container fields (`object`, `nested`) cannot be
+ * the catalogue and must be leaf fields: container fields (`object`, `nested`) cannot be
  * selected directly; their child fields must be requested instead.
  * @param fields - Dot-notation field names (e.g. `donor.age_at_diagnosis`).
  * @param context - Catalogue fields from introspection.

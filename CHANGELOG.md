@@ -26,7 +26,7 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 
 ### Server
 
-- **Multicatalogue support** - A single Arranger server can now serve multiple catalogues simultaneously. Organise configs in subdirectories under `CONFIGS_PATH` (one subdirectory per catalogue). Existing flat layouts continue to work as single-catalogue deployments — no migration required.
+- **Multicatalogue support** - A single Arranger server can now serve multiple catalogues simultaneously. Organise configs in subdirectories under `CONFIGS_PATH` (one subdirectory per catalogue). Existing flat layouts continue to work as single-catalogue deployments: no migration required.
 - **Introspection API** - New REST endpoints for tooling and LLM integration:
     - `GET /introspection` - Lists all registered catalogues with their document types, GraphQL paths, and introspection paths.
     - `GET /introspection/:catalogueId` - Returns all fields for a catalogue, their ES types, and valid SQON operators grouped by field type.

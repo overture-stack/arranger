@@ -38,7 +38,7 @@ For a production-ready setup with multicatalogue support, config file loading, e
 
 ## API
 
-### `arrangerRouter(options)` — default export
+### `arrangerRouter(options)`: default export
 
 Creates and returns an Express `Router` configured for a single Arranger catalogue. Returns a `Promise<Router>`.
 
@@ -53,9 +53,9 @@ const router = await arrangerRouter(options);
 | Option | Type | Description |
 |---|---|---|
 | `configs` | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration). |
-| `esClient` | `SearchClient` | Optional — bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`. |
-| `getServerSideFilter` | `GetServerSideFilterFn` | Optional — callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
-| `configsSource` | `string` | **Deprecated** — will be removed in v3.2. Pass `configs` directly instead. |
+| `esClient` | `SearchClient` | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`. |
+| `getServerSideFilter` | `GetServerSideFilterFn` | Optional: callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
+| `configsSource` | `string` | **Deprecated**: will be removed in v3.2. Pass `configs` directly instead. |
 
 ---
 
@@ -165,7 +165,7 @@ All nodes must serve overlapping index field names. Fields with the same name an
 
 ## Server-side filters
 
-`getServerSideFilter` injects a SQON filter on every query — typically used for access control. The callback receives the request context and returns a `SqonNode` (or `null` for no filter):
+`getServerSideFilter` injects a SQON filter on every query: typically used for access control. The callback receives the request context and returns a `SqonNode` (or `null` for no filter):
 
 ```ts
 import arrangerRouter from '@overture-stack/arranger-graphql-router';
@@ -188,7 +188,7 @@ const router = await arrangerRouter({ configs, getServerSideFilter });
 
 The returned filter is merged with any SQON the client provides before the query reaches ES/OS. The client cannot remove or bypass it.
 
-In multicatalogue mode the filter is global — it applies to all catalogues mounted under this router instance.
+In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
 
 ---
 
@@ -215,7 +215,7 @@ Transforms a raw ES/OS index mapping into Arranger's field descriptor format. Us
 
 ### `mergeConfigs(fallback, custom)`
 
-Deep-merges two `ConfigsObject` values, with `custom` taking precedence. Preserves nested objects rather than replacing them — the same merge used internally by `arrangerRouter` when combining defaults with caller-supplied config.
+Deep-merges two `ConfigsObject` values, with `custom` taking precedence. Preserves nested objects rather than replacing them: the same merge used internally by `arrangerRouter` when combining defaults with caller-supplied config.
 
 ### `SearchClient`, `SupportedClientTypes`
 

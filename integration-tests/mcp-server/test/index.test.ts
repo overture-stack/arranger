@@ -84,18 +84,18 @@ const cleanupIndices = async () => {
 	await Promise.all(deletePromises);
 };
 
-// Test runtime context — populated by the `before` hook below, consumed by tests via `getClient()`/`getServerUrl()`.
+// Test runtime context: populated by the `before` hook below, consumed by tests via `getClient()`/`getServerUrl()`.
 // Defined here to avoid issues with test isolation and variable scope across the `before` hook and individual tests.
 const context: { mcpClient?: Client; mcpServerUrl?: string } = {};
 const getClient = () => {
 	if (!context.mcpClient) {
-		throw new Error('MCP client has not been initialized — `before` hook did not run successfully');
+		throw new Error('MCP client has not been initialized: `before` hook did not run successfully');
 	}
 	return context.mcpClient;
 };
 const getServerUrl = () => {
 	if (!context.mcpServerUrl) {
-		throw new Error('MCP server URL has not been set — `before` hook did not run successfully');
+		throw new Error('MCP server URL has not been set: `before` hook did not run successfully');
 	}
 	return context.mcpServerUrl;
 };
@@ -114,7 +114,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 		try {
 			await cleanupIndices();
 		} catch {
-			// ignore — cleanup is best-effort
+			// ignore: cleanup is best-effort
 		}
 
 		try {

@@ -4,7 +4,7 @@ import { suite, test } from 'node:test';
 import { addFilterClause } from '#builder/filter.js';
 
 suite('addFilterClause', () => {
-	suite('scalar filters — standalone (no existing SQON)', () => {
+	suite('scalar filters: standalone (no existing SQON)', () => {
 		test('produces an in filter leaf for a single value', () => {
 			const result = addFilterClause({ fieldName: 'status', operator: 'in', value: 'active' });
 
@@ -39,7 +39,7 @@ suite('addFilterClause', () => {
 		});
 	});
 
-	suite('text filters — standalone (no existing SQON)', () => {
+	suite('text filters: standalone (no existing SQON)', () => {
 		test('produces a wildcard filter leaf with an array of field names', () => {
 			const result = addFilterClause({
 				fieldNames: ['gene_name', 'synonym'],
