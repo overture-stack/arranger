@@ -90,7 +90,6 @@ Renders a horizontal bar chart for aggregation data.
 	handlers={{
 		onClick: (data) => {
 			console.log('Clicked', data.label, data.value);
-			// !TODO SHOW HOW TO UPDATE FILTERS
 		},
 	}}
 	maxBars={15}
@@ -102,7 +101,40 @@ Renders a horizontal bar chart for aggregation data.
 
 #### Example - Filter on Click
 
-This example shows how to filter data in the `ArrangerDataProvider` based on the bar that the user clicked on.
+This example shows how to filter data in the `ArrangerDataProvider` based on the bar that the user clicked on. You can use the hook `useArrangerData` to update the SQON when the user clicks on a chart.
+
+```jsx
+import { BarChart, ChartsProvider, ChartsThemeProvider } from '@overture-stack/arranger-charts';
+import { useArrangerData } from '@overture-stack/arranger-components';
+import { useMemo } from 'react';
+
+const fieldName = 'myFieldName';
+
+const App = () => {
+	const { sqon, setSQON } = useArrangerData({ callerName: 'My Field Name' });
+
+	const chartFilters = useMemo(
+		() => ({
+			[fieldName]: chartFilter(fieldName, sqon, setSQON),
+		}),
+		[sqon, setSQON],
+	);
+
+	return (
+		<ChartsProvider>
+			<ChartsThemeProvider>
+				<BarChart
+					fieldName={fieldName}
+					maxBars={maxBars}
+					handlers={{
+						onClick: (config) => chartFilters[fieldName](config.data.key),
+					}}
+				/>
+			</ChartsThemeProvider>
+		</ChartsProvider>
+	);
+};
+```
 
 ### SunburstChart
 
@@ -110,12 +142,14 @@ Creates a sunburst chart showing relationships between broad and specific catego
 
 #### Props
 
-- `fieldName` (string, required): GraphQL field name to visualize
-- `maxSegments` (number, required): Maximum number of segments to display
-- `mapper` (function, required): Maps outer ring values to inner ring categories
-- `handlers`: Event handlers
-    - `onClick`: Callback when clicking a segment
-- `theme`: Chart configuration options
+| Name               | Type       | Required | Description                                     |
+| ------------------ | ---------- | -------- | ----------------------------------------------- |
+| `fieldName`        | `string`   | Yes      | GraphQL field name to visualize                 |
+| `maxSegments`      | `number`   | Yes      | Custom fallback components                      |
+| `mapper`           | `function` | Yes      | Maps outer ring values to inner ring categories |
+| `handlers`         | `object`   | No       | Event handlers                                  |
+| `handlers.onClick` | `function` | No       | Callback when clicking a segment                |
+| `theme`            | `object`   | No       | Chart configuration options                     |
 
 ```jsx
 <SunburstChart
