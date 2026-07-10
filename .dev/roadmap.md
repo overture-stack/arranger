@@ -102,6 +102,11 @@ Key design questions (not yet answered):
 - **Server-side filters redesign:** If ABAC lands, server-side filters may need to evolve from a raw SQON callback into something that understands user identity and translates claims into query constraints.
 - **Multi-catalog filter composition:** In multi-catalog mode, there should be support for a global server-side filter that composes with catalog-local filters, with deterministic precedence and merge behaviour so access-control rules are consistent across single- and multi-catalog deployments. Needed for Controlled Access implementations in multicatalog setups.
 
+Two requirements are not open design questions; they are safety defaults to build in from day one regardless of how the rest of the design resolves:
+
+- **Fail-closed on auth enforcement failure.** If Keycloak is unreachable, token validation errors, or claims are missing, the only safe behaviour is to reject the request. Fail-open (treating an enforcement failure as an implicit allow) is an access-control failure (OWASP A01:2025), not graceful degradation; this must be a deliberate, tested code path, not an accidental default.
+- **Every access denial produces a structured log entry** with `{ userId, resource, reason }` from the first implementation, not as optional plumbing added later. This is what makes denial events observable and auditable once ABAC ships; see [Structured request logging as a prerequisite for ABAC](#structured-request-logging-as-a-prerequisite-for-abac).
+
 This design intersects with Sets (ABAC for saved queries), the Admin/user access model, and the Arranger core module extraction (the core/transport boundary affects where auth checks are applied).
 
 _Needs design at the Overture platform level before Arranger-specific work can be scoped. Do not extend server-side filters in the interim without awareness of this direction._
@@ -203,6 +208,8 @@ Scope:
 - **Catalog config** (the per-catalog JSON loaded by Arranger): validate against the expected schema before the catalog is registered. Where a value is missing but has a safe default, warn rather than error.
 - **Validation library:** Zod is the leading candidate; it produces typed output and legible error messages. The config separation roadmap entry already assumes Zod; this item just brings validation forward to the current config shape.
 - **Tests:** validation logic should be tested directly, both the happy path and representative error cases (missing required field, wrong type, unknown key).
+
+**Security framing:** silently falling back to a partial or default config when validation fails is an OWASP A08:2025 (Software or Data Integrity Failures) risk, not just a UX rough edge. The correct behaviour on invalid config is to refuse to start with the validation error, never to silently apply a partial or best-effort config and continue running in an unintended state.
 
 _This work is independent of the config separation effort and is not blocked on it; it validates configs in their current shape. When config separation lands, the validation schemas will need updating to reflect the new layer boundaries, but that is an incremental change, not a rewrite._
 
@@ -362,6 +369,16 @@ _Sequencing note: this is easiest to wire in cleanly once [Arranger core module 
 Distinct from operational metrics above: this is about capturing which fields, operators, and facets are actually exercised in aggregate (counts only, no user identity or query content retained) to drive product decisions: which fields deserve `displayValues` next (see [`displayValues` for all aggregation types](#displayvalues-for-all-aggregation-types)), which facets should default higher in a catalogue's UI, and which configured fields are effectively dead weight. This is explicitly not the same concern as [Facet field groups: user-defined sort order](#facet-field-groups-user-defined-sort-order), which is a per-user manual preference; this is usage-informed defaults for everyone using a given catalogue.
 
 _Design question: does this live in Arranger itself (aggregated counters exposed via an admin-gated endpoint), or is it purely a log-mining exercise against the structured query logs that the metrics/tracing thread above would produce? The latter avoids adding stateful counters to Arranger and may be sufficient; building counters in-app is only clearly worth it if live facet reordering based on real-time usage is ever wanted._
+
+### Structured request logging as a prerequisite for ABAC
+
+_Priority: medium. Sequence before the auth/ABAC work above, not after._
+
+The [Observability](#observability-metrics-tracing-and-usage-analytics-research) item above covers metrics and tracing; neither addresses a narrower, more immediate gap: **there is currently no structured per-request log at all** for a query request. Confirmed absent: nothing in the query resolvers (`resolveHits.js`, `resolveAggregations.ts`) or `apps/search-server` emits a structured event per request today. No log line anywhere in the request path includes user identity, request ID, catalogue name, SQON size, or hit count, which is the minimum context needed for anomaly detection and post-incident reconstruction.
+
+Scope: one structured log event per query request with fields `{ catalogId, queryType, sqonSize, hitsReturned, durationMs }`, extendable to include `userId` once auth lands (the field can be established as absent/`null` now and populated later without a schema change). Unlike the full Observability item, this does not need OpenTelemetry or a `/metrics` endpoint: structured JSON to stdout is sufficient.
+
+This is a genuine prerequisite, not just adjacent work: access denial events (see [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control)) need somewhere to land once ABAC ships, and that logging shape should exist before enforcement does, not be retrofitted after.
 
 ---
 
