@@ -1,186 +1,114 @@
 # Arranger Charts
 
-A React chart library for visualizing Arranger aggregation.
+!TODO Rename to README.md
 
-## Installation
+A React chart library for visualizing Arranger aggregation. Uses the [Nivo](https://github.com/plouc/nivo) library, built on D3, to render charts.
+
+</br>
+
+> <div>
+> <img align="left" src="ov_logo.png" height="50"/>
+> </div>
+>
+> _Arranger Charts is part of [Overture](https://www.overture.bio/), a collection of open-source software microservices used to create platforms for researchers to organize and share genomics data._
+
+## Repository Structure
+
+The repository is organized with the following directory structure:
+
+```
+charts/
+├── .storybook/
+└── src/
+    ├── arranger/
+    ├── components/
+    │   ├── charts/
+    │   │   ├── Bar/
+    │   │   │   └── nivo/
+    │   │   └── Sunburst/
+    │   └── Provider/
+    ├── gql/
+    ├── hooks/
+    ├── logger/
+    ├── query/
+    ├── utils/
+    └── main.tsx
+```
+
+Brief description of each folder:
+
+- **.storybook/** - Storybook hasn't been fully implemented at this time.
+- **arranger/** - Types for working with Arranger GQL responses.
+- **components/charts/** - React components for Bar and Sunburst charts.
+- **components/Provider/** - `ChartsProvider` combines all of its child chart requests into one API request, then maps the result into chart data.
+- **gql/** - Functions for creating GraphQL queries.
+- **hooks/** - React hooks for querying GraphQL & creating the color scheme for all charts on the page.
+- **logger/** - Simple logger.
+- **query/** - Generates one query for all charts, for the `ChartsProvider`.
+- **utils/** - Utility scripts for handling API responses.
+- **main.tsx** - Barrel/export file.
+
+## Local development
+
+To use Arranger Charts in your project, you need the following prerequisites:
+
+- Node 22 or above
+- React 18
+- Arranger Components 3 (for the data context provider)
+
+### Installation
 
 ```bash
 npm i @overture-stack/arranger-charts
 ```
 
-## Quick Start
+See Documentation links below for setup instructions.
 
-Wrap a charts in required providers: `ArrangerDataProvider`,`ChartsProvider` and `ChartsThemeProvider`.
-Chart component is responsive to parent containers dimensions.
+## Documentation
 
-```jsx
-import { ChartsProvider, ChartsThemeProvider, BarChart, SunburstChart } from '@overture-stack/arranger-charts';
+Technical resources for those working with or contributing to the project are available from our official documentation site. The following content can also be read and updated within the `/docs` folder of this repository.
 
-function App() {
-	return (
-		<ArrangerDataProvider {...arrangerConfig}>
-			<ChartsProvider>
-				<ChartsThemeProvider>
-					<div height="200px">
-						<BarChart
-							fieldName="gender"
-							maxBars={10}
-							handlers={{ onClick: (data) => console.log(data) }}
-						/>
-					</div>
-				</ChartsThemeProvider>
-			</ChartsProvider>
-		</ArrangerDataProvider>
-	);
-}
-```
+!TODO UPDATE LINKS
 
-## Dependencies
+- **[Component Name Overview](link)**
+- [**Setting up the Development Environment**](link)
+- [**Common Usage Docs**](link)
 
-Arranger Charts requires an `ArrangerDataProvider` from `@overture-stack/arranger-components` as a parent component to handle data fetching and SQON state management.
+## Development Environment
 
-## Components
+- [NPM](https://www.npmjs.com/) Project manager
+- [Node.js](https://nodejs.org/en) Runtime environment (v24 or higher)
+- [VS Code](https://code.visualstudio.com/) As recommended code editor. Plugins recommended:
+    - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+    - [vscode-styled-components-cre-edition](https://marketplace.visualstudio.com/items?itemName=anthonycjw.vscode-styled-components-cre-edition)
+    - [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+    - [Makefile Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.makefile-tools)
+    - [Pretty TypeScript Errors](https://marketplace.visualstudio.com/items?itemName=yoavbls.pretty-ts-errors)
+    - [Todo Tree](https://marketplace.visualstudio.com/items?itemName=gruntfuggly.todo-tree)
+    - [Chat Customizations Evaluations](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-chat-customizations-evaluations)
 
-### ChartsProvider
+## Support & Contributions
 
-The main provider that manages chart registration, data fetching, and coordinates multiple charts.
+- For support, feature requests, and bug reports, please see our [Support Guide](https://docs.overture.bio/community/support).
 
-**Props:**
+- For detailed information on how to contribute to this project, please see our [Contributing Guide](https://docs.overture.bio/docs/contribution).
 
-- `debugMode` (boolean): Enable verbose logging for development
-- `loadingDelay` (number): Delay network results by milliseconds
+## Related Software
 
-### ChartsThemeProvider
+The Overture Platform includes the following Overture Components:
 
-Provides theme configuration and custom components to all child charts. You can nest multiple <ChartsThemeProviders> under a single <ChartsProvider>.
+| Software                                                | Description                                                                               |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [Score](https://github.com/overture-stack/score/)       | Transfer data to and from any cloud-based storage system                                  |
+| [Song](https://github.com/overture-stack/song/)         | Catalog and manage metadata associated to file data spread across cloud storage systems   |
+| [Maestro](https://github.com/overture-stack/maestro/)   | Organizing your distributed data into a centralized Elasticsearch index                   |
+| [Arranger](https://github.com/overture-stack/arranger/) | A search API with reusable search UI components                                           |
+| [Stage](https://github.com/overture-stack/stage)        | A React-based web portal scaffolding                                                      |
+| [Lyric](https://github.com/overture-stack/lyric)        | A model-agnostic, tabular data submission system                                          |
+| [Lectern](https://github.com/overture-stack/lectern)    | Schema Manager, designed to validate, store, and manage collections of data dictionaries. |
 
-**Props:**
+If you'd like to get started using our platform [check out our quickstart guides](https://docs.overture.bio/guides/getting-started)
 
-- `colors` (string[]): Array of hex colors for chart theming
-- `components`: Custom fallback components
-    - `Loader`: Custom loading component
-    - `ErrorData`: Custom error component
-    - `EmptyData`: Custom empty state component
+## Funding Acknowledgement
 
-```jsx
-<ChartsThemeProvider
-	colors={['#ff6b6b', '#4ecdc4', '#45b7d1']}
-	components={{
-		Loader: CustomSpinner,
-		ErrorData: CustomError,
-		EmptyData: NoDataMessage,
-	}}
->
-	{/* Charts */}
-</ChartsThemeProvider>
-```
-
-### BarChart
-
-Renders horizontal bar charts for aggregation data.
-
-**Props:**
-
-- `fieldName` (string, required): GraphQL field name to visualize
-- `maxBars` (number, required): Maximum number of bars to display
-- `ranges` (Range[]): For numeric fields, specify value ranges
-- `handlers`: Event handlers
-    - `onClick`: Callback when clicking a bar segment
-- `theme`: Chart configuration
-    - `sortByKey`: Array of keys to define custom sort order. Important to account for all values
-      e.g., `['Male', 'Female', '__missing__']`
-
-```jsx
-<BarChart
-	fieldName="primary_site"
-	maxBars={15}
-	theme={{
-		sortByKey: ['Brain', 'Lung', 'Breast', '__missing__'],
-	}}
-	handlers={{
-		onClick: (data) => {
-			console.log('Clicked', data.label, data.value);
-		},
-	}}
-/>
-```
-
-### SunburstChart
-
-Creates sunburst chart showing relationships between broad and specific categories.
-
-**Props:**
-
-- `fieldName` (string, required): GraphQL field name to visualize
-- `maxSegments` (number, required): Maximum number of segments to display
-- `mapper` (function, required): Maps outer ring values to inner ring categories
-- `handlers`: Event handlers
-    - `onClick`: Callback when clicking a segment
-- `theme`: Chart configuration options
-
-```jsx
-<SunburstChart
-	fieldName="primary_diagnosis"
-	maxSegments={12}
-	mapper={(diagnosisCode) => {
-		// Map specific diagnosis codes to broader categories
-		if (diagnosisCode.startsWith('C78')) return 'Metastatic';
-		if (diagnosisCode.startsWith('C50')) return 'Breast Cancer';
-		return 'Other';
-	}}
-	handlers={{
-		onClick: (data) => {
-			console.log('Selected category:', data);
-		},
-	}}
-/>
-```
-
-## Field Types
-
-Charts automatically detect field types from Arranger's extended mapping:
-
-- **Aggregations**: Categorical fields
-- **NumericAggregations**: Numeric fields that require range specifications
-
-For numeric fields, provide ranges:
-
-```jsx
-<BarChart
-	fieldName="age_at_diagnosis"
-	ranges={[
-		{ key: '0-18', from: 0, to: 18 },
-		{ key: '19-65', from: 19, to: 65 },
-		{ key: '65+', from: 65 },
-	]}
-	maxBars={10}
-/>
-```
-
-## Development
-
-### Local Development
-
-```bash
-# Install dependencies
-npm install
-
-# Build and watch for changes
-npm run dev
-```
-
-To ensure all code is using the same Arranger contexts, also `npm i` to the the consumer projects `@overture-stack/arranger-components` dependency.
-
-```bash
-npm i <shared instance of node_modules @overture-stack/arranger-components in consumer project>
-```
-
-From consumer project:
-
-```bash
-npm i <path to  @overture-stack/arranger-charts>
-```
-
-### Debug Mode
-
-Enable verbose logging by setting the `debugMode` prop on `ChartsProvider`.
+Overture is supported by grant #U24CA253529 from the National Cancer Institute at the US National Institutes of Health, and additional funding from Genome Canada, the Canada Foundation for Innovation, the Canadian Institutes of Health Research, Canarie, and the Ontario Institute for Cancer Research.
