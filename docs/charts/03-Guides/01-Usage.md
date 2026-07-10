@@ -1,0 +1,157 @@
+# Usage
+
+This guide covers how to use Arranger Charts, what components are available, and React props for each component.
+
+## Components
+
+### ChartsProvider
+
+The main provider that manages chart registration and data fetching, and coordinates multiple charts.
+
+#### Props
+
+| Name                    | Type      | Required | Description                            |
+| ----------------------- | --------- | -------- | -------------------------------------- |
+| `debugMode`             | `boolean` | No       | Enable verbose logging for development |
+| `disableIncludeMissing` | `boolean` | No       | Hide properties with "No Data"         |
+| `loadingDelay`          | `number`  | No       | Delay network results by milliseconds  |
+
+#### Example
+
+```jsx
+<ChartsProvider
+	debugMode
+	disableIncludeMissing={false}
+	loadingDelay={250}
+>
+	{/* ChartsThemeProvider */}
+</ChartsProvider>
+```
+
+### ChartsThemeProvider
+
+Provides theme configuration and custom components to all child charts. You can nest multiple `<ChartsThemeProvider>` components under a single `<ChartsProvider>`.
+
+#### Props
+
+| Name                   | Type             | Required | Description                           |
+| ---------------------- | ---------------- | -------- | ------------------------------------- |
+| `colors`               | `string[]`       | No       | Array of hex colors for chart theming |
+| `components`           | `object`         | No       | Custom fallback components            |
+| `components.EmptyData` | `ReactComponent` | No       | Custom empty state component          |
+| `components.ErrorData` | `ReactComponent` | No       | Custom error component                |
+| `components.Loader`    | `ReactComponent` | No       | Custom loading component              |
+
+#### Example
+
+```jsx
+<ChartsThemeProvider
+	colors={['#ff6b6b', '#4ecdc4', '#45b7d1']}
+	components={{
+		EmptyData: NoDataMessage,
+		ErrorData: CustomError,
+		Loader: CustomSpinner,
+	}}
+>
+	{/* Charts */}
+</ChartsThemeProvider>
+```
+
+### BarChart
+
+Renders a horizontal bar chart for aggregation data.
+
+#### Props
+
+- `fieldName` (string, required): GraphQL field name to visualize
+- `handlers`: Event handlers
+    - `onClick`: Callback when clicking a bar segment
+- `maxBars` (number, required): Maximum number of bars to display
+- `ranges` (Range[]): For numeric fields, specify value ranges
+- `theme`: Chart configuration
+    - `sortByKey`: Array of keys to define custom sort order. Important to account for all values
+      e.g., `['Male', 'Female', '__missing__']`
+
+| Name               | Type       | Required | Description                                                                                         |
+| ------------------ | ---------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `fieldName`        | `string`   | Yes      | GraphQL field name to visualize                                                                     |
+| `handlers`         | `object`   | No       | Event handlers                                                                                      |
+| `handlers.onClick` | `function` | No       | Callback when clicking a bar segment                                                                |
+| `maxBars`          | `number`   | Yes      | Maximum number of bars to display                                                                   |
+| `ranges`           | `Range[]`  | No       | For numeric fields, specify value ranges. A `Range` is `{ key: string, from: number, to: number }`. |
+| `theme`            | `object`   | No       | Event handlers                                                                                      |
+| `theme.sortByKey`  | `string[]` | No       | Callback when clicking a bar segment                                                                |
+
+#### Example
+
+```jsx
+<BarChart
+	fieldName="primary_site"
+	handlers={{
+		onClick: (data) => {
+			console.log('Clicked', data.label, data.value);
+			// !TODO SHOW HOW TO UPDATE FILTERS
+		},
+	}}
+	maxBars={15}
+	theme={{
+		sortByKey: ['Brain', 'Lung', 'Breast', '__missing__'],
+	}}
+/>
+```
+
+#### Example - Filter on Click
+
+This example shows how to filter data in the `ArrangerDataProvider` based on the bar that the user clicked on.
+
+### SunburstChart
+
+Creates a sunburst chart showing relationships between broad and specific categories.
+
+#### Props
+
+- `fieldName` (string, required): GraphQL field name to visualize
+- `maxSegments` (number, required): Maximum number of segments to display
+- `mapper` (function, required): Maps outer ring values to inner ring categories
+- `handlers`: Event handlers
+    - `onClick`: Callback when clicking a segment
+- `theme`: Chart configuration options
+
+```jsx
+<SunburstChart
+	fieldName="primary_diagnosis"
+	maxSegments={12}
+	mapper={(diagnosisCode) => {
+		// Map specific diagnosis codes to broader categories
+		if (diagnosisCode.startsWith('C78')) return 'Metastatic';
+		if (diagnosisCode.startsWith('C50')) return 'Breast Cancer';
+		return 'Other';
+	}}
+	handlers={{
+		onClick: (data) => {
+			console.log('Selected category:', data);
+		},
+	}}
+/>
+```
+
+## Field Types
+
+Charts automatically detect field types from Arranger's extended mapping:
+
+- **Aggregations**: Categorical fields
+- **NumericAggregations**: Numeric fields that require range specifications
+
+For numeric fields, provide ranges:
+
+```jsx
+<BarChart
+	fieldName="age_at_diagnosis"
+	ranges={[
+		{ key: '0-18', from: 0, to: 18 },
+		{ key: '19-65', from: 19, to: 65 },
+		{ key: '65+', from: 65 },
+	]}
+	maxBars={10}
+/>
+```
