@@ -1,19 +1,47 @@
 import type { Client as ElasticClient } from '@elastic/elasticsearch';
 import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
+import { type ESClientOptions } from './createElasticSearchClient.js';
+import { type OSClientOptions } from './createOpenSearchClient.js';
+
+// Configuration
+export type SupportedClients = {
+	elasticsearch: ElasticClient;
+	opensearch: OpenSearchClient;
+};
 export type SupportedClientTypes = keyof SupportedClients;
+
+export type StandardAuthConfig = {
+	password: string;
+	username: string;
+	type: 'standard';
+};
+
+type AWS_SERVICE_OPENSEARCH = 'es';
+type AWS_SERVICE_OPENSEARCH_SERVERLESS = 'aoss';
+type AwsService = AWS_SERVICE_OPENSEARCH | AWS_SERVICE_OPENSEARCH_SERVERLESS;
+
+export type AwsAuthConfig = {
+	password: string;
+	username: string;
+	type: 'AWS';
+	region: string;
+	service?: AwsService;
+};
+
 export type SearchConfig = {
+	auth?: Partial<StandardAuthConfig> | Partial<AwsAuthConfig>;
 	node: string;
 	clientType?: string;
-	auth?: {
-		password: string;
-		username: string;
-	};
 };
-export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
-	clientType: SupportedClientTypes;
-};
+export type SearchConfigWithClient = Prettify<
+	SearchConfig & {
+		clientType: SupportedClientTypes;
+	}
+>;
+
+export type SearchClientConfiguration = ESClientOptions | OSClientOptions;
 
 // Parameters
 export type SearchClientIndicesGetMappingParams = { index: string | string[] };
@@ -40,8 +68,14 @@ export type SearchClientIndicesOpenParams = { index: string | string[] };
 export type SearchClientIndicesPutMappingsParams = { index: string; body: Record<string, any> };
 export type SearchClientIndicesPutSettingsParams = { body: Record<string, any> };
 export type SearchClientBulkParams = { body: Record<string, any>[] };
-export type SearchClientCreateParams = { id: string; index: string; body: Record<string, any> };
-export type SearchClientDeleteParams = { index: string; id: string };
+export type ClientParamRefreshValues = boolean | 'wait_for';
+export type SearchClientCreateParams = {
+	id: string;
+	index: string;
+	body: Record<string, any>;
+	refresh?: ClientParamRefreshValues;
+};
+export type SearchClientDeleteParams = { index: string; id: string; refresh?: ClientParamRefreshValues };
 export type SearchClientDeleteByQueryParams = { index: string; body: Record<string, any> };
 export type SearchClientIndexParams = { index: string; body: Record<string, any> };
 export type SearchClientUpdateParams = { id: string; index: string; body: Record<string, any> };
@@ -95,6 +129,8 @@ type SearchClientHitsResponse = SearchClientBaseResponse & {
 		hits: {
 			hits: {
 				_source: any;
+				_id: string;
+				_index: string;
 			}[];
 		};
 	};
@@ -108,8 +144,8 @@ type SearchClientAggregationsResponse = SearchClientBaseResponse & {
 export type SearchClientSearchBody = {
 	_shards: ShardData;
 	aggregations?: Record<string, any>;
-	hits?: {
-		hits: { _id: string; _index: string; _source?: any }[];
+	hits: {
+		hits: { _source?: any }[];
 	};
 	timed_out: boolean;
 	took: number;

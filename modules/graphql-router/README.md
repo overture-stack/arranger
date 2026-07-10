@@ -21,11 +21,11 @@ import arrangerRouter from '@overture-stack/arranger-graphql-router';
 const app = express();
 
 const router = await arrangerRouter({
-  configs: {
-    esHost: 'http://localhost:9200',
-    esIndex: 'file_centric',
-    documentType: 'File',
-  },
+	configs: {
+		esHost: 'http://localhost:9200',
+		esIndex: 'file_centric',
+		documentType: 'File',
+	},
 });
 
 app.use('/graphql', router);
@@ -50,12 +50,12 @@ const router = await arrangerRouter(options);
 
 #### Options
 
-| Option | Type | Description |
-|---|---|---|
-| `configs` | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration). |
-| `esClient` | `SearchClient` | Optional — bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`. |
-| `getServerSideFilter` | `GetServerSideFilterFn` | Optional — callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
-| `configsSource` | `string` | **Deprecated** — will be removed in v3.2. Pass `configs` directly instead. |
+| Option                | Type                     | Description                                                                                                                          |
+| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                        |
+| `esClient`            | `SearchClient`           | Optional — bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
+| `getServerSideFilter` | `GetServerSideFilterFn`  | Optional — callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
+| `configsSource`       | `string`                 | **Deprecated** — will be removed in v3.2. Pass `configs` directly instead.                                                           |
 
 ---
 
@@ -65,42 +65,45 @@ const router = await arrangerRouter(options);
 
 ### Search engine connection
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `esHost` | `string` | `'http://localhost:9200'` | OpenSearch or Elasticsearch node URL. |
-| `esUser` | `string` | `''` | Basic auth username. |
-| `esPass` | `string` | `''` | Basic auth password. |
-| `searchEngine` | `'opensearch' \| 'elasticsearch'` | auto-detect | Client type. Leave unset to detect from the cluster version API on startup. |
+| Property                  | Type                              | Default                   | Description                                                                                                                                                                    |
+| ------------------------- | --------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `esHost`                  | `string`                          | `'http://localhost:9200'` | OpenSearch or Elasticsearch node URL.                                                                                                                                          |
+| `esUser`                  | `string`                          | `''`                      | Basic auth username.                                                                                                                                                           |
+| `esPass`                  | `string`                          | `''`                      | Basic auth password.                                                                                                                                                           |
+| `searchEngine`            | `'opensearch' \| 'elasticsearch'` | auto-detect               | Client type. Leave unset to detect from the cluster version API on startup.                                                                                                    |
+| `searchEngineAuthType`    | `string`                          | undefined                 | 'standard', 'AWS' or undefined. Used to specify authentication method for Search Engine configuration.                                                                         |
+| `searchEngineAuthRegion`  | `string`                          | undefined                 | Used for authentication using AWS and OpenSearch. Specifies AWS region value.                                                                                                  |
+| `searchEngineAuthService` | `string`                          | undefined                 | 'es', 'aoss' or undefined. Used for authentication using AWS and OpenSearch. Specifies AWS service value. 'es' represents OpenSearch, 'aoss' represents OpenSearch Serverless. |
 
 ### Catalogue identity
 
-| Property | Type | Description |
-|---|---|---|
-| `esIndex` | `string` | ES/OS index to query. Required. |
+| Property       | Type     | Description                                                  |
+| -------------- | -------- | ------------------------------------------------------------ |
+| `esIndex`      | `string` | ES/OS index to query. Required.                              |
 | `documentType` | `string` | GraphQL type name for documents in this catalogue. Required. |
 
 ### Feature flags
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `disableDownloads` | `boolean` | `false` | Disable the TSV/file download endpoint. |
-| `disableFilters` | `boolean` | `false` | Disable SQON filter support on queries. |
-| `enableSets` | `boolean` | `false` | Enable saved Sets. Sets are disabled by default; set to `true` to activate. |
-| `disablePlayground` | `boolean` | `false` | Disable the GraphQL Playground UI. |
+| Property            | Type      | Default | Description                                                                 |
+| ------------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| `disableDownloads`  | `boolean` | `false` | Disable the TSV/file download endpoint.                                     |
+| `disableFilters`    | `boolean` | `false` | Disable SQON filter support on queries.                                     |
+| `enableSets`        | `boolean` | `false` | Enable saved Sets. Sets are disabled by default; set to `true` to activate. |
+| `disablePlayground` | `boolean` | `false` | Disable the GraphQL Playground UI.                                          |
 
 ### Table
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `table.maxResultsWindow` | `number` | `10000` | Maximum hits returnable per query (ES/OS default). |
-| `table.rowIdFieldName` | `string` | `'id'` | ES field used as the row identifier in table results. |
+| Property                 | Type     | Default | Description                                           |
+| ------------------------ | -------- | ------- | ----------------------------------------------------- |
+| `table.maxResultsWindow` | `number` | `10000` | Maximum hits returnable per query (ES/OS default).    |
+| `table.rowIdFieldName`   | `string` | `'id'`  | ES field used as the row identifier in table results. |
 
 ### Query limits
 
-| Property | Type | Default | Description |
-|---|---|---|---|
+| Property     | Type     | Default   | Description                        |
+| ------------ | -------- | --------- | ---------------------------------- |
 | `maxAliases` | `number` | unlimited | Maximum aliases per GraphQL query. |
-| `maxDepth` | `number` | unlimited | Maximum depth of a GraphQL query. |
+| `maxDepth`   | `number` | unlimited | Maximum depth of a GraphQL query.  |
 
 ---
 
@@ -110,37 +113,37 @@ A catalogue can federate aggregation queries across multiple remote Arranger nod
 
 ```ts
 const router = await arrangerRouter({
-  configs: {
-    esHost: 'http://localhost:9200',
-    esIndex: 'file_centric',
-    documentType: 'File',
-    network: {
-      localNode: {
-        displayName: 'Local',
-        nodeId: 'local',
-      },
-      remoteRequests: {
-        headers: ['Authorization'],        // forwarded to all remote nodes by default
-      },
-      remoteNodes: [
-        {
-          displayName: 'Node A',
-          documentType: 'FileAggs',
-          graphqlUrl: 'http://node-a:5050/graphql',
-          nodeId: 'node-a',
-          requests: {
-            headers: ['Authorization'],    // per-node override; merged with remoteRequests.headers
-          },
-        },
-        {
-          displayName: 'Node B',
-          documentType: 'FileAggs',
-          graphqlUrl: 'http://node-b:5050/graphql',
-          nodeId: 'node-b',
-        },
-      ],
-    },
-  },
+	configs: {
+		esHost: 'http://localhost:9200',
+		esIndex: 'file_centric',
+		documentType: 'File',
+		network: {
+			localNode: {
+				displayName: 'Local',
+				nodeId: 'local',
+			},
+			remoteRequests: {
+				headers: ['Authorization'], // forwarded to all remote nodes by default
+			},
+			remoteNodes: [
+				{
+					displayName: 'Node A',
+					documentType: 'FileAggs',
+					graphqlUrl: 'http://node-a:5050/graphql',
+					nodeId: 'node-a',
+					requests: {
+						headers: ['Authorization'], // per-node override; merged with remoteRequests.headers
+					},
+				},
+				{
+					displayName: 'Node B',
+					documentType: 'FileAggs',
+					graphqlUrl: 'http://node-b:5050/graphql',
+					nodeId: 'node-b',
+				},
+			],
+		},
+	},
 });
 ```
 
@@ -148,15 +151,15 @@ When using `apps/search-server`, this config lives in `network.json` inside the 
 
 #### Network config fields
 
-| Field | Description |
-|---|---|
-| `localNode.displayName` | Human-readable label for this node's results in aggregation responses. |
-| `localNode.nodeId` | Stable identifier for this node, used when filtering results by node. |
-| `remoteRequests.headers` | Header names to forward from the incoming request to **all** remote nodes. |
-| `remoteNodes[].graphqlUrl` | GraphQL endpoint URL of the remote Arranger instance. |
-| `remoteNodes[].documentType` | Aggregation type name on the remote node. |
-| `remoteNodes[].displayName` | Human-readable label for this remote node's results. |
-| `remoteNodes[].nodeId` | Stable identifier for this node, used when filtering results by node. |
+| Field                            | Description                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `localNode.displayName`          | Human-readable label for this node's results in aggregation responses.                         |
+| `localNode.nodeId`               | Stable identifier for this node, used when filtering results by node.                          |
+| `remoteRequests.headers`         | Header names to forward from the incoming request to **all** remote nodes.                     |
+| `remoteNodes[].graphqlUrl`       | GraphQL endpoint URL of the remote Arranger instance.                                          |
+| `remoteNodes[].documentType`     | Aggregation type name on the remote node.                                                      |
+| `remoteNodes[].displayName`      | Human-readable label for this remote node's results.                                           |
+| `remoteNodes[].nodeId`           | Stable identifier for this node, used when filtering results by node.                          |
 | `remoteNodes[].requests.headers` | Header names to forward to this specific node. Takes precedence over `remoteRequests.headers`. |
 
 All nodes must serve overlapping index field names. Fields with the same name and GraphQL type are merged across nodes; fields unique to one node are excluded from federation.
@@ -172,15 +175,13 @@ import arrangerRouter from '@overture-stack/arranger-graphql-router';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 
 const getServerSideFilter: GetServerSideFilterFn = (context) => {
-  const userId = context.req.headers['x-user-id'];
-  if (!userId) return null;
+	const userId = context.req.headers['x-user-id'];
+	if (!userId) return null;
 
-  return {
-    op: 'and',
-    content: [
-      { op: 'in', content: { field: 'acl', value: [String(userId)] } },
-    ],
-  };
+	return {
+		op: 'and',
+		content: [{ op: 'in', content: { field: 'acl', value: [String(userId)] } }],
+	};
 };
 
 const router = await arrangerRouter({ configs, getServerSideFilter });
@@ -202,10 +203,10 @@ Creates an OpenSearch or Elasticsearch client:
 import { buildSearchClient } from '@overture-stack/arranger-graphql-router';
 
 const client = await buildSearchClient({
-  client: 'opensearch',  // 'elasticsearch', or omit to auto-detect
-  node: 'http://localhost:9200',
-  username: 'elastic',
-  password: 'secret',
+	client: 'opensearch', // 'elasticsearch', or omit to auto-detect
+	node: 'http://localhost:9200',
+	username: 'elastic',
+	password: 'secret',
 });
 ```
 
@@ -227,7 +228,7 @@ import type { SearchClient, SupportedClientTypes } from '@overture-stack/arrange
 
 ### Sub-path exports
 
-| Import path | Contents |
-|---|---|
-| `@overture-stack/arranger-graphql-router/utils` | Internal utilities (`ajax`, `runGraphQLQuery`). Not part of the stable API. |
-| `@overture-stack/arranger-graphql-router/download` | Download route helpers. Consumed internally by `arrangerRouter`. |
+| Import path                                        | Contents                                                                    |
+| -------------------------------------------------- | --------------------------------------------------------------------------- |
+| `@overture-stack/arranger-graphql-router/utils`    | Internal utilities (`ajax`, `runGraphQLQuery`). Not part of the stable API. |
+| `@overture-stack/arranger-graphql-router/download` | Download route helpers. Consumed internally by `arrangerRouter`.            |
