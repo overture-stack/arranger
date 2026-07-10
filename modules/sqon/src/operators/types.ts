@@ -14,6 +14,8 @@ export type SqonRangeApplicableType = (typeof RANGE_APPLICABLE_TYPES)[number];
 
 export type SqonFieldOperatorDetail = {
 	op: SqonFieldOp;
+	/** Which filter clause content property names the field(s): `fieldName` for most operators, `fieldNames` for multi-field text operators. */
+	fieldRef: 'fieldName' | 'fieldNames';
 	applicableTo: 'all' | SqonRangeApplicableType[];
 	valueType: string;
 };

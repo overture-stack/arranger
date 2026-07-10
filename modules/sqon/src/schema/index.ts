@@ -7,14 +7,15 @@ import {
 	SqonScalarValueSchema,
 	GroupOpSchema,
 } from './constants.js';
-import type { SqonGroup, SqonNode } from './types.js';
+export type { SqonScalar, SqonScalarOrArray } from './constants.js';
+import type { SqonCombination, SqonNode } from './types.js';
 
 export const InLikeFilterSchema = zod
 	.object({
 		op: InLikeOpSchema,
 		content: zod
 			.object({
-				fieldName: zod.string(),
+				fieldName: zod.string().min(1),
 				value: SqonScalarOrArrayValueSchema,
 			})
 			.passthrough(),
@@ -27,8 +28,8 @@ export const AllFilterSchema = zod
 		op: zod.literal('all'),
 		content: zod
 			.object({
-				fieldName: zod.string(),
-				value: SqonScalarOrArrayValueSchema,
+				fieldName: zod.string().min(1),
+				value: zod.array(SqonScalarValueSchema).min(1),
 			})
 			.passthrough(),
 		pivot: zod.union([zod.string(), zod.null()]).optional(),
@@ -40,7 +41,7 @@ export const RangeLikeFilterSchema = zod
 		op: RangeLikeOpSchema,
 		content: zod
 			.object({
-				fieldName: zod.string(),
+				fieldName: zod.string().min(1),
 				value: SqonScalarOrArrayValueSchema,
 			})
 			.passthrough(),
@@ -53,20 +54,20 @@ export const BetweenFilterSchema = zod
 		op: zod.literal('between'),
 		content: zod
 			.object({
-				fieldName: zod.string(),
-				value: zod.union([SqonScalarValueSchema, zod.array(SqonScalarValueSchema).min(2)]),
+				fieldName: zod.string().min(1),
+				value: zod.array(SqonScalarValueSchema).length(2),
 			})
 			.passthrough(),
 		pivot: zod.union([zod.string(), zod.null()]).optional(),
 	})
 	.passthrough();
 
-export const FuzzyFilterSchema = zod
+export const WildcardFilterSchema = zod
 	.object({
-		op: zod.literal('filter'),
+		op: zod.union([zod.literal('wildcard'), zod.literal('filter')]),
 		content: zod
 			.object({
-				fieldNames: zod.array(zod.string()).min(1),
+				fieldNames: zod.array(zod.string().min(1)).min(1),
 				value: zod.string(),
 			})
 			.passthrough(),
@@ -79,10 +80,10 @@ export const SqonLeafSchema = zod.union([
 	AllFilterSchema,
 	RangeLikeFilterSchema,
 	BetweenFilterSchema,
-	FuzzyFilterSchema,
+	WildcardFilterSchema,
 ]);
 
-export const SqonGroupSchema: zod.ZodType<SqonGroup> = zod.lazy(() =>
+export const SqonCombinationSchema: zod.ZodType<SqonCombination> = zod.lazy(() =>
 	zod
 		.object({
 			op: GroupOpSchema,
@@ -92,6 +93,6 @@ export const SqonGroupSchema: zod.ZodType<SqonGroup> = zod.lazy(() =>
 		.passthrough(),
 );
 
-export const SqonSchema: zod.ZodType<SqonNode> = zod.lazy(() => zod.union([SqonGroupSchema, SqonLeafSchema]));
+export const SqonSchema: zod.ZodType<SqonNode> = zod.lazy(() => zod.union([SqonCombinationSchema, SqonLeafSchema]));
 
-export type { SqonGroup, SqonLeaf, SqonNode } from './types.js';
+export type { SqonCombination, SqonLeaf, SqonNode } from './types.js';

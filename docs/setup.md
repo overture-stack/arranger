@@ -46,9 +46,9 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
         | Elasticsearch | `9200` | Distributed search and analytics engine         | Provides fast and scalable search capabilities over indexed data |
         | Stage         | `3000` | Web Portal Scaffolding                          | Houses Arranger's search UI components                           |
 
-        :::note Arranger uses Elasticsearch 7
+        :::note Supported search engines
 
-        Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
+        Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7). OpenSearch maintains API compatibility with ES 7.x, so query syntax and conventions apply to both engines.
 
         :::
 
@@ -141,6 +141,14 @@ Once the server starts, you can access Arranger-Server at `http://localhost:5050
     We are currently working on updating our development environment for Arranger Components. Documentation for implementing them, including their development setup and Storybook integration, will be available here in the near future.
 
     :::
+
+## Search engine permissions
+
+When connecting Arranger to a secured OpenSearch or Elasticsearch cluster, the search engine user must have specific permissions for startup (alias resolution, mapping fetch), per-query search, and optionally Sets and auto-detection.
+
+For a full reference covering every API call Arranger makes, the transport action required, the minimum grant, and the rationale for non-obvious requirements (such as why `indices:admin/aliases/get` must be on `*` rather than the data index pattern), see the [search engine integration guide](https://github.com/overture-stack/arranger/blob/main/.dev/docs/search-engine-integration.md#permission-reference).
+
+---
 
 ## Troubleshooting
 

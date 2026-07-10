@@ -47,6 +47,8 @@ make start          # starts Elasticsearch via docker-compose
 make seed-es        # seeds test documents
 ```
 
+The local stack runs without authentication. If you need to test against a secured cluster (OpenSearch or Elasticsearch with the security plugin enabled), see the [search engine permissions reference](docs/setup.md#search-engine-permissions) in the setup documentation for the minimum permissions required per feature.
+
 Start the development server (watches `sqon`, `types`, `graphql-router`, and `search-server`):
 
 ```bash
@@ -98,10 +100,44 @@ The `.dev/` directory is the shared context layer for this project. It is the ca
 
 - [`.dev/roadmap.md`](.dev/roadmap.md) — planned features, architectural evolution, CI/CD phases. Items are open unless marked `[done]` or `[in progress]`.
 - [`.dev/tech-debt.md`](.dev/tech-debt.md) — known issues and design weaknesses found during development. Entries marked `standalone: yes` can be picked up freely; others depend on roadmap work.
-- [`.dev/sessions.md`](.dev/sessions.md) — brief log of what was done each session, key decisions made, and open threads. Newest first.
+- [`.dev/sessions/`](.dev/sessions/) — one file per contributor per day (`YYYY-MM-DDTHHMMSS.md`), logging what was done each session, key decisions made, and open threads.
 
 **Session discipline:** at the end of any meaningful work session, update these documents to reflect what changed. This keeps the documents useful for the next person (or agent) who picks up the work.
 If working with an AI agent, this process will be done automatically by stating "we're done here" or similar (note: WIP).
+
+---
+
+## Using a custom search client
+
+`arrangerRouter` accepts an optional `esClient` parameter. If you pass one in, Arranger skips its own client setup and uses yours directly. This is the right approach when you need connection behaviour Arranger does not configure itself - for example, AWS IAM authentication for Amazon OpenSearch Service.
+
+**AWS example** (in your own server, not in Arranger):
+
+```ts
+import { Client } from '@opensearch-project/opensearch';
+import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import arrangerRouter from '@overture-stack/arranger-graphql-router';
+
+const esClient = new Client({
+  ...AwsSigv4Signer({
+    region: 'us-east-1',
+    service: 'es',              // 'es' for OpenSearch Service, 'aoss' for Serverless
+    getCredentials: () => defaultProvider()(),
+  }),
+  node: 'https://your-cluster.us-east-1.es.amazonaws.com',
+});
+
+const router = await arrangerRouter({
+  esClient,
+  configs: {
+    esIndex: 'your-index',
+    documentType: 'YourType',
+  },
+});
+```
+
+`defaultProvider` resolves credentials from wherever they are available in the environment: the `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars, an IAM role attached to the instance or container, a local `~/.aws` profile, and so on. It is part of the AWS SDK v3 (`@aws-sdk/credential-provider-node`) and is a dependency of your server, not of Arranger.
 
 ---
 
@@ -115,6 +151,6 @@ This project has first-class support for AI coding assistants. Agent instruction
 
 All three cover the same ground with minor variations for tool-specific features. If you update project conventions, update all three.
 
-**Start of session:** read `roadmap.md`, `tech-debt.md`, and `sessions.md` before starting work. The agent instruction files embed a checklist for this.
+**Start of session:** read `roadmap.md`, `tech-debt.md`, and the most recent file(s) in `.dev/sessions/` before starting work. The agent instruction files embed a checklist for this.
 
-**End of session:** update the `.dev/` documents and add a dated entry to `sessions.md`. This is the handoff to the next session — whether that is you, a colleague, or an AI agent.
+**End of session:** update the `.dev/` documents and extend today's file in `.dev/sessions/`. This is the handoff to the next session — whether that is you, a colleague, or an AI agent.

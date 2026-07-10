@@ -24,7 +24,7 @@ const configsFromEnv = {
 			[configFeatureFlagProperties.DISABLE_GRAPHQL_PLAYGROUND]: stringToBool(
 				process.env.DISABLE_GRAPHQL_PLAYGROUND,
 			),
-			[configFeatureFlagProperties.DISABLE_SETS]: stringToBool(process.env.DISABLE_SETS),
+			[configFeatureFlagProperties.ENABLE_SETS]: stringToBool(process.env.ENABLE_SETS),
 
 			// catalog base configs
 			// TODO: to be extended as e.g. process.env[`${catalogId}_ES_HOST`] etc in multicatalog

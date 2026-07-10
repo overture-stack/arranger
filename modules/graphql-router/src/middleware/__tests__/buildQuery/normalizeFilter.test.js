@@ -119,4 +119,19 @@ suite('middleware/normalizeFilter', () => {
 		assert.deepEqual(normalizeFilters(input), output);
 	});
 
+	test(`6.normalizeFilters normalizes legacy "filter" op to canonical "wildcard" via OP_ALIASES`, () => {
+		const input = {
+			content: { fieldNames: ['gene.symbol', 'donor.name'], value: '*brca*' },
+			op: 'filter',
+		};
+
+		const output = {
+			content: { fieldNames: ['gene.symbol', 'donor.name'], value: '*brca*' },
+			op: 'wildcard',
+			pivot: null,
+		};
+
+		assert.deepEqual(normalizeFilters(input), output);
+	});
+
 });

@@ -37,7 +37,7 @@ export interface SQONViewerProps extends UseDataBubblesProps {
 // TODO: centralise all these
 // SQON types
 
-export type ArrayFieldKeys = 'in' | 'is' | 'filter';
+export type ArrayFieldKeys = 'filter' | 'in' | 'is' | 'wildcard';
 
 export type ScalarFieldKeys = '>=' | '<=' | '>' | '<';
 

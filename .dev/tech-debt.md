@@ -5,6 +5,26 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 
 ---
 
+## modules/sqon
+
+### Relocate remaining `__tests__/` test files to co-located positions
+standalone: yes
+context: `modules/sqon/src/__tests__/jsonSchema.test.ts` and `schema.test.ts` are the remaining files in a `__tests__/` directory after `operators.test.ts` was moved to `src/operators/index.test.ts`. Move `jsonSchema.test.ts` alongside its source and `schema.test.ts` alongside `src/schema/index.ts` (or equivalent source file) to follow the co-location convention. The `__tests__/` directory can then be removed.
+
+---
+
+## build tooling
+
+### Migrate from npm to pnpm
+
+standalone: yes
+context: npm's flat hoisting causes esbuild binary version conflicts across workspaces when multiple packages use tsup. Adding sqon as a second tsup consumer caused bundle-require's peer esbuild to be hoisted to root at a mismatched version. pnpm's strict per-package isolation would prevent this class of issue; each package sees only what it declares. Migration requires updating the Jenkins pipeline and any Dockerfiles that invoke npm.
+
+### Upgrade tsup from 6.7.0 to 8.5.1
+
+standalone: no
+context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm hoisting problem above: tsup@8.5.1 brings esbuild@^0.27.0, which conflicts with tsx's esbuild@~0.28.0 and bundle-require's peer dep resolution under npm. Revisit after pnpm migration.
+
 ## apps/mcp-server
 
 ### `InMemoryEventStore` is not suitable for production
@@ -25,17 +45,29 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
 **Standalone:** yes; self-contained change to `app.ts`; no protocol or API surface changes
 
+### `NUMERIC_AGGREGATION_TYPES` in queryBuilder duplicates `esToAggTypesMap` from `modules/types`
+
+**File:** `apps/mcp-server/src/arranger/queryBuilder.ts` (`NUMERIC_AGGREGATION_TYPES`)
+**Severity:** low (duplication / drift risk)
+**Kind:** duplication
+**Issue:** The execute-query builder must know whether a field's generated GraphQL aggregation type is `NumericAggregations` (selected via `stats`) or `Aggregations` (selected via `buckets`). That classification lives in `esToAggTypesMap` in `modules/types/src/elastic/constants.ts`, but the MCP server does not depend on `modules/types`, so the builder carries a local `NUMERIC_AGGREGATION_TYPES` set mirroring it (plus the `number` display type used by catalogue configs). If `esToAggTypesMap` gains or corrects entries, the copy silently diverges and the builder would emit the wrong selection shape for affected field types.
+**Fix:** Either add `@overture-stack/arranger-types` as an mcp-server dependency and derive the set from `esToAggTypesMap`, or (preferred) expose each field's aggregation kind in the catalogue introspection response so MCP consumers need no local mapping at all. The latter aligns with the introspection-as-contract direction of the MCP integration readiness roadmap items.
+**Standalone:** yes; either fix is additive; no behaviour change for current field types
+
 ### Introspection types should be Zod-first and moved to `modules/types`
+
 **File:** `apps/mcp-server/src/arranger/types.ts`; `apps/search-server/src/introspection/types.ts`
 **Severity:** low (fragile cross-package import; duplication risk)
 **Kind:** design improvement
 **Issue:** Two related problems introduced together:
+
 1. `apps/mcp-server/src/arranger/types.ts` imports directly from `'../../../search-server/src/introspection/types.js'`: a raw file-path reference into another app's source tree, bypassing the package boundary. If `search-server` restructures its internals, the import silently breaks with no compile-time protection at the package level.
 2. `types.ts` duplicates the introspection shape as local Zod schemas because `search-server` exposes only TS interfaces, not Zod schemas. When the introspection shape changes, both the interfaces and the local Zod schemas must be updated in sync.
-**Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
-**Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
+   **Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
+   **Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
 
 ### `mcp-server` pins Express 4 and Zod 3; `@modelcontextprotocol/sdk` uses Express 5 and Zod 4 internally
+
 **File:** `apps/mcp-server/package.json`
 **Severity:** low-medium (version skew; potential for subtle type or behaviour divergence as the MCP SDK evolves)
 **Kind:** dependency management
@@ -58,11 +90,12 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Severity:** high (OWASP A05: Security Misconfiguration; adversarial agents can flood the endpoint and exhaust memory or downstream Arranger connections)
 **Kind:** missing security control
 **Issue:** There is no per-client or global request rate limit on the MCP endpoint. An adversarial agent can:
+
 - Open a large number of concurrent sessions, filling the `transports` map (memory exhaustion; see existing session-map entry).
 - Issue rapid-fire tool calls within a single session, generating a corresponding flood of HTTP requests to Arranger.
-Neither the MCP transport layer nor Express applies any backpressure.
-**Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
-**Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
+  Neither the MCP transport layer nor Express applies any backpressure.
+  **Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
+  **Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
 
 ### `get-catalogue-fields` does not validate `catalogueId` against the configured allowlist
 
@@ -91,6 +124,33 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Audit the monorepo and move all `__tests__/` test files to be co-located with their source file, following pattern (B). Update any Jest/node:test config glob patterns that rely on `__tests__/` directory discovery.
 **Standalone:** yes; mechanical file moves plus config glob updates, no logic changes
 
+### Elasticsearch-first naming in startup script and env vars
+
+**Files:** `scripts/ping-elasticsearch.sh`; env vars `ES_HOST`, `ES_USER`, `ES_PASS` set by the chart
+**Severity:** low (misleading branding; confusing for operators using OpenSearch)
+**Kind:** terminology / naming
+**Issue:** The startup readiness script is named `ping-elasticsearch.sh` and prints "Elasticsearch Ready" regardless of the configured engine. The env vars exposed by the chart (`ES_HOST`, `ES_USER`, `ES_PASS`) carry the "ES" prefix even when connecting to OpenSearch. The display label in the script has been updated to derive from `SEARCH_ENGINE` (outputs "OpenSearch", "Elasticsearch", or "Search Engine"), but the script filename and chart env var names remain Elasticsearch-first.
+**Fix:** Rename `ping-elasticsearch.sh` to `ping-search-engine.sh` (or `ping-cluster.sh`) and update the reference in the Dockerfile/entrypoint. Coordinate with the chart to rename `ES_HOST`, `ES_USER`, `ES_PASS` to engine-neutral names (`SEARCH_HOST`, `SEARCH_USER`, `SEARCH_PASS` or similar). Both changes require a coordinated release since the chart and image must agree on env var names.
+**Standalone:** no; script rename is trivially standalone, but env var rename requires a matching chart release
+
+### `make start-os` and `make start-server` reference docker-compose services that don't exist
+
+**File:** `Makefile` (`start-os`, `start-server` targets); `docker-compose.yml`
+**Severity:** low (local dev/demo convenience only; no production or CI impact)
+**Kind:** stale / broken tooling
+**Issue:** `make start-os` runs `$(DC_UP_CMD) opensearch`, but `docker-compose.yml` defines no `opensearch` service at all; only `elasticsearch`, `kibana`, `server`, and `ui` exist. The target fails outright. Separately, `make start-server` runs `$(DC_UP_CMD) arranger-server`, but the compose service key is `server` (its `container_name` is `arranger-server.local`, easy to confuse with the service key itself); that target is broken the same way.
+**Fix:** Add an `opensearch` service to `docker-compose.yml`. Starting OpenSearch is functionally the same process as the existing `elasticsearch` service (single-node container, health check against `_cluster/health`, same 9200/9300 ports), so the two definitions should stay nearly identical: swap the image (`opensearchproject/opensearch` for `docker.elastic.co/elasticsearch/elasticsearch`) and reconcile whatever security-plugin config differs (OpenSearch's security plugin vs. ES's `xpack.security`/`ELASTIC_PASSWORD` env vars). Fix the `start-server` service-name mismatch (`arranger-server` to `server`) in the same pass.
+**Standalone:** yes for both fixes as stated; coordinate with [OpenSearch-first migration](roadmap.md#opensearch-first-migration) if that work also changes which engine `make start` brings up by default, since this item only makes `start-os` work, not necessarily the default.
+
+### Audit public exports across all modules for spurious entries
+
+**Files:** `modules/sqon/src/index.ts`, `modules/graphql-router/src/index.ts`, `modules/types/src/index.ts`, `modules/components/src/index.ts`, `modules/charts/src/index.ts`
+**Severity:** low (API surface hygiene; no functional impact)
+**Kind:** API cleanliness
+**Issue:** Some exports in `modules/sqon` were added in anticipation of planned consumers (MCP handler) that don't exist yet. Across all modules, there may be exports that were added for one-off use, left over from refactors, or added speculatively. Unexported internals are easier to change without breaking callers; a clean public API surface is a forcing function for good module boundaries.
+**Fix:** For each module's `index.ts`, grep all exported names against imports across the monorepo. Remove exports with no consumer outside the module, or demote them to internal. Verify each removal does not break integration-tests or external packages (`sqon-builder` deprecation may affect this for `modules/sqon`).
+**Standalone:** yes; one module at a time; `modules/sqon` is the most active and a good starting point
+
 ### Inconsistent spelling of `catalogue`
 
 **File:** throughout the monorepo
@@ -109,20 +169,18 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 
 ### Inconsistent user-facing terminology: directory/folder, configuration/settings, docs prose
 
-**Files:** `README.md:13`; `docs/usage/02-arranger-components.md:29`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
+**Files:** `README.md:13`; `docs/usage/01-arranger-configs.md`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
 **Severity:** low (reader confusion, no functional impact)
 **Kind:** terminology drift
-**Issue:** Three clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`.
+**Issue:** Two clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`.
 
-1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, a mixed sentence in docs/usage/02-arranger-components.md:29 ("configs folder located within the app/modules/server/ directory"), configTemplates/configs.json.schema:6, and in code identifiers (buildCatalogsFromFolder, folderName) that surface in console output. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
+1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, `docs/usage/01-arranger-configs.md` (check after 2026-07-07 rewrite), `configTemplates/configs.json.schema:6`, and in code identifiers (buildCatalogsFromFolder, folderName) that surface in console output. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
 
 2. "settings" vs "configuration": "configuration" is canonical for Arranger-level concepts. "Settings" appears in configs.json.schema:28 ("Settings and limits for dataset downloads") and roadmap.md:191-205 (Arranger-level prose). Leave ES mapping file "settings" keys and ES-referencing prose untouched.
 
-3. "Arranger Configs" page title: docs/usage/02-arranger-components.md uses "Arranger Configs" as its page title while every section heading and body reference uses "Configuration". Title should be "Configuring Arranger".
+3. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. If the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
 
-4. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. If the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
-
-**Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
+**Fix:** (a) Docs/schema comments pass: update README.md:13, `docs/usage/01-arranger-configs.md`, configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in `docs/usage/01-arranger-configs.md`; introduce "filter clause" for leaf nodes in `docs/usage/04-sqon-in-detail.md`.
 **Standalone:** yes; (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
@@ -134,14 +192,50 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Either add a `.env.arrangerDev` template at the repo root, or rewrite step 2 to describe the actual setup process (e.g. copy from `.env.schema` and fill in values, or document required env vars inline). The `.env` content shown in the info callout in `setup.md` is a reasonable starting point for the template.
 **Standalone:** yes; documentation or file addition only
 
-### `/docs` out of date with recent functionality changes
+### Network/federated search feature is undocumented
 
-**File:** `/docs` directory
-**Severity:** high (ongoing; accumulates with every feature added)
-**Kind:** documentation debt
-**Issue:** The `/docs` directory has not been kept up to date with recent functionality changes and additions (multicatalog, network search, MCP server, config schema additions, query validation limits, etc.). This is urgent because documentation is a public-facing surface; Arranger integrators rely on it, and stale docs cause support burden and missed adoption.
-**Fix:** Audit `/docs` against the current codebase and recent git history. Update each affected page. Treat documentation updates as part of the definition of done for every feature going forward; not a separate follow-up task.
-**Standalone:** yes; can be worked on at any time, incrementally, without blocking other work
+**File:** `modules/graphql-router/src/network/` (in progress)
+**Severity:** medium (feature exists; operators and integrators have no documentation for it)
+**Kind:** missing documentation
+**Issue:** The network/federated search feature (cross-catalogue and cross-instance querying) has no published docs. "Network search" and "federated search" are synonyms for this feature; use "federated search" in consumer-facing docs.
+**Fix:** Once the feature stabilizes, add a `docs/usage/` page covering configuration, query patterns, and limitations. Implementation detail belongs in `.dev/docs/`.
+**Standalone:** no; blocked on feature stabilisation
+
+### Feature flags are undocumented (security features and optional functionalities)
+
+**File:** `apps/search-server/` (env vars and config flags)
+**Severity:** medium (operators cannot discover what they can enable or disable; security flags carry real risk if unknown)
+**Kind:** missing documentation
+**Issue:** Feature flags, including query validation limits and other optional behaviours, are not documented in `/docs`. These fall into two categories that warrant separate treatment: (1) security-relevant flags (query depth/complexity limits, rate controls) that operators should be aware of for production hardening; (2) optional functionality flags that change search behaviour but have no security dimension.
+**Fix:** Add a dedicated section or page to `/docs` listing all env-var-controlled feature flags, grouped by category: security hardening vs optional functionality. Each entry should state: the env var, the default, what enabling/disabling it does, and any production recommendation.
+**Standalone:** yes; docs-only addition
+
+### Arranger Components has no published docs page
+
+**File:** `docs/setup.md` ("Running the Arranger Components" section)
+**Severity:** medium (blocks UI developers from self-serving setup)
+**Kind:** missing documentation
+**Issue:** `setup.md` has a "Coming Soon" placeholder for Arranger Components development setup and Storybook integration. No usage page exists for the React component library. UI developers and portal integrators have no documented starting point.
+**Fix:** Add a `docs/usage/` page covering component installation, the development environment setup, and Storybook integration. Remove the "Coming Soon" placeholder in `setup.md` once that page exists.
+**Standalone:** yes; independent of all other docs work
+
+### `search-engine-integration.md` is developer-only; not published on docs.overture.bio
+
+**File:** `.dev/docs/search-engine-integration.md`
+**Severity:** medium (the permission reference is complete and useful; operators cannot reach it)
+**Kind:** documentation visibility gap
+**Issue:** `docs/setup.md` now links to `.dev/docs/search-engine-integration.md` for the full permissions reference. That file is only accessible in the repository; it is not published to docs.overture.bio. Operators who are not browsing the repo directly cannot reach this reference.
+**Fix:** Promote `search-engine-integration.md` to a published page under `docs/usage/` (or a new `docs/operations/` section). Update the link in `setup.md` accordingly.
+**Standalone:** yes; content is already complete; this is a placement and linking task only
+
+### `02-query-processing.md` tip callout does not link to the practical SQON guide
+
+**File:** `docs/usage/02-query-processing.md`
+**Severity:** low (readability and navigation)
+**Kind:** cross-link gap
+**Issue:** The query processing page explains the pipeline conceptually but has no link to `03-building-sqon-queries.md`, which is the practical follow-up showing how to construct SQONs. Readers who want to go from theory to implementation have no signpost.
+**Fix:** Add a tip callout at the bottom of `02-query-processing.md` pointing to `03-building-sqon-queries.md`.
+**Standalone:** yes; one-line docs addition
 
 ---
 
@@ -161,22 +255,31 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **File:** `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts` (`getValidFieldOperators()`); `modules/sqon/src/operators/index.ts` (`getSqonFieldOperatorDetails()`)
 **Severity:** low (currently consistent in practice, but will drift)
 **Kind:** duplication / maintenance risk
-**Issue:** Two separate implementations encode which SQON operators are valid for which field types. `buildCatalogueIntrospection.ts` has a more nuanced classification (ENUM_LIKE_TYPES, RANGE_TYPES, fallback) while `modules/sqon` returns a flat list with `applicableTo: 'all'` for non-range operators. They're consistent today but maintained independently; any future operator addition requires updating both.
-**Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
-**Standalone:** yes; internal refactor, no change to API output
+**Issue:** Two separate implementations encode which SQON operators are valid for which field types. `buildCatalogueIntrospection.ts` has a more nuanced classification (ENUM_LIKE_TYPES, RANGE_TYPES, fallback) while `modules/sqon` returns a flat list with `applicableTo: 'all'` for non-range operators. They're consistent today but maintained independently; any future operator addition requires updating both. They have also drifted in naming: after the `filter` → `wildcard` rename, `getValidFieldOperators` still advertises the legacy `filter` name in introspection responses. The MCP Server's `queryValidation.ts` shims this by normalizing introspected operator names through `normalizeSqonOp` before comparison (2026-07-07).
+**Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. Switch introspection operator lists to canonical names in the same pass (client-visible change). See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
+**Standalone:** yes; internal refactor; the canonical-name switch changes API output and needs a coordinated note for introspection consumers
 
-### SQON value schema does not accept boolean values
+### Published SQON JSON Schema contains dangling `$ref` pointers after `anyOf` → `oneOf` normalization
 
-**File:** `modules/sqon/src/schema/constants.ts` (`SqonScalarValueSchema`)
-**Severity:** low-medium
-**Kind:** schema gap
-**Issue:** `SqonScalarValueSchema` is `string | number`, so `SqonScalarOrArrayValueSchema` (used by `InLikeFilterSchema` and others) rejects boolean values. Any Elasticsearch index with a `boolean` field can only be queried via SQON by passing `"true"`/`"false"` as strings; the schema will reject `true`/`false` literals. This is non-obvious and will trip up LLMs generating SQON for boolean fields (and human callers). Surfaced when reviewing the LLM evaluation fixture set.
-**Fix:** Add `zod.boolean()` to `SqonScalarValueSchema`. Verify that Arranger's ES query builder handles boolean values in a `terms` clause correctly (Elasticsearch accepts native booleans in `terms`). Update SQON documentation to clarify accepted value types.
-**Standalone:** yes; schema-only change; runtime behaviour in ES is already permissive for booleans in `terms` queries
+**File:** `modules/sqon/src/jsonSchema/runtime.ts` (`normalizeUnionKeywords`)
+**Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get-sqon-schema`)
+**Kind:** bug
+**Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf`, but does not rewrite the `$ref` _path strings_, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
+**Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway; see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
+**Standalone:** yes; self-contained fix in `runtime.ts` plus a resolution test
 
 ---
 
 ## graphql-router
+
+### `buildAggregations` crashes when the SQON root is a leaf filter clause
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:88`
+**Severity:** medium (valid SQON rejected with an opaque error; hits and aggregations paths behave inconsistently)
+**Kind:** bug
+**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute-query` tool, which forwards SQONs verbatim: an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
+**Fix:** Normalize a root-level leaf by wrapping it in `{ op: 'and', content: [leaf] }` before (or inside) `buildAggregations`, matching the hits path's tolerance. The MCP query builder could defensively wrap root leaves too, but the canonical fix belongs in Arranger.
+**Standalone:** yes; small fix in `buildAggregations` plus a unit test for a root-leaf SQON
 
 ### `GraphQLEndpointOptions` escape hatch
 
@@ -247,13 +350,14 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Severity:** medium
 **Kind:** design-smell / reliability
 **Issue:** The download route has several fragile points in how it receives and parses its request body:
+
 1. `params` arrives as a JSON-stringified string inside a `urlencoded` form body (`JSON.parse(params)` on line 110). Double-encoding is easy to get wrong on the caller side and produces opaque parse errors with no indication of which layer failed.
 2. Callers must pass full column descriptor objects (`fieldName`, `accessor`, `Header`, `extendedType`, `extendedDisplayValues`, `show`, `sortable`, `query`, `jsonPath`, plus UI-only fields like `minWidth` and `canChangeShow`). The router already holds the extended mapping at request time; everything except `fieldName` is derivable from it. Callers should only need to pass `fieldNames: string[]`, with optional per-field overrides. `dataToExportFormat.js` already partially reads from `extendedFieldsDict` for display names; the full resolution just never got wired up.
 3. No validation of the parsed `params` object: missing or malformed `files`, unknown `fileType`, invalid `sqon`, and negative `maxRows` all pass through silently until they cause an error deep in `getAllData` or `dataToExportFormat`.
 4. The `400` error response on catch returns `err?.message || err?.details || 'An unknown error occurred.'`; callers cannot distinguish a parse failure from a stream error from a missing-files error.
 5. The `Content-disposition` header is set without quoting the filename (`attachment; filename=${responseFileName}`); filenames with spaces or special characters break the header.
-**Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
-**Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
+   **Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
+   **Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
 
 ### `filterNodesByNodeId` has no tests
 
@@ -271,18 +375,96 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Issue:** PR #1076 added cardinality accumulation to `resolveAggregation` (summing `agg.cardinality` across nodes, with `undefined` passthrough). The existing accumulation logic for `buckets` and `bucket_count` had no tests before this PR; the cardinality path now adds a third untested accumulation branch. Cases to cover: cardinality sums correctly across multiple nodes; a node with `cardinality: undefined` does not contribute to the sum; an empty aggregations list produces `cardinality: 0`.
 **Standalone:** yes; unit tests only, no application changes
 
+### `fetchMapping` uses `cat.aliases` instead of `indices.getAlias`
+
+**File:** `modules/graphql-router/src/searchClient/fetchMapping.ts` (`getESAliases`)
+**Severity:** low (over-privileged; requires `*` index permission for alias lookup)
+**Kind:** privilege minimization
+**Issue:** `getESAliases` calls `esClient.cat.aliases({ format: 'json' })` with no index filter, retrieving ALL cluster aliases and doing client-side filtering. `GET /_cat/aliases` evaluates `indices:admin/aliases/get` as an index-level permission (OpenSearch `manage_aliases` group is `type: "index"` in the static plugin config) against all indices; the permission must be granted on `*` because the request is unscoped. A targeted `indices.getAlias({ index: esIndex })` call makes a scoped request, so the permission need only be granted on the data index pattern.
+**Fix:** Replace `esClient.cat.aliases()` + `checkESAlias` with `esClient.indices.getAlias({ index: esIndex })`. If the alias exists, the response contains the backing index name; if not, handle the 404. The `indices:admin/aliases/get` permission on `*` can then be removed from the role and scoped down to the data index pattern.
+**Standalone:** yes; confined to `fetchMapping.ts`; update `docs/setup.md` and `.dev/docs/search-engine-integration.md` permission tables when done
+
+### No unit tests for `getESAliases` alias resolution
+
+**File:** `modules/graphql-router/src/searchClient/fetchMapping.ts` (`getESAliases`)
+**Severity:** low (missing test coverage)
+**Kind:** missing test coverage
+**Issue:** `getESAliases` has two distinct code paths: alias found (returns the backing index name) and no match (returns `esIndex` as-is); neither has a unit test. Mock the `cat.aliases` response to cover both branches.
+**Standalone:** yes; unit test only, no application changes
+
+### No unit tests for `getAllData` pagination
+
+**File:** `modules/graphql-router/src/utils/getAllData.js`
+**Severity:** low (missing test coverage)
+**Kind:** missing test coverage
+**Issue:** `getAllData` uses `search_after` cursor pagination across batches; neither the cursor handoff between pages nor the single-page short-circuit (all results fit in one batch) has a unit test.
+**Standalone:** yes; unit test only; mock the `esClient.search` call
+
+### No unit tests for `resolveSetsInSqon` set expansion
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
+**Severity:** low (missing test coverage)
+**Kind:** missing test coverage
+**Issue:** `resolveSetsInSqon` has two paths: SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
+**Standalone:** yes; but note the file also carries the `hackyTemporaryEsSetResolution` tech-debt entry; evaluate for removal during Sets full-feature implementation rather than investing deeply in tests for code that may be replaced
+
+### No unit tests for `convertToSqon` or other `network/utils/` functions
+
+**Files:** `modules/graphql-router/src/network/utils/sqon.ts`, `modules/graphql-router/src/network/utils/gql.ts`, `modules/graphql-router/src/network/utils/promise.ts`
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** `convertToSqon` is a pure function at a user-input boundary: it parses an unknown value and returns `Result<SqonNode, { INVALID_SQON: string }>`. Every incoming SQON passes through it, making it security-relevant, yet it has zero test coverage. The other two utils files (`gql.ts`, `promise.ts`) are also untested.
+**Fix:** Unit tests for `convertToSqon` covering: valid SQON returns `success(SqonNode)`; invalid SQON (wrong shape, missing `op`) returns failure with `INVALID_SQON`; null/undefined input returns failure; JSON string input is accepted. Add tests for `gql.ts` and `promise.ts` once their exported surface is confirmed non-trivial.
+**Standalone:** yes; pure functions, no mocking required
+
+### No unit tests for network resolvers
+
+**Files:** `modules/graphql-router/src/network/resolvers/` (aggregations.ts, fetch.ts, networkNode.ts, query.ts, response.ts)
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** The entire network resolver layer has no tests. This is the core async multi-node query execution path: aggregation response resolving, remote node data fetching, network node response building, query construction, and response transformation. Bugs here affect all multi-catalogue network searches silently.
+**Fix:** Unit tests with mocked network node responses. The pure transformation files (`response.ts`, `networkNode.ts`, `query.ts`) can be tested directly. `fetch.ts` requires HTTP-level mocking (e.g. `undici MockAgent` or similar). Cover: single-node success; partial node failure (one down, others succeed); empty response; aggregation accumulation across nodes.
+**Standalone:** partial; transformation functions are standalone; `fetch.ts` depends on establishing the HTTP mock pattern first
+
+### No unit tests for `dataToExportFormat`
+
+**File:** `modules/graphql-router/src/utils/dataToExportFormat.js`
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** `dataToExportFormat` transforms ES hit data into the export column format, handling `extendedDisplayValues` label substitution, `jsonPath` extraction, column visibility, and hit flattening. No unit tests exist.
+**Fix:** Unit tests covering: basic field mapping; `jsonPath` extraction; `extendedDisplayValues` label substitution; columns with `show: false` excluded; empty hit set returns empty array.
+**Standalone:** yes; pure transformation function
+
 ### `hackyTemporaryEsSetResolution.js`: stale ES 6.2 workaround + convention violation
 
 **File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
 **Severity:** low
 **Kind:** stale code / convention violation
 **Issue:** Two related problems in one file. (1) The file header says the code is a workaround for an Elasticsearch 6.2 bug fixed in 6.3: "Once the issue is resolved by Elasticsearch in version 6.3, we no longer need these functions here." That condition was met years ago; we are on ES 7.x/OpenSearch. The function should be evaluated for removal. (2) `resolveSetIdsFromEs` reads `fallbackConfigs.sets.index` from a module-level import of the global `fallbackConfigs` object rather than receiving the sets index name as a parameter. This violates the module convention (modules receive config as typed params; they do not read from global or environment state).
-**Fix:** Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised in any real deployment or test. If the ES 6.2 workaround is still required for runtime correctness (sets membership resolution), rewrite to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. If Sets are fully gated behind `disableSets` and no path reaches this code in practice, remove the file and its import in `resolveAggregations.ts`. The Sets full-feature roadmap item is the natural moment to make this call.
-**Standalone:** no; evaluate alongside the Sets full feature implementation; do not remove without confirming sets query behaviour
+**Fix:** ~~Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised~~ Confirmed: `resolveSetsInSqon` is called unconditionally from `mapping/resolveAggregations.ts:96` on every request, regardless of `enableSets`; it is not gated and cannot be removed without breaking `set_id:` filter resolution wherever Sets is enabled. Rewrite `resolveSetIdsFromEs` to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. The ES 6.2 workaround framing in the file header is still stale and should be removed once confirmed unnecessary against current ES/OS versions, but the functions themselves stay. See also the new access-control entry below, found while confirming this.
+**Standalone:** no; evaluate alongside the Sets full feature implementation; the `fallbackConfigs` parameter fix is standalone, the ES 6.2 header cleanup is standalone, but do not remove the file
+
+### `ENABLE_SETS` flag does not fully gate the Sets query path
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js` (`resolveSetsInSqon`, called unconditionally from `mapping/resolveAggregations.ts:96`); `modules/graphql-router/src/middleware/buildQuery/index.js:214-259` (`set_id:` terms-lookup query construction)
+**Severity:** medium (OWASP A01: Broken Access Control; the risk is bounded by `setId` being an unguessable UUID, but there is no ownership check at all)
+**Kind:** design gap / feature flag does not cover its own attack surface
+**Issue:** `ENABLE_SETS` (default `false`) only gates `initializeSets`, which creates the sets ES index on startup (`config/utils/index.ts:15-17`). `resolveSetsInSqon` and the `set_id:` terms-lookup query builder run unconditionally on every request regardless of the flag. If a sets index exists in the cluster (the flag was enabled at some point, or the index is shared across deployments), any query containing `set_id:<uuid>` resolves to that set's full document ID list with no ownership check: the sets ES mapping stores `userId` per set, but nothing anywhere reads or enforces it.
+**Fix:** Short-term mitigation: gate `resolveSetsInSqon` and the `set_id:` query path on `enableSets` explicitly, so a disabled flag is a real kill switch rather than only skipping index creation. Real fix: implement the ABAC ownership check already scoped in [roadmap: Sets full feature implementation](roadmap.md#sets-full-feature-implementation) before treating any `set_id:` query as safe in a multi-tenant deployment.
+**Standalone:** yes for the flag-gating mitigation; no for the ABAC ownership check, which is the roadmap item's own scope
 
 ---
 
 ## modules/types
+
+### No unit tests for `tools/` utilities or `networkAggregationConfigUtils`
+
+**Files:** `modules/types/src/tools/stringFns.ts`, `modules/types/src/tools/typeFns.ts`, `modules/types/src/configs/networkAggregationConfigUtils.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** All three files are exported from the package and used across the monorepo but have zero test coverage. `stringFns.ts` and `typeFns.ts` are utility and type guard functions where a regression would propagate silently to every consumer. `networkAggregationConfigUtils.ts` contains non-trivial domain logic for network aggregation config setup.
+**Fix:** Co-located unit tests (e.g. `stringFns.test.ts` alongside `stringFns.ts`) covering each exported function. Prioritize `networkAggregationConfigUtils` as the highest-complexity target.
+**Standalone:** yes
 
 ### Config constants need reorganization (blocked on architecture work)
 
@@ -353,12 +535,27 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 
 ### SQON viewer shows multiple values in the same bubble [urgent]
 
-**File:** `modules/components/src/`; SQON viewer component
+**File:** `modules/components/src/SQONViewer/index.jsx:63` (value construction), `helpers.tsx` (`ValueCrumb`, truncation/tooltip)
 **Severity:** high (regression)
 **Kind:** bug
-**Issue:** The SQON viewer is showing multiple values for a single field within the same bubble, rather than as separate bubbles as it used to. This is a regression; the previous behaviour was one value per bubble.
-**Fix:** Unknown; needs investigation. Likely a rendering or data-mapping change that altered how multi-value field filters are displayed. Bisect recent changes to the SQON viewer or the SQON-to-display-model mapping.
-**Standalone:** yes; UI-only bug, no server-side involvement
+**Issue:** Root cause confirmed via bisect to commit `87b9c1da` (PR #923, "upgrade to 2025 standards"). The value array construction was changed from `const value = [].concat(valueSQON.content.value || [])` to `const value = valueSQON.content.value ? [valueSQON.content.value] : []`. The old form flattened `content.value` into a real array of N entries regardless of whether it was already an array or a bare scalar. The new form always wraps `content.value` in a single-element array, so a multi-value filter's array (e.g. `['LOSH', 'TNTS']`) becomes a one-element array containing that array, not a two-element array of strings.
+
+Downstream effects, both visible in production (demo.overture.bio):
+- `hasMultipleValues` (`value.length > 1`) is now always `false` for multi-value filters, since `value` is always length 1. This also breaks the operator label at line 88 (`op === 'in' && hasMultipleValues ? op : 'is'`): a genuine `in` filter with multiple values now displays as `is` instead of `in`, and the surrounding parentheses (`SQONValueGroup`, gated on `hasMultipleValues`) never render.
+- `ValueCrumb` (`helpers.tsx`) receives the whole array as a single `value` instead of one call per entry, so all values are joined into one bubble instead of one bubble per value.
+- The per-value character-limit truncation and hover-tooltip in `ValueCrumb` still fire, but now against the comma-joined multi-value string rather than each individual value, so a long list is silently truncated with no per-value "x" to remove one value at a time; the tooltip becomes the only way to read the full list.
+
+**Fix:** Revert `index.jsx:63` to flatten rather than wrap: `const value = [].concat(valueSQON.content.value ?? [])`. This restores one-bubble-per-value rendering, the `in`/`is` label distinction, the enclosing parentheses, and per-value truncation. **Tests are a required part of this fix, not optional follow-up**: this exact regression shipped silently once already because no test covered the rendering path. Add a co-located `SQONViewer/index.test.jsx` covering at minimum: an `in`/multi-value filter renders N separate value bubbles with the `in` label and parentheses; a single-value filter renders one bubble with the `is` label and no parentheses; a multi-value filter past the truncation limit still renders N bubbles (not one truncated joined string). Do not consider this entry resolved until the fix lands with these tests in the same change.
+**Standalone:** yes; UI-only bug, no server-side involvement; single-line fix plus tests
+
+### No rendering-level unit test coverage in `modules/components`; SQONViewer is the natural starting point
+
+**Files:** `modules/components/src/` (all rendering components); confirmed via survey: only `SQONViewer/utils.test.js`, `SQONViewer/__tests__/utils.test.js`, `TextFilter/__tests__/TextFilter.test.js`, `utils/__tests__/splitString.test.js`, `utils/uri/__tests__/uri.test.js` exist in the entire module
+**Severity:** medium (regressions in rendering logic ship silently; the SQON viewer bubble bug above is a direct instance)
+**Kind:** missing test coverage
+**Issue:** Across the whole `modules/components` package, only five test files exist, and none exercise actual component rendering; all are pure-function/utility tests. No component that renders JSX has any test. This is why the SQON viewer bubble regression (see entry above) shipped and went unnoticed for over a year: `index.jsx`'s rendering logic had zero coverage. Separately, `SQONViewer/__tests__/utils.test.js` (old-style, non-co-located) contains a no-op assertion (`it('should return the query if no base sqon', () => { expect(false).toBe(false); })`) that passes regardless of the code under test; existing coverage is thinner than the file count suggests. `SQONViewer/utils.test.js` (co-located) and `SQONViewer/__tests__/utils.test.js` (old-style) both exist side by side and test different functions, not duplicates, but the latter should be relocated per the [co-location convention](#inconsistent-unit-test-file-placement).
+**Fix:** Use the SQON viewer bubble fix above as the pilot: add `SQONViewer/index.test.jsx` with real rendering assertions (via Testing Library, already available for React 18+ components). Fix the no-op test in `__tests__/utils.test.js` while relocating it to co-located `utils.test.js` alongside the other `addInSQON`/`toggleSQON`/`mergeQuery` tests it actually covers (careful: this would collide with the existing co-located `utils.test.js`, which tests `isWildcardFilter` from the same `utils.js`; merge into one file rather than overwriting). Once the pattern is established, extend to other high-traffic rendering components (Table, Aggs family) opportunistically as they're touched.
+**Standalone:** yes; the SQONViewer pilot is standalone; broader extension to other components is opportunistic, not a blocking prerequisite
 
 ### Columns button disabled when no columns are shown by default
 
@@ -444,11 +641,17 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Files:** `integration-tests/import/test.ts`, `integration-tests/import/package.json`
 **Severity:** low (gap in regression coverage)
 **Kind:** missing test coverage
-**Issue:** `integration-tests/import` runs under Jest + ts-jest, which handles CJS and TypeScript source but cannot import pure-ESM dist packages (`.js` files with `"type": "module"` and no `"require"` export) without additional configuration. `@overture-stack/arranger-graphql-router` and `@overture-stack/sqon` are pure ESM; both are missing from the import smoke test. `@overture-stack/arranger-types` (CJS + ESM hybrid) and `@overture-stack/arranger-components` (CJS via Babel) are covered. An import regression in `graphql-router` or `sqon` would not be caught by this test.
+**Issue:** `integration-tests/import` runs under Jest + ts-jest, which handles CJS and TypeScript source but cannot import pure-ESM dist packages (`.js` files with `"type": "module"` and no `"require"` export) without additional configuration. `@overture-stack/arranger-graphql-router` is pure ESM and is missing from the import smoke test. `@overture-stack/arranger-types` (CJS + ESM hybrid), `@overture-stack/arranger-components` (CJS via Babel), and `@overture-stack/sqon` (dual ESM+CJS since 2026-06-30) are covered. An import regression in `graphql-router` would not be caught by this test.
 
 Additionally: `integration-tests/import` resolves all deps via npm workspaces symlinks (`file:` paths), so it tests local build output, not the published tarball. Publishing regressions (e.g. stale `file:` refs in `package.json`) are caught by `npm run release:check` (`scripts/verify-pack.mjs`), not by this test.
 
-**Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and `arranger-sqon` and checks their key exports.
+**Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and checks its key exports.
+
+**Additional TODOs on top of the ESM gap:**
+
+1. **Verify `exports` subpaths, not just package root.** The smoke test should assert each named subpath in the `exports` field (`./utils`, `./download`, etc.) resolves and exposes the expected named exports. A missing barrel re-export (e.g. `getAllData` was absent from `utils/index.ts`) causes `ERR_PACKAGE_PATH_NOT_EXPORTED` for consumers importing via a subpath, which the current test would not catch.
+2. **Document what is exported and why.** There is currently no reference for which methods are available on each export path (`./utils`, `./download`, root) or what they are for. Add inline JSDoc to each export in the barrel files and a brief summary in the package README (once one exists; see search-server README debt) or a `EXPORTS.md` at the package root.
+
 **Standalone:** yes; test infrastructure change only, no application code
 
 ---
@@ -477,6 +680,15 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 ---
 
 ## apps/search-server
+
+### No unit tests for catalog config loading or `catalogId`
+
+**Files:** `apps/search-server/src/configs/index.ts`, `apps/search-server/src/configs/catalogId.ts`, `apps/search-server/src/configs/fromFiles/` (4 files), `apps/search-server/src/configs/fromEnv/` (3 files)
+**Severity:** high
+**Kind:** missing test coverage
+**Issue:** The catalog loading logic (recursing subdirectories, aggregating config files, generating unique IDs) has no tests. This is startup-critical: bugs cause startup failures or silent misconfiguration in multicatalog deployments. `catalogId.ts` tracks ID uniqueness across loads but is also untested. `fromFiles/` and `fromEnv/` parsing has no coverage either.
+**Fix:** Unit tests using a temporary directory fixture for flat (single-catalog) and nested (multicatalog) layouts; error handling on malformed config files; unique ID generation and collision detection in `catalogId.ts`; env var aggregation in `fromEnv/`.
+**Standalone:** yes; no running server required; mock the filesystem with a temp directory
 
 ### No README
 

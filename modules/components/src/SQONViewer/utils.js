@@ -163,13 +163,15 @@ export const replaceFieldSQON = (fieldName, q, ctxq) => {
 };
 
 // export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
+export const isWildcardFilter = (op) => op === 'wildcard' || op === 'filter';
+
 export const replaceFilterSQON = (q, ctxq) => {
 	const { entity, fieldNames, value } = q?.content?.[0]?.content || {};
 	const merged = {
 		op: 'and',
 		content: [
 			...(ctxq?.content?.filter((x) =>
-				entity ? !(x.op === 'filter' && x.content.entity === entity) : x.op !== 'filter',
+				entity ? !(isWildcardFilter(x.op) && x.content.entity === entity) : !isWildcardFilter(x.op),
 			) || []),
 			...(!fieldNames?.length || !value?.length ? [] : q.content),
 		].sort(sortSQON),
@@ -178,8 +180,8 @@ export const replaceFilterSQON = (q, ctxq) => {
 };
 
 export const currentFilterValue = (sqon, entity = null) =>
-	sqon?.content?.find(({ op, content }) => op === 'filter' && (!entity || entity === content.entity))?.content?.value ||
-	'';
+	sqon?.content?.find(({ op, content }) => isWildcardFilter(op) && (!entity || entity === content.entity))?.content
+		?.value || '';
 
 // const mergeFns: TMergeFns = (v) => {
 const mergeFns = (v) => {
