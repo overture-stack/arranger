@@ -67,14 +67,15 @@ export const BarChart = ({
 
 	const variables = { ranges };
 
-	// validate
-	// TODO: Validate for network fields and determine gqlType (no extended mapping guarantee atm for network aggregations)
-	const validationResult = isNetworkAggregation
-		? success({ fieldName, gqlTypename: networkAggregationType, isNetworkAggregation })
-		: useMemo(
-				() => validateQueryProps({ fieldName, variables, extendedMapping }),
-				[fieldName, variables, extendedMapping],
-			);
+	// validate the requested fields and variables using the extended mapping
+	const validationResult = useMemo(
+		() =>
+			isNetworkAggregation
+				? // TODO: Validate for network fields and determine gqlType (no extended mapping guarantee atm for network aggregations)
+					success({ fieldName, gqlTypename: networkAggregationType, isNetworkAggregation })
+				: validateQueryProps({ fieldName, variables, extendedMapping }),
+		[isNetworkAggregation, fieldName, variables, extendedMapping],
+	);
 
 	// Setup a useEffect to deregister the chart if and when the
 	useEffect(() => {

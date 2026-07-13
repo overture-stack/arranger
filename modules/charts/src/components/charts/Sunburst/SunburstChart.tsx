@@ -52,12 +52,15 @@ export const SunburstChart = ({
 	const { extendedMapping } = useArrangerData();
 	const { registerChart, deregisterChart, getChartData, getNetworkChartData } = useChartsContext();
 
-	const validationResult = isNetworkAggregation
-		? success({ fieldName, gqlTypename: aggregationsTypenames.Aggregations, isNetworkAggregation: true })
-		: useMemo(
-				() => validateQueryProps({ fieldName, variables: {}, extendedMapping }),
-				[fieldName, extendedMapping],
-			);
+	// validate the requested fields and variables using the extended mapping
+	const validationResult = useMemo(
+		() =>
+			isNetworkAggregation
+				? // TODO: Validate for network fields and determine gqlType (no extended mapping guarantee atm for network aggregations)
+					success({ fieldName, gqlTypename: aggregationsTypenames.Aggregations, isNetworkAggregation: true })
+				: validateQueryProps({ fieldName, variables: {}, extendedMapping }),
+		[isNetworkAggregation, fieldName, extendedMapping],
+	);
 
 	useEffect(() => {
 		if (!validationResult.success) {
