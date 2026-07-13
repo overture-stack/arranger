@@ -49,9 +49,15 @@ const normalizeNetworkConfig = (configFilesJson: any) => {
 			const customRemoteRequestFn: CustomizeRemoteRequestFn<ArrangerBaseContext> = (params) => {
 				const headers: CustomRemoteRequestProps['headers'] = {};
 
-				// Match by nodeId.
+				// Match by nodeId if provided in the params, otherwise match by URL and displayname
 				// If there are nodes with duplicate nodeId then we can't differentiate, we will use the first match from the configs
 				const matchingConfig = remoteNodeExtendedConfigs.find((node) => {
+					if (params.remoteNode.nodeId === undefined) {
+						return (
+							node.graphqlUrl === params.remoteNode.graphqlUrl &&
+							node.displayName === params.remoteNode.displayName
+						);
+					}
 					return node.nodeId === params.remoteNode.nodeId;
 				});
 
