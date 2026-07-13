@@ -84,14 +84,15 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
 		/*
 		 * Checks validity of SQON
-		 * For now we will pass through the non SQON object to the pipeline
+		 * For now we will pass through the non SQON object to the pipeline.
+		 * We can throw an error if the SQON is found to be incorrectly formed.
 		 *
 		 * // TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
 		 * {"content": [{...}], "op": "and"}
 		 */
 		if ('filters' in args) {
 			const result = convertToSqon(args.filters);
-			if (result.success) {
+			if (!result.success) {
 				throw new Error(`Provided filter is not a valid sqon: ${result.data}`);
 			}
 		}
