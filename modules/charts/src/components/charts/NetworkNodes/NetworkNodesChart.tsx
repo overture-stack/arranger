@@ -30,7 +30,7 @@ export interface NetworkNodesChartProps {
  * @param props.isNetworkAggregation - If true, this chart will attempt a network aggregation query using the fieldName
  * @param props.components - Custom components for fallback states
  * @param props.theme - Chart config mostly for Nivo
- * @param props.maxBars = Required - determines how many bars to show.
+ * @param props.maxBars - Determines how many bars to show. If no value is provided this will default to Infinity and show all bars.
  *   If maxBars is greater than the amount of available data, TopChartItemsCount will be hidden.
  * @returns JSX element with complete bar chart or null if field validation fails
  */
@@ -40,11 +40,6 @@ export const NetworkNodesChart = ({
 	maxBars = Infinity,
 	theme,
 }: NetworkNodesChartProps) => {
-	// ensure maxBars is provided
-	if (!maxBars) {
-		throw Error(`"maxBars" prop is required for NetworkNodes chart."`);
-	}
-
 	// get context
 	const { getNetworkNodesData, requireNetworkSearch } = useChartsContext();
 
