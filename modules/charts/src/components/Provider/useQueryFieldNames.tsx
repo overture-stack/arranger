@@ -59,11 +59,9 @@ export const useDynamicQuery = (params: {
 		// TODO: Need to keep unique records for every registration and only remove them one at a time. The gql generation can de-duplicate the fields.
 		if (isNetworkAggregation) {
 			setNetworkAggregationQueries((prev) => {
-				// There is no current reason to check if this chart has been registered before, we can just set it again
-				// Need to rebuild the Map to ensure we get the state update
 				const newValuesMap = new Map(prev);
 				newValuesMap.delete(fieldName);
-				logger.debug(`Registered Chart for Network Aggregation on field '${fieldName}'`);
+				logger.debug(`Deregistered chart for Network Aggregation on field '${fieldName}'`);
 				return newValuesMap;
 			});
 		} else {
