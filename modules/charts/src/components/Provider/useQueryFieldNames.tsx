@@ -63,7 +63,7 @@ export const useDynamicQuery = (params: {
 				// Need to rebuild the Map to ensure we get the state update
 				const newValuesMap = new Map(prev);
 				newValuesMap.delete(fieldName);
-				logger.debug(`Registered Chart for Network Aggregation on field '${fieldName}'`);
+				logger.debug(`Deregistered Chart for Network Aggregation on field '${fieldName}'`);
 				return newValuesMap;
 			});
 		} else {
