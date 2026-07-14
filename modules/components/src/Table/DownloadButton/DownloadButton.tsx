@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import SQONBuilder from '@overture-stack/sqon-builder';
+import { SqonBuilder } from '@overture-stack/sqon';
 import cx from 'classnames';
 import { merge } from 'lodash-es';
 import urlJoin from 'url-join';
@@ -103,7 +103,7 @@ const DownloadButton = ({
 
 	const downloadSqon =
 		!disableRowSelection && hasSelectedRows
-			? SQONBuilder.in(exportSelectedRowsField, selectedRows).toValue()
+			? SqonBuilder.in(exportSelectedRowsField, selectedRows).toValue()
 			: sqon;
 
 	const handleExporterClick = (

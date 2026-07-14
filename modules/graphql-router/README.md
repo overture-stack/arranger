@@ -1,6 +1,6 @@
 # `@overture-stack/arranger-graphql-router`
 
-Core GraphQL routing library for a single Arranger catalogue. Converts an Elasticsearch or OpenSearch index into a working GraphQL API with faceted search, aggregations, SQON filtering, download support, and optional network search federation.
+Core GraphQL routing library for a single Arranger catalogue. Converts an OpenSearch or Elasticsearch index into a working GraphQL API with faceted search, aggregations, SQON filtering, download support, and optional network search federation.
 
 This module is the engine inside [`apps/search-server`](../../apps/search-server). It can also be used directly to embed Arranger search into a custom Express application.
 
@@ -38,7 +38,7 @@ For a production-ready setup with multicatalogue support, config file loading, e
 
 ## API
 
-### `arrangerRouter(options)` — default export
+### `arrangerRouter(options)`: default export
 
 Creates and returns an Express `Router` configured for a single Arranger catalogue. Returns a `Promise<Router>`.
 
@@ -53,9 +53,9 @@ const router = await arrangerRouter(options);
 | Option | Type | Description |
 |---|---|---|
 | `configs` | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration). |
-| `esClient` | `SearchClient` | Optional — bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`. |
-| `getServerSideFilter` | `GetServerSideFilterFn` | Optional — callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
-| `configsSource` | `string` | **Deprecated** — will be removed in v3.2. Pass `configs` directly instead. |
+| `esClient` | `SearchClient` | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`. |
+| `getServerSideFilter` | `GetServerSideFilterFn` | Optional: callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
+| `configsSource` | `string` | **Deprecated**: will be removed in v3.2. Pass `configs` directly instead. |
 
 ---
 
@@ -67,10 +67,10 @@ const router = await arrangerRouter(options);
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `esHost` | `string` | `'http://localhost:9200'` | Elasticsearch or OpenSearch node URL. |
+| `esHost` | `string` | `'http://localhost:9200'` | OpenSearch or Elasticsearch node URL. |
 | `esUser` | `string` | `''` | Basic auth username. |
 | `esPass` | `string` | `''` | Basic auth password. |
-| `searchEngine` | `'elasticsearch' \| 'opensearch'` | auto-detect | Client type. Leave unset to detect from the cluster version API on startup. |
+| `searchEngine` | `'opensearch' \| 'elasticsearch'` | auto-detect | Client type. Leave unset to detect from the cluster version API on startup. |
 
 ### Catalogue identity
 
@@ -85,7 +85,7 @@ const router = await arrangerRouter(options);
 |---|---|---|---|
 | `disableDownloads` | `boolean` | `false` | Disable the TSV/file download endpoint. |
 | `disableFilters` | `boolean` | `false` | Disable SQON filter support on queries. |
-| `disableSets` | `boolean` | `false` | Disable saved Sets. |
+| `enableSets` | `boolean` | `false` | Enable saved Sets. Sets are disabled by default; set to `true` to activate. |
 | `disablePlayground` | `boolean` | `false` | Disable the GraphQL Playground UI. |
 
 ### Table
@@ -165,7 +165,7 @@ All nodes must serve overlapping index field names. Fields with the same name an
 
 ## Server-side filters
 
-`getServerSideFilter` injects a SQON filter on every query — typically used for access control. The callback receives the request context and returns a `SqonNode` (or `null` for no filter):
+`getServerSideFilter` injects a SQON filter on every query: typically used for access control. The callback receives the request context and returns a `SqonNode` (or `null` for no filter):
 
 ```ts
 import arrangerRouter from '@overture-stack/arranger-graphql-router';
@@ -188,7 +188,7 @@ const router = await arrangerRouter({ configs, getServerSideFilter });
 
 The returned filter is merged with any SQON the client provides before the query reaches ES/OS. The client cannot remove or bypass it.
 
-In multicatalogue mode the filter is global — it applies to all catalogues mounted under this router instance.
+In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
 
 ---
 
@@ -196,13 +196,13 @@ In multicatalogue mode the filter is global — it applies to all catalogues mou
 
 ### `buildSearchClient(options)`
 
-Creates an Elasticsearch or OpenSearch client:
+Creates an OpenSearch or Elasticsearch client:
 
 ```ts
 import { buildSearchClient } from '@overture-stack/arranger-graphql-router';
 
 const client = await buildSearchClient({
-  client: 'elasticsearch',  // 'opensearch', or omit to auto-detect
+  client: 'opensearch',  // 'elasticsearch', or omit to auto-detect
   node: 'http://localhost:9200',
   username: 'elastic',
   password: 'secret',
@@ -215,7 +215,7 @@ Transforms a raw ES/OS index mapping into Arranger's field descriptor format. Us
 
 ### `mergeConfigs(fallback, custom)`
 
-Deep-merges two `ConfigsObject` values, with `custom` taking precedence. Preserves nested objects rather than replacing them — the same merge used internally by `arrangerRouter` when combining defaults with caller-supplied config.
+Deep-merges two `ConfigsObject` values, with `custom` taking precedence. Preserves nested objects rather than replacing them: the same merge used internally by `arrangerRouter` when combining defaults with caller-supplied config.
 
 ### `SearchClient`, `SupportedClientTypes`
 

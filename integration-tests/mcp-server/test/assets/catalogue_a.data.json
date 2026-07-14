@@ -1,0 +1,42 @@
+[
+	{
+		"_id": "a-001",
+		"_source": {
+			"analysis_id": "a-001",
+			"age_at_diagnosis": 34,
+			"vital_status": "Alive"
+		}
+	},
+	{
+		"_id": "a-002",
+		"_source": {
+			"analysis_id": "a-002",
+			"age_at_diagnosis": 51,
+			"vital_status": "Deceased"
+		}
+	},
+	{
+		"_id": "a-003",
+		"_source": {
+			"analysis_id": "a-003",
+			"age_at_diagnosis": 62,
+			"vital_status": "Alive"
+		}
+	},
+	{
+		"_id": "a-004",
+		"_source": {
+			"analysis_id": "a-004",
+			"age_at_diagnosis": 8,
+			"vital_status": "Unknown"
+		}
+	},
+	{
+		"_id": "a-005",
+		"_source": {
+			"analysis_id": "a-005",
+			"age_at_diagnosis": 45,
+			"vital_status": "Deceased"
+		}
+	}
+]

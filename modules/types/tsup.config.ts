@@ -1,6 +1,8 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
+	clean: true,
+	dts: true,
 	entry: [
 		'src/index.ts',
 		'src/configs/index.ts',
@@ -10,8 +12,6 @@ export default defineConfig({
 		'src/tools/index.ts',
 	],
 	format: ['esm', 'cjs'],
-	dts: true,
-	sourcemap: true,
-	clean: true,
 	outDir: 'dist',
+	sourcemap: true,
 });

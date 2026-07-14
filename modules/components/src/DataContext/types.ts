@@ -1,4 +1,4 @@
-import type { SQON } from '@overture-stack/sqon-builder';
+import type { SqonNode } from '@overture-stack/sqon';
 import type { AxiosResponse, Method } from 'axios';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -80,7 +80,7 @@ export type APIFetcherFn = (options: {
 	url?: string;
 }) => Promise<AxiosResponse<unknown>>;
 
-export type SQONType = SQON | null;
+export type SQONType = SqonNode | null;
 
 export type FetchDataFn = (options?: {
 	config?: Record<string, any>;

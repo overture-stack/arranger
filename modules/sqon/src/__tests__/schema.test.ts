@@ -70,6 +70,38 @@ suite('sqon/schema', () => {
 		assert.equal(emptyStringValue.success, true);
 	});
 
+	test('accepts boolean true as a scalar value in an in filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'in',
+			content: { fieldName: 'sample.flagged', value: true },
+		});
+		assert.equal(output.success, true);
+	});
+
+	test('accepts boolean false as a scalar value in an in filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'in',
+			content: { fieldName: 'sample.flagged', value: false },
+		});
+		assert.equal(output.success, true);
+	});
+
+	test('accepts boolean values in an array for an in filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'in',
+			content: { fieldName: 'sample.flags', value: [true, false] },
+		});
+		assert.equal(output.success, true);
+	});
+
+	test('accepts boolean as a scalar value in a range filter', () => {
+		const output = SqonSchema.safeParse({
+			op: 'gt',
+			content: { fieldName: 'sample.flagged', value: true },
+		});
+		assert.equal(output.success, true);
+	});
+
 	test('accepts all currently supported field operators', () => {
 		const candidates = [
 			{ op: 'in', content: { fieldName: 'a', value: ['x'] } },
@@ -178,10 +210,76 @@ suite('sqon/schema', () => {
 		assert.equal(output.success, false);
 	});
 
+	test('rejects between with a scalar value', () => {
+		const input = {
+			content: { fieldName: 'donor.age', value: 18 },
+			op: 'between',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
+	test('rejects between with more than two values', () => {
+		const input = {
+			content: { fieldName: 'donor.age', value: [18, 65, 100] },
+			op: 'between',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
 	test('rejects group with non-array content', () => {
 		const input = {
 			content: { op: 'in', content: { fieldName: 'a', value: ['x'] } },
 			op: 'and',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
+	test('rejects leaf with an empty fieldName', () => {
+		const operators = ['in', 'not-in', 'some-not-in', 'all', 'gt', 'gte', 'lt', 'lte'];
+		operators.forEach((op) => {
+			const input = { op, content: { fieldName: '', value: ['x'] } };
+			const output = SqonSchema.safeParse(input);
+			assert.equal(output.success, false, `Expected empty fieldName to be rejected for op "${op}"`);
+		});
+	});
+
+	test('rejects all with a scalar value', () => {
+		const input = {
+			content: { fieldName: 'donor.status', value: 'active' },
+			op: 'all',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
+	test('accepts a wildcard filter node with op "wildcard"', () => {
+		const input = {
+			op: 'wildcard',
+			content: { fieldNames: ['donor.name', 'donor.alias'], value: 'jo*' },
+		};
+		assert.equal(SqonSchema.safeParse(input).success, true);
+	});
+
+	test('accepts a wildcard filter node with op "filter" for backward compatibility', () => {
+		const input = {
+			op: 'filter',
+			content: { fieldNames: ['donor.name'], value: 'jo*' },
+		};
+		assert.equal(SqonSchema.safeParse(input).success, true);
+	});
+
+
+	test('rejects filter with an empty string in fieldNames', () => {
+		const input = {
+			content: { fieldNames: ['donor.name', ''], value: 'jo' },
+			op: 'filter',
 		};
 
 		const output = SqonSchema.safeParse(input);
