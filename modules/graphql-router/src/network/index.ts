@@ -106,6 +106,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 		availableLocalNodes.push({
 			catalogId: localConfig.catalogId,
 			displayName: localConfig.displayName,
+			nodeId: localConfig.nodeId,
 			resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
 			aggregations: catalog.configs.aggregations,
 		});

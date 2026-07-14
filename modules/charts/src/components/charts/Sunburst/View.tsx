@@ -34,9 +34,11 @@ const colorMapResolver = ({ chartData, savedMap, colors }) => {
 
 type SunburstViewProps = {
 	data: any;
+	fieldName: string;
 	theme: any;
 	handlers: any;
 	colorMapRef: React.RefObject<Map<string, string>>;
+	maxSegments: number;
 };
 
 /**
@@ -111,7 +113,6 @@ export const SunburstView = ({ fieldName, data, handlers, colorMapRef, maxSegmen
 					<ResponsiveSunburst
 						data={hierarchicalData}
 						cornerRadius={0}
-						borderColor={{ theme: 'background' }}
 						enableArcLabels={false}
 						borderWidth={1}
 						borderColor={'white'}

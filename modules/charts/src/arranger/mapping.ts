@@ -1,6 +1,7 @@
 import { DisplayType, ExtendedMappingInterface } from '@overture-stack/arranger-components';
 
 import { logger } from '#logger';
+import { aggregationsTypenames } from '.';
 
 // GQL field name to Arranger extended mapping JSON field name
 export const toJSONFieldName = (fieldName: string) => {
@@ -42,7 +43,7 @@ export const getGQLTypename = ({
 }) => {
 	// GQL field name to Arranger extended mapping JSON field name
 	const jsonFieldName = toJSONFieldName(fieldName);
-	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
+	const mapping = extendedMapping?.find((mapping) => mapping.fieldName === jsonFieldName);
 
 	const aggType = mapping?.type && esToAggTypeMap[mapping?.type];
 	if (aggType) {
@@ -51,5 +52,5 @@ export const getGQLTypename = ({
 	}
 
 	logger.debug(`Missing mapping for ${fieldName}`);
-	return 'Aggregations';
+	return aggregationsTypenames.Aggregations;
 };

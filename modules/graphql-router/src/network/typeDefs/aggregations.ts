@@ -1,5 +1,5 @@
 import { GraphQLBoolean, GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
-import { GraphQLJSONObject } from 'graphql-type-json';
+import { GraphQLJSON } from 'graphql-type-json';
 
 import { type SupportedAggregationField } from '#network/setup/fields.js';
 
@@ -69,6 +69,7 @@ export const createNetworkAggregationTypeDefs = (networkFieldTypes: SupportedAgg
 	const remoteConnectionType = new GraphQLObjectType({
 		name: 'NetworkNode',
 		fields: {
+			nodeId: { type: GraphQLString },
 			name: { type: GraphQLString },
 			hits: { type: GraphQLInt },
 			status: { type: GraphQLString },
@@ -95,9 +96,10 @@ export const createNetworkAggregationTypeDefs = (networkFieldTypes: SupportedAgg
 			network: {
 				type: networkType,
 				args: {
-					filters: { type: GraphQLJSONObject },
+					filters: { type: GraphQLJSON },
 					aggregations_filter_themselves: { type: GraphQLBoolean },
 					include_missing: { type: GraphQLBoolean },
+					nodesFilter: { type: new GraphQLList(GraphQLString) },
 				},
 			},
 		},

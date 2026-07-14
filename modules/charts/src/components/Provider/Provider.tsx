@@ -1,31 +1,22 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { createContext, PropsWithChildren, useCallback, useContext } from 'react';
 
-import { Aggregations, NumericAggregations } from '#arranger';
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { logger } from '#logger';
-import { ChartBucket, gqlToBuckets } from './dataTransform';
+import type { ArrangerAggregations } from '../../arranger';
+import type {
+	ChartBucket,
+	ChartContext,
+	ChartQuery,
+	ChartsGQLResult,
+	GQLResponseAggregationData,
+	NetworkNodeGQLResponseData,
+} from './chartsContextTypes';
+import { gqlToBuckets } from './dataTransform';
 import { useDynamicQuery } from './useQueryFieldNames';
 
-type ChartContextType = {
-	registerChart: (queryProps: any) => void;
-	deregisterChart: (fieldName: string) => void;
-	getChartData: (fieldName: string) => {
-		isLoading: boolean;
-		isError: boolean;
-		data: ChartBucket[] | null;
-	};
-};
+export const ChartsContext = createContext<ChartContext | null>(null);
 
-export const ChartsContext = createContext<ChartContextType | null>(null);
-
-type ChartsProviderProps = PropsWithChildren<{
-	debugMode: boolean;
-	disableIncludeMissing?: boolean;
-	loadingDelay: number;
-}>;
-
-export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
 /**
  * Transforms raw GraphQL API response into a structured data map.
  * Extracts aggregation data and creates a Map for efficient field lookups.
@@ -33,17 +24,30 @@ export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
  * @param data - Raw API response from GraphQL query
  * @returns Map of field names to aggregation data, or null if no data
  */
-const createChartDataMap = (data): GQLDataMap | null => {
-	if (!data) {
+const createChartDataMap = (gqlData: any, documentType: string): GQLResponseAggregationData | null => {
+	if (!gqlData) {
 		return null;
 	}
 
 	return new Map(
-		Object.entries(data.data.file.aggregations).map(([fieldName, gqlData]) => {
+		Object.entries(gqlData?.data?.[documentType]?.aggregations ?? {}).map(([fieldName, aggregationData]) => {
+			// TODO: No validation is done that the data.[docType].aggregations entries have values of the expected type
+			const gqlData = aggregationData as ArrangerAggregations;
 			const buckets = gqlToBuckets({ fieldName, gqlData });
 			return [fieldName, buckets];
 		}),
 	);
+};
+
+/**
+ * Transforms raw GraphQL API response into a structured data map.
+ * Contains the network aggregation data stored in a Map for efficient field lookups.
+ *
+ * @param data - Raw API response from GraphQL query
+ * @returns Map of field names to aggregation data, or null if no data
+ */
+const createChartNetworkDataMap = (data: any): GQLResponseAggregationData | null => {
+	return createChartDataMap(data, 'network');
 };
 
 /**
@@ -54,75 +58,123 @@ const createChartDataMap = (data): GQLDataMap | null => {
  * @param props.children - Child components that will have access to charts context
  * @param props.debugMode - Verbose logging for debug
  * @param props.disableIncludeMissing - Hide properties with "No Data"
- * @param props.loadingDelay - Delays network result loading by <loadingDelay> milliseconds
+ * @param props.loadingDelay - Delays network result loading by <loadingDelay> milliseconds. Default is 50 ms.
  * @returns JSX provider element that enables chart functionality
  */
-export const ChartsProvider = ({ children, debugMode, disableIncludeMissing, loadingDelay }: ChartsProviderProps) => {
+export const ChartsProvider = ({
+	children,
+	debugMode = false,
+	disableIncludeMissing = false,
+	loadingDelay = 50,
+}: PropsWithChildren<{
+	debugMode?: boolean;
+	disableIncludeMissing?: boolean;
+	loadingDelay?: number;
+}>) => {
 	// set logger
 	logger.setDebugMode(debugMode);
 
 	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
-	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
+	const { apiFetcher, documentType, networkNodesFilter, sqon } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
 	// track GQL dynamic query
-	const { gqlQuery, addQuery, removeQuery } = useDynamicQuery({ disableIncludeMissing, documentType });
+	const { gqlQuery, addQuery, removeQuery, requireNetworkSearch } = useDynamicQuery({
+		disableIncludeMissing,
+		documentType,
+	});
 
 	// API call
-	const { apiState } = useNetworkQuery({
-		query: gqlQuery,
+	const networkResult = useNetworkQuery({
+		query: gqlQuery ?? '',
 		apiFetcher,
 		sqon,
 		loadingDelay,
+		networkNodesFilter,
 	});
 
+	const gqlAggregationsDataMap =
+		networkResult.state === 'SUCCESS' ? createChartDataMap(networkResult.data, documentType) : null;
+	const gqlNetworkAggregationsDataMap =
+		networkResult.state === 'SUCCESS' ? createChartNetworkDataMap(networkResult.data) : null;
+
 	//
-	const gqlDataMap = createChartDataMap(apiState.data);
 
 	// chartType for slicing data
-	const getChartData = (fieldName: string) => {
-		const { loading: isLoading, error: isError } = apiState;
-		const apiStates = {
-			isLoading,
-			isError,
-		};
-
-		if (isLoading || isError) {
-			return { ...apiStates, data: null };
-		} else {
-			const data = gqlDataMap ? gqlDataMap.get(fieldName) : null;
+	const getChartData = (fieldName: string): ChartsGQLResult<ChartBucket[]> => {
+		if (networkResult.state === 'SUCCESS') {
+			const data = gqlAggregationsDataMap?.get(fieldName) ?? [];
 
 			return {
-				...apiStates,
+				...networkResult,
 				data,
 			};
 		}
+
+		return networkResult;
+	};
+
+	const getNetworkChartData = (fieldName: string): ChartsGQLResult<ChartBucket[]> => {
+		if (networkResult.state === 'SUCCESS') {
+			const data = gqlNetworkAggregationsDataMap?.get(fieldName) ?? [];
+
+			return {
+				...networkResult,
+				data,
+			};
+		}
+
+		return networkResult;
+	};
+
+	const getNetworkNodesData = (): ChartsGQLResult<NetworkNodeGQLResponseData[]> => {
+		if (networkResult.state === 'SUCCESS') {
+			const hasNetworkData = !!networkResult.data.data?.network?.nodes;
+			if (!hasNetworkData) {
+				return {
+					state: 'ERROR',
+					error: 'Response does not contain required network data.',
+				};
+			}
+			// TODO: validate data content
+			const data: NetworkNodeGQLResponseData[] = networkResult.data.data.network.nodes.map((node) => ({
+				errors: node.errors,
+				hits: node.hits,
+				name: node.name,
+				nodeId: node.nodeId,
+				status: node.status,
+			}));
+			return {
+				...networkResult,
+				data,
+			};
+		}
+
+		return networkResult;
 	};
 
 	//
-	const registerChart = useCallback(async (queryProps) => {
+	const registerChart = useCallback(async (queryProps: ChartQuery) => {
 		logger.debug('Registering fieldName', queryProps);
 		addQuery(queryProps);
 	}, []);
 
-	const deregisterChart = useCallback((fieldName) => {
+	const deregisterChart = useCallback((props: { fieldName: string; isNetworkAggregation?: boolean }) => {
+		const { fieldName, isNetworkAggregation } = props;
+
 		logger.debug('Deregistering fieldName', fieldName);
-		fieldName !== '' && removeQuery(fieldName);
+		fieldName !== '' && removeQuery(fieldName, isNetworkAggregation ?? false);
 	}, []);
 
-	const update = useCallback(({ fieldName, eventData }) => {
-		logger.debug('update', fieldName, eventData);
-		// new data => sqon => arranger => data => render
-		// update arranger.setSqon
-		setSQON();
-	}, []);
-
-	const chartContext: ChartContextType = {
+	const chartContext: ChartContext = {
 		registerChart,
 		deregisterChart,
 		getChartData,
+		getNetworkChartData,
+		getNetworkNodesData,
+		requireNetworkSearch,
 	};
 
 	return <ChartsContext.Provider value={chartContext}>{children}</ChartsContext.Provider>;

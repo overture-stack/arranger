@@ -121,6 +121,7 @@
 				"graphqlUrl": "http://localhost:5051/graphql",
 				"documentType": "file",
 				"displayName": "Local Port 5051",
+				"nodeId": "local-5051"
 
 				// Customize requests to this specific remote node
 				"requests": {
@@ -133,7 +134,7 @@
 		],
 
 		// Optionally, include the local catalog in the network aggregation search
-		"localNode": { "displayName": "Local Port 5050" }
+		"localNode": { "displayName": "Local Port 5050", "nodeId": "local-5050" }
 	},
 
 	// Charts Visualizations library

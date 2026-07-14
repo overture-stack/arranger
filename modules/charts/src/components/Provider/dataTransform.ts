@@ -1,5 +1,5 @@
 import { ArrangerAggregations, aggregationsTypenames } from '#arranger';
-import { GQLDataMap } from '#components/Provider/Provider';
+import type { ChartBucket } from './chartsContextTypes';
 
 const ARRANGER_MISSING_DATA_KEY = '__missing__';
 
@@ -22,16 +22,7 @@ const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }
 	}
 };
 
-export interface ChartBucket {
-	key: string;
-	label: string;
-	value: number;
-}
-export const gqlToBuckets = ({ gqlData }: { fieldName: string; gqlData: GQLDataMap }): ChartBucket[] | null => {
-	if (!gqlData) {
-		return null;
-	}
-
+export const gqlToBuckets = ({ gqlData }: { fieldName: string; gqlData: ArrangerAggregations }): ChartBucket[] => {
 	const gqlBuckets = resolveBuckets({ aggregations: gqlData });
 	/**
 	 * 1 - override label

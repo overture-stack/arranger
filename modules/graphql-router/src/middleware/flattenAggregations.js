@@ -24,7 +24,7 @@ function flattenAggregations({ aggregations, includeMissing = true }) {
 				...value.buckets,
 				...(includeMissing && missing && missing.doc_count > 0 ? [{ ...missing, key: MISSING }] : []),
 			];
-			const bucket_count = buckets.length;
+			const bucket_count = buckets?.length ?? 0;
 
 			return {
 				...prunedAggs,
