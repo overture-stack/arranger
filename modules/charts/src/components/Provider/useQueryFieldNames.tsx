@@ -61,7 +61,8 @@ export const useDynamicQuery = (params: {
 			setNetworkAggregationQueries((prev) => {
 				const newValuesMap = new Map(prev);
 				newValuesMap.delete(fieldName);
-				logger.debug(`Deregistered chart for Network Aggregation on field '${fieldName}'`);
+				logger.debug(`Field deregistered for Network Aggregation chart query: '${fieldName}'`);
+				logger.debug(`Current registered fields: ${Array.from(newValuesMap)}`);
 				return newValuesMap;
 			});
 		} else {
