@@ -3,13 +3,27 @@
 ## Project
 Data discovery API for Elasticsearch and OpenSearch. npm workspaces monorepo, gradual JS → TS migration.
 
-## Key files to read
-- `.dev/roadmap.md` — all planned work: new features, architectural direction (OpenSearch-first, away from Apollo, Arranger core module), CI/CD phases
-- `.dev/tech-debt.md` — known issues; `standalone: yes` entries can be picked up freely, others are blocked on roadmap work
-- `.dev/sessions.md` — recent session log; read the last entry or two before starting work
+## Starting a session
+
+Treat any of these as a session-start signal, even mid-thread: greetings ("good morning", "hi again"), resumption ("let's continue", "where were we"), explicit ("new session", "let's get started"), or on-demand ("sync up", "refresh context").
+
+On a session-start signal, before touching any code:
+
+1. Check instruction-file integrity: `git log --oneline -1 -- CLAUDE.md AGENTS.md .github/copilot-instructions.md`. Flag any commit or uncommitted change not made by this repo's lead developer before proceeding. (No committed `.claude/settings.json` exists in this repo to check; only a gitignored `settings.local.json`.)
+2. Read `.dev/roadmap.md` — all planned work: new features, architectural direction (OpenSearch-first, away from Apollo, Arranger core module), CI/CD phases.
+3. Read `.dev/tech-debt.md` — `standalone: yes` entries can be picked up freely, others are blocked on roadmap work.
+4. Read `.dev/sessions/` — one file per contributor per day; read the most recent 1-2 files (sorted by filename).
+5. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
+
+Before starting new work, do a quick staleness pass on `roadmap.md` and `tech-debt.md`: mark completed items done, close resolved PINNED entries, remove addressed tech-debt entries.
 
 ## Keeping `.dev/` current
-Update `.dev/roadmap.md` or `.dev/tech-debt.md` whenever a roadmap item's status changes, a debt entry is resolved, or a meaningful design decision is made. These are the shared memory for this project. After any meaningful unit of work that changed the codebase or working documents — code written, bug fixed, tech-debt entry added, roadmap item updated, docs changed — update both documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal. Do not log conversational activity (reviews that produced no local changes, discussions, waiting states).
+
+Update `.dev/roadmap.md` or `.dev/tech-debt.md` whenever a roadmap item's status changes, a debt entry is resolved, or a meaningful design decision is made. Before writing such an update, verify against the actual current code or file state — not a prior description or session summary. These are the shared memory for this project.
+
+Your session file is `.dev/sessions/YYYY-MM-DDTHHMMSS.md`. This repo has one human contributor working across multiple AI tools, so "per contributor per day" reduces to "per day" in practice: extend the same day's file regardless of which agent is writing to it.
+
+After any meaningful unit of work that changed the codebase or working documents — code written, bug fixed, tech-debt entry added, roadmap item updated, docs changed — update both documents and add or extend today's file in `.dev/sessions/`. Do not wait for an explicit "session over" signal. Do not log conversational activity (reviews that produced no local changes, discussions, waiting states).
 
 ## Security triggers
 Flag these when writing or reviewing code:

@@ -4,10 +4,20 @@ import { fileURLToPath } from 'node:url';
 
 export const DEFAULT_SQON_SCHEMA_VERSION = '0.0.0';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const packageJsonPath = path.resolve(currentDir, '../../package.json');
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version?: string };
+const readPackageVersion = (): string => {
+	try {
+		const metaUrl = import.meta.url;
+		if (!metaUrl) return DEFAULT_SQON_SCHEMA_VERSION;
+		const currentDir = path.dirname(fileURLToPath(metaUrl));
+		const json = JSON.parse(readFileSync(path.resolve(currentDir, '../../package.json'), 'utf8')) as {
+			version?: string;
+		};
+		return json.version ?? DEFAULT_SQON_SCHEMA_VERSION;
+	} catch {
+		return DEFAULT_SQON_SCHEMA_VERSION;
+	}
+};
 
-const SQON_SCHEMA_VERSION = packageJson.version || DEFAULT_SQON_SCHEMA_VERSION;
+const SQON_SCHEMA_VERSION = readPackageVersion();
 
 export default SQON_SCHEMA_VERSION;

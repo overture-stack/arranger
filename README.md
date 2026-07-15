@@ -1,6 +1,6 @@
 # Arranger
 
-Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and OpenSearch, designed to simplify building search interfaces for complex datasets. A React component library is included for building interactive search UIs.
+Arranger is a versatile, model-agnostic data discovery API for OpenSearch and Elasticsearch, designed to simplify building search interfaces for complex datasets. A React component library is included for building interactive search UIs.
 
 </br>
 
@@ -20,6 +20,9 @@ Technical resources for those working with or contributing to the project are av
 
 - [Node.js](https://nodejs.org/) (v22 or higher)
 - [Docker](https://www.docker.com/) (v4.39.0 or higher)
+- OpenSearch 1.x or higher, or Elasticsearch 7.x
+
+> **Note:** Only the default (licensed) Elasticsearch distribution is supported; the discontinued ES OSS distribution is not. Elasticsearch 8.x is not yet supported; the bundled client is `@elastic/elasticsearch` v7.
 
 ## Support & Contributions
 
