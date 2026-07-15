@@ -4,13 +4,13 @@ For adding Arranger Charts in a React application.
 
 ## Prerequisites
 
-- Node 22 or higher
+- Node 24 or higher
 - React 18
 - Arranger Components 3 (for the data context provider)
 
 ## Developer Setup
 
-This guide will walk you through setting up a complete development environment for Arranger Charts, including its complementary services.
+This guide will walk you through installing Arranger Charts in your React application, and adding it to a page or component.
 
 ### Installation
 
@@ -30,16 +30,17 @@ import { ArrangerDataProvider } from '@overture-stack/arranger-components';
 
 function App() {
 	return (
-		<ArrangerDataProvider {...arrangerConfig}>
+		<ArrangerDataProvider
+			apiUrl={YOUR_ARRANGER_API_URL}
+			documentType="file" // must be "file" for Arranger Charts
+		>
 			<ChartsProvider>
 				<ChartsThemeProvider>
-					<div height="200px">
-						<BarChart
-							fieldName="gender"
-							maxBars={10}
-							handlers={{ onClick: (data) => console.log(data) }}
-						/>
-					</div>
+					<BarChart
+						fieldName="gender"
+						maxBars={10}
+						handlers={{ onClick: (data) => console.log(data) }}
+					/>
 				</ChartsThemeProvider>
 			</ChartsProvider>
 		</ArrangerDataProvider>
