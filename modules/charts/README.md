@@ -1,7 +1,5 @@
 # Arranger Charts
 
-!TODO Rename to README.md
-
 A React chart library for visualizing Arranger aggregation. Uses the [Nivo](https://github.com/plouc/nivo) library, built on D3, to render charts.
 
 </br>
@@ -52,7 +50,7 @@ Brief description of each folder:
 
 To use Arranger Charts in your project, you need the following prerequisites:
 
-- Node 22 or above
+- Node 24 or above
 - React 18
 - Arranger Components 3 (for the data context provider)
 

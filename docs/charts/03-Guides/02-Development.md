@@ -1,6 +1,6 @@
 # Development
 
-This guide covers how to develop or contribute to Arranger Charts. For using Arranger Charts in a React application, see !TODO LINK TO GUIDES/USAGE.
+This guide covers how to develop or contribute to Arranger Charts. For using Arranger Charts in a React application, see [Guides/Usage](01-Usage.md).
 
 ## Local Development
 

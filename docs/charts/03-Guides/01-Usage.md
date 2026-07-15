@@ -71,7 +71,7 @@ Renders a horizontal bar chart for aggregation data.
 | `handlers.onClick`    | `function` | No       | Callback when clicking a bar segment                                                                |
 | `maxBars`             | `number`   | Yes      | Maximum number of bars to display                                                                   |
 | `ranges`              | `Range[]`  | No       | For numeric fields, specify value ranges. A `Range` is `{ key: string, from: number, to: number }`. |
-| `theme`               | `object`   | No       | Event handlers                                                                                      |
+| `theme`               | `object`   | Yes      | Chart configuration options                                                                         |
 | `theme.sortByKey`     | `string[]` | No       | Array of keys to sort the data by.                                                                  |
 
 #### Example
@@ -91,42 +91,9 @@ Renders a horizontal bar chart for aggregation data.
 />
 ```
 
-#### Example - Filter on Click
+#### Screenshot
 
-This example shows how to filter data in the `ArrangerDataProvider` based on the bar that the user clicked on. You can use the hook `useArrangerData` to update the SQON when the user clicks on a chart.
-
-```jsx
-import { BarChart, ChartsProvider, ChartsThemeProvider } from '@overture-stack/arranger-charts';
-import { useArrangerData } from '@overture-stack/arranger-components';
-import { useMemo } from 'react';
-
-const fieldName = 'myFieldName';
-
-const App = () => {
-	const { sqon, setSQON } = useArrangerData({ callerName: 'My Field Name' });
-
-	const chartFilters = useMemo(
-		() => ({
-			[fieldName]: chartFilter(fieldName, sqon, setSQON),
-		}),
-		[sqon, setSQON],
-	);
-
-	return (
-		<ChartsProvider>
-			<ChartsThemeProvider>
-				<BarChart
-					fieldName={fieldName}
-					maxBars={maxBars}
-					handlers={{
-						onClick: (config) => chartFilters[fieldName](config.data.key),
-					}}
-				/>
-			</ChartsThemeProvider>
-		</ChartsProvider>
-	);
-};
-```
+![Example of a bar chart](barchart.png)
 
 ### SunburstChart
 
@@ -137,21 +104,22 @@ Creates a sunburst chart showing relationships between broad and specific catego
 | Name               | Type       | Required | Description                                     |
 | ------------------ | ---------- | -------- | ----------------------------------------------- |
 | `fieldName`        | `string`   | Yes      | GraphQL field name to visualize                 |
-| `maxSegments`      | `number`   | Yes      | Custom fallback components                      |
+| `maxSegments`      | `number`   | Yes      | Maximum number of segments to display           |
 | `mapper`           | `function` | Yes      | Maps outer ring values to inner ring categories |
 | `handlers`         | `object`   | No       | Event handlers                                  |
 | `handlers.onClick` | `function` | No       | Callback when clicking a segment                |
 | `theme`            | `object`   | No       | Chart configuration options                     |
 
+#### Example
+
 ```jsx
 <SunburstChart
 	fieldName="primary_diagnosis"
 	maxSegments={12}
-	mapper={(diagnosisCode) => {
-		// Map specific diagnosis codes to broader categories
-		if (diagnosisCode.startsWith('C78')) return 'Metastatic';
-		if (diagnosisCode.startsWith('C50')) return 'Breast Cancer';
-		return 'Other';
+	mapper={(value) => {
+		if (value.startsWith('C78')) return 'Metastatic';
+		if (value.startsWith('C50')) return 'Breast Cancer';
+		return value;
 	}}
 	handlers={{
 		onClick: (data) => {
@@ -160,6 +128,10 @@ Creates a sunburst chart showing relationships between broad and specific catego
 	}}
 />
 ```
+
+#### Screenshot
+
+![Example of a sunburst chart](sunburstchart.png)
 
 ## Field Types
 
