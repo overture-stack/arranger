@@ -77,18 +77,27 @@ Renders a horizontal bar chart for aggregation data.
 #### Example
 
 ```jsx
-<BarChart
-	fieldName="primary_site"
-	handlers={{
-		onClick: (data) => {
-			console.log('Clicked', data.label, data.value);
-		},
-	}}
-	maxBars={15}
-	theme={{
-		sortByKey: ['Brain', 'Lung', 'Breast', '__missing__'],
-	}}
-/>
+<ArrangerDataProvider
+	apiUrl={YOUR_ARRANGER_API_URL}
+	documentType="file" // must be "file" for Arranger Charts
+>
+	<ChartsProvider>
+		<ChartsThemeProvider>
+			<BarChart
+				fieldName="primary_site"
+				handlers={{
+					onClick: (data) => {
+						console.log('Clicked', data.label, data.value);
+					},
+				}}
+				maxBars={15}
+				theme={{
+					sortByKey: ['Brain', 'Lung', 'Breast', '__missing__'],
+				}}
+			/>
+		</ChartsThemeProvider>
+	</ChartsProvider>
+</ArrangerDataProvider>
 ```
 
 #### Screenshot
@@ -113,20 +122,29 @@ Creates a sunburst chart showing relationships between broad and specific catego
 #### Example
 
 ```jsx
-<SunburstChart
-	fieldName="primary_diagnosis"
-	maxSegments={12}
-	mapper={(value) => {
-		if (value.startsWith('C78')) return 'Metastatic';
-		if (value.startsWith('C50')) return 'Breast Cancer';
-		return value;
-	}}
-	handlers={{
-		onClick: (data) => {
-			console.log('Selected category:', data);
-		},
-	}}
-/>
+<ArrangerDataProvider
+	apiUrl={YOUR_ARRANGER_API_URL}
+	documentType="file" // must be "file" for Arranger Charts
+>
+	<ChartsProvider>
+		<ChartsThemeProvider>
+			<SunburstChart
+				fieldName="primary_diagnosis"
+				maxSegments={12}
+				mapper={(value) => {
+					if (value.startsWith('C78')) return 'Metastatic';
+					if (value.startsWith('C50')) return 'Breast Cancer';
+					return value;
+				}}
+				handlers={{
+					onClick: (data) => {
+						console.log('Selected category:', data);
+					},
+				}}
+			/>
+		</ChartsThemeProvider>
+	</ChartsProvider>
+</ArrangerDataProvider>
 ```
 
 #### Screenshot
