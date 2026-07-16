@@ -24,9 +24,9 @@ const queryTemplateCharts = ({
 
 	// Add a network query if it is set as required, or if we have networkFieldQueries to add.
 	// network search will always return all nodes info
-	const networkQuery =
-		isRequireNetworkSearch || networkFieldQueries
-			? `network (filters: $filters, nodesFilter: $nodesFilter, aggregations_filter_themselves: true) {
+	const isNetworkQuery = Boolean(isRequireNetworkSearch || networkFieldQueries);
+	const networkQuery = isNetworkQuery
+		? `network (filters: $filters, nodesFilter: $nodesFilter, aggregations_filter_themselves: true) {
   ${networkAggregations}
   nodes {
     hits
@@ -36,7 +36,7 @@ const queryTemplateCharts = ({
     status
   }
 }`
-			: '';
+		: '';
 
 	const localQuery = fieldQueries
 		? `${documentType} {
@@ -49,7 +49,11 @@ const queryTemplateCharts = ({
         }
       }`
 		: '';
-	return `query ChartsQuery($filters: JSON, $nodesFilter: [String]) {
+
+	// $nodesFilter is only declared when the network query is present - an unused
+	// operation variable fails GraphQL validation (NoUnusedVariablesRule).
+	const operationVariables = isNetworkQuery ? '$filters: JSON, $nodesFilter: [String]' : '$filters: JSON';
+	return `query ChartsQuery(${operationVariables}) {
       ${localQuery}
       ${networkQuery}
     }`;
@@ -99,7 +103,7 @@ export const generateChartsQuery = ({
 				return fullQuery + queryTemplateNumericAggregations({ fieldName, variables });
 			default:
 				logger.debug('Unsupported GQL typename found');
-				return '';
+				return fullQuery;
 		}
 	}, '');
 

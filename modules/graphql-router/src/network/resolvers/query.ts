@@ -76,11 +76,14 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
  */
 export const createRemoteNodeGQLQuery = (documentName: string, requestedFields: RequestedFieldsMap) => {
 	const fields = convertFieldsToString(requestedFields);
-	const queryArgsTypes = !isEmpty(fields)
+	const hasAggregationFields = !isEmpty(fields);
+	// $filters is always used by `hits`, so it must always be declared, even when no
+	// aggregation fields (and their variables) are requested.
+	const queryArgsTypes = hasAggregationFields
 		? `($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean)`
-		: '';
+		: `($filters: JSON)`;
 	const fieldQueryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
-	const aggregationsString = !isEmpty(fields) ? `aggregations${fieldQueryArgs} ${fields}` : '';
+	const aggregationsString = hasAggregationFields ? `aggregations${fieldQueryArgs} ${fields}` : '';
 	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits (filters: $filters) { total } ${aggregationsString} }}`;
 	return gqlString;
 };

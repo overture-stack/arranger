@@ -106,6 +106,15 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 **Fix:** In the tool handler, check that `catalogueId` is present in `config.catalogues` before calling the Arranger client. Return an MCP error if it is not. The config is already available via `deps` in `registerTools`.
 **Standalone:** yes; one conditional check in the tool handler; no new dependencies
 
+### `readTools.ts` integration test exercises the wrong failure path
+
+**File:** `integration-tests/mcp-server/test/readTools.ts:85`
+**Severity:** low (test asserts the right outcome for the wrong reason)
+**Kind:** test correctness
+**Issue:** The test calls the `get-catalogue-fields` MCP tool with `arguments: { catalogId: 'this-catalogue-does-not-exist' }`, but the tool's actual schema (`apps/mcp-server/src/mcp/tools.ts`) expects `catalogueId`, not `catalogId`. The test likely still passes (wrong key produces a schema-validation error, and the test asserts `isError: true`), but its description claims it is exercising an upstream 404 for an unknown catalogue, not a schema-validation failure. Found while auditing `catalog`/`catalogue` spelling; not fixed as part of that pass since it's a test logic bug, not a spelling issue.
+**Fix:** Change the test's argument key to `catalogueId`, and confirm the test still asserts the intended 404/not-found behaviour rather than a schema-validation error.
+**Standalone:** yes; one-line test fix
+
 ---
 
 ## monorepo: cross-cutting
@@ -156,12 +165,19 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **File:** throughout the monorepo
 **Severity:** low (consistency / maintainability)
 **Kind:** terminology drift
-**Issue:** Remaining instances of `catalog` must be updated to `catalogue`.
+**Issue:** As discussed in https://github.com/overture-stack/admin/issues/182 , we have chosen the Canadian spelling `catalogue` over the American `catalog`.
 
-As discussed in https://github.com/overture-stack/admin/issues/182 , we have chosen the Canadian spelling `catalogue` over the American `catalog`. The MCP Server app
-(`apps/mcp-server`) has been updated to reflect this change, with the exception of keys in responses returned from Arranger Server Introspection endpoints, such as `catalogs`, `catalogId`, and `catalogCount`.
+**Done (this pass):** all internal-only code (variables, internal function/type names, comments) and doc prose in `apps/search-server`, `modules/graphql-router`, `modules/types`, and `integration-tests` have been renamed to `catalogue`. `apps/mcp-server` was already migrated in an earlier pass.
 
-When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the MCP Server will need to be updated accordingly where it depends on Introspection responses.
+**Remaining, deliberately not renamed (external contract surface, needs a coordinated/breaking change, not a text pass):**
+- `catalogId` / `CatalogId` / `CATALOG_ID`: the config JSON key (`base.json`), the route param, and the GraphQL/introspection field. Defined once at `modules/types/src/configs/constants.ts:4`.
+- `catalogs` and `catalogCount` as literal introspection response keys (as opposed to the same words used generically in prose, which are already renamed).
+- `CatalogsMap`, `CatalogFieldIntrospection`, `CatalogIntrospectionResponse`: exported types from `modules/types` / `apps/search-server/src/introspection/types.ts` that `apps/mcp-server` imports directly.
+- All real catalogue config JSON fixtures (`configTemplates/*.json`, `integration-tests/*/multiconfigs/*/base.json`) and the `configTemplates/configs.json.schema`: their keys are the config-file contract; renaming needs the same migration as `catalogId` above.
+- `integration-tests/server/multiconfigs/catalog1`/`catalog2` directory names, inconsistent with `integration-tests/mcp-server/multiconfigs/catalogue-a`/`catalogue-b`, which already use the correct spelling. A filesystem rename, out of scope for a text-only pass.
+
+**Fix:** when `catalogId`/`catalogs`/`catalogCount` are renamed (see the "Per-catalogue search engine credentials via env vars" and general API contract work in `roadmap.md`), accept both spellings during a deprecation window (config parser accepts either key; API dual-emits) before removing the old one. `apps/mcp-server` will need a matching update wherever it depends on introspection response shapes.
+**Standalone:** the internal rename above was standalone and is done; the remaining contract rename is not standalone, and needs coordinated changes across `modules/types`, `apps/search-server`, `apps/mcp-server`, and any external consumer of the introspection API.
 
 ---
 
@@ -280,6 +296,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 ---
 
 ## graphql-router
+
+### Stale file reference in `buildCatalogueIntrospection.ts` comment
+
+**File:** `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts:3`
+**Severity:** low (misleading comment only, no functional impact)
+**Kind:** stale comment
+**Issue:** The comment says this file is "verbatim from search-server/catalogDetails.ts", but that file no longer exists; the actual origin is `apps/search-server/src/introspection/serverDetails.ts`. Found while auditing `catalog`/`catalogue` spelling.
+**Fix:** Update the comment to reference `serverDetails.ts`, or remove the provenance note if it no longer adds value.
+**Standalone:** yes; one-line comment fix
 
 ### `buildAggregations` crashes when the SQON root is a leaf filter clause
 
@@ -428,11 +453,11 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 
 ### No unit tests for network resolvers
 
-**Files:** `modules/graphql-router/src/network/resolvers/` (aggregations.ts, fetch.ts, networkNode.ts, query.ts, response.ts)
+**Files:** `modules/graphql-router/src/network/resolvers/` (aggregations.ts, fetch.ts, networkNode.ts, response.ts)
 **Severity:** medium
 **Kind:** missing test coverage
-**Issue:** The entire network resolver layer has no tests. This is the core async multi-node query execution path: aggregation response resolving, remote node data fetching, network node response building, query construction, and response transformation. Bugs here affect all multi-catalogue network searches silently.
-**Fix:** Unit tests with mocked network node responses. The pure transformation files (`response.ts`, `networkNode.ts`, `query.ts`) can be tested directly. `fetch.ts` requires HTTP-level mocking (e.g. `undici MockAgent` or similar). Cover: single-node success; partial node failure (one down, others succeed); empty response; aggregation accumulation across nodes.
+**Issue:** Most of the network resolver layer has no tests. This is the core async multi-node query execution path: aggregation response resolving, remote node data fetching, network node response building, and response transformation. Bugs here affect all multi-catalogue network searches silently. `query.ts` (`createRemoteNodeGQLQuery`) now has co-located tests (`query.test.ts`, added 2026-07-16 alongside a GraphQL variable-declaration bug fix), so it is no longer part of this gap.
+**Fix:** Unit tests with mocked network node responses. The pure transformation files (`response.ts`, `networkNode.ts`) can be tested directly. `fetch.ts` requires HTTP-level mocking (e.g. `undici MockAgent` or similar). Cover: single-node success; partial node failure (one down, others succeed); empty response; aggregation accumulation across nodes.
 **Standalone:** partial; transformation functions are standalone; `fetch.ts` depends on establishing the HTTP mock pattern first
 
 ### No unit tests for `dataToExportFormat`
@@ -597,21 +622,15 @@ Downstream effects, both visible in production (demo.overture.bio):
 **Fix:** After `release-charts` merges to `main`, replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change.
 **Standalone:** yes; mechanical import substitution, no logic changes
 
-### `generateChartsQuery` network path has no tests
-
-**File:** `modules/charts/src/query/generateCharts.ts`
-**Severity:** low
-**Kind:** missing test coverage
-**Issue:** PR #1076 added the network query generation branch to `generateChartsQuery` (local query, network aggregations, and network nodes independently enabled/disabled by `queryFields`, `networkQueryFields`, and `isRequireNetworkSearch`). The existing local-only path was also untested. Key cases: no fields and no network requirement returns `null`; local fields only produces no `network` block; `isRequireNetworkSearch` without network aggregation fields produces a `network { nodes }` block without `aggregations`; both local and network fields appear together in one query.
-**Standalone:** yes; unit tests only, no application changes
-
 ### TypeScript / declaration diagnostics on successful build
 
 **File:** `modules/charts`; build output
 **Severity:** medium
 **Kind:** build hygiene
-**Issue:** The charts build exits with a success code while emitting TypeScript and declaration file diagnostics. This is a "noisy-successful" build; CI passes, but the output is not actually clean. Published type declarations may be incomplete or incorrect.
-**Fix:** Resolve the diagnostics so the build is genuinely clean, or explicitly gate `charts` out of the release path until they are fixed. Do not leave it in a state where a successful exit code masks real type errors.
+**Issue:** The charts build exits with a success code while emitting TypeScript and declaration file diagnostics. This is a "noisy-successful" build; CI passes, but the output is not actually clean. Published type declarations may be incomplete or incorrect. Most of the noise is implicit-`any` diagnostics from the module's `noImplicitAny` override removal (expected; the build intentionally does not block on these). A smaller set of genuine, non-implicit-any errors remain, confirmed by diffing the build output against the commit immediately before the network-aggregation-charts merge:
+    - `Bar/View.tsx`: `dataWithSuppressedValues.find(...).filter(Boolean)` narrows to `(BarData | undefined)[]`, not `BarData[]`; the `filter(Boolean)` call doesn't narrow out `undefined` for TypeScript even though it does at runtime.
+    - `Sunburst/View.tsx` and `Sunburst/dataTransform.ts`: nivo's `ComputedDatum`/`OrdinalColorScaleConfig` generics don't line up with the actual node shape used (`children`, `DatumId` vs `string`), and a `.reduce<SunburstData>(...)` call has no matching overload. These appear to be pre-existing sloppy typing that was masked before the module's ES2023 target bump: at ES2020, `.toSorted` didn't resolve, which likely degraded downstream inference to `any` and silently swallowed the mismatch; the target bump made `.toSorted` resolve correctly, which is what surfaced the previously-hidden error.
+**Fix:** Resolve the diagnostics so the build is genuinely clean, or explicitly gate `charts` out of the release path until they are fixed. Do not leave it in a state where a successful exit code masks real type errors. For the Sunburst/nivo generics specifically, the fix likely means correcting the node data shape passed to nivo's `ResponsiveSunburst` (or its generic type params) rather than patching each downstream error individually.
 **Standalone:** yes; isolated to the charts module; does not affect other packages
 
 ### Chart tooltip cannot pluralize custom labels
@@ -707,6 +726,15 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 **Issue:** `apps/search-server` has no README. It is the primary runnable application in the monorepo (the thing operators deploy) but there is no document explaining how to run it, what env vars it accepts, how the config directory is structured, or how it relates to `modules/graphql-router`. The `.env.schema` file partially serves this purpose, but only for env vars, and is not discoverable without knowing to look there.
 **Fix:** Add `apps/search-server/README.md` covering: what the app is, how to run it (`npm run server` from repo root), the env var reference (pointing at `.env.schema` for full schema, with the most important vars inline), the configuration directory structure (flat = single catalogue; subdirectories = multicatalogue), and a pointer to the `graphql-router` README for custom integrations.
 **Standalone:** yes
+
+### No boot-time warning when a network node config omits `nodeId`
+
+**File:** `apps/search-server/src/configs/fromFiles/normalize.ts` (`normalizeNetworkConfig`); `modules/types/src/configs/index.ts:116` (`BaseNodeConfig`, where `[baseNodeProperties.NODE_ID]?: string` is declared optional)
+**Severity:** medium (silent feature degradation; multi-node deployments that skip `nodeId` lose per-node filtering and get ambiguous header matching with no indication anything is wrong)
+**Kind:** missing operator-facing validation
+**Issue:** PR #1076 makes `nodeId` load-bearing for `NetworkNodesChart` rendering and for `filterNodesByNodeId`'s node-scoped filtering, but the config type keeps it optional with no startup check. An operator who configures multiple remote/local nodes without `nodeId` gets no error and no warning: `normalizeNetworkConfig`'s custom-request header matching silently falls back to `graphqlUrl` + `displayName` matching (correct, but a quieter code path than `nodeId` matching), and any UI feature depending on `nodeId`-based node filtering simply won't work, discoverable only by an operator noticing the feature doesn't do anything. Flagged in PR #1076 review as "TODO for another PR": https://github.com/overture-stack/arranger/pull/1076#discussion_r3424291614
+**Fix:** In `normalizeNetworkConfig` (or wherever network config is validated at boot, alongside the existing `console.warn` calls in `apps/search-server/src/configs/fromFiles/fileHandlers.ts`), warn when `remoteNodeExtendedConfigs` (or the local node config) contains more than one node and any entry is missing `nodeId`. Message should name which node(s) lack it and note that node-scoped filtering and per-node chart features require it.
+**Standalone:** yes; additive validation/logging only, no change to existing fallback-matching behaviour
 
 ---
 

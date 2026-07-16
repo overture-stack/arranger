@@ -18,7 +18,6 @@ interface BarChartViewProps {
 	theme: BarChartProps['theme'];
 	maxBars: BarChartProps['maxBars'];
 	colorMapRef: React.RefObject<Map<string, string>>;
-	fieldName: string;
 }
 
 type BarData = {
