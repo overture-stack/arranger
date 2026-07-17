@@ -23,8 +23,8 @@ import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/ex
 import { addMappingsToTypes, extendFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
-import type { LocalCatalogSchemaData } from '#network/types.js';
-import { createCatalogResolvers, createSchemaForResolvers } from '#schema/index.js';
+import type { LocalCatalogueSchemaData } from '#network/types.js';
+import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
 import type { SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
@@ -154,7 +154,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	setsIndex: string;
 	types: SchemaTypesTuple;
 }): { schema: GraphQLSchema; mockSchema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
-	const { resolvers, typesWithSets } = createCatalogResolvers({
+	const { resolvers, typesWithSets } = createCatalogueResolvers({
 		debug: enableDebug,
 		enableAdmin,
 		getServerSideFilter,
@@ -358,17 +358,17 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 					'    DEBUG: `network` config provided for network aggregation. Adding network search to the gql schema...',
 				);
 
-			// TODO: This initial setup assumes that the config only references the local catalog,
-			//       needs to be updated for a multi-catalog setup with the localCatalog info provided in the function argumemnts
+			// TODO: This initial setup assumes that the config only references the local catalogue,
+			//       needs to be updated for a multi-catalogue setup with the local catalogue info provided in the function arguments
 			const localCatalogId = 'local';
 			const configLocalNodeProps = networkConfigsObj[configArrangerNetworkProperties.LOCAL_NODE];
 			const localNodeConfigs: LocalNodeConfig[] = configLocalNodeProps
 				? [{ catalogId: localCatalogId, ...configLocalNodeProps }]
 				: [];
 
-			// Build local catalogs by extracting aggregations and hits resolvers from the provided resolvers
-			// TODO: Move this extraction to the calling function (search-server), its their responsibility to provide only the required resolvers for each catalog
-			const localCatalogs: LocalCatalogSchemaData<Context>[] = [];
+			// Build local catalogues by extracting aggregations and hits resolvers from the provided resolvers
+			// TODO: Move this extraction to the calling function (search-server), it's their responsibility to provide only the required resolvers for each catalogue
+			const localCatalogues: LocalCatalogueSchemaData<Context>[] = [];
 
 			const documentResolvers = resolvers[configs.documentType];
 			if (documentResolvers && typeof documentResolvers === 'object') {
@@ -384,7 +384,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 
 				// If the resolvers were where we expected them to be, pass them into the
 				if (aggregationResolver && hitsResolver) {
-					localCatalogs.push({
+					localCatalogues.push({
 						catalogId: localCatalogId,
 						configs: { aggregations },
 						resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
@@ -397,13 +397,13 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 				enableDebug,
 				remoteNodeConfigs: networkConfigsObj[configArrangerNetworkProperties.REMOTE_NODES] ?? [],
 				localNodeConfigs,
-				localCatalogs,
+				localCatalogues,
 			});
 			if (networkSchemaResult.success) {
 				schemasToMerge.push(networkSchemaResult.data);
 			} else {
 				console.error(
-					`Error creating network schema for catalog ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
+					`Error creating network schema for catalogue ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
 				);
 			}
 		}

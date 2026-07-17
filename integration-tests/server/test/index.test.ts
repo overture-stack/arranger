@@ -34,12 +34,12 @@ const serverUrl = `http://localhost:${serverPort}`;
 
 const rootApi = ajax(serverUrl, {});
 
-const createCatalogApi = (catalogId: string) =>
+const createCatalogueApi = (catalogId: string) =>
 	ajax(serverUrl, {
 		endpoint: `/${catalogId}/graphql`,
 	});
 
-const catalogConfigs = [
+const catalogueConfigs = [
 	{
 		catalogId: catalog1Base.catalogId,
 		documentType: catalog1Base.documentType,
@@ -47,7 +47,7 @@ const catalogConfigs = [
 		data: data_1,
 		mappings: mappings_1,
 		gqlPath: `/${catalog1Base.catalogId}/graphql`,
-		api: createCatalogApi(catalog1Base.catalogId),
+		api: createCatalogueApi(catalog1Base.catalogId),
 	},
 	{
 		catalogId: catalog2Base.catalogId,
@@ -56,7 +56,7 @@ const catalogConfigs = [
 		data: data_2,
 		mappings: mappings_2,
 		gqlPath: `/${catalog2Base.catalogId}/graphql`,
-		api: createCatalogApi(catalog2Base.catalogId),
+		api: createCatalogueApi(catalog2Base.catalogId),
 	},
 ];
 
@@ -76,7 +76,7 @@ const cleanup = async (caller = '') => {
 
 	// Clean up all known test indices to ensure no leftovers
 	const allTestIndices = [
-		...catalogConfigs.map((c) => c.esIndex), // multicatalog indices
+		...catalogueConfigs.map((c) => c.esIndex), // multicatalogue indices
 		setsIndex, // sets index
 	];
 
@@ -137,7 +137,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			console.error('\n------------------------------------');
 			console.log('Initializing Elasticsearch testing indices\n');
 
-			for (const { catalogId, data, esIndex, mappings } of catalogConfigs) {
+			for (const { catalogId, data, esIndex, mappings } of catalogueConfigs) {
 				console.debug('  - Creating index for', catalogId);
 				await esClient.indices.create({
 					index: esIndex,
@@ -164,12 +164,12 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		}
 	});
 
-	suite('Single Catalog Integration Tests', () => {
+	suite('Single Catalogue Integration Tests', () => {
 		let serverApp;
 
 		before(async () => {
 			console.error('\n------------------------------------');
-			console.log('Setting up Arranger - Single Catalog Mode\n');
+			console.log('Setting up Arranger - Single Catalogue Mode\n');
 
 			try {
 				serverApp = await ArrangerServer({
@@ -207,10 +207,10 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			}
 		});
 
-		const [singleCatalog] = catalogConfigs;
+		const [singleCatalogue] = catalogueConfigs;
 		const env = {
 			api: ajax(serverUrl, { endpoint: '/graphql' }),
-			documentType: singleCatalog.documentType,
+			documentType: singleCatalogue.documentType,
 		};
 
 		runTestSuites(env, {
@@ -218,7 +218,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 				api: rootApi,
 				catalogs: [
 					{
-						documentType: singleCatalog.documentType,
+						documentType: singleCatalogue.documentType,
 						gqlPath: '/graphql',
 					},
 				],
@@ -229,23 +229,23 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		after(async () => {
 			try {
 				serverApp.close();
-				console.log('\nStopped Arranger Server - Single Catalog\n');
+				console.log('\nStopped Arranger Server - Single Catalogue\n');
 			} catch (err) {
 				// console.log('err after', err);
 			}
 		});
 	});
 
-	suite('Multicatalog Integration Tests', () => {
+	suite('Multicatalogue Integration Tests', () => {
 		let serverApp;
 
 		before(async () => {
 			console.error('\n------------------------------------');
-			console.log('Setting up Arranger - Multicatalog Mode\n');
+			console.log('Setting up Arranger - Multicatalogue Mode\n');
 
 			try {
 				serverApp = await ArrangerServer({
-					catalogConfigsPath: './multiconfigs',
+					catalogueConfigsPath: './multiconfigs',
 					disableDownloads: false,
 					disableFilters: false,
 					disablePlayground: false,
@@ -256,7 +256,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					enableSets: true,
 					esClient,
 					// FIXME: not fully integrated yet
-					// should merge across catalogs with their own serverside filters
+					// should merge across catalogues with their own serverside filters
 					filters: () => ({
 						op: 'not',
 						content: [
@@ -285,7 +285,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		suite('functional endpoints', () => {
 			checkBaseEndpoints({
 				api: rootApi,
-				catalogs: catalogConfigs.map(({ catalogId, documentType, gqlPath }) => ({
+				catalogs: catalogueConfigs.map(({ catalogId, documentType, gqlPath }) => ({
 					catalogId,
 					documentType,
 					gqlPath,
@@ -294,21 +294,21 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			});
 		});
 
-		catalogConfigs.forEach((config) => {
-			const catalogEnv = {
+		catalogueConfigs.forEach((config) => {
+			const catalogueEnv = {
 				api: config.api,
 				documentType: config.documentType,
 			};
 
-			suite(`Catalog ${config.catalogId}`, () => {
-				runTestSuites(catalogEnv);
+			suite(`Catalogue ${config.catalogId}`, () => {
+				runTestSuites(catalogueEnv);
 			});
 		});
 
 		after(async () => {
 			try {
 				serverApp.close();
-				console.log('\nStopped Arranger Server - Multicatalog\n');
+				console.log('\nStopped Arranger Server - Multicatalogue\n');
 			} catch (err) {
 				// console.log('err after', err);
 			}

@@ -6,10 +6,10 @@ import configsFromLocalEnv from './localEnvs.js';
 
 const configsAggregator = (
 	externalConfigs: ExternalConfigs = {},
-): AllServerConfigs & { catalogConfigsPath: string } => {
+): AllServerConfigs & { catalogueConfigsPath: string } => {
 	const {
 		allowedCorsOrigins,
-		catalogConfigsPath,
+		catalogueConfigsPath,
 		disableDownloads,
 		disableFilters,
 		disablePlayground,
@@ -27,7 +27,7 @@ const configsAggregator = (
 
 	const aggregatedEnvConfigs = merge({}, configsFromLocalEnv, {
 		allowedCorsOrigins,
-		catalogConfigsPath,
+		catalogueConfigsPath,
 		catalogs: {
 			fromEnv: {
 				disableDownloads,

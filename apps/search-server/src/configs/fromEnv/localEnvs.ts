@@ -13,7 +13,7 @@ const configsFromEnv = {
 	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')
 		.map((origin) => origin.trim())
 		.filter(Boolean),
-	catalogConfigsPath: process.env.CONFIGS_PATH || './configs',
+	catalogueConfigsPath: process.env.CONFIGS_PATH || './configs',
 	// FIXME: this will need Helm chart changes, to inject secrets into env
 	catalogs: {
 		// these are used as "global" Arranger configs
@@ -26,8 +26,8 @@ const configsFromEnv = {
 			),
 			[configFeatureFlagProperties.ENABLE_SETS]: stringToBool(process.env.ENABLE_SETS),
 
-			// catalog base configs
-			// TODO: to be extended as e.g. process.env[`${catalogId}_ES_HOST`] etc in multicatalog
+			// catalogue base configs
+			// TODO: to be extended as e.g. process.env[`${catalogId}_ES_HOST`] etc in multicatalogue
 			[configRootProperties.DOCUMENT_TYPE]: process.env.DOCUMENT_TYPE || '',
 			[configRootProperties.ES_HOST]: process.env.ES_HOST || 'http://127.0.0.1:9200',
 			[configRootProperties.ES_INDEX]: process.env.ES_INDEX || '',

@@ -244,6 +244,31 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Promote `search-engine-integration.md` to a published page under `docs/usage/` (or a new `docs/operations/` section). Update the link in `setup.md` accordingly.
 **Standalone:** yes; content is already complete; this is a placement and linking task only
 
+### Non-obvious behavioural defaults are scattered across resolver code, invisible via introspection, and only partially (or incorrectly) documented
+
+**File:** see individual defaults below; concentrated in `modules/graphql-router/src/mapping/`, `modules/graphql-router/src/middleware/buildAggregations/`, `modules/graphql-router/src/utils/`
+**Severity:** medium (silent truncation, unexpected bucket shapes, or wrong assumptions about enforced limits; confirmed to cause a real bug in a downstream consumer for the `hits` default alone)
+**Kind:** missing/incorrect documentation, schema-invisibility
+**Issue:** A number of defaults that materially change query results or enforcement live only as JS default parameters or fallback constants deep in resolver/middleware code, not as GraphQL SDL argument defaults. That means they are invisible via introspection: a consumer, or any tool generating queries from the schema (including the MCP server), has no way to discover them without reading Arranger's source. Confirmed instances:
+
+- `hits(first: Int)` defaults to **10** when omitted. `modules/graphql-router/src/mapping/resolveHits.js:189` (`first = 10`); no SDL default in `createConnectionTypeDefs.js`. `docs/usage/02-query-processing.md` shows example queries with explicit `"first": 20` values but never states what happens when `first` is omitted. Confirmed real-world impact: a downstream Overture-based platform shipped a UI stat that silently truncated its result set at 10 records without realizing it; traced back to this default during a PR review and fixed on their end with explicit pagination.
+- `aggregations.buckets(max: Int)` defaults to **300000** when omitted, silently overriding Elasticsearch's own default terms-aggregation size of 10. `modules/graphql-router/src/middleware/buildAggregations/createFieldAggregation.js:7,36,87` (`MAX_AGGREGATION_SIZE`); no SDL default (`modules/graphql-router/src/schema/Aggregations.ts:32`).
+- `aggregations.include_missing` defaults to **true**, adding a synthetic "missing" bucket to every facet. Defaulted independently in two places: `modules/graphql-router/src/mapping/resolveAggregations.ts:85` and `modules/graphql-router/src/middleware/flattenAggregations.js:5`; no SDL default (`createConnectionTypeDefs.js:15`).
+- `aggregations.histogram(interval: Float)` defaults to **1000**. `createFieldAggregation.js:8,17`; no SDL default (`schema/Aggregations.ts:26`).
+- `aggregations.range(ranges: [RangesArg])` defaults to a single bucket **`[{ from: 0 }]`** when omitted. `createFieldAggregation.js:10,21`; no SDL default (`schema/Aggregations.ts:27`).
+- `aggregations.cardinality(precision_threshold: Int)` defaults to **40000**. `createFieldAggregation.js:9,111-112`; no SDL default (`schema/Aggregations.ts:33`).
+- `aggregations.top_hits(size: Int)` defaults to **1** sampled document per bucket. `createFieldAggregation.js:40`; no SDL default (`schema/Aggregations.ts:14`).
+- CSV/TSV downloads always append an `_id: asc` sort tie-breaker after any user-supplied sort. `modules/graphql-router/src/utils/getAllData.js:41`. Not a GraphQL argument (download is a REST stream, not resolved through the schema), so not introspectable by construction, and undocumented in `docs/`.
+- `GRAPHQL_MAX_ALIASES`/`GRAPHQL_MAX_DEPTH` default to **15**/**7** when unset (`modules/graphql-router/src/utils/queryValidation.ts:9,35`, wired unconditionally in `graphqlRoutes.ts:217`). This one is not merely undocumented, it is actively **misdocumented**: `docs/migration/v3.1.md:140` states "Both are unset by default, meaning no limits apply," which is incorrect, a real 15/7 ceiling is enforced by default. This needs a correction, not just an addition.
+
+Already documented and excluded from this list: `hits(trackTotalHits: Boolean = true)` (has a real SDL default, visible via introspection) and `tableDefaults.MAX_RESULTS_WINDOW = 10000` (same class of JS-only default, but already documented with its override mechanism in `docs/migration/v3.1.md:34-48`).
+
+See also the related but distinct bug below (`downloads.maxRows` is silently never enforced), which is a broken *implementation* of a configured limit rather than an invisible default, and should be fixed and tracked separately from the documentation work here.
+**Fix:** Two parts:
+1. Correct `docs/migration/v3.1.md:140`'s false claim about query complexity limits immediately; it is giving operators wrong information about their own security posture, independent of any broader documentation effort.
+2. Rather than patch each default into whichever doc page seems closest, add a single consolidated reference (for example `docs/reference/defaults-and-limits.md`, or a clearly-titled section of `02-query-processing.md`) listing every non-obvious default in one place: the field/argument it applies to, its default value, and how to override it. Scattering one-line fixes across several pages doesn't solve the actual discoverability problem: an integrator reading the query-building doc has no reason to expect a fact about `top_hits` sizing to live on a different page, or to exist at all. Longer term, consider whether any of these can become real SDL defaults (visible via introspection) rather than resolver-only fallbacks, tying into the existing MCP introspection-as-contract direction in the roadmap.
+**Standalone:** yes for the docs work; the SDL-default follow-through is a larger, separable design question.
+
 ### `02-query-processing.md` tip callout does not link to the practical SQON guide
 
 **File:** `docs/usage/02-query-processing.md`
@@ -392,6 +417,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 5. The `Content-disposition` header is set without quoting the filename (`attachment; filename=${responseFileName}`); filenames with spaces or special characters break the header.
    **Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
    **Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
+
+### Configured download row cap (`downloads.maxRows`) is never enforced due to a property-name mismatch
+
+**File:** `modules/graphql-router/src/utils/getAllData.js:70-77`; property names defined in `modules/types/src/configs/constants.ts:100-104`
+**Severity:** high (OWASP A05: Security Misconfiguration; a resource-exhaustion control operators believe is active silently does nothing)
+**Kind:** bug
+**Issue:** `getAllData.js` reads `downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS` and `downloadProperties.MAX_DOWNLOAD_ROWS` to compute `maxHits`, but `downloadProperties` (in `modules/types/src/configs/constants.ts:100-104`) only defines `ALLOW_CUSTOM_MAX_ROWS` and `MAX_ROWS`. Both lookups resolve to `undefined`, so `maxHits` is always falsy, and `total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount` (line 77) always takes the unbounded branch. An operator who sets `downloads.maxRows` in `base.json`, believing it caps export size (the fallback constant `DOWNLOAD_MAX_ROWS = 100` in `modules/graphql-router/src/config/constants.ts:11` implies this is meant to be enforced), gets no enforcement at all: downloads are unbounded regardless of configuration.
+**Fix:** Rename the two lookups in `getAllData.js:70-73` to the property names that actually exist (`ALLOW_CUSTOM_MAX_ROWS`, `MAX_ROWS`), or vice versa if `MAX_DOWNLOAD_ROWS`/`ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS` are the intended canonical names and `modules/types` should be updated instead. Add a unit test asserting that a configured `maxRows` actually caps `total` in `getAllData`, since this exact class of bug (a property-name drift between the config-defining package and a consumer) would otherwise recur silently.
+**Standalone:** yes; either fix is a small, self-contained rename plus a regression test
 
 ### `filterNodesByNodeId` has no tests
 

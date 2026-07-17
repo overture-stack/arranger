@@ -1,6 +1,6 @@
 export const serverConfigProperties = {
 	ALLOWED_CORS_ORIGINS: 'allowedCorsOrigins',
-	CONFIGS_PATH: 'catalogConfigsPath',
+	CONFIGS_PATH: 'catalogueConfigsPath',
 	PING_MS: 'pingMs',
 	PING_PATH: 'pingPath',
 	SERVER_PORT: 'serverPort',

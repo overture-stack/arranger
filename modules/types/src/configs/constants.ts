@@ -1,4 +1,4 @@
-// TODO: reorganize these constants into their actual dependency tree: server vs catalog, nested properly, etc.
+// TODO: reorganize these constants into their actual dependency tree: server vs catalogue, nested properly, etc.
 
 // generic terms
 const CATALOG_ID = 'catalogId';

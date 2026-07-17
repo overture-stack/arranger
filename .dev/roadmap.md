@@ -176,6 +176,23 @@ Catalogs can fail to load or be intentionally disabled. There is currently no ex
 
 _Design-first. Coordinate with the API version exposure entry; catalog metadata and server introspection are related surfaces._
 
+### Per-catalogue config reload without full server restart
+
+_Priority: medium. To be reviewed before committing to a design._
+
+Today, a catalogue config change triggers a full server restart: the Helm chart detects md5 checksum drift against the deployed config and restarts the whole process. Kubernetes rolling updates keep the previous pod serving traffic until the new one is ready, so this costs nothing in a k8s deployment, but a local or smaller setup without rolling updates takes full downtime on any single catalogue's config change.
+
+Investigation found per-catalogue state (ES/OS client, GraphQL schema, Express router) is already isolated and keyed by catalogue ID inside `arrangerRouter()` (`modules/graphql-router/src/router.ts:40-127`), built fresh per catalogue with no shared caching. The actual gap is mounting: `apps/search-server/src/arrangerRoutes.ts:58-61` mounts each catalogue's router directly on the parent Express router (`router.use(...)`), which has no mutable registry to reach back into once mounted; Express bakes the sub-router into its internal middleware stack.
+
+Two carve-outs would need care in any implementation: the optional shared `esClient` injection path (`apps/search-server/src/server.ts:14,64`) forces one client onto all catalogues if used, and the introspection router map (`apps/search-server/src/introspection/index.ts:9-43`) would need its entry swapped in lockstep with any router swap, or it could keep referencing a torn-down catalogue.
+
+**Proposed incremental path, not yet committed to:**
+1. Manual reload trigger for a single catalogue (for example an admin-gated `POST /:catalogId/reload`) that re-runs `buildCatalogueRouter()` and swaps its entry in a `Map<catalogId, Router>` behind a thin dereferencing middleware, replacing Express's static mount.
+2. Opt-in file-watching (for example `chokidar`) on each catalogue's config directory, calling the same reload path automatically; this is where the md5-checksum logic currently living in the Helm chart could move into the app itself.
+3. Coordinate with "Multicatalog catalogue lifecycle and metadata" above: a catalogue mid-reload is a natural fit for the `available`/`failed`/`disabled` status model already being planned there, so a client hitting the catalogue during a reload gets a real status rather than a race condition.
+
+_To be reviewed before committing to a design. Related: Multicatalog catalogue lifecycle and metadata; Per-catalogue search engine credentials via env vars._
+
 ### Per-catalogue search engine credentials via env vars
 
 _Priority: medium. Config plumbing gap, not a design question._

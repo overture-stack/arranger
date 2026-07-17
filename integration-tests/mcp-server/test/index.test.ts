@@ -107,7 +107,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 	// Does the following before tests run:
 	// - 1. Cleans up any existing test indices
 	// - 2. Initializes test indices with mappings for the test suite
-	// - 3. Starts an Arranger server in multicatalog mode
+	// - 3. Starts an Arranger server in multicatalogue mode
 	// - 4. Starts the MCP server
 	// - 5. Connects an MCP client to the MCP server and stores it in `context` for tests to use
 	before(async () => {
@@ -140,7 +140,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 				await esClient.indices.refresh({ index: esIndex });
 			}
 
-			// Pre-create the sets index: in multicatalog mode every catalogue router runs
+			// Pre-create the sets index: in multicatalogue mode every catalogue router runs
 			// `initializeSets` concurrently at startup, and when the index is missing the
 			// creation race leaves the losing catalogue's GraphQL endpoint permanently
 			// responding 500 (see tech-debt). Sets are disabled in this suite, so an empty
@@ -158,10 +158,10 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 
 		try {
 			console.error('\n------------------------------------');
-			console.log('Setting up Arranger - Multicatalog Mode for MCP tests\n');
+			console.log('Setting up Arranger - Multicatalogue Mode for MCP tests\n');
 
 			arrangerApp = await ArrangerServer({
-				catalogConfigsPath: './multiconfigs',
+				catalogueConfigsPath: './multiconfigs',
 				disableDownloads: false,
 				disableFilters: false,
 				disablePlayground: false,

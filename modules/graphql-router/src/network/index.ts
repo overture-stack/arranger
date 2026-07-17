@@ -20,7 +20,7 @@ import {
 	type FetchAggregationSuccess,
 } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
-import type { LocalCatalogSchemaData } from './types.js';
+import type { LocalCatalogueSchemaData } from './types.js';
 import { type NetworkLocalNode } from './types/setup.js';
 
 /**
@@ -44,13 +44,13 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 	enableDebug,
 	remoteNodeConfigs,
 	localNodeConfigs,
-	localCatalogs,
+	localCatalogues,
 }: {
 	customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 	enableDebug: boolean;
 	remoteNodeConfigs: RemoteNodeConfig[];
 	localNodeConfigs: LocalNodeConfig[];
-	localCatalogs: LocalCatalogSchemaData<Context>[];
+	localCatalogues: LocalCatalogueSchemaData<Context>[];
 }): AsyncResult<GraphQLSchema, { NO_AGGREGATIONS: null }> => {
 	/* ================== *
 	 * Setup Remote Nodes
@@ -81,18 +81,18 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 
 	localNodeConfigs.forEach((localConfig) => {
 		/* ================================================ *
-		 *  Find catalog that corresponds with this config
+		 *  Find catalogue that corresponds with this config
 		 * ================================================ */
 
-		const catalog = localCatalogs.find((catalog) => localConfig.catalogId === catalog.catalogId);
-		if (!catalog) {
+		const catalogue = localCatalogues.find((catalogue) => localConfig.catalogId === catalogue.catalogId);
+		if (!catalogue) {
 			console.error(
-				`A local network node configuration specified a catalog ID '${localConfig.catalogId}' that cannot be found on this server. This node will not be included in the network search.`,
+				`A local network node configuration specified a catalogue ID '${localConfig.catalogId}' that cannot be found on this server. This node will not be included in the network search.`,
 			);
 
 			missingLocalNodes.push({
 				config: localConfig,
-				error: 'Required local search catalog is not available.',
+				error: 'Required local search catalogue is not available.',
 			});
 			return;
 		}
@@ -100,15 +100,15 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 		/* ======================================= *
 		 *  Get Resolvers (hits and aggregations)
 		 * ======================================= */
-		const aggregationResolver = catalog.resolvers['aggregations'];
-		const hitsResolver = catalog.resolvers['hits'];
+		const aggregationResolver = catalogue.resolvers['aggregations'];
+		const hitsResolver = catalogue.resolvers['hits'];
 
 		availableLocalNodes.push({
 			catalogId: localConfig.catalogId,
 			displayName: localConfig.displayName,
 			nodeId: localConfig.nodeId,
 			resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
-			aggregations: catalog.configs.aggregations,
+			aggregations: catalogue.configs.aggregations,
 		});
 	});
 

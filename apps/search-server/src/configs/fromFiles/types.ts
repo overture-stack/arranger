@@ -11,7 +11,7 @@ export type FileEncodingType =
 
 export type ConfigsFromFilesFn = (args: {
 	baseConfig: Partial<ArrangerConfigs<any>>;
-	catalogConfigsPath: string;
+	catalogueConfigsPath: string;
 	currentDirectory: string;
 	enableDebug: boolean;
 }) => Promise<
