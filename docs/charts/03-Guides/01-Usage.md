@@ -63,16 +63,17 @@ Renders a horizontal bar chart for aggregation data.
 
 #### Props
 
-| Name                  | Type       | Required | Description                                                                                         |
-| --------------------- | ---------- | -------- | --------------------------------------------------------------------------------------------------- |
-| `disableTopBarsCount` | `boolean`  | No       | Disables the "Top `bars` of `totalBars`" flag at the top right of charts.                           |
-| `fieldName`           | `string`   | Yes      | GraphQL field name to visualize                                                                     |
-| `handlers`            | `object`   | No       | Event handlers                                                                                      |
-| `handlers.onClick`    | `function` | No       | Callback when clicking a bar segment                                                                |
-| `maxBars`             | `number`   | Yes      | Maximum number of bars to display                                                                   |
-| `ranges`              | `Range[]`  | No       | For numeric fields, specify value ranges. A `Range` is `{ key: string, from: number, to: number }`. |
-| `theme`               | `object`   | Yes      | Chart configuration options                                                                         |
-| `theme.sortByKey`     | `string[]` | No       | Array of keys to sort the data by.                                                                  |
+| Name                                   | Type       | Required | Description                                                                                         |
+| -------------------------------------- | ---------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `disableTopBarsCount`                  | `boolean`  | No       | Disables the "Top `bars` of `totalBars`" flag at the top right of charts.                           |
+| `fieldName`                            | `string`   | Yes      | GraphQL field name to visualize                                                                     |
+| `handlers`                             | `object`   | No       | Event handlers                                                                                      |
+| `handlers.onClick`                     | `function` | No       | Callback when clicking a bar segment                                                                |
+| `maxBars`                              | `number`   | Yes      | Maximum number of bars to display                                                                   |
+| `ranges`                               | `Range[]`  | No       | For numeric fields, specify value ranges. A `Range` is `{ key: string, from: number, to: number }`. |
+| `theme`                                | `object`   | Yes      | Chart configuration options                                                                         |
+| `theme.sortByKey`                      | `string[]` | No       | Array of keys to sort the data by.                                                                  |
+| `theme.axisBottom.customTickValueSize` | `number`   | `No`     | For setting a custom step size for the bottom (X) axis                                              |
 
 #### Example
 
