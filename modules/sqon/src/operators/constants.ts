@@ -5,26 +5,27 @@ export const sqonCombinationProperties = {
 } as const;
 
 export const sqonFieldOperatorProperties = {
-	IN: 'in',
-	NOT_IN: 'not-in',
-	SOME_NOT_IN: 'some-not-in',
 	ALL: 'all',
+	BETWEEN: 'between',
 	GT: 'gt',
 	GTE: 'gte',
+	IN: 'in',
 	LT: 'lt',
 	LTE: 'lte',
-	BETWEEN: 'between',
-	FILTER: 'filter',
+	NOT_IN: 'not-in',
+	SOME_NOT_IN: 'some-not-in',
+	WILDCARD: 'wildcard',
 } as const;
 
 export const sqonAliasProperties = {
+	FILTER: 'filter',
 	GT: '>',
 	GTE: '>=',
-	LT: '<',
-	LTE: '<=',
 	IN: '=',
 	IN_DOUBLE: '==',
 	IN_TRIPLE: '===',
+	LT: '<',
+	LTE: '<=',
 	NOT_IN: '!=',
 	NOT_IN_DOUBLE: '!==',
 } as const;
@@ -45,7 +46,7 @@ export const SQON_FIELD_OPS = [
 	sqonFieldOperatorProperties.LT,
 	sqonFieldOperatorProperties.LTE,
 	sqonFieldOperatorProperties.BETWEEN,
-	sqonFieldOperatorProperties.FILTER,
+	sqonFieldOperatorProperties.WILDCARD,
 ] as const;
 
 export const SQON_IN_LIKE_OPS = [
@@ -77,16 +78,17 @@ export const SQON_RANGE_LIKE_ALIASES = [
 ] as const;
 
 export const SQON_OP_ALIASES = {
+	[sqonAliasProperties.FILTER]: sqonFieldOperatorProperties.WILDCARD,
 	[sqonAliasProperties.GT]: sqonFieldOperatorProperties.GT,
-	[sqonAliasProperties.LT]: sqonFieldOperatorProperties.LT,
 	[sqonAliasProperties.GTE]: sqonFieldOperatorProperties.GTE,
-	[sqonAliasProperties.LTE]: sqonFieldOperatorProperties.LTE,
 	[sqonAliasProperties.IN]: sqonFieldOperatorProperties.IN,
 	[sqonAliasProperties.IN_DOUBLE]: sqonFieldOperatorProperties.IN,
 	[sqonAliasProperties.IN_TRIPLE]: sqonFieldOperatorProperties.IN,
+	[sqonAliasProperties.LT]: sqonFieldOperatorProperties.LT,
+	[sqonAliasProperties.LTE]: sqonFieldOperatorProperties.LTE,
 	[sqonAliasProperties.NOT_IN]: sqonFieldOperatorProperties.NOT_IN,
 	[sqonAliasProperties.NOT_IN_DOUBLE]: sqonFieldOperatorProperties.NOT_IN,
 } as const;
 
 export const RANGE_APPLICABLE_TYPES = ['long', 'integer', 'float', 'double', 'date'] as const;
-export const STRING_OR_NUMBER_ARRAY = 'string | number | Array<string | number>';
+export const SCALAR_OR_ARRAY_VALUE_TYPE = 'string | number | boolean | Array<string | number | boolean>';

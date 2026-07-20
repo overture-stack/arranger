@@ -36,7 +36,7 @@ const createIntrospectionRoutes = ({
 	router.get('/introspection/:catalogId', (req, res, next) => {
 		const catalogueRouter = catalogueRouters[req.params.catalogId];
 		if (!catalogueRouter) {
-			return res.status(404).json({ error: `Catalog "${req.params.catalogId}" was not found.` });
+			return res.status(404).json({ error: `Catalogue "${req.params.catalogId}" was not found.` });
 		}
 		req.url = '/introspection';
 		return catalogueRouter(req, res, next);

@@ -1,3 +1,6 @@
+export { SqonBuilder, type SqonBuilderHandle, type SqonFieldFilter, type SqonFieldFilterKey } from './builder/index.js';
+export { addFilterClause, type ScalarFilter, type TextFilter } from './builder/filter.js';
+export { checkMatchingArrays, checkMatchingFilter, emptySqon } from './builder/utils.js';
 export { getSqonJsonSchema, getVersionedSqonJsonSchema } from './jsonSchema/index.js';
 export {
 	getSqonFieldOperatorDetails,
@@ -18,12 +21,16 @@ export type {
 export {
 	AllFilterSchema,
 	BetweenFilterSchema,
-	FuzzyFilterSchema,
 	InLikeFilterSchema,
 	RangeLikeFilterSchema,
-	SqonGroupSchema,
+	SqonCombinationSchema,
 	SqonLeafSchema,
 	SqonSchema,
+	WildcardFilterSchema,
 } from './schema/index.js';
-export type { SqonNode } from './schema/index.js';
+export {
+	SqonScalarValueSchema as SqonScalarSchema,
+	SqonScalarOrArrayValueSchema as SqonScalarOrArraySchema,
+} from './schema/constants.js';
+export type { SqonCombination, SqonNode, SqonScalar, SqonScalarOrArray } from './schema/index.js';
 export { SQON_SCHEMA_VERSION } from './version/index.js';

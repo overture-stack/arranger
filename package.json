@@ -2,6 +2,7 @@
 	"$schema": "https://json.schemastore.org/package.json",
 	"devDependencies": {
 		"@eslint/js": "^9.18.0",
+		"esbuild": "0.17.19",
 		"@tsconfig/node22": "^22.0.0",
 		"@types/node": "^22.13.10",
 		"@types/react": "^18.3.12",
@@ -32,7 +33,9 @@
 	},
 	"scripts": {
 		"clear:nodeModules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
-		"components:watch": "npm run watch -w modules/components",
+		"components:build": "npm run build --w modules/components",
+		"components:watch": "npm run watch --w modules/components",
+		"charts:build": "npm run build --w modules/charts",
 		"dev:components": "concurrently -n types,router,server -c magenta,blue,green \"npm run types:watch\" \"npm run components:watch\"",
 		"dev:check": "npm run test:dev",
 		"dev:server": "concurrently --raw -n sqon,types,router,server -c yellow,magenta,blue,green --hide sqon,types,router \"npm run sqon:watch\" \"npm run types:watch\" \"npm run graphql-router:watch\" \"npm run server:dev\"",
@@ -67,6 +70,7 @@
 		"ajv-draft-04": {
 			"ajv": "^8.18.0"
 		},
+		"esbuild": "0.17.19",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1"
 	},

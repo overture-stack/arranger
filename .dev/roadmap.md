@@ -8,19 +8,39 @@ This document covers two categories of planned work: **product and architecture*
 
 ## Architecture
 
+### Config plan/preview CLI
+
+_Priority: high. Sequenced at the top of the roadmap: validate before build, and no open design question blocks starting this independently of the rest of this document._
+
+Arranger's catalogue configuration (`base.json`, `extended.json`, `facets.json`, `table.json`) is derived from, and must stay consistent with, a live ES/OS index mapping, but there is currently no way to see what a proposed config change would actually do before deploying it. An operator editing `facets.json` to add a field, or changing a display setting in `extended.json`, finds out whether it worked by deploying and inspecting the running server.
+
+**Proposal:** a CLI (for example `npm run config:plan`, run from `apps/search-server`) that takes a configuration directory and a target ES/OS connection (local, staging, or production, read-only) and prints a diff of what would change: which facets would appear or disappear, which table columns would change, which fields referenced in configuration are missing from the live mapping (or vice versa), and any validation errors, all without starting the GraphQL server or writing anything to the target cluster. Modelled on a "plan before apply" workflow.
+
+**Why this is well-scoped to start now:**
+- Reinforces the [Admin UI replacement](#admin-ui-replacement) direction directly: the deprecated `admin-ui` mutated configuration as live state in an ES index, which is documented as a design mistake. A plan/preview CLI is the opposite pattern (configuration as data, reviewed before being applied) and gives the eventual admin UI replacement a validation primitive to build on rather than starting from nothing.
+- Naturally absorbs [Config validation with structured errors and tests](#config-validation-with-structured-errors-and-tests): the Zod-based validation that item already calls for is exactly what a `plan` command needs before it can produce a meaningful diff. Building them together avoids writing the validation logic twice.
+- Does not need to wait for [Arranger config separation](#arranger-config-separation) or [Arranger core module extraction](#arranger-core-module-extraction): it can validate configuration in its current, coupled shape today, the same way the config-validation item is already scoped to do. It becomes cleaner to implement once those land, but nothing blocks starting now.
+
+**Open questions for design:**
+- **Read-only credential:** the CLI must never write to the target index; needs a documented minimum-permission credential (read mapping, read aliases only), consistent with the least-privilege direction in [Decouple startup health check from application credential](#decouple-startup-health-check-from-application-credential).
+- **Output format:** a human-readable terminal diff is the minimum bar. A machine-readable (JSON) output mode would let this run as a CI check on configuration pull requests (fail the build if a change would silently drop a facet, for instance), a natural follow-on once the CLI itself exists.
+- **Scope of "diff":** start with facets, columns, and fields, all directly derived from configuration plus mapping. Whether to also diff the resolved GraphQL SDL is a heavier lift and a reasonable phase two, since Arranger's schema also includes code-authored parts (Root query shape, SQON input types) that a config-vs-mapping diff alone would not cover.
+
+### Mapping-drift detector (research)
+
+_Priority: low. Research-first, and possibly not a separate implementation at all: see the scoping note below before treating this as new tooling._
+
+The problem this is aimed at: a catalogue's facets, columns, and searchable fields come from configuration files (`extended.json`, `facets.json`, `table.json`), which are supposed to match the real fields in the live ES/OS index. Nothing currently checks that they still agree. Concrete failure mode: an operator's upstream indexing pipeline (for example Maestro) adds a new field to the index; nobody remembers to add it to the catalogue's configuration; the field is then silently invisible in Arranger, with no error and no warning. The reverse also happens: a field is removed or renamed upstream while a facet still references it, and that facet quietly breaks.
+
+**Scoping note:** this is, mechanically, the same comparison the Config plan/preview CLI item above already has to make (live index mapping versus configuration files). The likely right answer is that this does not need its own tool: running that CLI on a schedule against the currently-deployed configuration, with no proposed change, and alerting if it reports any diff, is a mapping-drift detector. This entry mainly exists to record that use case (scheduled, automatic drift-checking, not just pre-deploy validation) so it isn't lost when the CLI is scoped. Whoever picks up the CLI work should read this and decide whether a "drift-check mode" (for example, a machine-readable exit code or JSON diff suitable for a cron job and an alert) is worth designing in from the start, rather than building a second tool later.
+
+**Distinct from the typed client SDK item further below:** despite sounding similar (both are "things that are supposed to match can silently drift apart"), they check different pairs of things for different people. This item is about Arranger's own configuration staying honest about the real data underneath it, an operator's concern. The typed client SDK is about a consumer's code staying honest about Arranger's current API, a downstream developer's concern. Neither substitutes for the other.
+
+---
+
 ### Fix `initializeSets` startup race in multicatalog mode
 
-_Priority: high. Confirmed bug; affects any multicatalog deployment on a fresh cluster._
-
-In multicatalog mode, every catalogue's `arrangerRoutes` runs concurrently at startup and each calls `initializeSets` with the same sets index name. `initializeSets` does a check-then-act (`indices.exists` then `indices.create`): when the index does not exist yet, multiple routers pass the existence check simultaneously, one create wins, and the others throw `resource_already_exists_exception`. That exception is caught by `arrangerRoutes`' catch-all, which replaces the entire catalogue router with a permanent 500 handler. A healthy catalogue's GraphQL endpoint is dead until restart, nondeterministically, with no clear indication in logs of what happened.
-
-Two aggravating factors: `initializeSets` runs even when `disableSets: true`; and a Sets initialization failure poisons the whole router, not just the Sets feature.
-
-**Fix:** Treat `resource_already_exists_exception` as success in `initializeSets` (the race loser's goal state is already achieved). Additionally: skip `initializeSets` when `disableSets: true`, and scope the `arrangerRoutes` catch so a Sets initialization failure does not take down the catalogue's entire GraphQL endpoint.
-
-**Files:** `modules/graphql-router/src/config/utils/index.ts` (`initializeSets`); `modules/graphql-router/src/graphqlRoutes.ts` (`arrangerRoutes` catch block). Standalone: yes.
-
-_Note: confirm the exact exception name in OpenSearch before implementing the guard - it may differ from Elasticsearch's `resource_already_exists_exception`._
+_Resolved._
 
 ---
 
@@ -40,9 +60,15 @@ The `SearchClient` abstraction already exists as the right boundary; the migrati
 
 ### GraphQL server migration (away from Apollo)
 
-_Priority: medium. Blocked by, or done in parallel with, the core module extraction._
+_Priority: high. prerequisite for Keycloak auth implementation._
 
-Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right move; the goal is to move _away_ from Apollo, not deeper into it. Apollo is opinionated about its hosting environment (it assumes Express-style middleware, has its own context and plugin APIs) in ways that conflict with the longer-term direction of decoupling Arranger from any specific framework.
+Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right move; Apollo is opinionated about its hosting environment (it assumes Express-style middleware, has its own context and plugin APIs) in ways that conflict with the longer-term direction of making Arranger framework-agnostic.
+
+**Sequencing:** This item is the second step of a three-step chain driven by a pentest audit finding:
+
+1. **Disable introspection in Apollo v3 (done):** Apollo's `introspection` option on both `ApolloServer` constructors in `graphqlRoutes.ts` is now gated by the `disableGraphQLIntrospection` feature flag (`introspection: !disableGraphQLIntrospection`), which defaults to disabled in production via `NODE_ENV` and can also be set explicitly per catalogue or via env var. Apollo v4+ disables introspection in production automatically; this flag aligns v3 behaviour with that convention, with the added benefit of being explicitly overridable. Field name suggestions in GraphQL error responses (a separate leak from introspection, on its own validation code path) are now also stripped via a custom `formatError` in `createEndpoint` (2026-07-20); Apollo v4 handles this automatically, so this becomes redundant (not harmful) once the migration lands.
+2. **Migrate to graphql-yoga (this item):** Clean foundation before auth is built on Apollo-specific APIs.
+3. **Keycloak bearer token auth (follows):** Implemented as Express middleware - library-agnostic, portable across the migration. Direct Keycloak JWT validation while Usher planning continues. See [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control).
 
 The leading replacement candidate is **graphql-yoga** (maintained by The Guild, who also maintain `@graphql-tools`, already used in this repo). It runs on any JS runtime, integrates with Express without requiring it, supports the same schema-first approach the codebase uses, and is actively maintained. This is a research-confirmed candidate, not a final decision.
 
@@ -82,6 +108,11 @@ Key design questions (not yet answered):
 - **Server-side filters redesign:** If ABAC lands, server-side filters may need to evolve from a raw SQON callback into something that understands user identity and translates claims into query constraints.
 - **Multi-catalog filter composition:** In multi-catalog mode, there should be support for a global server-side filter that composes with catalog-local filters, with deterministic precedence and merge behaviour so access-control rules are consistent across single- and multi-catalog deployments. Needed for Controlled Access implementations in multicatalog setups.
 
+Two requirements are not open design questions; they are safety defaults to build in from day one regardless of how the rest of the design resolves:
+
+- **Fail-closed on auth enforcement failure.** If Keycloak is unreachable, token validation errors, or claims are missing, the only safe behaviour is to reject the request. Fail-open (treating an enforcement failure as an implicit allow) is an access-control failure (OWASP A01:2025), not graceful degradation; this must be a deliberate, tested code path, not an accidental default.
+- **Every access denial produces a structured log entry** with `{ userId, resource, reason }` from the first implementation, not as optional plumbing added later. This is what makes denial events observable and auditable once ABAC ships; see [Structured request logging as a prerequisite for ABAC](#structured-request-logging-as-a-prerequisite-for-abac).
+
 This design intersects with Sets (ABAC for saved queries), the Admin/user access model, and the Arranger core module extraction (the core/transport boundary affects where auth checks are applied).
 
 _Needs design at the Overture platform level before Arranger-specific work can be scoped. Do not extend server-side filters in the interim without awareness of this direction._
@@ -94,69 +125,15 @@ Once `arranger-core` exists, `graphql-router` becomes one of potentially several
 
 This is a directional goal, not an actionable item yet.
 
-### `sqon-builder` absorption into `modules/sqon`
+### Deprecate `sqon-builder`
 
-_Priority: medium. Separate repo, should be absorbed into this monorepo._
+_Priority: next. Absorption into `modules/sqon` is complete (builder API, reduceSqon, filter manipulation, from(), all operators, correct type boundary). Remaining: formal deprecation and removal._
 
-The direction is **not** a lateral merge: `modules/sqon` is the host. It grows to subsume `sqon-builder`'s capabilities, primarily the builder/chainable API and the SQON manipulation utilities, so that `modules/sqon` becomes the single package for everything SQON: validation, operator metadata, JSON Schema, and programmatic construction. `sqon-builder` is then deprecated and its consumers redirected.
+Steps:
+1. Publish a final `@overture-stack/sqon-builder` version with a deprecation notice pointing consumers at `@overture-stack/sqon`.
+2. Remove `sqon-builder` as a dependency from this monorepo.
 
-#### What sqon-builder brings that is worth keeping
-
-**Builder/chainable API**: `SQONBuilder.in('x', ['a']).and(SQONBuilder.gt('y', 5))`. Genuinely useful for programmatic SQON construction in UI code and the MCP server. Used in `graphql-router`'s `convertToSqon` path and presumably in `modules/components`.
-
-**`reduceSQON`**: a non-trivial deduplication and simplification algorithm. Merges duplicate filters under the same combination (e.g. two `gt` on `and` collapses to the greater value), unwraps single-item wrappers, removes empty combinations. No equivalent in `modules/sqon`.
-
-**Filter manipulation methods**: `removeFilter`, `removeExactFilter`, `setFilter`. These are stateful builder operations that the UI depends on for interactive SQON editing (adding/removing facet selections).
-
-**`checkMatchingFilter` / `checkMatchingArrays`**: semantic filter comparison, order-independent. Worth keeping as a utility export.
-
-**`from()` static parser**: parses a raw object into a builder. The MCP-layer `convertToSqon` already uses this.
-
-**`emptySQON()`**: trivial but a useful starting point for builder chains.
-
-#### What needs to be fixed or extended during absorption
-
-**Operator coverage gap**: the single largest issue. `sqon-builder` only implements `in`, `gt`, `lt`. It cannot build `not-in`, `some-not-in`, `all`, `gte`, `lte`, `between`, or `filter` queries. The absorbed builder must cover all operators `modules/sqon` already defines. Any SQON a consumer can _validate_ they must also be able to _build_.
-
-**`reduceSQON` operator coverage gap**: the reduction logic only handles specific cases for `GT`, `LT`, and `IN`. When the builder gains the full operator set, the reduction rules for `gte`, `lte`, `between`, and `not-in` need to be defined and implemented. Some cases are clear (two `gte` on `and` keeps the greater); others need deliberate design (what does it mean to reduce two `between` ranges on `and`?).
-
-**Own Zod schema**: `sqon-builder` defines its own `ArrayFilterValue`, `ScalarFilterValue`, `SQON`, etc. which diverge from and are a strict subset of `modules/sqon`'s schema. The absorbed builder must use `modules/sqon`'s types exclusively. The builder-internal types go away.
-
-**`@ts-expect-error` in graphql-router**: `network/utils/sqon.ts` has `@ts-expect-error sqon-builder types need update` when calling `SQONBuilder.from()`. This is a type misalignment symptom that disappears once the builder's types are grounded in `modules/sqon`'s schema.
-
-**Boolean value support**: add `zod.boolean()` to `SqonScalarValueSchema` in the unified schema (see [tech-debt: boolean values](tech-debt.md#sqon-value-schema-does-not-accept-boolean-values)). The builder inherits the fix automatically.
-
-#### What to leave behind
-
-**The `& SQON` type pattern: a known design mistake.** `sqon-builder` types the builder as `SQONBuilder & SQON`, meaning the builder object _is simultaneously the data_. This is wrong. `SqonNode` (the canonical SQON type, defined in `modules/sqon`) represents a JSON-serializable query structure; it has no methods and should never have them. The builder is a separate construction tool that produces `SqonNode` values; it is not itself a `SqonNode`.
-
-The correct design is a clean wrapper: `SqonBuilder` holds a `SqonNode` internally, exposes builder methods, and has explicit extraction: `toValue(): SqonNode` and `toString(): string`. The data type and the construction API are two distinct things.
-
-The consequences of the `& SQON` anti-pattern:
-
-- `cloneDeepValues` exists only to strip builder methods before serialization; it is a workaround for the blur, not a useful utility in its own right.
-- The `StripFunctions<T>` generic is a type-level admission that the type is wrong.
-- Consumers can accidentally pass a builder where a plain `SqonNode` is expected.
-- The `@ts-expect-error` in `graphql-router`'s `sqon.ts` is a direct downstream symptom.
-
-This must be explicit in the implementation, the TypeScript types, and the JSDoc. `SqonNode` is the data type. `SqonBuilder` is a factory. They must not be conflated.
-
-**`createFilter` in its current form**: only handles `in`/`gt`/`lt` and is tightly coupled to the old type constants. Rewrite against the full operator set with the new types.
-
-**`cloneDeepValues`**: only exists because of the `& SQON` pattern. Goes away with the wrapper redesign.
-
-**sqon-builder's constants** (`FilterKeys`, `ArrayFilterKeys`, `ScalarFilterKeys`, `CombinationKeys`): `modules/sqon` already has `sqonFieldOperatorProperties`, `sqonCombinationProperties`, and `sqonAliasProperties`. One set of constants.
-
-#### Migration path
-
-1. Add the builder API and manipulation utilities to `modules/sqon`, implemented against the full operator set and the existing Zod schema. Export as `SqonBuilder` (or similar) alongside the existing exports.
-2. Add a `from()` static method to `SqonBuilder` that calls `SqonSchema.parse()` internally, replacing the sqon-builder's `SQON.parse()` call.
-3. Update `graphql-router`'s `convertToSqon` to import from `@overture-stack/arranger-sqon` instead of `@overture-stack/sqon-builder`. The `@ts-expect-error` goes away.
-4. Update `modules/components` and any other consumer of `sqon-builder`.
-5. Deprecate `sqon-builder`. Publish a final version pointing consumers at `@overture-stack/arranger-sqon`.
-6. Remove `sqon-builder` as a dependency.
-
-_Note: `sqon-builder` git history can be preserved via `git subtree add` or `git filter-repo` if desired, but this is optional; the source is small enough to port directly. The `sqon-builder` monorepo integration work described previously is superseded by this._
+**MCP surface unification** (follow-on): `modules/sqon` now owns all operator metadata via `getSqonFieldOperatorDetails()`. The `get-sqon-schema` MCP tool still returns a hand-maintained prose cheat sheet; the `arranger://introspection/sqon` resource returns raw JSON. Both should derive from `getSqonFieldOperatorDetails()` so they stay in sync automatically as operators are added. Scope this as part of the deprecation PR or immediately after.
 
 ### Consolidate field-type-to-operator rules into `modules/sqon`
 
@@ -205,6 +182,33 @@ Catalogs can fail to load or be intentionally disabled. There is currently no ex
 
 _Design-first. Coordinate with the API version exposure entry; catalog metadata and server introspection are related surfaces._
 
+### Per-catalogue config reload without full server restart
+
+_Priority: medium. To be reviewed before committing to a design._
+
+Today, a catalogue config change triggers a full server restart: the Helm chart detects md5 checksum drift against the deployed config and restarts the whole process. Kubernetes rolling updates keep the previous pod serving traffic until the new one is ready, so this costs nothing in a k8s deployment, but a local or smaller setup without rolling updates takes full downtime on any single catalogue's config change.
+
+Investigation found per-catalogue state (ES/OS client, GraphQL schema, Express router) is already isolated and keyed by catalogue ID inside `arrangerRouter()` (`modules/graphql-router/src/router.ts:40-127`), built fresh per catalogue with no shared caching. The actual gap is mounting: `apps/search-server/src/arrangerRoutes.ts:58-61` mounts each catalogue's router directly on the parent Express router (`router.use(...)`), which has no mutable registry to reach back into once mounted; Express bakes the sub-router into its internal middleware stack.
+
+Two carve-outs would need care in any implementation: the optional shared `esClient` injection path (`apps/search-server/src/server.ts:14,64`) forces one client onto all catalogues if used, and the introspection router map (`apps/search-server/src/introspection/index.ts:9-43`) would need its entry swapped in lockstep with any router swap, or it could keep referencing a torn-down catalogue.
+
+**Proposed incremental path, not yet committed to:**
+1. Manual reload trigger for a single catalogue (for example an admin-gated `POST /:catalogId/reload`) that re-runs `buildCatalogueRouter()` and swaps its entry in a `Map<catalogId, Router>` behind a thin dereferencing middleware, replacing Express's static mount.
+2. Opt-in file-watching (for example `chokidar`) on each catalogue's config directory, calling the same reload path automatically; this is where the md5-checksum logic currently living in the Helm chart could move into the app itself.
+3. Coordinate with "Multicatalog catalogue lifecycle and metadata" above: a catalogue mid-reload is a natural fit for the `available`/`failed`/`disabled` status model already being planned there, so a client hitting the catalogue during a reload gets a real status rather than a race condition.
+
+_To be reviewed before committing to a design. Related: Multicatalog catalogue lifecycle and metadata; Per-catalogue search engine credentials via env vars._
+
+### Per-catalogue search engine credentials via env vars
+
+_Priority: medium. Config plumbing gap, not a design question._
+
+Confirmed: file-based config (a catalogue's `base.json`) already supports per-catalogue `esHost`/`esUser`/`esPass`/`searchEngine`, since `arrangerRouter()` (`modules/graphql-router/src/router.ts`) builds a fresh search client per catalogue from that catalogue's own config whenever no client is injected. Env-var configuration, the primary documented deployment path, does not: `apps/search-server/src/configs/fromEnv/localEnvs.ts` reads one global `ES_HOST`/`ES_USER`/`ES_PASS` for the whole server instance, explicitly commented as "global" Arranger config, with an existing TODO in that file to extend it to `${catalogId}_ES_HOST`-style per-catalogue env vars.
+
+Until this is closed, a multicatalog deployment configured purely by env vars (rather than per-catalogue `base.json` files) is limited to one shared search engine credential across all catalogues, even though the underlying client-construction code already supports per-catalogue separation.
+
+_Related: Multicatalog catalogue lifecycle and metadata; Arranger config separation._
+
 ### Arranger config separation
 
 _Priority: medium-high. Blocked on core module extraction._
@@ -227,6 +231,8 @@ Scope:
 - **Catalog config** (the per-catalog JSON loaded by Arranger): validate against the expected schema before the catalog is registered. Where a value is missing but has a safe default, warn rather than error.
 - **Validation library:** Zod is the leading candidate; it produces typed output and legible error messages. The config separation roadmap entry already assumes Zod; this item just brings validation forward to the current config shape.
 - **Tests:** validation logic should be tested directly, both the happy path and representative error cases (missing required field, wrong type, unknown key).
+
+**Security framing:** silently falling back to a partial or default config when validation fails is an OWASP A08:2025 (Software or Data Integrity Failures) risk, not just a UX rough edge. The correct behaviour on invalid config is to refuse to start with the validation error, never to silently apply a partial or best-effort config and continue running in an unintended state.
 
 _This work is independent of the config separation effort and is not blocked on it; it validates configs in their current shape. When config separation lands, the validation schemas will need updating to reflect the new layer boundaries, but that is an incremental change, not a rewrite._
 
@@ -252,9 +258,41 @@ Two related but distinct problems:
 
 _Schema versioning decision gates the hits/edges/nodes redesign._
 
+### Typed client SDK via GraphQL Codegen (research)
+
+_Priority: low. Research-first; a developer-experience improvement for consumers, not a change to Arranger's own runtime behaviour._
+
+Consumers that build on Arranger (portal frontends, and internally `modules/charts`) currently write GraphQL queries by hand and separately hand-write the TypeScript types describing the expected response shape. Nothing connects the two: if Arranger's schema changes (a field renamed, a type changed), a consumer's hand-written types don't know about it, and the mismatch shows up as a silent runtime bug rather than a build failure.
+
+**Proposal:** adopt [GraphQL Code Generator](https://the-guild.dev/graphql/codegen) (maintained by The Guild, a natural fit alongside `@graphql-tools`, already used in this repo) to generate TypeScript types, and optionally typed query functions, directly from Arranger's schema plus a consumer's query files. A schema change that breaks an existing query becomes a build-time type error for that consumer instead of a runtime surprise.
+
+**How this differs from the mapping-drift detector earlier in this document:** both are instances of the same general problem (two representations of the same information silently drifting apart), but they check different pairs of things for different audiences. This item keeps a consumer's code in sync with whatever schema Arranger currently outputs. The mapping-drift detector keeps Arranger's own configuration in sync with the raw data underneath it. Neither substitutes for the other: perfectly synced configuration and index data doesn't help a frontend developer whose types are stale, and perfectly typed consumer code doesn't tell an operator that a field silently vanished from their own facets.
+
+**Open questions:** would Arranger publish a canonical `.graphql` schema file per release for consumers to generate against, or does this only work well once [API version exposure and schema versioning strategy](#api-version-exposure-and-schema-versioning-strategy) gives schemas a stable versioning story? Multicatalogue deployments complicate this further, since each catalogue's schema differs by index mapping; codegen would need to target one catalogue's schema at a time, not "Arranger's schema" as a singular thing.
+
 ### MCP integration readiness
 
-Three targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. These arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface.
+Six targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation; the fifth is a follow-up question from a documentation fix logged during a downstream PR review; the sixth is the accumulated `/docs` gap the other five (and everything already shipped) have left behind.
+
+#### SQON generation via `build_sqon` tool
+
+_Priority: high. Somewhat urgent: MCP SQON generation is currently hit-or-miss in practice._
+
+LLMs asked to generate SQONs by inference produce inconsistent results. The root cause is training-data staleness: operator names, value schemas, combination nesting rules, and field-type constraints in model training data are incomplete or incorrect relative to the current spec. Prompting alone cannot reliably compensate for this.
+
+The fix is to remove the LLM from the SQON synthesis loop. Add a `build_sqon` MCP tool in `apps/mcp-server` that accepts structured parameters (field, operator, value, and an optional combination operator for nesting) and calls `SqonBuilder` internally, returning a validated SQON. The LLM's responsibility becomes selecting the right field, operator, and value from the available catalogue schema, not synthesizing raw JSON. The tool is the generator; the LLM is the selector.
+
+This is also more token-efficient than the alternatives: embedding SQON documentation in a system prompt and relying on the `/introspection` endpoint as a runtime SQON guide both consume context window on every request. A tool call is cheaper and fully deterministic.
+
+**Scope:**
+
+1. **`build_sqon` tool** in `apps/mcp-server/src/mcp/tools.ts`: accepts `field`, `operator`, `value`, and optional `combination` type; calls `SqonBuilder` internally; returns a validated SQON object.
+2. **Agent-optimized tool description**: the tool schema carries descriptions that guide the LLM toward correct parameter selection: valid operators per field type (from `getSqonFieldOperatorDetails()`) and value type hints. The tool's own description is the spec; the LLM does not need SQON documentation injected into every prompt.
+3. **Versioned changelog**: as the SQON schema evolves, the tool interface is versioned and its changelog is machine-readable. Agent behaviour decouples from model training data; the tool's current description is always authoritative.
+
+**Prerequisite (resolved):** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. This was previously blocked on absorbing full operator coverage into `modules/sqon`; that absorption is now complete (see [Deprecate `sqon-builder`](#deprecate-sqon-builder)) and `modules/sqon`'s `SqonBuilder` already covers `all`, `between`, `gte`, `in`, `lte`, `not-in`, `some-not-in`, and `wildcard`. `build_sqon` can ship with full operator coverage from the start; no partial-coverage phasing is needed.
+
+**Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once the `execute-query` MCP implementation is available and real token budgets can be measured empirically.
 
 #### Schema cache invalidation signal (ETag / schema hash)
 
@@ -286,6 +324,25 @@ Arranger should surface field descriptions from ES mapping metadata (the `meta` 
 
 _Requires a mapping-to-schema pass change. Operators who want richer descriptions can add `meta.description` to their index mappings without any Arranger code change._
 
+#### Make invisible query defaults visible via SDL (research)
+
+_Priority: low. The documentation gap is closed (see `docs/usage/07-defaults-and-limits.md`); this is the follow-up question of whether the underlying defaults should also become schema-visible._
+
+Several arguments that materially change query results (`hits(first)`, `aggregations.buckets(max)`, `histogram(interval)`, `range(ranges)`, `cardinality(precision_threshold)`, `top_hits(size)`, `include_missing`) default in resolver code rather than as GraphQL SDL argument defaults, unlike `hits(trackTotalHits: Boolean = true)`, which does have a real SDL default. A human reading the defaults-and-limits doc now has the answer, but an LLM or codegen tool working from the schema alone still doesn't. Worth revisiting once the SDL surface is being touched for other reasons anyway, for example alongside [SQON documentation in schema descriptions](#sqon-documentation-in-schema-descriptions) above: would adding real `= value` defaults to these arguments change resolver behaviour in any edge case (for instance, distinguishing "explicitly passed 10" from "omitted"), or is it a safe, additive schema change?
+
+#### Update `/docs` for the MCP server surface
+
+_Priority: medium. Recurring gap logged as a session open thread many times over; never yet promoted to a tracked item._
+
+The published docs site has no coverage of `apps/mcp-server` at all: `execute-query`, `get-sqon-schema`, `get-catalogue-fields`, `list-catalogues`, and (once shipped) `build_sqon` are all undocumented in `/docs`, despite `docs/concepts.md` already positioning Arranger as "a working search API and MCP server for AI agent access."
+
+**Scope:**
+
+- A dedicated `docs/usage/` page (or an extension of `06-ai-and-automation.md`) covering the full MCP tool surface: what each tool does, its input/output shape, and the elicitation-confirmation flow in `execute-query`.
+- To check once `build_sqon` ships: `docs/concepts.md`'s `fieldName`/`fieldNames` definition currently ties both names to appearing "within a filter clause's `content` object"; `build_sqon` makes them flat tool-call arguments instead, so the definition will read narrower than reality unless extended to cover that usage too.
+
+_Coordinate with whichever MCP work lands next; `execute-query` already shipped (#1077), `build_sqon` is still design-only._
+
 ---
 
 ### GraphQL large integer type
@@ -300,7 +357,83 @@ _Low urgency unless precision bugs appear. Research-first._
 
 ---
 
+### Query result caching (research)
+
+_Priority: medium-high; higher priority than the other query-economics item below. Verified absent from the codebase today (no caching layer anywhere in `graphql-router`), and the cost impact on public-facing deployments is direct and immediate rather than theoretical. Research-first: evaluate existing plugins before building anything bespoke._
+
+High-traffic public portals re-run the same default facet aggregation queries constantly, since most users land on the same default view before narrowing their search. A short-TTL cache keyed on the resolved ES/OS query DSL (not the raw GraphQL query string: the same GraphQL query with different SQON filters produces different results) plus a catalogue/index state signal would cut ES/OS load significantly for a large share of real traffic, with bounded staleness risk.
+
+**Evaluate first:** [`graphql-yoga`](https://the-guild.dev/graphql/yoga-server) (already the leading candidate to replace Apollo; see [GraphQL server migration](#graphql-server-migration-away-from-apollo)) ships an official [`@graphql-yoga/plugin-response-cache`](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching) plugin: TTL-based response caching with configurable cache keys and session-aware invalidation, maintained by the same team as the server itself. If the Apollo-to-Yoga migration lands first, this plugin should be the default answer to evaluate before considering a bespoke cache layer; it may substantially shorten this research item.
+
+**Invalidation:** ES/OS index updates (via an operator's indexing pipeline, e.g. Maestro reindexing) need to invalidate stale cache entries. Two options: (a) tie cache keys to the schema/index-state hash already planned for MCP cache invalidation (see [API version exposure and schema versioning strategy](#api-version-exposure-and-schema-versioning-strategy)), so a reindex naturally busts the cache; or (b) accept bounded staleness via a short TTL (30 to 60 seconds, for example) and skip invalidation complexity entirely. Option (b) is simpler and may be sufficient in practice; option (a) is more correct. The right choice depends on how often real deployments reindex during active-use hours.
+
+**Deployment shape matters:** the cache-layer choice (in-memory LRU versus a shared store such as Redis) depends on whether Arranger is expected to run as multiple replicas behind a load balancer. Multi-replica deployments need a shared cache for hits to be useful across instances; a single-replica deployment can use in-memory LRU. This should be a deployment-time configuration choice, not hardcoded to one approach.
+
+### Persisted queries and point-in-time export pagination (research)
+
+_Priority: low but worth tracking. Two independent, smaller-scoped research items grouped together; neither is currently implemented._
+
+**Automatic Persisted Queries (APQ).** Reduces request payload size and, combined with a server-side allow-list, acts as a second DoS-hardening layer alongside the existing alias and depth limits (see [GraphQL query complexity analysis](#graphql-query-complexity-analysis)): only known query shapes execute, and arbitrary ad-hoc queries can be rejected in hardened deployments. The protocol itself ([originally specified by Apollo](https://www.apollographql.com/docs/apollo-server/performance/apq), but server-agnostic) has the client send a SHA-256 hash first; the server looks it up and only asks for the full query text on a cache miss. If any current Arranger consumers already use Apollo Client's APQ link, that matters for sequencing this against the Apollo-to-Yoga migration. If [query result caching](#query-result-caching-research) above is also pursued, a persisted-query hash is a naturally stable cache key and may simplify that design.
+
+**Point-in-time (PIT) pagination for exports.** Confirmed: `getAllData` (`modules/graphql-router/src/utils/getAllData.js`) paginates via `search_after` with a deterministic `_id: 'asc'` tie-breaker, but never opens a Point-in-Time context. This is a correctness question, not a performance one: `search_after` alone is only guaranteed consistent across pages if the index doesn't change during the export; a long-running download that races a concurrent write or delete on the underlying index can skip or duplicate records. See the [ES Point-in-Time API](https://www.elastic.co/guide/en/elasticsearch/reference/current/point-in-time-api.html) (7.10+) and [OpenSearch's PIT API](https://opensearch.org/docs/latest/search-plugins/point-in-time-api/) (2.4+); check both against the actual minimum versions this repo targets (see [OpenSearch-first migration](#opensearch-first-migration)) before assuming PIT is universally available. Scope is narrow: this only matters for exports/downloads and any other "fetch everything matching this SQON" path, not normal paginated UI browsing, where minor staleness between pages is an accepted and unremarkable tradeoff.
+
+### Observability: metrics, tracing, and usage analytics (research)
+
+_Priority: low but important. Research-first; complements the existing structured-logging convention rather than replacing it. Confirmed absent: no OpenTelemetry, Prometheus, or `prom-client` references anywhere in the codebase today._
+
+Logging, metrics, and tracing are three distinct observability disciplines. Structured logging is already an established convention here; the other two are not addressed at all. Two related but separable threads:
+
+#### Metrics and tracing
+
+A `/metrics` endpoint (Prometheus format: query latency histograms, error rates, per-catalogue query volume) and distributed tracing spans across the request path (GraphQL resolution, query building, search client call, ES/OS response) would answer operational questions that structured logs alone answer poorly in aggregate: why a given aggregation is slow, or which catalogue is driving load on a shared deployment.
+
+Prior art: [`@opentelemetry/instrumentation-graphql`](https://www.npmjs.com/package/@opentelemetry/instrumentation-graphql) and [`@opentelemetry/instrumentation-express`](https://www.npmjs.com/package/@opentelemetry/instrumentation-express) give auto-instrumentation for most of the request path with minimal manual span creation. [`prom-client`](https://www.npmjs.com/package/prom-client) is the standard Node Prometheus client if metrics are pursued on their own, independent of full tracing.
+
+_Sequencing note: this is easiest to wire in cleanly once [Arranger core module extraction](#arranger-core-module-extraction) and the [GraphQL server migration](#graphql-server-migration-away-from-apollo) land, since both introduce clear seams (the core call boundary, the transport boundary) that are natural instrumentation points. Not blocked on them; doing this afterward just avoids instrumenting code that is about to be restructured anyway._
+
+#### Facet and field usage analytics
+
+Distinct from operational metrics above: this is about capturing which fields, operators, and facets are actually exercised in aggregate (counts only, no user identity or query content retained) to drive product decisions: which fields deserve `displayValues` next (see [`displayValues` for all aggregation types](#displayvalues-for-all-aggregation-types)), which facets should default higher in a catalogue's UI, and which configured fields are effectively dead weight. This is explicitly not the same concern as [Facet field groups: user-defined sort order](#facet-field-groups-user-defined-sort-order), which is a per-user manual preference; this is usage-informed defaults for everyone using a given catalogue.
+
+_Design question: does this live in Arranger itself (aggregated counters exposed via an admin-gated endpoint), or is it purely a log-mining exercise against the structured query logs that the metrics/tracing thread above would produce? The latter avoids adding stateful counters to Arranger and may be sufficient; building counters in-app is only clearly worth it if live facet reordering based on real-time usage is ever wanted._
+
+### Structured request logging as a prerequisite for ABAC
+
+_Priority: medium. Sequence before the auth/ABAC work above, not after._
+
+The [Observability](#observability-metrics-tracing-and-usage-analytics-research) item above covers metrics and tracing; neither addresses a narrower, more immediate gap: **there is currently no structured per-request log at all** for a query request. Confirmed absent: nothing in the query resolvers (`resolveHits.js`, `resolveAggregations.ts`) or `apps/search-server` emits a structured event per request today. No log line anywhere in the request path includes user identity, request ID, catalogue name, SQON size, or hit count, which is the minimum context needed for anomaly detection and post-incident reconstruction.
+
+Scope: one structured log event per query request with fields `{ catalogId, queryType, sqonSize, hitsReturned, durationMs }`, extendable to include `userId` once auth lands (the field can be established as absent/`null` now and populated later without a schema change). Unlike the full Observability item, this does not need OpenTelemetry or a `/metrics` endpoint: structured JSON to stdout is sufficient.
+
+This is a genuine prerequisite, not just adjacent work: access denial events (see [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control)) need somewhere to land once ABAC ships, and that logging shape should exist before enforcement does, not be retrofitted after.
+
+---
+
 ## Features
+
+### Fuzzy (edit-distance) SQON operator
+
+_Priority: medium. Distinct from the `wildcard` operator already implemented._
+
+Add a `fuzzy` SQON operator that performs approximate string matching using Levenshtein edit distance, translated to an ES/OS `multi_match` query with `fuzziness: "AUTO"`. This tolerates typos and near-matches (`"jhn"` matches `"john"`) in a way that the current `wildcard`/substring operator does not.
+
+The SQON schema: same shape as `wildcard` (`fieldNames` array + `value` string), different `op`:
+
+```json
+{
+  "op": "fuzzy",
+  "content": { "fieldNames": ["donor.name"], "value": "john smit" }
+}
+```
+
+**Implementation notes:**
+- `multi_match` with `fuzziness: "AUTO"` is the natural ES/OS translation; the current `getWildcardFilter` in `graphql-router` is the reference implementation to branch from
+- Nested field grouping logic from `getWildcardFilter` carries over: nested fields must be wrapped per path
+- A new `SqonBuilder.fuzzy()` builder method and a new `FuzzyFilterSchema` in `modules/sqon` are needed; the schema change is additive
+- The `fuzzy` op name is free: it was never released under the `wildcard`-era codebase, so there are no aliases or compatibility shims to remove; just add it as a new canonical op
+- Expose `fuzziness` as an optional `content` param defaulting to `"AUTO"` for callers who need tighter or looser matching
+
+**Design question to resolve before implementing:** should `fuzzy` tolerate leading-term fuzziness only (`operator: "AND"`) or allow any-term matching (`operator: "OR"`)? AND is less surprising for search boxes; OR is more permissive. Decide at API design time.
 
 ### GA4GH Beacon v2 module
 
@@ -375,18 +508,52 @@ might map one to `individuals`, one to `biosamples`, and one not to any Beacon e
 _Design-first. Define the filtering term registry schema and the entry type config surface before
 writing any query translation code._
 
+### Domain-specific search capabilities (research)
+
+_Priority: low but important. Research-first; no implementation until each sub-question below is scoped. Three related but independent tracks grouped together because they share a theme (moving beyond exact-match faceted filtering), not a timeline._
+
+#### Genomic interval and overlap operator
+
+The current SQON operator set (`all`, `between`, `gt`, `gte`, `in`, `lt`, `lte`, `not-in`, `some-not-in`, `wildcard`, and the planned `fuzzy`) has no way to express "does this record's genomic region overlap chr1:1000-2000", a foundational query pattern for variant, gene, and read-alignment data. `between` is a single-field numeric range; an overlap query compares a query range against two fields (start and end, or a single range-typed field), which is a different shape.
+
+Prior art: ES and OS both support this today via a `bool` query composing `lte`/`gte` pairs across two fields (`start <= queryEnd AND end >= queryStart`), or via the native [ES `range` field type](https://www.elastic.co/guide/en/elasticsearch/reference/current/range.html) queried with the `intersects`, `contains`, or `within` relation. OpenSearch supports the same field type and relations.
+
+This is directly relevant to the already-planned [GA4GH Beacon v2 module](#ga4gh-beacon-v2-module): region/variant search is core to the [Beacon v2 query spec](https://github.com/ga4gh-beacon/beacon-v2) for its `g_variants` entry type. Building this as a general SQON operator now means Beacon's later phases can consume it rather than reinventing region-overlap translation logic when that work starts.
+
+Open design questions: does the SQON schema need a new two-field content shape (for example `{ startField, endField, queryStart, queryEnd }`), or can it be expressed as a composition of existing `gte`/`lte` operators under `and`? Should this require catalogues to index positions using an ES/OS `range` field type, or should it also support the two-plain-numeric-fields case for catalogues that do not use range fields? The answer determines whether this is purely a `modules/sqon` and query-builder change, or also an indexing/mapping requirement that needs to be communicated to operators.
+
+#### Relevance-ranked search mode
+
+Arranger's query model today is exact-filter and aggregation-first; there is no first-class "search box" mode with ranked results. `resolveHits.js` already threads `track_scores` through to the ES/OS query, so `_score` is reachable if a caller explicitly requests `sort: [{ fieldName: '_score' }]`, but there is no per-catalogue configuration for field boosting, and no `multi_match`-style query builder for weighted matching across several fields with relevance ranking, as distinct from what `wildcard` gives today (exact substring matching, unweighted).
+
+Prior art: [`multi_match`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html) with per-field `^boost` weights (for example `title^3,description`) is the standard building block. [`function_score`](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html) would allow boosts that depend on field values (for example, favouring more recent records), if that is ever wanted.
+
+Configuration surface: field boost weights would naturally live in `extended.json`, where per-field configuration already exists, as an additive property rather than a new configuration file.
+
+This is lower-risk than it looks: the response-side plumbing (`track_scores`, generic `sort`) already exists, so the actual gap is entirely in query construction and configuration surface.
+
+#### Hybrid keyword and vector (semantic) search
+
+Longer horizon; flagged clearly as a bigger bet, not a near-term build. Confirmed: neither ES nor OS vector or k-NN fields are used anywhere in the codebase today. `docs/concepts.md` already positions Arranger as "a working search API and MCP server for AI agent access"; semantic search over free-text fields (clinical notes, descriptions, publication abstracts) is a natural extension of that positioning, and is distinct from both operators above: `wildcard` and relevance-ranked search match on literal or weighted term overlap, while semantic search matches on meaning (for example, "kidney cancer" matching a record that says "renal carcinoma").
+
+Prior art: OpenSearch's [k-NN plugin](https://opensearch.org/docs/latest/search-plugins/knn/index/) (`knn_vector` field type; HNSW or IVF algorithms) and its [hybrid query feature](https://opensearch.org/docs/latest/search-plugins/hybrid-search/) (combines BM25 and k-NN scores with score normalization) are the most directly relevant references, since this already aligns with the OpenSearch-first direction. ES has an equivalent (`dense_vector` field plus `knn` query since 8.x), though Arranger's documented minimum ES support (7.0+) predates ES's native k-NN support; this would likely be an OpenSearch-only capability at first unless the ES version floor is revisited.
+
+Open design question: who generates the embeddings? Almost certainly not Arranger itself, since it doesn't own embedding-model infrastructure; an operator's indexing pipeline (for example Maestro) would populate a vector field at index time. Arranger's role would be the query side only: accepting a query vector, or text to embed at query time via a configured embedding endpoint, and fusing keyword and vector result rankings. This needs a design decision on where the embedding call happens before any implementation begins.
+
 ### Sets: full feature implementation
 
 _Priority: active. Backend exists but the feature is incomplete._
 
-Sets are saved groupings of documents from a catalog; think "save this search result for later" or "share this selection with a colleague." The backend infrastructure exists but Sets are not yet a complete user-facing feature. The full scope includes:
+Sets are saved groupings of documents from a catalog; think "save this search result for later" or "share this selection with a colleague." Confirmed backend inventory: exactly **one** operation exists end-to-end. `saveSet` (type def `modules/graphql-router/src/schema/Root.ts:68`, resolver `mapping/resolveSets.js:58-108`) runs a SQON as an ES query, walks every matching document via `search_after` pagination, and indexes a static snapshot (`{setId, createdAt, ids, type, path, sqon, userId, size}`, mapping in `schema/index.ts:11-20`) into a dedicated sets index. There is no `listSets`, `deleteSet`, `updateSet`, or `renameSet` anywhere in the codebase, and no query to fetch a set back: a user can create a set and never see, rename, or delete it again through the API. UI-side, the only artifact is `modules/components/src/utils/saveSet.js`, a thin mutation wrapper consumed inside `Arranger/MatchBox.jsx:265-289`; there is no create/view/manage/share panel of any kind.
 
-- **Backend:** Complete resolver logic, index lifecycle management, full CRUD operations, and proper error handling.
-- **UI:** Components for creating, viewing, managing, and sharing sets. Needs to integrate with the existing filter/search UI.
-- **Access control:** Sets should support Attribute-Based Access Control (ABAC). A set has an owner; it can be private, shared with specific users, or public. This design needs to be done before the backend is completed, as it affects the data model.
-- **Virtual cohorts:** Rather than storing a static list of document IDs, a set can be defined as a saved filter/query that resolves dynamically at query time. This is more powerful and avoids stale sets when the underlying data changes.
+The full scope includes:
 
-This is a substantial multi-sprint effort. Backend and UI work can be parallelized once the ABAC model is defined. The `DISABLE_SETS` feature flag exists precisely because this is a work in progress; it should remain until the feature is complete and stable.
+- **Backend:** `saveSet` (create) exists; `listSets`, `deleteSet`, and `updateSet` are entirely missing, not partially built. Error handling on the existing path is unverified, since it has no test coverage (see [tech-debt: no unit tests for `resolveSetsInSqon`](tech-debt.md#no-unit-tests-for-resolvesetsinsqon-set-expansion)).
+- **UI:** Components for creating, viewing, managing, and sharing sets, integrated with the existing filter/search UI. Zero UI exists beyond the MatchBox save affordance.
+- **Access control:** Sets should support Attribute-Based Access Control (ABAC). A set has an owner; it can be private, shared with specific users, or public. This design needs to be done before the backend is completed, as it affects the data model. Confirmed: the sets ES mapping stores `userId` per set today, but nothing anywhere reads or enforces it, and the query-time resolution path (`set_id:` filter expansion) is not even gated by `ENABLE_SETS`, only index creation is (see [tech-debt: `ENABLE_SETS` flag does not fully gate the Sets query path](tech-debt.md#enable_sets-flag-does-not-fully-gate-the-sets-query-path)). This is a live gap, not only a forward-looking design question.
+- **Virtual cohorts:** Rather than storing a static list of document IDs, a set can be defined as a saved filter/query that resolves dynamically at query time. Confirmed: today's `ids` field is a frozen snapshot taken at creation time; the `sqon` is stored alongside it but never re-run. Virtual cohorts would be a genuinely new resolution mode, not an extension of the existing one.
+
+This is a substantial multi-sprint effort. Backend and UI work can be parallelized once the ABAC model is defined. The `ENABLE_SETS` feature flag exists precisely because this is a work in progress; it should remain until the feature is complete and stable.
 
 ### Admin UI replacement
 
@@ -442,7 +609,15 @@ _Needs interaction and data model design before implementation._
 
 _Priority: medium. Extends existing behaviour uniformly._
 
-The `displayValues` feature maps raw field values to human-readable labels (e.g. `"M"` → `"Male"`). It currently works in BooleanAggs but not TermAggs or other agg types. TermAggs should be the next target given their frequency of use, then extend to all agg types and the table column display.
+The `displayValues` feature maps raw field values to human-readable labels (e.g. `"M"` → `"Male"`). Confirmed source of truth: `extendFields` (`modules/graphql-router/src/mapping/extendMapping.ts:184-196`) populates a flat `displayValues: Record<string, string>` per field, typed as `ExtendedMappingInterface.displayValues` (`modules/components/src/DataContext/types.ts:41`) and exposed via GraphQL: the same shape is already fetched and available to every consumer regardless of agg type.
+
+**Confirmed current state, by component:**
+- **BooleanAggs: implemented.** `BooleanAggs/index.tsx:24` destructures `displayValues` (as `extendedDisplayKeys`), merges it with defaults at lines 49-57, and it drives the toggle labels at lines 131 and 152.
+- **TermAggs: not implemented.** `TermAggs/TermAggs.jsx:96` has only `// TODO: displayValues may fit here`; `decorateBuckets` maps `bucket.key_as_string ?? bucket.key` through a generic string formatter (`translateSQONValue`), not a config-driven label lookup. No `displayValues` prop is accepted anywhere in the file.
+- **RangeAgg / DatesAgg: not implemented.** No trace of `displayValues` in either component.
+- **Table column rendering: not implemented, and this is a real gap today, not speculative.** `Table/helpers/cells.tsx`'s `getDisplayValue` (lines 27-36) only special-cases `date` columns; the boolean cell type stringifies `true`/`false` directly. `displayValues` is fetched via GraphQL but never read in `cells.tsx`, `columns.tsx`, or `Row/Cell.tsx`.
+
+TermAggs remains the correct next target given their frequency of use, then RangeAgg/DatesAgg, then the table column display, in that order.
 
 _Relatively self-contained. Good TDD candidate. Start with TermAggs._
 
@@ -474,27 +649,36 @@ _Priority: medium. Ongoing maintenance cost that compounds over time._
 
 The components package still uses patterns that predate React hooks: `recompose` (an HOC composition library), `component-component` (a render-prop state machine), and class-based components throughout. These are no longer idiomatic React and make the codebase harder to read, test, and extend.
 
+**Confirmed scope, by grep:**
+- `recompose`: 4 files (`Tabs.jsx`, `Query.jsx`, `QuickSearch/QuickSearchQuery.js`, `Arranger/MatchBox.jsx`).
+- `component-component`: 10 files, concentrated in one directory; 7 of the 10 are in `AdvancedSqonBuilder/` (`index.jsx`, `SqonEntry.js`, `sqonPieces/FieldOp.jsx`, `sqonPieces/BooleanOp.jsx`, `filterComponents/BooleanFilter.jsx`, `filterComponents/RangeFilter.js`, `filterComponents/TermFilter.jsx`); the rest are `AdvancedFacetView/index.jsx`, `State.js`, and `utils/ExtendedMappingProvider.jsx`. Migrating `AdvancedSqonBuilder` alone closes most of this.
+- Class components: 21 files. Not confined to obviously-legacy code: alongside `Query.jsx`, `State.js`, and `AdvancedFacetView/*`, the pattern also cuts through the theme engine (`ThemeContext/index.tsx`, `Table/helpers/context.tsx`, `DataContext/index.tsx`) and the Aggs family (`aggregations/RangeAgg.jsx`, `aggregations/DatesAgg.jsx`, `aggregations/AggsState.ts`); code that's otherwise already modernized in other respects.
+
 Scope:
 
 - Remove `recompose` and `component-component`; replace HOC and render-prop patterns with hooks
 - Convert remaining class components to function components
 - Simplify the aggregations components, which have accumulated redundant abstractions over time (multiple layers of HOC wrapping that add indirection without adding value)
 
-Can be done incrementally, component by component, without breaking the public API.
+Can be done incrementally, component by component, without breaking the public API. `AdvancedSqonBuilder` is the natural first target for `component-component` removal, given how concentrated that dependency is there.
 
 ### Extend the theming engine to all components
 
 _Priority: medium. Consistency issue that affects integrators._
 
-The table component introduced a theming system that lets operators customize appearance through a theme prop. This pattern should be extended to facets, aggregation components, and other UI pieces so operators have a uniform customization surface. Currently some components use the theme engine, others don't.
+The table component introduced a theming system (`modules/components/src/ThemeContext/`: `ThemeProvider`, `useThemeContext`, `withTheme`, and a `Components` type holding a per-component theme shape) that lets operators customize appearance through a theme prop. Most aggregation components already participate: `TermAggs`, `BooleanAggs`, `AggsGroup`, `BucketCount`, `RangeAgg`, and `DatesAgg` are wired in. The remaining gaps are narrower than "facets and aggregation components" suggests: `Aggregations.jsx`, `AggsQuery.jsx`, `aggComponentsMap.jsx`, `AggsPanel.jsx`, `TermAggs/SelectAllButton.jsx`, and `Tooltip/`.
 
-_Coordinate with the Emotion replacement decision before investing heavily here; the styling mechanism affects how theming is implemented._
+**Next concrete target: Tooltip.** `modules/components/src/Tooltip/` already carries its own local theme prop (`TooltipThemeProperties`: `tooltipAlign`, `tooltipFontColor`, `tooltipText`, `tooltipVisibility`), but it is a self-contained shape disconnected from the central `Components` type. Folding it in (add a `Tooltip: TooltipThemeProps` slot to `Components`, switch the component to `useThemeContext`/`withTheme`) follows the exact pattern Table and Aggregations already use. It does not require the Emotion replacement decision below: it reuses the existing mechanism rather than deepening investment in it, so it is a reasonable next step to take now.
+
+**Known unaddressed split:** `modules/charts` has its own separate `ChartsThemeProvider` (colour array, a `components` override slot including `TooltipComp`/`Loader`) with no connection to `modules/components`' `ThemeContext`. Whether these should ever merge is an open question, not yet scoped. Note `TooltipComp` specifically is declared but not actually wired up yet, see [tech-debt: `TooltipComp` theme override is declared but never wired up](tech-debt.md#tooltipcomp-theme-override-is-declared-but-never-wired-up).
+
+_Coordinate with the Emotion replacement decision before investing heavily beyond the Tooltip step; the styling mechanism affects how theming is implemented for anything larger._
 
 ### Replace Emotion with a less constrained styling solution
 
 _Priority: medium-high. Blocks or complicates several other component improvements._
 
-Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Two alternatives worth evaluating:
+Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Confirmed footprint: 46 files in the module import from `@emotion/*`, essentially the entire styled-component surface and not a contained corner of it, with 39 files using the `css` template-literal prop and 6 using `styled(...)`. This is a module-wide migration, not a localized swap. Two alternatives worth evaluating:
 
 - **Radix UI**: headless, unstyled accessible primitives. Provides behaviour (keyboard nav, ARIA, focus management) without imposing styles. Arranger would own all visual styling.
 - **ShadCN**: built on Radix with Tailwind CSS. Provides a starting set of styled components as copy-paste source rather than as a runtime dependency. More opinionated but faster to an initial working UI.
@@ -526,6 +710,8 @@ _Priority: low. Basic protections are already in place._
 Alias count and depth limits are implemented (`maxAliasesRule`, `maxDepthRule` in `graphql-router`, configurable via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` environment variables). These address the specific DoS vectors that were identified.
 
 A more thorough approach would assign cost weights to individual field resolvers and reject queries that exceed a total complexity budget, so a query with 10 expensive aggregation fields costs more than 10 cheap scalar fields. The `graphql-query-complexity` library handles this well. This is a hardening step worth doing eventually, but not urgent given the current protections.
+
+**Related, now closed:** array-based HTTP batching (multiple GraphQL operations in a single POST body, each executed in parallel via `Promise.all`) was a separate vector from alias/depth abuse: it bypasses request-level rate limiting and multiplies cost per request, and neither `maxAliasesRule` nor `maxDepthRule` caps the number of operations in a batch, only the cost of each one. Flagged by an external HCMI pentest report (2026-07-20). Fixed by gating on a new `enableGraphQLBatching` feature flag (`apollo-server-express`'s `allowBatchedHttpRequests` option, previously left at its permissive library default). Unlike the other `disable*` flags it's wired inverted, `enable*` and disabled by default, since Arranger has no legitimate internal use for HTTP-level batching: default `false` (batching rejected unless explicitly enabled), opt in only if a consumer genuinely relies on it. See `modules/graphql-router/README.md` feature-flags table.
 
 ### Request rate limiting
 
@@ -566,6 +752,27 @@ _Needs design before implementation. Treat as a blocking design question for any
 ---
 
 ## Deployment
+
+### Decouple startup health check from application credential
+
+`scripts/ping-elasticsearch.sh` calls `GET /_cluster/health` using the application user's credentials (`ES_USER`/`ES_PASS`). This forces `cluster:monitor/health` to be granted to the application role even though no application code path ever calls `/_cluster/health`. The permission exists solely so a shell script can display a status block on startup.
+
+This violates the principle of least privilege: the application user's role carries a permission it never exercises. Any operator following the documented minimum permissions will grant `cluster:monitor/health` to their search engine user indefinitely, with no indication that it is a startup-script concern rather than an application requirement.
+
+**Correct fix:**
+
+Move the readiness gate into a Kubernetes init container that runs with its own, more privileged credential, separate from the application's runtime credential:
+
+- **Init container:** runs `ping-elasticsearch.sh` (or its successor) with an elevated credential granted `cluster:monitor/main` + `cluster:monitor/health`. It retries `GET /_cluster/health?wait_for_status=yellow&...` until the cluster is ready or the container times out, gating the pod's main container start via the normal init-container mechanism. The cluster status block (cluster name, status, node count, shards) stays as this container's log output, visible via `kubectl logs <pod> -c <init-name>`, and never needs to be a concern for the app container.
+- **Main container:** the application runs with a leaner credential, `cluster:monitor/main` only, which is all it needs for `GET /` engine auto-detection. It never holds `cluster:monitor/health`.
+
+This preserves the `wait_for_status=yellow` readiness gate (true cluster-ready signal, not just HTTP connectivity) while still removing the unused permission from the long-running application process: the actual least-privilege violation the rest of this item is about.
+
+A simpler alternative (drop the readiness gate, probe `GET /` only, no init container) was considered and rejected: it trades a real readiness check for a permissions fix, and `GET /` only confirms the process is responding, not that shards are allocated.
+
+**Related:** the script filename (`ping-elasticsearch.sh`) and env var names (`ES_HOST`, `ES_USER`, `ES_PASS`) are also Elasticsearch-first and should be renamed in the same effort. See tech-debt: "Elasticsearch-first naming in startup script and env vars".
+
+_Standalone: yes, once the approach is agreed. Needs a new Vault role/policy for the init container's elevated credential, a second VSO-injected secret, and an `initContainers` stanza added to the Helm chart, in addition to script changes. If the Helm chart lives in a separate repo from this one, that work belongs there. No application logic changes._
 
 ### Helm chart update
 
@@ -733,6 +940,8 @@ _The CI pod already has dind; testcontainers would work today. Evaluate as part 
 ### 3.3 Migrate from npm to pnpm
 
 Catches phantom dependencies at install time, faster CI installs, removes `dangerouslyDisablePackageManagerCheck`.
+
+**Corepack Docker gotcha (learned from Lyric):** When adopting pnpm with corepack in a multi-stage Dockerfile, use `corepack prepare pnpm@x.y.z --activate` - not `corepack use pnpm@x.y.z`. `corepack use` only updates package.json; the binary is fetched lazily at runtime. If the pod has no egress to registry.npmjs.org (common in locked-down clusters), startup fails with a corepack download error. `corepack prepare --activate` downloads and caches the binary during image build, so the pod needs no network access to start.
 
 1. Install pnpm on Jenkins nodes (coordinate with infra)
 2. Create `pnpm-workspace.yaml` (replacing npm workspaces declaration)

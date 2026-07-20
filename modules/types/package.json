@@ -65,8 +65,8 @@
 		"@tsconfig/node22": "^22.0.0",
 		"@types/node": "^22.19.13",
 		"nodemon": "^3.1.9",
-		"tsx": "^4.19.2",
 		"tsup": "^6.7.0",
+		"tsx": "^4.19.2",
 		"typescript": "^5.8.2",
 		"typescript-transform-paths": "^3.5.6"
 	},

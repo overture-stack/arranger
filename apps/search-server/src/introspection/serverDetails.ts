@@ -4,18 +4,18 @@ import type { CatalogsMap } from '#configs/types/index.js';
 
 import type { IntrospectionResponse } from './types.js';
 
-const getCatalogGraphqlPath = ({ catalogCount, catalogId }: { catalogCount: number; catalogId: string }) =>
+const getCatalogueGraphqlPath = ({ catalogCount, catalogId }: { catalogCount: number; catalogId: string }) =>
 	catalogCount > 1 ? `/${catalogId}/graphql` : '/graphql';
 
 const buildServerDetails = ({ catalogs }: { catalogs: CatalogsMap }): IntrospectionResponse => {
-	const catalogEntries = Object.entries(catalogs);
-	const catalogCount = catalogEntries.length;
+	const catalogueEntries = Object.entries(catalogs);
+	const catalogCount = catalogueEntries.length;
 
 	return {
 		catalogCount,
 		catalogs: Object.fromEntries(
-			catalogEntries.map(([catalogId, catalogConfigs]) => {
-				const typedConfigs = catalogConfigs as Partial<ConfigsObject>;
+			catalogueEntries.map(([catalogId, catalogueConfigs]) => {
+				const typedConfigs = catalogueConfigs as Partial<ConfigsObject>;
 
 				return [
 					catalogId,
@@ -24,7 +24,7 @@ const buildServerDetails = ({ catalogs }: { catalogs: CatalogsMap }): Introspect
 						documentType: typedConfigs.documentType || '',
 						paths: {
 							...(catalogCount === 1 ? { fields: '/introspection/fields' } : {}),
-							graphql: getCatalogGraphqlPath({ catalogCount, catalogId }),
+							graphql: getCatalogueGraphqlPath({ catalogCount, catalogId }),
 							introspection: `/introspection/${catalogId}`,
 						},
 					},

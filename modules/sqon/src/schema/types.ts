@@ -5,9 +5,9 @@ import type { GroupOpSchema } from './constants.js';
 import type {
 	AllFilterSchema,
 	BetweenFilterSchema,
-	FuzzyFilterSchema,
 	InLikeFilterSchema,
 	RangeLikeFilterSchema,
+	WildcardFilterSchema,
 } from './index.js';
 
 export type SqonLeaf =
@@ -15,12 +15,12 @@ export type SqonLeaf =
 	| zod.infer<typeof AllFilterSchema>
 	| zod.infer<typeof RangeLikeFilterSchema>
 	| zod.infer<typeof BetweenFilterSchema>
-	| zod.infer<typeof FuzzyFilterSchema>;
-export type SqonGroup = {
+	| zod.infer<typeof WildcardFilterSchema>;
+export type SqonCombination = {
 	op: zod.infer<typeof GroupOpSchema>;
 	content: SqonNode[];
 	pivot?: string | null;
 	[key: string]: unknown;
 };
 
-export type SqonNode = SqonLeaf | SqonGroup;
+export type SqonNode = SqonLeaf | SqonCombination;

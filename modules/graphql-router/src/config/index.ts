@@ -8,7 +8,7 @@ export const validateConfigs = <Context extends ArrangerBaseContext>(
 	configs: Partial<ConfigsObject<Context>>,
 	esClient?: SearchClient,
 ): Partial<ConfigsObject<Context>> => {
-	console.log('  - Validating catalog configurations provided');
+	console.log('  - Validating catalogue configurations provided');
 
 	// Require base properties, and also ES connection properties if the esClient is not available
 	const propertiesToDemand = esClient ? configArrangerBaseProperties : configRequiredProperties;

@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 
-import { createArrangerIntrospectionClient, type ArrangerIntrospectionClient } from '#arranger/client.js';
+import { createArrangerClient, type ArrangerClient } from '#arranger/client.js';
 import { validateArrangerConnection } from '#arranger/validation.js';
 import { createHttpApp } from '#http/app.js';
 import { registerResources } from '#mcp/resources.js';
@@ -10,7 +10,7 @@ import logger from '#utils/logger.js';
 
 export type McpServerDeps = {
 	config: ArrangerMcpConfig;
-	client: ArrangerIntrospectionClient;
+	client: ArrangerClient;
 };
 
 export const createMcpServer = (deps: McpServerDeps): McpServer => {
@@ -22,7 +22,7 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
 
 export const startServer = async (): Promise<void> => {
 	const config = createArrangerMcpConfig();
-	const client = createArrangerIntrospectionClient(config);
+	const client = createArrangerClient(config);
 	await validateArrangerConnection(config, client);
 
 	const deps: McpServerDeps = { config, client };

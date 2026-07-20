@@ -19,14 +19,15 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 	try {
 		const { allowedCorsOrigins, catalogs, enableDebug, enableLogs, health, serverPort } =
 			await loadAllConfigs(externalConfigs);
-		const catalogEntries = Object.entries(catalogs);
-		const catalogMode = catalogEntries.length > 1 ? 'multiple' : 'single';
+		const catalogueEntries = Object.entries(catalogs);
+		const catalogueMode = catalogueEntries.length > 1 ? 'multiple' : 'single';
 
-		catalogMode === 'single' || console.log(`  - Loaded ${catalogEntries.length} catalogs in ${catalogMode} mode`);
+		catalogueMode === 'single' ||
+			console.log(`  - Loaded ${catalogueEntries.length} catalogues in ${catalogueMode} mode`);
 
 		enableDebug &&
 			console.log(
-				`    Catalog IDs: ${catalogEntries.map(([catalogId]) => catalogId).join(', ') || '(none found)'}`,
+				`    Catalogue IDs: ${catalogueEntries.map(([catalogId]) => catalogId).join(', ') || '(none found)'}`,
 			);
 
 		enableLogs &&

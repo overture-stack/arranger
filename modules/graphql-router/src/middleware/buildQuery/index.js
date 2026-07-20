@@ -14,6 +14,7 @@ import {
 	ES_SHOULD,
 	ES_WILDCARD,
 	FILTER_OP,
+	WILDCARD_OP,
 	GTE_OP,
 	GT_OP,
 	IN_OP,
@@ -85,7 +86,7 @@ function getTermFilter({ nestedFieldNames, filter }) {
 	return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
-function getFuzzyFilter({ nestedFieldNames, filter }) {
+function getWildcardFilter({ nestedFieldNames, filter }) {
 	const { content } = filter;
 	const { value, fieldNames } = content;
 
@@ -281,8 +282,8 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 		return getRangeFilter({ nestedFieldNames, filter });
 	} else if ([BETWEEN_OP].includes(op)) {
 		return getBetweenFilter({ nestedFieldNames, filter });
-	} else if (FILTER_OP === op) {
-		return getFuzzyFilter({ nestedFieldNames, filter });
+	} else if (WILDCARD_OP === op || FILTER_OP === op) {
+		return getWildcardFilter({ nestedFieldNames, filter });
 	} else {
 		throw new Error('unknown op');
 	}

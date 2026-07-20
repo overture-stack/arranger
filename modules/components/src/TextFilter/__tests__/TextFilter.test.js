@@ -49,7 +49,7 @@ describe('generateNextSQON', () => {
 			op: 'and',
 			content: [
 				{
-					op: 'filter',
+					op: 'wildcard',
 					content: {
 						fieldNames: ['field3', 'field4'],
 						value: 'new value',
@@ -95,7 +95,7 @@ describe('generateNextSQON', () => {
 					},
 				},
 				{
-					op: 'filter',
+					op: 'wildcard',
 					content: {
 						fieldNames: ['field3', 'field4'],
 						value: 'another value',

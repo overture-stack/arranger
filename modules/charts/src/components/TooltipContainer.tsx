@@ -4,6 +4,7 @@ import { PropsWithChildren } from 'react';
 export const TooltipContainer = ({ children }: PropsWithChildren<{}>) => {
 	return (
 		<div
+			className="tooltip-container"
 			css={css({
 				fontFamily: 'Work Sans, sans-serif',
 				fontSize: '11px',

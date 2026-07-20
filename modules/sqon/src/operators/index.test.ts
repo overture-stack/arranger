@@ -41,17 +41,33 @@ suite('sqon/operators', () => {
 	test('returns operator details for introspection consumers', () => {
 		const details = getSqonFieldOperatorDetails();
 		const inOp = details.find((detail) => detail.op === 'in');
+		const allOp = details.find((detail) => detail.op === 'all');
 		const betweenOp = details.find((detail) => detail.op === 'between');
+		const wildcardOp = details.find((detail) => detail.op === 'wildcard');
 
 		assert.deepEqual(inOp, {
 			op: 'in',
+			fieldRef: 'fieldName',
 			applicableTo: 'all',
-			valueType: 'string | number | Array<string | number>',
+			valueType: 'string | number | boolean | Array<string | number | boolean>',
+		});
+		assert.deepEqual(allOp, {
+			op: 'all',
+			fieldRef: 'fieldName',
+			applicableTo: 'all',
+			valueType: 'Array<string | number | boolean>',
 		});
 		assert.deepEqual(betweenOp, {
 			op: 'between',
+			fieldRef: 'fieldName',
 			applicableTo: ['long', 'integer', 'float', 'double', 'date'],
 			valueType: 'Array<number | date>',
+		});
+		assert.deepEqual(wildcardOp, {
+			op: 'wildcard',
+			fieldRef: 'fieldNames',
+			applicableTo: 'all',
+			valueType: 'string',
 		});
 	});
 });

@@ -2,7 +2,7 @@ export const warnDeprecatedConfigsSource = ({ configsSource = '', enableDebug = 
 	if (configsSource) {
 		console.warn(
 			'[Arranger] "configsSource" is deprecated. Pass a parsed configs object instead.',
-			enableDebug && 'DEBUG: file parsing has moved to the server as `catalogConfigsPath`.',
+			enableDebug && 'DEBUG: file parsing has moved to the server as `catalogueConfigsPath`.',
 		);
 	}
 };

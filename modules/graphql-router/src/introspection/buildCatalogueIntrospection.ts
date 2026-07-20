@@ -1,6 +1,6 @@
 import type { ExtendedConfigs } from '@overture-stack/arranger-types/configs';
 
-// Field type classification sets — verbatim from search-server/catalogDetails.ts.
+// Field type classification sets: verbatim from search-server/catalogDetails.ts.
 // Consolidation with modules/sqon operator rules is a separate tech-debt item.
 const NUMERIC_TYPES = new Set(['double', 'float', 'integer', 'long', 'number']);
 const RANGE_TYPES = new Set(['date', ...NUMERIC_TYPES]);
@@ -45,7 +45,7 @@ const buildFieldOperators = (resolvedFields: ExtendedConfigs[]): Record<string, 
 
 /**
  * Builds the catalogue field introspection response body from a live-resolved field list.
- * `operators` is keyed by field type — clients can look up valid operators for a given type
+ * `operators` is keyed by field type: clients can look up valid operators for a given type
  * without inspecting each field individually. `description` is included only when provided.
  */
 export const buildCatalogueIntrospectionBody = ({

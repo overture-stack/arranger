@@ -5,7 +5,7 @@ import buildBaseIntrospection from '#introspection/serverDetails.js';
 import buildSqonIntrospection from '#introspection/sqonDetails.js';
 
 suite('introspection tests', () => {
-	test('builds a single-catalog payload with root graphql path', () => {
+	test('builds a single-catalogue payload with root graphql path', () => {
 		const result = buildBaseIntrospection({
 			catalogs: {
 				models: {
@@ -29,7 +29,7 @@ suite('introspection tests', () => {
 		assert.equal(result.sqonSchemaPath, '/introspection/sqon');
 	});
 
-	test('builds a multi-catalog payload with catalog-scoped graphql paths', () => {
+	test('builds a multi-catalogue payload with catalogue-scoped graphql paths', () => {
 		const result = buildBaseIntrospection({
 			catalogs: {
 				chemistry: {

@@ -38,7 +38,7 @@
 		"@graphql-tools/utils": "^10.2.2",
 		"@opensearch-project/opensearch": "^3.6.0",
 		"@overture-stack/arranger-types": "file:../types",
-		"@overture-stack/sqon-builder": "^1.1.0",
+		"@overture-stack/sqon": "file:../sqon",
 		"apollo-server": "^3.10.3",
 		"apollo-server-core": "^3.10.3",
 		"apollo-server-express": "^3.10.3",

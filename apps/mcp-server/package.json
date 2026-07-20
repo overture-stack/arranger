@@ -23,6 +23,7 @@
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.29.0",
+		"@overture-stack/sqon": "file:../../modules/sqon",
 		"cors": "^2.8.6",
 		"dotenv": "^16.6.1",
 		"express": "^4.21.2",

@@ -16,6 +16,7 @@ import { ChartText } from './ChartText';
  * @returns JSX element with chart or appropriate fallback component
  */
 export const ChartRenderer = ({ isLoading, isError, isEmpty, Chart }) => {
+	// TODO: Refactor so that this render can take the GQL Response directly and pass the validated data to the Chart component
 	const { components } = useThemeContext();
 
 	if (isLoading) {

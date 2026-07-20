@@ -135,7 +135,7 @@ Most leaf nodes use:
 - `fieldName`
 - `value`
 
-The `filter` operator is the exception and instead uses `fieldNames` (plural).
+The `wildcard` operator is the exception and instead uses `fieldNames` (plural).
 
 </details>
 
@@ -145,7 +145,7 @@ SQONs can apply several kinds of filtering to fields and values:
 
 - **membership** answers questions like "is this value in the allowed set?" or "is it excluded from that set?"
 - **range** compares values against bounds such as greater than, less than, or between two endpoints
-- **fuzzy** performs a broader text-style search across one or more fields instead of exact matching
+- **wildcard** performs a case-insensitive substring match across one or more fields using ES/OS wildcard queries
 
 ### Membership-style operators
 
@@ -200,16 +200,16 @@ This results in:
 
 </details>
 
-### Fuzzy operator
+### Wildcard operator
 
-- `filter`
+- `wildcard`
 
 <details>
 <summary><b>Example:</b></summary>
 
 ```json
 {
-	"op": "filter",
+	"op": "wildcard",
 	"content": {
 		"fieldNames": ["fruit.name", "fruit.nickname"],
 		"value": "*app*"
@@ -219,7 +219,9 @@ This results in:
 
 This results in:
 
-- search for text like `app` in either `fruit.name` or `fruit.nickname`
+- case-insensitive substring match for `app` in either `fruit.name` or `fruit.nickname`
+
+The wildcard operator translates to an ES/OS `wildcard` query with `case_insensitive: true`. Use `*` in the value to express substring patterns (e.g. `*apple*`, `apple*`, `*apple`). This is distinct from fuzzy (edit-distance) matching: it finds substrings, not approximate terms.
 
 </details>
 
@@ -238,6 +240,7 @@ Arranger accepts several shorthand aliases in addition to canonical operators.
 | `>=`  | `gte`              |
 | `<`   | `lt`               |
 | `<=`  | `lte`              |
+| `filter` | `wildcard`      |
 
 For interoperability, the canonical operator names are always preferred when generating new SQONs.
 
@@ -351,7 +354,7 @@ In practice:
 - nested aggregations and nested field filtering are where `pivot` becomes important
 - `pivot` may appear on either leaf or group nodes
 
-A pivot can still be rejected later at runtime if it does not match a valid nested field path for the active catalog.
+A pivot can still be rejected later at runtime if it does not match a valid nested field path for the active catalogue.
 
 ## Current Accepted Value Shapes
 
@@ -454,21 +457,8 @@ Examples include:
 
 These are still ordinary SQON values structurally, but Arranger may compile them into specialized Elasticsearch queries.
 
-## Recommended Generation Rules
-
-If you are generating SQON automatically, the safest defaults are:
-
-1. Prefer canonical operator names over aliases.
-2. Use leaf-root SQON only for a single simple condition.
-3. Use group-root SQON for composed logic.
-4. Use scalar values for `gt`, `gte`, `lt`, and `lte`.
-5. Use exactly 2 values for `between`.
-6. Preserve valid falsy values such as `0` and `""`.
-7. Do not invent `pivot` unless you know the nested path semantics.
-8. Treat catalog field names and allowed values as catalog-specific introspection data, not SQON syntax.
-
 ## Introspection
 
-The `GET /introspection/sqon` endpoint returns the SQON JSON Schema and operator metadata for this server — combination operators, field operators with value types and applicability, and accepted aliases. Use it to validate or describe SQON structure independently of any specific catalogue.
+The `GET /introspection/sqon` endpoint returns the SQON JSON Schema and operator metadata for this server: combination operators, field operators with value types and applicability, and accepted aliases. Use it to validate or describe SQON structure independently of any specific catalogue.
 
-For full introspection API documentation — including catalogue discovery and per-catalogue field listings — see [Introspection API](./04-introspection.md).
+For full introspection API documentation: including catalogue discovery and per-catalogue field listings: see [Introspection API](./05-introspection.md).

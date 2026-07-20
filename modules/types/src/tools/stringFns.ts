@@ -1,13 +1,13 @@
-export const stringToBool = (str = '', fallback = false) => {
+export const stringToBool = (str: string | undefined, fallback = false) => {
 	if (str === undefined) {
 		return fallback;
 	}
 
-	const lowercasedStr = (str || '').toLocaleLowerCase();
+	const lowercasedStr = str.toLocaleLowerCase();
 	return lowercasedStr === 'true' || lowercasedStr === '1';
 };
 
-export const stringToNumber = (str = '', fallback?: number) => {
+export const stringToNumber = (str: string | undefined, fallback?: number) => {
 	const parsed = str ? Number(str) : NaN;
 	return Number.isFinite(parsed) ? parsed : fallback;
 };
@@ -18,7 +18,7 @@ export const stringToNumber = (str = '', fallback?: number) => {
  * @param str valid JSON string (hopefully)
  * @returns parsed array from string, a fallback value, or an empty array
  */
-export const stringToArray = (str = '', fallback: unknown[] = []) => {
+export const stringToArray = (str: string | undefined, fallback: unknown[] = []) => {
 	try {
 		const parsed = str && JSON.parse(str);
 		if (Array.isArray(parsed)) {

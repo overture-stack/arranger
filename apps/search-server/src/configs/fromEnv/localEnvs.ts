@@ -9,11 +9,14 @@ import {
 } from '@overture-stack/arranger-types/configs/constants';
 import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
 
+// TODO: make a more robust isProd helper (e.g. casing + alternatives like 'prod')
+const isProd = process.env.NODE_ENV === 'production';
+
 const configsFromEnv = {
 	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')
 		.map((origin) => origin.trim())
 		.filter(Boolean),
-	catalogConfigsPath: process.env.CONFIGS_PATH || './configs',
+	catalogueConfigsPath: process.env.CONFIGS_PATH || './configs',
 	// FIXME: this will need Helm chart changes, to inject secrets into env
 	catalogs: {
 		// these are used as "global" Arranger configs
@@ -21,13 +24,18 @@ const configsFromEnv = {
 			// feature flags
 			[configFeatureFlagProperties.DISABLE_DOWNLOADS]: stringToBool(process.env.DISABLE_DOWNLOADS),
 			[configFeatureFlagProperties.DISABLE_FILTERS]: stringToBool(process.env.DISABLE_FILTERS),
+			[configFeatureFlagProperties.DISABLE_GRAPHQL_INTROSPECTION]: stringToBool(
+				process.env.DISABLE_GRAPHQL_INTROSPECTION,
+				isProd,
+			),
 			[configFeatureFlagProperties.DISABLE_GRAPHQL_PLAYGROUND]: stringToBool(
 				process.env.DISABLE_GRAPHQL_PLAYGROUND,
 			),
-			[configFeatureFlagProperties.DISABLE_SETS]: stringToBool(process.env.DISABLE_SETS),
+			[configFeatureFlagProperties.ENABLE_GRAPHQL_BATCHING]: stringToBool(process.env.ENABLE_GRAPHQL_BATCHING),
+			[configFeatureFlagProperties.ENABLE_SETS]: stringToBool(process.env.ENABLE_SETS),
 
-			// catalog base configs
-			// TODO: to be extended as e.g. process.env[`${catalogId}_ES_HOST`] etc in multicatalog
+			// catalogue base configs
+			// TODO: to be extended as e.g. process.env[`${catalogId}_ES_HOST`] etc in multicatalogue
 			[configRootProperties.DOCUMENT_TYPE]: process.env.DOCUMENT_TYPE || '',
 			[configRootProperties.ES_HOST]: process.env.ES_HOST || 'http://127.0.0.1:9200',
 			[configRootProperties.ES_INDEX]: process.env.ES_INDEX || '',

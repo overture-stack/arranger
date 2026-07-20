@@ -24,19 +24,23 @@ export const Tooltip = (tooltipData: Bar | SunburstSegment) => {
 	const { value, label, suppressed } = normalizeTooltipProps(tooltipData);
 	return (
 		<TooltipContainer>
-			<div>
-				<div>{`${label}`}</div>
-				<div>
+			<div className="tooltip-wrapper">
+				<div
+					className="tooltip-label"
+					data-label={label} // CSS selector hook for per-label styling; if building the selector dynamically in JS, escape with CSS.escape() first
+
+				>{`${label}`}</div>
+				<div className="tooltip-data">
 					{suppressed ? (
-						<span>Too few</span>
+						<span className="tooltip-data-suppressed">Too few</span>
 					) : (
 						<>
-							<span>{value}</span>
+							<span className="tooltip-data-value">{value}</span>
 							<span className="tooltip-data-source-wrapper">
 								<span className="tooltip-data-source">: Record</span>
 							</span>
 							{/* TODO: Fix custom tooltip content so we are able to use pluralize; currently does not work if a custom label is applied with CSS */}
-							<span>{value > 1 ? 's' : ''}</span>
+							<span className="tooltip-data-plural">{value > 1 ? 's' : ''}</span>
 						</>
 					)}
 				</div>

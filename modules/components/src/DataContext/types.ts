@@ -1,4 +1,4 @@
-import type { SQON } from '@overture-stack/sqon-builder';
+import type { SqonNode } from '@overture-stack/sqon';
 import type { AxiosResponse, Method } from 'axios';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -80,7 +80,7 @@ export type APIFetcherFn = (options: {
 	url?: string;
 }) => Promise<AxiosResponse<unknown>>;
 
-export type SQONType = SQON | null;
+export type SQONType = SqonNode | null;
 
 export type FetchDataFn = (options?: {
 	config?: Record<string, any>;
@@ -111,6 +111,9 @@ export interface DataContextInterface {
 	fetchData: FetchDataFn;
 	isLoadingConfigs: boolean;
 	missingProvider?: string;
+	/** Node IDs to restrict a network/federated search to; empty means all configured nodes. */
+	networkNodesFilter: string[];
+	setNetworkNodesFilter: Dispatch<SetStateAction<string[]>>;
 	sqon: SQONType;
 	setSQON: Dispatch<SetStateAction<SQONType>>;
 	tableConfigs: TableConfigsInterface;

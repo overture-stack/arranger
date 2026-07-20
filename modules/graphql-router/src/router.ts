@@ -33,8 +33,8 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
 	enforceAccessControl({ configs }),
 ];
 
-// TODO: for multicatalog, serverSideFilters may be also "per catalog"
-// i.e. each catalog may have their own, with no global filters
+// TODO: for multicatalogue, serverSideFilters may be also "per catalogue"
+// i.e. each catalogue may have their own, with no global filters
 // question: should global filters be allowed?
 
 const arrangerRouter = async <Context extends ArrangerBaseContext>({
@@ -104,7 +104,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			enableAdmin,
 			enableDebug,
 			esClient,
-			getServerSideFilter, // TODO: Extend for multicatalog per-catalog filters
+			getServerSideFilter, // TODO: Extend for multicatalogue per-catalogue filters
 			graphqlOptions,
 			mappingFromIndex,
 		});

@@ -11,8 +11,11 @@ import { buildSearchClient } from '../../../modules/graphql-router/src/index.js'
 import catalogueABase from '../multiconfigs/catalogue-a/base.json' with { type: 'json' };
 import catalogueBBase from '../multiconfigs/catalogue-b/base.json' with { type: 'json' };
 
+import catalogueAData from './assets/catalogue_a.data.json' with { type: 'json' };
 import catalogueAMappings from './assets/catalogue_a.mappings.json' with { type: 'json' };
+import catalogueBData from './assets/catalogue_b.data.json' with { type: 'json' };
 import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
+import executeQuery from './executeQuery.js';
 import readResources from './readResources.js';
 import readTools from './readTools.js';
 import spinupActive from './spinupActive.js';
@@ -37,6 +40,7 @@ const catalogueConfigs = [
 		documentType: catalogueABase.documentType,
 		esIndex: catalogueABase.esIndex,
 		mappings: catalogueAMappings,
+		data: catalogueAData,
 		extendedFieldNames: catalogueABase.extended.map((field) => field.fieldName),
 	},
 	{
@@ -44,6 +48,7 @@ const catalogueConfigs = [
 		documentType: catalogueBBase.documentType,
 		esIndex: catalogueBBase.esIndex,
 		mappings: catalogueBMappings,
+		data: catalogueBData,
 		extendedFieldNames: catalogueBBase.extended.map((field) => field.fieldName),
 	},
 ];
@@ -79,14 +84,20 @@ const cleanupIndices = async () => {
 	await Promise.all(deletePromises);
 };
 
-// Test runtime context — populated by the `before` hook below, consumed by tests via `getClient()`.
+// Test runtime context: populated by the `before` hook below, consumed by tests via `getClient()`/`getServerUrl()`.
 // Defined here to avoid issues with test isolation and variable scope across the `before` hook and individual tests.
-const context: { mcpClient?: Client } = {};
+const context: { mcpClient?: Client; mcpServerUrl?: string } = {};
 const getClient = () => {
 	if (!context.mcpClient) {
-		throw new Error('MCP client has not been initialized — `before` hook did not run successfully');
+		throw new Error('MCP client has not been initialized: `before` hook did not run successfully');
 	}
 	return context.mcpClient;
+};
+const getServerUrl = () => {
+	if (!context.mcpServerUrl) {
+		throw new Error('MCP server URL has not been set: `before` hook did not run successfully');
+	}
+	return context.mcpServerUrl;
 };
 
 suite('integration-tests/mcp-server', { concurrency: false }, () => {
@@ -96,27 +107,45 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 	// Does the following before tests run:
 	// - 1. Cleans up any existing test indices
 	// - 2. Initializes test indices with mappings for the test suite
-	// - 3. Starts an Arranger server in multicatalog mode
+	// - 3. Starts an Arranger server in multicatalogue mode
 	// - 4. Starts the MCP server
 	// - 5. Connects an MCP client to the MCP server and stores it in `context` for tests to use
 	before(async () => {
 		try {
 			await cleanupIndices();
 		} catch {
-			// ignore — cleanup is best-effort
+			// ignore: cleanup is best-effort
 		}
 
 		try {
 			console.error('\n------------------------------------');
 			console.log('Initializing Elasticsearch testing indices\n');
 
-			for (const { catalogId, esIndex, mappings } of catalogueConfigs) {
+			for (const { catalogId, esIndex, mappings, data } of catalogueConfigs) {
 				console.debug('  - Creating index for', catalogId);
 				await esClient.indices.create({
 					index: esIndex,
 					body: mappings,
 				});
+
+				for (const datum of data) {
+					await esClient.create({
+						index: esIndex,
+						id: datum._id,
+						body: datum._source,
+					});
+				}
+
+				// Make the seeded documents searchable before any test queries run.
+				await esClient.indices.refresh({ index: esIndex });
 			}
+
+			// Pre-create the sets index: in multicatalogue mode every catalogue router runs
+			// `initializeSets` concurrently at startup, and when the index is missing the
+			// creation race leaves the losing catalogue's GraphQL endpoint permanently
+			// responding 500 (see tech-debt). Sets are disabled in this suite, so an empty
+			// index is enough to make every router's existence check pass.
+			await esClient.indices.create({ index: setsIndex, body: {} });
 
 			console.log('\n  Success!');
 		} catch (err) {
@@ -129,16 +158,16 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 
 		try {
 			console.error('\n------------------------------------');
-			console.log('Setting up Arranger - Multicatalog Mode for MCP tests\n');
+			console.log('Setting up Arranger - Multicatalogue Mode for MCP tests\n');
 
 			arrangerApp = await ArrangerServer({
-				catalogConfigsPath: './multiconfigs',
+				catalogueConfigsPath: './multiconfigs',
 				disableDownloads: false,
 				disableFilters: false,
 				disablePlayground: false,
-				disableSets: true,
 				enableAdmin: false,
 				enableNetworkAggregation: undefined,
+				enableSets: false,
 				esClient,
 				serverPort: arrangerPort,
 				setsIndex,
@@ -182,6 +211,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			const transport = new StreamableHTTPClientTransport(new URL(mcpServer.url));
 			await mcpClient.connect(transport);
 			context.mcpClient = mcpClient;
+			context.mcpServerUrl = mcpServer.url;
 		} catch (err) {
 			console.error('\n\n------------------------------------');
 			console.error('FATAL: MCP Client failed to connect to MCP Server\n');
@@ -211,6 +241,10 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			expectedDocumentTypes,
 			expectedFieldsByCatalogue,
 		});
+	});
+
+	suite('Tools: execute-query', () => {
+		executeQuery({ getClient, getServerUrl });
 	});
 
 	after(async () => {

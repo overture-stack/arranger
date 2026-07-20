@@ -1,4 +1,4 @@
-// TODO: reorganize these constants into their actual dependency tree: server/node (including networking) vs catalog (and array nested properties), etc.
+// TODO: reorganize these constants into their actual dependency tree: server/node (including networking) vs catalogue (and array nested properties), etc.
 import type { SqonNode } from '@overture-stack/sqon';
 
 import type { ValuesOf } from '#tools/typeFns.js';
@@ -28,7 +28,7 @@ export type ArrangerFeatureFlagConfigs = Record<ValuesOf<typeof configArrangerFe
 export type RuntimeFeatureFlagConfigs = Record<ValuesOf<typeof configRuntimeFeatureFlagProperties>, boolean>;
 export type AllFeatureFlagConfigs = Record<ValuesOf<typeof configFeatureFlagProperties>, boolean>;
 
-// Catalog Configs
+// Catalogue Configs
 
 export type AggConfigs = {
 	[dataFieldProperties.DISPLAY_NAME]: string;
@@ -113,6 +113,7 @@ export type TableConfigs = {
 
 export type BaseNodeConfig = {
 	[baseNodeProperties.DISPLAY_NAME]: string;
+	[baseNodeProperties.NODE_ID]?: string;
 };
 export type RemoteNodeConfig = {
 	[remoteNodeProperties.DOCUMENT_TYPE]: string;
@@ -151,7 +152,7 @@ export type NetworkConfig<Context> = {
 	[configArrangerNetworkProperties.REMOTE_NODES]?: RemoteNodeConfig[];
 	[configArrangerNetworkProperties.CUSTOMIZE_REMOTE_REQUEST]?: CustomizeRemoteRequestFn<Context>;
 
-	// TODO: To support multi-catalog, we need to update this to be `'localNodes': LocalNodeConfig[];`
+	// TODO: To support multi-catalogue, we need to update this to be `'localNodes': LocalNodeConfig[];`
 	[configArrangerNetworkProperties.LOCAL_NODE]?: BaseNodeConfig;
 };
 

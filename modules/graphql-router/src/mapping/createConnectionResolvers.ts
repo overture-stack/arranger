@@ -15,7 +15,7 @@ import resolveHits from './resolveHits.js';
 // TODO: tighten these types
 
 /**
- * Create the resolvers to retrieve information for the provided search catalog type configs.
+ * Create the resolvers to retrieve information for the provided search catalogue type configs.
  * This will perform seraches against the configured search engine index, returning total hits,
  * or aggregation counts, based on the provided filter.
  *

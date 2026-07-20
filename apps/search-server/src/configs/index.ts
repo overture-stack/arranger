@@ -6,17 +6,17 @@ import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
 import type { AllServerConfigs, CatalogsMap } from './types/index.js';
 
-const buildCatalogsFromFolder = async ({
-	catalogConfigsPath,
+const buildCataloguesFromFolder = async ({
+	catalogueConfigsPath,
 	configsFromEnv: { catalogs, enableDebug },
 	currentDirectory,
 }: {
-	catalogConfigsPath: string;
+	catalogueConfigsPath: string;
 	configsFromEnv: AllServerConfigs;
 	currentDirectory: string;
 }): Promise<CatalogsMap> => {
 	const usedIds = new Set<string>();
-	const resolvedBase = path.resolve(currentDirectory, catalogConfigsPath);
+	const resolvedBase = path.resolve(currentDirectory, catalogueConfigsPath);
 	const entries = await fs.promises.readdir(resolvedBase, { withFileTypes: true });
 	const hasJsonFiles = (entries: fs.Dirent[]) => entries.some((e) => e.isFile() && e.name.endsWith('.json'));
 	const getSubdirectories = (entries: fs.Dirent[]) => entries.filter((e) => e.isDirectory());
@@ -25,7 +25,7 @@ const buildCatalogsFromFolder = async ({
 		const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
 			// FIXME: TypeScript doesn't believe this won't be undefined.
 			baseConfig: catalogs.fromEnv || {},
-			catalogConfigsPath,
+			catalogueConfigsPath,
 			enableDebug,
 			currentDirectory,
 		});
@@ -35,7 +35,7 @@ const buildCatalogsFromFolder = async ({
 			configsPath,
 			usedIds,
 		});
-		console.log(`    Registered catalog "${catalogId}"`);
+		console.log(`    Registered catalogue "${catalogId}"`);
 
 		return {
 			[catalogId]: aggregatedConfigs,
@@ -43,24 +43,24 @@ const buildCatalogsFromFolder = async ({
 	}
 
 	const subdirectories = getSubdirectories(entries);
-	const catalogsMap: CatalogsMap = {};
+	const cataloguesMap: CatalogsMap = {};
 
 	if (subdirectories.length === 0) {
 		console.log('No JSON files or subdirectories found. Using env defaults.');
 		return {};
 	}
 
-	console.log(`  - Found ${subdirectories.length} catalog directories in '${catalogConfigsPath}'`);
+	console.log(`  - Found ${subdirectories.length} catalogue directories in '${catalogueConfigsPath}'`);
 
 	for (const dir of subdirectories) {
-		const subPath = path.join(catalogConfigsPath, dir.name);
-		console.log(`  - Loading catalog from '${subPath}'...`);
+		const subPath = path.join(catalogueConfigsPath, dir.name);
+		console.log(`  - Loading catalogue from '${subPath}'...`);
 
 		try {
 			const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
 				// FIXME: TypeScript doesn't believe this won't be undefined.
 				baseConfig: catalogs.fromEnv || {}, // FIXME why is this necessary?
-				catalogConfigsPath: subPath,
+				catalogueConfigsPath: subPath,
 				enableDebug,
 				currentDirectory,
 			});
@@ -71,15 +71,15 @@ const buildCatalogsFromFolder = async ({
 				usedIds,
 			});
 
-			catalogsMap[catalogId] = aggregatedConfigs;
-			console.log(`    Registered catalog "${catalogId}"`);
+			cataloguesMap[catalogId] = aggregatedConfigs;
+			console.log(`    Registered catalogue "${catalogId}"`);
 		} catch (err) {
-			console.log(`  Error loading catalog from ${dir.name}:`, (err as Error).message);
+			console.log(`  Error loading catalogue from ${dir.name}:`, (err as Error).message);
 		}
 	}
 
-	if (Object.keys(catalogsMap).length === 0) {
-		console.log('No catalogs loaded from subdirectories. Preserving env defaults.');
+	if (Object.keys(cataloguesMap).length === 0) {
+		console.log('No catalogues loaded from subdirectories. Preserving env defaults.');
 		const catalogId = resolveCatalogId({
 			aggregatedConfigs: catalogs.fromEnv || {},
 			configsPath: resolvedBase,
@@ -91,26 +91,26 @@ const buildCatalogsFromFolder = async ({
 		};
 	}
 
-	return catalogsMap;
+	return cataloguesMap;
 };
 
 const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Promise<AllServerConfigs> => {
 	console.log('Gathering configuration data:');
 
 	// TODO: validate external configs to prevent undesired items, warn deprecations, etc.
-	const { catalogConfigsPath, ...configsFromEnv } = aggregateConfigsFromEnv(externalConfigs);
+	const { catalogueConfigsPath, ...configsFromEnv } = aggregateConfigsFromEnv(externalConfigs);
 
 	try {
-		// TODO: this function should do all the multicatalog config parsing
-		const catalogConfigs = await buildCatalogsFromFolder({
-			catalogConfigsPath,
+		// TODO: this function should do all the multicatalogue config parsing
+		const catalogueConfigs = await buildCataloguesFromFolder({
+			catalogueConfigsPath,
 			configsFromEnv,
 			currentDirectory,
 		});
 
 		const aggregatedConfigs = {
 			...configsFromEnv,
-			catalogs: catalogConfigs,
+			catalogs: catalogueConfigs,
 		};
 
 		// TODO: some form of config validation and logging for it
