@@ -16,6 +16,7 @@ const configsAggregator = (
 		disablePlayground,
 		enableAdmin,
 		enableDebug,
+		enableGraphQLBatching,
 		enableLogs,
 		enableSets,
 		filters,
@@ -38,6 +39,7 @@ const configsAggregator = (
 				disableGraphQLIntrospection,
 				disablePlayground,
 				enableAdmin,
+				enableGraphQLBatching,
 				enableSets,
 				getServerSideFilter: filters,
 				sets: {

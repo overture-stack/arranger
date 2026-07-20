@@ -19,7 +19,7 @@ const defaultColors = [
 interface ThemeProviderProps {
 	colors?: string[];
 	components?: {
-		TooltipComp?: ComponentType;
+		TooltipComp?: ComponentType; // declared but not wired up yet: Bar/View.tsx and Sunburst/View.tsx still hardcode the built-in Tooltip
 		Loader?: ComponentType;
 		ErrorData?: ComponentType;
 		EmptyData?: ComponentType;

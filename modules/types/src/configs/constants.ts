@@ -12,6 +12,7 @@ export const configArrangerFeatureFlagProperties = {
 	DISABLE_FILTERS: 'disableFilters',
 	DISABLE_GRAPHQL_INTROSPECTION: 'disableGraphQLIntrospection',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
+	ENABLE_GRAPHQL_BATCHING: 'enableGraphQLBatching',
 	ENABLE_SETS: 'enableSets',
 } as const;
 

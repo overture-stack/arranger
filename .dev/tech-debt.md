@@ -185,18 +185,18 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 
 ### Inconsistent user-facing terminology: directory/folder, configuration/settings, docs prose
 
-**Files:** `README.md:13`; `docs/usage/01-arranger-configs.md`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
+**Files:** `README.md:13`; `apps/search-server/configTemplates/configs.json.schema:6,29`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:216-230` (opportunistic)
 **Severity:** low (reader confusion, no functional impact)
 **Kind:** terminology drift
-**Issue:** Two clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`.
+**Issue:** Two clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`. `docs/usage/01-arranger-configs.md` was also flagged originally but is now clean after its 2026-07-07 rewrite; no longer part of this entry.
 
-1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, `docs/usage/01-arranger-configs.md` (check after 2026-07-07 rewrite), `configTemplates/configs.json.schema:6`, and in code identifiers (buildCatalogsFromFolder, folderName) that surface in console output. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
+1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, `configTemplates/configs.json.schema:6`, and in code identifiers (`buildCataloguesFromFolder`, `folderName` in `apps/search-server/src/configs/catalogId.ts:18,20`) that surface in console output. The catalog→catalogue rename already landed on this function's name; only the folder→directory half remains. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
 
-2. "settings" vs "configuration": "configuration" is canonical for Arranger-level concepts. "Settings" appears in configs.json.schema:28 ("Settings and limits for dataset downloads") and roadmap.md:191-205 (Arranger-level prose). Leave ES mapping file "settings" keys and ES-referencing prose untouched.
+2. "settings" vs "configuration": "configuration" is canonical for Arranger-level concepts. "Settings" appears in configs.json.schema:29 ("Settings and limits for dataset downloads") and roadmap.md:216-230 (Arranger-level prose, "server-level settings" / "index settings"). Leave ES mapping file "settings" keys and ES-referencing prose untouched.
 
-3. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. If the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
+3. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. Still true; if the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
 
-**Fix:** (a) Docs/schema comments pass: update README.md:13, `docs/usage/01-arranger-configs.md`, configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in `docs/usage/01-arranger-configs.md`; introduce "filter clause" for leaf nodes in `docs/usage/04-sqon-in-detail.md`.
+**Fix:** (a) Docs/schema comments pass: update README.md:13 and configs.json.schema:6, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): `buildCataloguesFromFolder` -> `buildCataloguesFromDirectory`, `folderName` -> `directoryName` in `apps/search-server/src/configs/`. (c) Cross-references: introduce "filter clause" for leaf nodes in `docs/usage/04-sqon-in-detail.md`.
 **Standalone:** yes; (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
@@ -216,15 +216,6 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Issue:** The network/federated search feature (cross-catalogue and cross-instance querying) has no published docs. "Network search" and "federated search" are synonyms for this feature; use "federated search" in consumer-facing docs.
 **Fix:** Once the feature stabilizes, add a `docs/usage/` page covering configuration, query patterns, and limitations. Implementation detail belongs in `.dev/docs/`.
 **Standalone:** no; blocked on feature stabilisation
-
-### Feature flags are undocumented (security features and optional functionalities)
-
-**File:** `apps/search-server/` (env vars and config flags)
-**Severity:** medium (operators cannot discover what they can enable or disable; security flags carry real risk if unknown)
-**Kind:** missing documentation
-**Issue:** Feature flags, including query validation limits and other optional behaviours, are not documented in `/docs`. These fall into two categories that warrant separate treatment: (1) security-relevant flags (query depth/complexity limits, rate controls) that operators should be aware of for production hardening; (2) optional functionality flags that change search behaviour but have no security dimension.
-**Fix:** Add a dedicated section or page to `/docs` listing all env-var-controlled feature flags, grouped by category: security hardening vs optional functionality. Each entry should state: the env var, the default, what enabling/disabling it does, and any production recommendation.
-**Standalone:** yes; docs-only addition
 
 ### Arranger Components has no published docs page
 
@@ -252,15 +243,6 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Issue:** The query processing page explains the pipeline conceptually but has no link to `03-building-sqon-queries.md`, which is the practical follow-up showing how to construct SQONs. Readers who want to go from theory to implementation have no signpost.
 **Fix:** Add a tip callout at the bottom of `02-query-processing.md` pointing to `03-building-sqon-queries.md`.
 **Standalone:** yes; one-line docs addition
-
-### Root-level `code_of_conduct.md` added by PR #1083 duplicates the centralized Overture Code of Conduct
-
-**File:** `code_of_conduct.md` (repo root, added in PR #1083)
-**Severity:** low (no functional impact; a maintenance and consistency concern)
-**Kind:** duplicated / misplaced documentation
-**Issue:** `CONTRIBUTING.md:7` already points contributors at a centrally-maintained Code of Conduct at `https://docs.overture.bio/community/code-of-conduct`. PR #1083 (Charts documentation) added a second, local copy of the Contributor Covenant text as `code_of_conduct.md`, unrelated to the Charts docs work the PR was otherwise scoped to. It is not linked from `CONTRIBUTING.md` or anywhere else in this repo. Filename is also lowercase, so GitHub's community-profile detection would not recognize it as the health file even if it were meant to stand alone.
-**Fix:** Remove the local file from this repo; the Code of Conduct should stay centralized. This is not an Arranger-specific decision: see the `overture/docs` roadmap for how consolidation across Overture repos should be handled.
-**Standalone:** yes; deletion only, no dependency on other Charts docs work in the PR
 
 ---
 
@@ -359,15 +341,6 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Issue:** Server error responses are including stack traces visible to API clients. Stack traces leak internal file paths, library versions, and implementation details that assist attackers. They should only appear in server logs, never in API responses.
 **Fix:** Strip stack traces from client-facing error responses in the GraphQL error formatter. Optionally surface them when `enableDebug` is true (server-side only) or when `enableAdmin` is active; but that dependency on the Admin model is TBD. Safe default: never send stacks to clients.
 **Standalone:** mostly yes; the stack stripping is a one-file fix. The question of whether debug mode re-enables stack visibility is the only part that touches the Admin design.
-
-### GraphQL field suggestions leak schema structure in error responses
-
-**File:** `modules/graphql-router/src/graphqlRoutes.ts` (Apollo Server config)
-**Severity:** low (OWASP A02: Security Misconfiguration)
-**Kind:** security bug
-**Issue:** Apollo Server 3 includes field name suggestions in error messages (e.g. "Did you mean 'fieldName'?"). This leaks schema structure to clients through error responses even when `disableGraphQLIntrospection: true` is set; suggestions are a separate code path from the introspection system. Note: GraphQL introspection itself is now gated by `disableGraphQLIntrospection`, which defaults to `true` in production via `NODE_ENV`.
-**Fix:** Override `formatError` in `createEndpoint` to strip suggestion hints from Apollo error messages before they reach clients, or add a custom validation rule that suppresses them. This will resolve itself on the yoga migration (yoga does not expose suggestions by default), but the interim fix is small and standalone.
-**Standalone:** yes; isolated change to the Apollo Server config in `createEndpoint`
 
 ### `hasValidConfig` GraphQL resolver should be deprecated
 
@@ -505,17 +478,26 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Short-term mitigation: gate `resolveSetsInSqon` and the `set_id:` query path on `enableSets` explicitly, so a disabled flag is a real kill switch rather than only skipping index creation. Real fix: implement the ABAC ownership check already scoped in [roadmap: Sets full feature implementation](roadmap.md#sets-full-feature-implementation) before treating any `set_id:` query as safe in a multi-tenant deployment.
 **Standalone:** yes for the flag-gating mitigation; no for the ABAC ownership check, which is the roadmap item's own scope
 
+### `SupportedClientTypes`/`clientType` naming conflates "which search engine" with "which client library"
+
+**File:** `modules/graphql-router/src/searchClient/types.ts` (`SupportedClientTypes`, `SearchConfig.clientType`, `SearchConfigWithClient.clientType`), exported publicly from `modules/graphql-router/src/index.ts`; compare `modules/types/src/configs/index.ts:161` (`SearchEngineType = 'elasticsearch' | 'opensearch'`) and `configOptionalProperties.SEARCH_ENGINE: 'searchEngine'`
+**Severity:** low (naming/API clarity, no functional impact)
+**Kind:** naming inconsistency
+**Issue:** `modules/types` already names the consumer-facing concept correctly: an operator sets `searchEngine`, typed `SearchEngineType`, to say which search engine ('elasticsearch' | 'opensearch') a catalogue targets. `modules/graphql-router`'s `searchClient` module defines a second, separately-declared union over the exact same two values, `SupportedClientTypes` (`keyof SupportedClients`), used for `SearchConfig.clientType`/`SearchConfigWithClient.clientType` and exported publicly. "Client" is the correct word for the actual client library instances (`SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient }` legitimately stays "Client"-named, since it's a lookup table of real client objects), but the *selection* type, the thing a caller of `buildSearchClient` sets to say which engine they want, reads as though it's choosing a client implementation detail rather than a search engine. This is what an earlier version of this entry (mistakenly removed as "resolved" after a since-merged PR fixed only a literal naming regression) was trying to flag: not that `SupportedClientTypes` needs to disappear, but that the engine-selection surface should read as "engine," not "client."
+**Fix:** Rename the selection-facing usages (`SearchConfig.clientType`/`SearchConfigWithClient.clientType`, and ideally `SupportedClientTypes` itself where it names *which engine to target* rather than *which client instance exists*) toward `searchEngine`/`SearchEngineType` terminology, reusing `SearchEngineType` from `modules/types` directly instead of maintaining a second, independently-defined union of the same two values. Leave `SupportedClients` and any type describing actual client library instances/behaviour named around "Client": that framing is correct there. Be judicious per-identifier rather than doing a blanket find-replace, since both concepts legitimately coexist in this file.
+**Standalone:** yes; naming-only change, but `SupportedClientTypes` is a public export of `@overture-stack/arranger-graphql-router`, so this is a breaking change for any consumer referencing it directly; coordinate with a version bump per current semver policy.
+
 ---
 
 ## modules/types
 
-### No unit tests for `tools/` utilities or `networkAggregationConfigUtils`
+### No unit tests for `typeFns.ts` or `networkAggregationConfigUtils`
 
-**Files:** `modules/types/src/tools/stringFns.ts`, `modules/types/src/tools/typeFns.ts`, `modules/types/src/configs/networkAggregationConfigUtils.ts`
+**Files:** `modules/types/src/tools/typeFns.ts`, `modules/types/src/configs/networkAggregationConfigUtils.ts`
 **Severity:** low
 **Kind:** missing test coverage
-**Issue:** All three files are exported from the package and used across the monorepo but have zero test coverage. `stringFns.ts` and `typeFns.ts` are utility and type guard functions where a regression would propagate silently to every consumer. `networkAggregationConfigUtils.ts` contains non-trivial domain logic for network aggregation config setup.
-**Fix:** Co-located unit tests (e.g. `stringFns.test.ts` alongside `stringFns.ts`) covering each exported function. Prioritize `networkAggregationConfigUtils` as the highest-complexity target.
+**Issue:** Both files are exported from the package and used across the monorepo but have zero test coverage. `typeFns.ts` holds type guard functions where a regression would propagate silently to every consumer. `networkAggregationConfigUtils.ts` contains non-trivial domain logic for network aggregation config setup.
+**Fix:** Co-located unit tests (e.g. `typeFns.test.ts` alongside `typeFns.ts`) covering each exported function. Prioritize `networkAggregationConfigUtils` as the highest-complexity target.
 **Standalone:** yes
 
 ### Config constants need reorganization (blocked on architecture work)
@@ -546,7 +528,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Severity:** medium
 **Kind:** missing dependency
 **Issue:** The integration test suite already supports multiple search engines via `SEARCH_ENGINE` env var and `buildSearchClient({ client: searchEngine })`, but `@opensearch-project/opensearch` is not listed as a dependency; only `@elastic/elasticsearch`. Running the suite with `SEARCH_ENGINE=opensearch` would fail to resolve the client.
-**Fix:** Add `@opensearch-project/opensearch` to dependencies. Confirm that `buildSearchClient` in `graphql-router` supports it (the `SupportedSearchClients` type implies it does). Add an OpenSearch container to the CI pod spec (or adopt testcontainers; see [roadmap §3.2](roadmap.md#32-testcontainers-for-integration-test-infrastructure)) and run the suite against both engines.
+**Fix:** Add `@opensearch-project/opensearch` to dependencies. Confirm that `buildSearchClient` in `graphql-router` supports it (the `SupportedClientTypes` type implies it does). Add an OpenSearch container to the CI pod spec (or adopt testcontainers; see [roadmap §3.2](roadmap.md#32-testcontainers-for-integration-test-infrastructure)) and run the suite against both engines.
 **Standalone:** mostly yes; the test harness is already wired; this is the last missing piece before OS integration tests actually run
 
 ### No integration test verifying `/introspection/fields` reflects the live ES mapping
@@ -622,22 +604,13 @@ Downstream effects, both visible in production (demo.overture.bio):
 
 ## modules/charts
 
-### `SupportedSearchClients` rename regression risk (PR #1066)
+### `esToAggTypeMap` duplicated from `modules/types`
 
-**File:** `modules/graphql-router`; exported type `SupportedSearchClients`
-**Severity:** high (will break consumers on merge)
-**Kind:** naming regression
-**Issue:** PR #1066 renames `SupportedSearchClients` to an incorrect name. This type is exported from `@overture-stack/arranger-graphql-router` and used by consumers including `integration-tests/server`. Merging the PR as-is will break any code referencing `SupportedSearchClients` by name.
-**Fix:** Correct the name in PR #1066 before merging; the exported type must remain `SupportedSearchClients`.
-**Standalone:** yes; name fix only, no logic changes
-
-### `esToAggTypeMap` duplicated from `modules/types` (once release-charts merges)
-
-**File:** `modules/charts/src/arranger/mapping.ts` (via commit #1064 on `release-charts`)
+**File:** `modules/charts/src/arranger/mapping.ts:11` (introduced by #1064, already merged to `main`)
 **Severity:** low
 **Kind:** duplication
-**Issue:** PR #1064 on `release-charts` fixed the `aggsType` gap by computing the GQL aggregation type locally in the charts module from `mapping.type`. The fix works, but it introduces a local `esToAggTypeMap` that duplicates `esToAggTypesMap` already defined and exported from `modules/types/src/elastic/constants.ts`. If `esToAggTypesMap` ever changes (new ES types, corrected mappings), the charts copy will silently diverge.
-**Fix:** After `release-charts` merges to `main`, replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change.
+**Issue:** #1064 fixed the `aggsType` gap by computing the GQL aggregation type locally in the charts module from `mapping.type`. The fix works, but it introduces a local `esToAggTypeMap` that duplicates `esToAggTypesMap` already defined and exported from `modules/types/src/elastic/constants.ts`. If `esToAggTypesMap` ever changes (new ES types, corrected mappings), the charts copy will silently diverge.
+**Fix:** Replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change; not blocked on anything.
 **Standalone:** yes; mechanical import substitution, no logic changes
 
 ### TypeScript / declaration diagnostics on successful build
@@ -659,6 +632,24 @@ Downstream effects, both visible in production (demo.overture.bio):
 **Issue:** Added in PR #1074. The tooltip appends `'s'` for counts greater than one (e.g. "Records" vs "Record") using a simple string suffix. The TODO in the file notes that a `pluralize` library call does not work when a custom label is applied via CSS; so operators who override the label text via styling get a suffix on the wrong content. The root cause is that label customization is CSS-based rather than prop-based, leaving no programmatic hook for pluralization logic.
 **Fix:** Replace the CSS-based label customization pattern with a `label` prop accepting a singular/plural string pair (e.g. `{ singular: 'Record', plural: 'Records' }`). The pluralization then happens in the component against the prop value rather than against CSS output. The default values maintain the current "Record"/"Records" behaviour.
 **Standalone:** yes; component-level change, no server involvement
+
+### No test coverage for Tooltip/TooltipContainer CSS classNames
+
+**File:** `modules/charts/src/components/charts/Tooltip.tsx`; `modules/charts/src/components/TooltipContainer.tsx`
+**Severity:** low (no functional impact today; regression risk for external consumers)
+**Kind:** missing test coverage
+**Issue:** PR #1085 added stable classNames (`tooltip-container`, `tooltip-wrapper`, `tooltip-label`, `tooltip-data`, `tooltip-data-suppressed`, `tooltip-data-value`, `tooltip-data-plural`, alongside the pre-existing `tooltip-data-source-wrapper`/`tooltip-data-source`) plus a `data-label` attribute, specifically so an external consumer (OHCRN) can target Tooltip internals with custom CSS. Neither component has any test coverage. A future refactor could rename or drop any of these classNames with nothing failing in CI, silently breaking downstream styling with no build-time signal, exactly the kind of regression these classNames exist to survive.
+**Fix:** Add a render test using `@testing-library/react` (already a devDependency here) asserting each classNames above is present in the rendered output, covering both the suppressed and normal-value branches, plus a case confirming `data-label` reflects the label text. Keep it a presence check rather than a full markup snapshot, so unrelated markup changes don't cause spurious failures.
+**Standalone:** yes; test-only addition, no component changes needed
+
+### `TooltipComp` theme override is declared but never wired up
+
+**File:** `modules/charts/src/components/ChartsThemeProvider.tsx:22` (`TooltipComp?: ComponentType`); `modules/charts/src/components/charts/Bar/View.tsx` and `modules/charts/src/components/charts/Sunburst/View.tsx` (both hardcode the built-in `Tooltip` directly; neither reads `useThemeContext().components?.TooltipComp`)
+**Severity:** medium (raised from a passing roadmap mention, see driver below)
+**Kind:** incomplete implementation
+**Issue:** `ChartsThemeProvider`'s `components` prop declares a `TooltipComp` override slot alongside `Loader`/`ErrorData`/`EmptyData`, but only those three are actually consulted anywhere. A consumer passing `components={{ TooltipComp: MyTooltip }}` today gets no error and no effect; their component is silently ignored. This was previously logged only as a "not yet scoped" side-note in [roadmap: Extend the theming engine to all components](roadmap.md#extend-the-theming-engine-to-all-components), which also mischaracterized the prop as "swappable." Elevating priority now that there's a concrete driver: PR #1085 added a `data-label` attribute to the built-in Tooltip so external consumers (OHCRN) can target specific label values with custom CSS, which pushes consumers toward handling CSS-selector escaping for arbitrary label content themselves. A working `TooltipComp` override would let those consumers supply their own tooltip component with direct JS access to `label` instead, avoiding CSS-selector matching, and any escaping, entirely.
+**Fix:** In `Bar/View.tsx` and `Sunburst/View.tsx`, read `components?.TooltipComp` from `useThemeContext()` and render it in place of the built-in `Tooltip` when provided, passing the same tooltip data shape (`Bar | SunburstSegment`, or a normalized shape both charts can share). Document the prop and its shape in `modules/charts/README.md`, currently undocumented; only `Loader`/`ErrorData`/`EmptyData` are listed there.
+**Standalone:** yes; additive, no change to existing default-Tooltip behaviour
 
 ### Bar chart `SUPPRESSION_INCREMENT_VALUE` is not configurable
 
@@ -754,14 +745,3 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 **Fix:** In `normalizeNetworkConfig` (or wherever network config is validated at boot, alongside the existing `console.warn` calls in `apps/search-server/src/configs/fromFiles/fileHandlers.ts`), warn when `remoteNodeExtendedConfigs` (or the local node config) contains more than one node and any entry is missing `nodeId`. Message should name which node(s) lack it and note that node-scoped filtering and per-node chart features require it.
 **Standalone:** yes; additive validation/logging only, no change to existing fallback-matching behaviour
 
----
-
-## search-server / graphql-router boundary
-
-### `SearchClient` vs `Client` type mismatch [done]
-
-**Files:** `apps/search-server/src/arrangerRoutes.ts`, `apps/search-server/src/server.ts`
-**Severity:** low
-**Kind:** type-weakness
-**Issue:** `search-server` imported `Client` from `@elastic/elasticsearch` while `graphql-router` defines its own `SearchClient` abstraction. The rest of `search-server` already used `SearchClient` via `ExternalConfigs`; only `arrangerRoutes.ts` had the stale import.
-**Fix applied:** Replaced `import type { Client } from '@elastic/elasticsearch'` with `import { type SearchClient } from '@overture-stack/arranger-graphql-router'` and updated the parameter type accordingly. `@elastic/elasticsearch` is no longer imported directly in this file.

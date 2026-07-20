@@ -364,6 +364,110 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		});
 	});
 
+	suite('GraphQL batching (default disabled)', () => {
+		let serverApp;
+
+		before(async () => {
+			console.error('\n------------------------------------');
+			console.log('Setting up Arranger - Batching Default\n');
+
+			try {
+				serverApp = await ArrangerServer({
+					enableAdmin,
+					esClient,
+					serverPort,
+					setsIndex,
+					setsType,
+				});
+			} catch (err) {
+				console.error('\n\n------------------------------------');
+				console.error('FATAL: Arranger Server is not available - aborting tests\n');
+				console.error(`  ${err instanceof Error ? err.stack : err}\n`);
+				console.error('------------------------------------\n');
+				process.exit(1);
+			}
+		});
+
+		test('rejects an array of batched GraphQL operations with a 400 response when enableGraphQLBatching is left unset', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				[{ query: '{ __typename }' }, { query: '{ __typename }' }],
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 400);
+			assert.ok(Array.isArray(response.data?.errors) && response.data.errors.length > 0);
+			assert.match(response.data.errors[0].message, /batch/i);
+		});
+
+		test('still processes a single (non-batched) GraphQL operation', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				{ query: '{ __typename }' },
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 200);
+			assert.ok(response.data?.data?.__typename);
+		});
+
+		after(async () => {
+			try {
+				serverApp.close();
+				console.log('\nStopped Arranger Server - Batching Default\n');
+			} catch (err) {
+				// console.log('err after', err);
+			}
+		});
+	});
+
+	suite('GraphQL batching enabled', () => {
+		let serverApp;
+
+		before(async () => {
+			console.error('\n------------------------------------');
+			console.log('Setting up Arranger - Batching Enabled\n');
+
+			try {
+				serverApp = await ArrangerServer({
+					enableAdmin,
+					enableGraphQLBatching: true,
+					esClient,
+					serverPort,
+					setsIndex,
+					setsType,
+				});
+			} catch (err) {
+				console.error('\n\n------------------------------------');
+				console.error('FATAL: Arranger Server is not available - aborting tests\n');
+				console.error(`  ${err instanceof Error ? err.stack : err}\n`);
+				console.error('------------------------------------\n');
+				process.exit(1);
+			}
+		});
+
+		test('processes an array of batched GraphQL operations', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				[{ query: '{ __typename }' }, { query: '{ __typename }' }],
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 200);
+			assert.ok(Array.isArray(response.data));
+			assert.equal(response.data.length, 2);
+		});
+
+		after(async () => {
+			try {
+				serverApp.close();
+				console.log('\nStopped Arranger Server - Batching Enabled\n');
+			} catch (err) {
+				// console.log('err after', err);
+			}
+		});
+	});
+
 	after(async () => {
 		try {
 			await cleanup('after all');
