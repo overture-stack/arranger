@@ -4,6 +4,7 @@ import { maxBy, omit } from 'lodash';
 import { useMemo } from 'react';
 
 import { useColorMap } from '#hooks/useColorMap';
+import type { ChartBucket } from '../../Provider/chartsContextTypes';
 import { BarChartProps, SupportedNivo } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
@@ -11,12 +12,12 @@ import { arrangerToNivoBarChart } from './nivo/config';
 const SUPPRESSION_INCREMENT_VALUE = 0.2;
 
 interface BarChartViewProps {
-	data: any;
+	data: ChartBucket[];
+	fieldName: string;
 	handlers: BarChartProps['handlers'];
 	theme: BarChartProps['theme'];
 	maxBars: BarChartProps['maxBars'];
 	colorMapRef: React.RefObject<Map<string, string>>;
-	fieldName: string;
 }
 
 type BarData = {

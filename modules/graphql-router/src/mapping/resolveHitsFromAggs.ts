@@ -71,15 +71,7 @@ export const getHitsFromAggsResolver = (aggregationsResolver: AggregationsResolv
 		if (aggregationsSelectionSet) {
 			const modifiedInfo = { ...info, fieldNodes: [aggregationsSelectionSet] };
 
-			const aggregations = await aggregationsResolver(
-				obj,
-				// @ts-ignore
-				// modifying the query info field inline so it can query aggregations correctly
-				// not idiomatic so doesn't line up with typings from graphql
-				info.variableValues,
-				context,
-				modifiedInfo,
-			);
+			const aggregations = await aggregationsResolver(obj, info.variableValues, context, modifiedInfo);
 			const { hitsTotal: total } = applyAggregationMasking({
 				aggregations,
 			});

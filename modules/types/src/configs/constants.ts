@@ -1,4 +1,4 @@
-// TODO: reorganize these constants into their actual dependency tree: server vs catalog, nested properly, etc.
+// TODO: reorganize these constants into their actual dependency tree: server vs catalogue, nested properly, etc.
 
 // generic terms
 const CATALOG_ID = 'catalogId';
@@ -10,7 +10,9 @@ const TYPE = 'type';
 export const configArrangerFeatureFlagProperties = {
 	DISABLE_DOWNLOADS: 'disableDownloads',
 	DISABLE_FILTERS: 'disableFilters',
+	DISABLE_GRAPHQL_INTROSPECTION: 'disableGraphQLIntrospection',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
+	ENABLE_GRAPHQL_BATCHING: 'enableGraphQLBatching',
 	ENABLE_SETS: 'enableSets',
 } as const;
 
@@ -114,6 +116,7 @@ export const facetsProperties = {
 
 export const baseNodeProperties = {
 	DISPLAY_NAME: 'displayName',
+	NODE_ID: 'nodeId',
 } as const;
 export const localNodeProperties = {
 	CATALOG_ID,

@@ -93,7 +93,7 @@ export const describeExecutionError = (error: unknown): string => {
 			const detail = error.body ? ` Arranger responded: ${truncate(error.body)}` : '';
 			return `Arranger rejected the request with ${status}.${detail}`;
 		}
-		return 'Could not reach the Arranger server. It may be unavailable — verify the connection and retry.';
+		return 'Could not reach the Arranger server. It may be unavailable: verify the connection and retry.';
 	}
 	if (error instanceof zod.ZodError) {
 		const issues = error.issues.map((issue) => issue.message).join('; ');

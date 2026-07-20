@@ -60,9 +60,15 @@ The `SearchClient` abstraction already exists as the right boundary; the migrati
 
 ### GraphQL server migration (away from Apollo)
 
-_Priority: medium. Blocked by, or done in parallel with, the core module extraction._
+_Priority: high. prerequisite for Keycloak auth implementation._
 
-Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right move; the goal is to move _away_ from Apollo, not deeper into it. Apollo is opinionated about its hosting environment (it assumes Express-style middleware, has its own context and plugin APIs) in ways that conflict with the longer-term direction of decoupling Arranger from any specific framework.
+Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right move; Apollo is opinionated about its hosting environment (it assumes Express-style middleware, has its own context and plugin APIs) in ways that conflict with the longer-term direction of making Arranger framework-agnostic.
+
+**Sequencing:** This item is the second step of a three-step chain driven by a pentest audit finding:
+
+1. **Disable introspection in Apollo v3 (done):** Apollo's `introspection` option on both `ApolloServer` constructors in `graphqlRoutes.ts` is now gated by the `disableGraphQLIntrospection` feature flag (`introspection: !disableGraphQLIntrospection`), which defaults to disabled in production via `NODE_ENV` and can also be set explicitly per catalogue or via env var. Apollo v4+ disables introspection in production automatically; this flag aligns v3 behaviour with that convention, with the added benefit of being explicitly overridable. Field name suggestions in GraphQL error responses (a separate leak from introspection, on its own validation code path) are now also stripped via a custom `formatError` in `createEndpoint` (2026-07-20); Apollo v4 handles this automatically, so this becomes redundant (not harmful) once the migration lands.
+2. **Migrate to graphql-yoga (this item):** Clean foundation before auth is built on Apollo-specific APIs.
+3. **Keycloak bearer token auth (follows):** Implemented as Express middleware - library-agnostic, portable across the migration. Direct Keycloak JWT validation while Usher planning continues. See [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control).
 
 The leading replacement candidate is **graphql-yoga** (maintained by The Guild, who also maintain `@graphql-tools`, already used in this repo). It runs on any JS runtime, integrates with Express without requiring it, supports the same schema-first approach the codebase uses, and is actively maintained. This is a research-confirmed candidate, not a final decision.
 
@@ -176,6 +182,23 @@ Catalogs can fail to load or be intentionally disabled. There is currently no ex
 
 _Design-first. Coordinate with the API version exposure entry; catalog metadata and server introspection are related surfaces._
 
+### Per-catalogue config reload without full server restart
+
+_Priority: medium. To be reviewed before committing to a design._
+
+Today, a catalogue config change triggers a full server restart: the Helm chart detects md5 checksum drift against the deployed config and restarts the whole process. Kubernetes rolling updates keep the previous pod serving traffic until the new one is ready, so this costs nothing in a k8s deployment, but a local or smaller setup without rolling updates takes full downtime on any single catalogue's config change.
+
+Investigation found per-catalogue state (ES/OS client, GraphQL schema, Express router) is already isolated and keyed by catalogue ID inside `arrangerRouter()` (`modules/graphql-router/src/router.ts:40-127`), built fresh per catalogue with no shared caching. The actual gap is mounting: `apps/search-server/src/arrangerRoutes.ts:58-61` mounts each catalogue's router directly on the parent Express router (`router.use(...)`), which has no mutable registry to reach back into once mounted; Express bakes the sub-router into its internal middleware stack.
+
+Two carve-outs would need care in any implementation: the optional shared `esClient` injection path (`apps/search-server/src/server.ts:14,64`) forces one client onto all catalogues if used, and the introspection router map (`apps/search-server/src/introspection/index.ts:9-43`) would need its entry swapped in lockstep with any router swap, or it could keep referencing a torn-down catalogue.
+
+**Proposed incremental path, not yet committed to:**
+1. Manual reload trigger for a single catalogue (for example an admin-gated `POST /:catalogId/reload`) that re-runs `buildCatalogueRouter()` and swaps its entry in a `Map<catalogId, Router>` behind a thin dereferencing middleware, replacing Express's static mount.
+2. Opt-in file-watching (for example `chokidar`) on each catalogue's config directory, calling the same reload path automatically; this is where the md5-checksum logic currently living in the Helm chart could move into the app itself.
+3. Coordinate with "Multicatalog catalogue lifecycle and metadata" above: a catalogue mid-reload is a natural fit for the `available`/`failed`/`disabled` status model already being planned there, so a client hitting the catalogue during a reload gets a real status rather than a race condition.
+
+_To be reviewed before committing to a design. Related: Multicatalog catalogue lifecycle and metadata; Per-catalogue search engine credentials via env vars._
+
 ### Per-catalogue search engine credentials via env vars
 
 _Priority: medium. Config plumbing gap, not a design question._
@@ -249,7 +272,7 @@ Consumers that build on Arranger (portal frontends, and internally `modules/char
 
 ### MCP integration readiness
 
-Five targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation; the fifth is the accumulated `/docs` gap the other four (and everything already shipped) have left behind.
+Six targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation; the fifth is a follow-up question from a documentation fix logged during a downstream PR review; the sixth is the accumulated `/docs` gap the other five (and everything already shipped) have left behind.
 
 #### SQON generation via `build_sqon` tool
 
@@ -267,9 +290,7 @@ This is also more token-efficient than the alternatives: embedding SQON document
 2. **Agent-optimized tool description**: the tool schema carries descriptions that guide the LLM toward correct parameter selection: valid operators per field type (from `getSqonFieldOperatorDetails()`) and value type hints. The tool's own description is the spec; the LLM does not need SQON documentation injected into every prompt.
 3. **Versioned changelog**: as the SQON schema evolves, the tool interface is versioned and its changelog is machine-readable. Agent behaviour decouples from model training data; the tool's current description is always authoritative.
 
-**Prerequisite:** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. The current `sqon-builder` package only handles `in`, `gt`, `lt`. Full operator coverage (`not-in`, `gte`, `lte`, `between`, etc.) depends on the sqon-builder absorption into `modules/sqon` item. The tool can ship with partial coverage while absorption is in progress, then expand as operators are added to the builder.
-
-_See [sqon-builder absorption into `modules/sqon`](#sqon-builder-absorption-into-modulessqon) for the prerequisite builder work._
+**Prerequisite (resolved):** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. This was previously blocked on absorbing full operator coverage into `modules/sqon`; that absorption is now complete (see [Deprecate `sqon-builder`](#deprecate-sqon-builder)) and `modules/sqon`'s `SqonBuilder` already covers `all`, `between`, `gte`, `in`, `lte`, `not-in`, `some-not-in`, and `wildcard`. `build_sqon` can ship with full operator coverage from the start; no partial-coverage phasing is needed.
 
 **Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once the `execute-query` MCP implementation is available and real token budgets can be measured empirically.
 
@@ -302,6 +323,12 @@ The GraphQL schema Arranger generates from ES/OS index mappings currently carrie
 Arranger should surface field descriptions from ES mapping metadata (the `meta` object on a field mapping, which can carry arbitrary key-value pairs including a `description`) as GraphQL field descriptions. Where no metadata description exists, the field name is still the fallback. This gives LLM consumers (and Playground users) meaningful context at the point where it costs nothing to add it.
 
 _Requires a mapping-to-schema pass change. Operators who want richer descriptions can add `meta.description` to their index mappings without any Arranger code change._
+
+#### Make invisible query defaults visible via SDL (research)
+
+_Priority: low. The documentation gap is closed (see `docs/usage/07-defaults-and-limits.md`); this is the follow-up question of whether the underlying defaults should also become schema-visible._
+
+Several arguments that materially change query results (`hits(first)`, `aggregations.buckets(max)`, `histogram(interval)`, `range(ranges)`, `cardinality(precision_threshold)`, `top_hits(size)`, `include_missing`) default in resolver code rather than as GraphQL SDL argument defaults, unlike `hits(trackTotalHits: Boolean = true)`, which does have a real SDL default. A human reading the defaults-and-limits doc now has the answer, but an LLM or codegen tool working from the schema alone still doesn't. Worth revisiting once the SDL surface is being touched for other reasons anyway, for example alongside [SQON documentation in schema descriptions](#sqon-documentation-in-schema-descriptions) above: would adding real `= value` defaults to these arguments change resolver behaviour in any edge case (for instance, distinguishing "explicitly passed 10" from "omitted"), or is it a safe, additive schema change?
 
 #### Update `/docs` for the MCP server surface
 
@@ -643,7 +670,7 @@ The table component introduced a theming system (`modules/components/src/ThemeCo
 
 **Next concrete target: Tooltip.** `modules/components/src/Tooltip/` already carries its own local theme prop (`TooltipThemeProperties`: `tooltipAlign`, `tooltipFontColor`, `tooltipText`, `tooltipVisibility`), but it is a self-contained shape disconnected from the central `Components` type. Folding it in (add a `Tooltip: TooltipThemeProps` slot to `Components`, switch the component to `useThemeContext`/`withTheme`) follows the exact pattern Table and Aggregations already use. It does not require the Emotion replacement decision below: it reuses the existing mechanism rather than deepening investment in it, so it is a reasonable next step to take now.
 
-**Known unaddressed split:** `modules/charts` has its own separate `ChartsThemeProvider` (colour array, swappable `TooltipComp`/`Loader`) with no connection to `modules/components`' `ThemeContext`. Whether these should ever merge is an open question, not yet scoped.
+**Known unaddressed split:** `modules/charts` has its own separate `ChartsThemeProvider` (colour array, a `components` override slot including `TooltipComp`/`Loader`) with no connection to `modules/components`' `ThemeContext`. Whether these should ever merge is an open question, not yet scoped. Note `TooltipComp` specifically is declared but not actually wired up yet, see [tech-debt: `TooltipComp` theme override is declared but never wired up](tech-debt.md#tooltipcomp-theme-override-is-declared-but-never-wired-up).
 
 _Coordinate with the Emotion replacement decision before investing heavily beyond the Tooltip step; the styling mechanism affects how theming is implemented for anything larger._
 
@@ -683,6 +710,8 @@ _Priority: low. Basic protections are already in place._
 Alias count and depth limits are implemented (`maxAliasesRule`, `maxDepthRule` in `graphql-router`, configurable via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` environment variables). These address the specific DoS vectors that were identified.
 
 A more thorough approach would assign cost weights to individual field resolvers and reject queries that exceed a total complexity budget, so a query with 10 expensive aggregation fields costs more than 10 cheap scalar fields. The `graphql-query-complexity` library handles this well. This is a hardening step worth doing eventually, but not urgent given the current protections.
+
+**Related, now closed:** array-based HTTP batching (multiple GraphQL operations in a single POST body, each executed in parallel via `Promise.all`) was a separate vector from alias/depth abuse: it bypasses request-level rate limiting and multiplies cost per request, and neither `maxAliasesRule` nor `maxDepthRule` caps the number of operations in a batch, only the cost of each one. Flagged by an external HCMI pentest report (2026-07-20). Fixed by gating on a new `enableGraphQLBatching` feature flag (`apollo-server-express`'s `allowBatchedHttpRequests` option, previously left at its permissive library default). Unlike the other `disable*` flags it's wired inverted, `enable*` and disabled by default, since Arranger has no legitimate internal use for HTTP-level batching: default `false` (batching rejected unless explicitly enabled), opt in only if a consumer genuinely relies on it. See `modules/graphql-router/README.md` feature-flags table.
 
 ### Request rate limiting
 
@@ -911,6 +940,8 @@ _The CI pod already has dind; testcontainers would work today. Evaluate as part 
 ### 3.3 Migrate from npm to pnpm
 
 Catches phantom dependencies at install time, faster CI installs, removes `dangerouslyDisablePackageManagerCheck`.
+
+**Corepack Docker gotcha (learned from Lyric):** When adopting pnpm with corepack in a multi-stage Dockerfile, use `corepack prepare pnpm@x.y.z --activate` - not `corepack use pnpm@x.y.z`. `corepack use` only updates package.json; the binary is fetched lazily at runtime. If the pod has no egress to registry.npmjs.org (common in locked-down clusters), startup fails with a corepack download error. `corepack prepare --activate` downloads and caches the binary during image build, so the pod needs no network access to start.
 
 1. Install pnpm on Jenkins nodes (coordinate with infra)
 2. Create `pnpm-workspace.yaml` (replacing npm workspaces declaration)

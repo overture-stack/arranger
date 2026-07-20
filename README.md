@@ -22,7 +22,7 @@ Technical resources for those working with or contributing to the project are av
 - [Docker](https://www.docker.com/) (v4.39.0 or higher)
 - OpenSearch 1.x or higher, or Elasticsearch 7.x
 
-> **Note:** Only the default (licensed) Elasticsearch distribution is supported; the discontinued ES OSS distribution is not. Elasticsearch 8.x is not yet supported; the bundled client is `@elastic/elasticsearch` v7.
+> **Note:** For Elasticsearch, only the default (licensed) distribution is supported; the discontinued ES OSS distribution is not. Elasticsearch 8.x is not yet supported, and the bundled client is `@elastic/elasticsearch` v7.
 
 ## Support & Contributions
 

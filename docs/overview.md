@@ -102,6 +102,7 @@ You need a running server connected to your search engine, with at least one cat
 2. [Setup](./setup.md): prerequisites, environment variables, search engine permissions
 3. [Index mappings](./usage/00-index-mappings.md): what your ES/OS index mapping drives in Arranger
 4. [Catalogue configuration](./usage/01-arranger-configs.md): the four JSON files that define each catalogue
+5. [Feature flags](./usage/08-feature-flags.md): security hardening flags to review before going to production
 
 ---
 

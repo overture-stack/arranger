@@ -4,7 +4,7 @@ import { extendFields, flattenMappingToFields } from './extendMapping.js';
 
 /**
  * Merges a live ES index mapping with extended config to produce the authoritative
- * field list for a catalogue. Pure transformation — no network calls, no framework
+ * field list for a catalogue. Pure transformation: no network calls, no framework
  * dependencies.
  *
  * Future home: `arranger-core`. Today lives in `graphql-router/mapping/` as a

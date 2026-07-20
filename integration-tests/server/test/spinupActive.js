@@ -29,11 +29,11 @@ export default ({ api, catalogs, mode = 'single' }) => {
 		assert.equal(data.sqonSchemaPath, '/introspection/sqon');
 
 		if (mode === 'single') {
-			const [singleCatalog] = Object.values(data.catalogs);
-			assert.ok(singleCatalog);
-			assert.equal(singleCatalog.documentType, catalogs[0].documentType);
-			assert.equal(singleCatalog.paths.graphql, catalogs[0].gqlPath);
-			assert.equal(singleCatalog.paths.fields, '/introspection/fields');
+			const [singleCatalogue] = Object.values(data.catalogs);
+			assert.ok(singleCatalogue);
+			assert.equal(singleCatalogue.documentType, catalogs[0].documentType);
+			assert.equal(singleCatalogue.paths.graphql, catalogs[0].gqlPath);
+			assert.equal(singleCatalogue.paths.fields, '/introspection/fields');
 		} else {
 			catalogs.forEach(({ catalogId, documentType, gqlPath }) => {
 				assert.equal(data.catalogs[catalogId].documentType, documentType);
@@ -74,7 +74,7 @@ export default ({ api, catalogs, mode = 'single' }) => {
 		}
 	});
 
-	test("6.should register the single-catalog '/introspection/fields' alias", async () => {
+	test("6.should register the single-catalogue '/introspection/fields' alias", async () => {
 		if (mode !== 'single') {
 			return;
 		}
@@ -94,7 +94,7 @@ export default ({ api, catalogs, mode = 'single' }) => {
 		assert.ok(data.fields);
 	});
 
-	test('7.should register catalog-specific introspection in multiple mode', async () => {
+	test('7.should register catalogue-specific introspection in multiple mode', async () => {
 		if (mode !== 'multiple') {
 			return;
 		}
@@ -105,7 +105,7 @@ export default ({ api, catalogs, mode = 'single' }) => {
 					endpoint: `/introspection/${catalogId}`,
 				})
 				.catch((err) => {
-					console.log('spinupActive/introspection/catalog error', err.message);
+					console.log('spinupActive/introspection/catalogue error', err.message);
 				});
 
 			assert.equal(statusText, 'OK');
@@ -113,6 +113,24 @@ export default ({ api, catalogs, mode = 'single' }) => {
 			assert.equal(data.documentType, documentType);
 			assert.equal(typeof data.generatedAt, 'string');
 			assert.ok(data.fields);
+		}
+	});
+
+	test('8.should allow GraphQL introspection in non-production mode', async () => {
+		for (const { gqlPath } of catalogs) {
+			const { data, statusText } = await api
+				.post({
+					body: {
+						query: `{ __schema { queryType { name } } }`,
+					},
+					endpoint: gqlPath,
+				})
+				.catch((err) => {
+					console.log('spinupActive/graphql-introspection error', err.message);
+				});
+
+			assert.equal(statusText, 'OK');
+			assert.ok(data?.data?.__schema?.queryType?.name, 'introspection should return schema data when not in production');
 		}
 	});
 

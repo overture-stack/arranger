@@ -112,6 +112,10 @@ The client sends the SQON to Arranger as part of a GraphQL request:
 - **Pagination** (lines 24-25): `first` and `offset` control how many records to fetch and where to start
 - **Sorting** (line 26): Order of results (empty in this example)
 
+:::tip
+This example sets `first: 20` explicitly. If `first` is omitted entirely, it defaults to 10, along with a number of other non-obvious defaults for aggregations and downloads; see [Defaults and Limits](./07-defaults-and-limits.md) for the full list.
+:::
+
 </details>
 
 Arranger receives the GraphQL request and translates the entire query, including the embedded SQON filter, into a native Elasticsearch query:

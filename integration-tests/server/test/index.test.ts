@@ -1,7 +1,9 @@
-import { after, before, suite } from 'node:test';
+import assert from 'node:assert/strict';
+import { after, before, suite, test } from 'node:test';
 import path from 'path';
 
 import { stringToNumber } from '@overture-stack/arranger-types/tools';
+import axios from 'axios';
 import dotenv from 'dotenv';
 
 import ArrangerServer from '../../../apps/search-server/src/server.js';
@@ -34,12 +36,12 @@ const serverUrl = `http://localhost:${serverPort}`;
 
 const rootApi = ajax(serverUrl, {});
 
-const createCatalogApi = (catalogId: string) =>
+const createCatalogueApi = (catalogId: string) =>
 	ajax(serverUrl, {
 		endpoint: `/${catalogId}/graphql`,
 	});
 
-const catalogConfigs = [
+const catalogueConfigs = [
 	{
 		catalogId: catalog1Base.catalogId,
 		documentType: catalog1Base.documentType,
@@ -47,7 +49,7 @@ const catalogConfigs = [
 		data: data_1,
 		mappings: mappings_1,
 		gqlPath: `/${catalog1Base.catalogId}/graphql`,
-		api: createCatalogApi(catalog1Base.catalogId),
+		api: createCatalogueApi(catalog1Base.catalogId),
 	},
 	{
 		catalogId: catalog2Base.catalogId,
@@ -56,7 +58,7 @@ const catalogConfigs = [
 		data: data_2,
 		mappings: mappings_2,
 		gqlPath: `/${catalog2Base.catalogId}/graphql`,
-		api: createCatalogApi(catalog2Base.catalogId),
+		api: createCatalogueApi(catalog2Base.catalogId),
 	},
 ];
 
@@ -76,7 +78,7 @@ const cleanup = async (caller = '') => {
 
 	// Clean up all known test indices to ensure no leftovers
 	const allTestIndices = [
-		...catalogConfigs.map((c) => c.esIndex), // multicatalog indices
+		...catalogueConfigs.map((c) => c.esIndex), // multicatalogue indices
 		setsIndex, // sets index
 	];
 
@@ -137,7 +139,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			console.error('\n------------------------------------');
 			console.log('Initializing Elasticsearch testing indices\n');
 
-			for (const { catalogId, data, esIndex, mappings } of catalogConfigs) {
+			for (const { catalogId, data, esIndex, mappings } of catalogueConfigs) {
 				console.debug('  - Creating index for', catalogId);
 				await esClient.indices.create({
 					index: esIndex,
@@ -164,12 +166,12 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		}
 	});
 
-	suite('Single Catalog Integration Tests', () => {
+	suite('Single Catalogue Integration Tests', () => {
 		let serverApp;
 
 		before(async () => {
 			console.error('\n------------------------------------');
-			console.log('Setting up Arranger - Single Catalog Mode\n');
+			console.log('Setting up Arranger - Single Catalogue Mode\n');
 
 			try {
 				serverApp = await ArrangerServer({
@@ -207,10 +209,10 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			}
 		});
 
-		const [singleCatalog] = catalogConfigs;
+		const [singleCatalogue] = catalogueConfigs;
 		const env = {
 			api: ajax(serverUrl, { endpoint: '/graphql' }),
-			documentType: singleCatalog.documentType,
+			documentType: singleCatalogue.documentType,
 		};
 
 		runTestSuites(env, {
@@ -218,7 +220,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 				api: rootApi,
 				catalogs: [
 					{
-						documentType: singleCatalog.documentType,
+						documentType: singleCatalogue.documentType,
 						gqlPath: '/graphql',
 					},
 				],
@@ -229,23 +231,23 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		after(async () => {
 			try {
 				serverApp.close();
-				console.log('\nStopped Arranger Server - Single Catalog\n');
+				console.log('\nStopped Arranger Server - Single Catalogue\n');
 			} catch (err) {
 				// console.log('err after', err);
 			}
 		});
 	});
 
-	suite('Multicatalog Integration Tests', () => {
+	suite('Multicatalogue Integration Tests', () => {
 		let serverApp;
 
 		before(async () => {
 			console.error('\n------------------------------------');
-			console.log('Setting up Arranger - Multicatalog Mode\n');
+			console.log('Setting up Arranger - Multicatalogue Mode\n');
 
 			try {
 				serverApp = await ArrangerServer({
-					catalogConfigsPath: './multiconfigs',
+					catalogueConfigsPath: './multiconfigs',
 					disableDownloads: false,
 					disableFilters: false,
 					disablePlayground: false,
@@ -256,7 +258,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					enableSets: true,
 					esClient,
 					// FIXME: not fully integrated yet
-					// should merge across catalogs with their own serverside filters
+					// should merge across catalogues with their own serverside filters
 					filters: () => ({
 						op: 'not',
 						content: [
@@ -285,7 +287,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		suite('functional endpoints', () => {
 			checkBaseEndpoints({
 				api: rootApi,
-				catalogs: catalogConfigs.map(({ catalogId, documentType, gqlPath }) => ({
+				catalogs: catalogueConfigs.map(({ catalogId, documentType, gqlPath }) => ({
 					catalogId,
 					documentType,
 					gqlPath,
@@ -294,21 +296,172 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			});
 		});
 
-		catalogConfigs.forEach((config) => {
-			const catalogEnv = {
+		catalogueConfigs.forEach((config) => {
+			const catalogueEnv = {
 				api: config.api,
 				documentType: config.documentType,
 			};
 
-			suite(`Catalog ${config.catalogId}`, () => {
-				runTestSuites(catalogEnv);
+			suite(`Catalogue ${config.catalogId}`, () => {
+				runTestSuites(catalogueEnv);
 			});
 		});
 
 		after(async () => {
 			try {
 				serverApp.close();
-				console.log('\nStopped Arranger Server - Multicatalog\n');
+				console.log('\nStopped Arranger Server - Multicatalogue\n');
+			} catch (err) {
+				// console.log('err after', err);
+			}
+		});
+	});
+
+	suite('GraphQL introspection disabled', () => {
+		let serverApp;
+
+		before(async () => {
+			console.error('\n------------------------------------');
+			console.log('Setting up Arranger - Introspection Disabled\n');
+
+			try {
+				serverApp = await ArrangerServer({
+					disableGraphQLIntrospection: true,
+					enableAdmin,
+					esClient,
+					serverPort,
+					setsIndex,
+					setsType,
+				});
+			} catch (err) {
+				console.error('\n\n------------------------------------');
+				console.error('FATAL: Arranger Server is not available - aborting tests\n');
+				console.error(`  ${err instanceof Error ? err.stack : err}\n`);
+				console.error('------------------------------------\n');
+				process.exit(1);
+			}
+		});
+
+		test('rejects GraphQL introspection queries with a 400 response', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				{ query: '{ __schema { queryType { name } } }' },
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 400);
+			assert.ok(Array.isArray(response.data?.errors) && response.data.errors.length > 0);
+			assert.match(response.data.errors[0].message, /introspection/i);
+		});
+
+		after(async () => {
+			try {
+				serverApp.close();
+				console.log('\nStopped Arranger Server - Introspection Disabled\n');
+			} catch (err) {
+				// console.log('err after', err);
+			}
+		});
+	});
+
+	suite('GraphQL batching (default disabled)', () => {
+		let serverApp;
+
+		before(async () => {
+			console.error('\n------------------------------------');
+			console.log('Setting up Arranger - Batching Default\n');
+
+			try {
+				serverApp = await ArrangerServer({
+					enableAdmin,
+					esClient,
+					serverPort,
+					setsIndex,
+					setsType,
+				});
+			} catch (err) {
+				console.error('\n\n------------------------------------');
+				console.error('FATAL: Arranger Server is not available - aborting tests\n');
+				console.error(`  ${err instanceof Error ? err.stack : err}\n`);
+				console.error('------------------------------------\n');
+				process.exit(1);
+			}
+		});
+
+		test('rejects an array of batched GraphQL operations with a 400 response when enableGraphQLBatching is left unset', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				[{ query: '{ __typename }' }, { query: '{ __typename }' }],
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 400);
+			assert.ok(Array.isArray(response.data?.errors) && response.data.errors.length > 0);
+			assert.match(response.data.errors[0].message, /batch/i);
+		});
+
+		test('still processes a single (non-batched) GraphQL operation', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				{ query: '{ __typename }' },
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 200);
+			assert.ok(response.data?.data?.__typename);
+		});
+
+		after(async () => {
+			try {
+				serverApp.close();
+				console.log('\nStopped Arranger Server - Batching Default\n');
+			} catch (err) {
+				// console.log('err after', err);
+			}
+		});
+	});
+
+	suite('GraphQL batching enabled', () => {
+		let serverApp;
+
+		before(async () => {
+			console.error('\n------------------------------------');
+			console.log('Setting up Arranger - Batching Enabled\n');
+
+			try {
+				serverApp = await ArrangerServer({
+					enableAdmin,
+					enableGraphQLBatching: true,
+					esClient,
+					serverPort,
+					setsIndex,
+					setsType,
+				});
+			} catch (err) {
+				console.error('\n\n------------------------------------');
+				console.error('FATAL: Arranger Server is not available - aborting tests\n');
+				console.error(`  ${err instanceof Error ? err.stack : err}\n`);
+				console.error('------------------------------------\n');
+				process.exit(1);
+			}
+		});
+
+		test('processes an array of batched GraphQL operations', async () => {
+			const response = await axios.post(
+				`${serverUrl}/graphql`,
+				[{ query: '{ __typename }' }, { query: '{ __typename }' }],
+				{ validateStatus: () => true },
+			);
+
+			assert.equal(response.status, 200);
+			assert.ok(Array.isArray(response.data));
+			assert.equal(response.data.length, 2);
+		});
+
+		after(async () => {
+			try {
+				serverApp.close();
+				console.log('\nStopped Arranger Server - Batching Enabled\n');
 			} catch (err) {
 				// console.log('err after', err);
 			}

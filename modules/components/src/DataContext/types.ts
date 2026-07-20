@@ -111,6 +111,9 @@ export interface DataContextInterface {
 	fetchData: FetchDataFn;
 	isLoadingConfigs: boolean;
 	missingProvider?: string;
+	/** Node IDs to restrict a network/federated search to; empty means all configured nodes. */
+	networkNodesFilter: string[];
+	setNetworkNodesFilter: Dispatch<SetStateAction<string[]>>;
 	sqon: SQONType;
 	setSQON: Dispatch<SetStateAction<SQONType>>;
 	tableConfigs: TableConfigsInterface;

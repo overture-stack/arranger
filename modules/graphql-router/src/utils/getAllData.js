@@ -11,7 +11,7 @@ import runQuery from './runQuery.js';
  * @param maxRows (Optional. Default: null) Limits the maximum number of rows to include in the results.
  *
  * If zero (0) is given, it will include up to Server's own limit (Default: 100).
- * -- This props may be ignored depending on Server configs.
+ * This props may be ignored depending on Server configs.
  */
 export default async ({
 	chunkSize = fallbackConfigs.downloads.chunkSize,

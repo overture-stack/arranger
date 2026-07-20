@@ -354,7 +354,7 @@ In practice:
 - nested aggregations and nested field filtering are where `pivot` becomes important
 - `pivot` may appear on either leaf or group nodes
 
-A pivot can still be rejected later at runtime if it does not match a valid nested field path for the active catalog.
+A pivot can still be rejected later at runtime if it does not match a valid nested field path for the active catalogue.
 
 ## Current Accepted Value Shapes
 

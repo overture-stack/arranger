@@ -106,7 +106,7 @@ export const fetchMapping = async ({
 
 /**
  * Fetches the ES index mapping and strips the reserved "id" field.
- * This is the main entry point for any code that needs an index mapping —
+ * This is the main entry point for any code that needs an index mapping:
  * it owns the ES I/O and the one GraphQL-specific pre-processing step.
  *
  * TODO: Return type definition once SearchClient response types are merged

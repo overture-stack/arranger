@@ -20,7 +20,7 @@ export const setsMapping = {
 };
 
 /**
- * Create the sets type to combine with the catalog document type to create the complete schema.
+ * Create the sets type to combine with the catalogue document type to create the complete schema.
  * Types are of the shape `[ 'documentName', {config, mapping, index, etc.}]`
  * The Sets type is only dependent on the `setsIndex`, which is the string name of the index in the
  * search engine that will store sets.
@@ -51,7 +51,7 @@ export const createSetsType = (setsIndex: string): SchemaTypesTuple => {
 	];
 };
 
-export const createCatalogResolvers = <Context extends ArrangerBaseContext>({
+export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	debug = false,
 	enableAdmin = false,
 	getServerSideFilter,

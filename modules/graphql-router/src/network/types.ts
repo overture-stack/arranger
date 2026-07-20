@@ -3,7 +3,7 @@ import type { ArrangerBaseContext, Resolver } from '#types.js';
 
 import type { AggregationField } from './types/setup.js';
 
-export type LocalCatalogSchemaData<Context extends ArrangerBaseContext> = {
+export type LocalCatalogueSchemaData<Context extends ArrangerBaseContext> = {
 	catalogId: string;
 	configs: {
 		aggregations: AggregationField[];

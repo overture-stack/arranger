@@ -49,13 +49,17 @@ const normalizeNetworkConfig = (configFilesJson: any) => {
 			const customRemoteRequestFn: CustomizeRemoteRequestFn<ArrangerBaseContext> = (params) => {
 				const headers: CustomRemoteRequestProps['headers'] = {};
 
-				// No remote node ID, so let's find the exact match in teh config (matching name and graphqlUrl).
-				// If there are multiple matches, we can't differentiate, we will use the first match from the configs
-				const matchingConfig = remoteNodeExtendedConfigs.find(
-					(node) =>
-						node.graphqlUrl === params.remoteNode.graphqlUrl &&
-						node.displayName === params.remoteNode.displayName,
-				);
+				// Match by nodeId if provided in the params, otherwise match by URL and displayname
+				// If there are nodes with duplicate nodeId then we can't differentiate, we will use the first match from the configs
+				const matchingConfig = remoteNodeExtendedConfigs.find((node) => {
+					if (params.remoteNode.nodeId === undefined) {
+						return (
+							node.graphqlUrl === params.remoteNode.graphqlUrl &&
+							node.displayName === params.remoteNode.displayName
+						);
+					}
+					return node.nodeId === params.remoteNode.nodeId;
+				});
 
 				// use the request.headers value from matching config if present, otherwise use the allRequestsPassthroughHeaders
 				const passthroughHeaders = matchingConfig?.requests?.headers ?? allRequestsPassthroughHeaders;

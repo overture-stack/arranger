@@ -37,12 +37,12 @@ const isDataFile = (fileName: string) => {
 
 const getConfigFromFiles: ConfigsFromFilesFn = async ({
 	baseConfig,
-	catalogConfigsPath,
+	catalogueConfigsPath,
 	currentDirectory,
 	enableDebug,
 }) => {
-	console.log(`  - Looking for files in '${catalogConfigsPath}'...`);
-	const configsPath = path.resolve(currentDirectory, catalogConfigsPath);
+	console.log(`  - Looking for files in '${catalogueConfigsPath}'...`);
+	const configsPath = path.resolve(currentDirectory, catalogueConfigsPath);
 
 	enableDebug && console.debug('\n    DEBUG: resolved configs path:', configsPath);
 
