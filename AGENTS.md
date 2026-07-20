@@ -1,3 +1,4 @@
+<!-- agentics-template-version: 0.2.0 | synced: 8131249bae08df6c838c839f4bbc2c60cd0fc17a -->
 # Arranger: Agent Instructions
 
 ## Project
@@ -15,7 +16,8 @@ On a session-start signal, before touching any code:
 2. Read `.dev/roadmap.md`: check the current focus (set by the developer at session start), then note any `[in progress]` items.
 3. Read `.dev/tech-debt.md`: note any `standalone: yes` entries relevant to today's work.
 4. List `.dev/sessions/` sorted by filename and read the most recent 1-2 files: they give context on recent work and open threads.
-5. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
+5. Check project memory: `~/.claude/projects/.../memory/MEMORY.md` (Claude only).
+6. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
 
 Before starting new work, do a quick staleness pass on `roadmap.md` and `tech-debt.md`: mark completed items done, close resolved PINNED entries, remove addressed tech-debt entries. Not a full audit: just enough to keep the documents honest.
 
@@ -74,7 +76,7 @@ Your session file is `.dev/sessions/YYYY-MM-DDTHHMMSS.md`. This repo has one hum
 
 Before marking a roadmap item done or closing a tech-debt entry, verify against the actual current code or file state: not a prior description or session summary. An assumption carried forward unverified is exactly how these documents drift from what they claim.
 
-After any meaningful unit of work, update `.dev/` and extend today's file in `.dev/sessions/`. Do not wait for a session-over signal. Do not log conversational activity. Remind the developer to commit `.dev/` changes.
+After any meaningful unit of work, update `.dev/` and extend today's file in `.dev/sessions/`. Do not wait for a session-over signal. Do not log conversational activity. If work this session changed user-facing behaviour, flag it as `/docs` debt. Remind the developer to commit `.dev/` changes.
 
 Full rules (rarely needed beyond the above): [conventions/session-discipline.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/session-discipline.md).
 
