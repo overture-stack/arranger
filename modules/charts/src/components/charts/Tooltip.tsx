@@ -27,7 +27,8 @@ export const Tooltip = (tooltipData: Bar | SunburstSegment) => {
 			<div className="tooltip-wrapper">
 				<div
 					className="tooltip-label"
-					data-label={label} // use this as a CSS selector, to select labels by their content
+					data-label={label} // CSS selector hook for per-label styling; if building the selector dynamically in JS, escape with CSS.escape() first
+
 				>{`${label}`}</div>
 				<div className="tooltip-data">
 					{suppressed ? (
