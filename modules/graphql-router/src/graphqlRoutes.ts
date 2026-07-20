@@ -15,7 +15,7 @@ import {
 import { ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
 import { Router, type Request, type RequestHandler, type Response } from 'express';
-import type { GraphQLSchema } from 'graphql';
+import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql';
 
 import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
@@ -188,9 +188,26 @@ const noSchemaHandler =
 		});
 	};
 
+// graphql-js appends "Did you mean ...?" field-name suggestions to validation errors on a
+// separate code path from introspection, so they leak schema structure even when
+// disableGraphQLIntrospection is true.
+//
+// Not every error Apollo that runs through this hook is a GraphQLError with a working `toJSON`
+// (e.g. the batching-disabled rejection is a plain Error), so we build the formatted shape from
+// the enumerable fields Apollo has already normalized onto `error` rather than calling
+// graphql-js's `formatError`/`error.toJSON()`, which assumes a GraphQLError prototype.
+// TODO: evaluate whether this is needed after switching away from Apollo
+const FIELD_SUGGESTION_SUFFIX = / Did you mean .+\?$/i;
+const formatError = (error: GraphQLError): GraphQLFormattedError => ({
+	...error,
+	message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
+});
+
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
+	disableGraphQLIntrospection,
 	disablePlayground,
-	enableDebug = false,
+	enableDebug,
+	enableGraphQLBatching = false,
 	esClient,
 	graphqlOptions = {},
 	maxAliases,
@@ -198,8 +215,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	mockSchema,
 	schema,
 }: {
+	disableGraphQLIntrospection?: boolean;
 	disablePlayground: boolean;
 	enableDebug?: boolean;
+	enableGraphQLBatching?: boolean;
 	esClient: SearchClient;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	maxAliases?: number;
@@ -247,8 +266,11 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 			// TODO: context type mismatch
 			const apolloServer = new ApolloServer({
+				allowBatchedHttpRequests: enableGraphQLBatching,
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
+				formatError,
+				introspection: !disableGraphQLIntrospection,
 				schema,
 				validationRules,
 				...apolloFeatureFlags,
@@ -270,7 +292,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 		if (mockSchema) {
 			const apolloMockServer = new ApolloServer({
+				allowBatchedHttpRequests: enableGraphQLBatching,
 				cache: 'bounded',
+				formatError,
+				introspection: !disableGraphQLIntrospection,
 				schema: mockSchema,
 				validationRules,
 				...apolloFeatureFlags,
@@ -430,8 +455,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 
 export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	configs: ConfigsObject<Context>;
-	enableDebug?: boolean;
 	enableAdmin?: boolean;
+	enableDebug?: boolean;
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
@@ -439,8 +464,8 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 };
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
-	enableDebug,
 	enableAdmin,
+	enableDebug,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -462,8 +487,10 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		});
 
 		const graphQLEndpoints = await createEndpoint({
+			disableGraphQLIntrospection: configs[configOptionalProperties.DISABLE_GRAPHQL_INTROSPECTION] ?? false,
 			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND] ?? false,
 			enableDebug,
+			enableGraphQLBatching: configs[configOptionalProperties.ENABLE_GRAPHQL_BATCHING] ?? false,
 			esClient,
 			graphqlOptions,
 			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
@@ -481,7 +508,9 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			});
 		} catch (setsError) {
 			const message = setsError instanceof Error ? setsError.message : `${setsError}`;
-			console.error(`\n------\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`);
+			console.error(
+				`\n------\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+			);
 		}
 
 		return [

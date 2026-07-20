@@ -116,5 +116,23 @@ export default ({ api, catalogs, mode = 'single' }) => {
 		}
 	});
 
+	test('8.should allow GraphQL introspection in non-production mode', async () => {
+		for (const { gqlPath } of catalogs) {
+			const { data, statusText } = await api
+				.post({
+					body: {
+						query: `{ __schema { queryType { name } } }`,
+					},
+					endpoint: gqlPath,
+				})
+				.catch((err) => {
+					console.log('spinupActive/graphql-introspection error', err.message);
+				});
+
+			assert.equal(statusText, 'OK');
+			assert.ok(data?.data?.__schema?.queryType?.name, 'introspection should return schema data when not in production');
+		}
+	});
+
 	// TODO: add /download checks
 };
