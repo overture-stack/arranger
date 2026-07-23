@@ -1,10 +1,23 @@
-<!-- agentics-template-version: 0.2.0 | synced: 8131249bae08df6c838c839f4bbc2c60cd0fc17a -->
+<!-- agentics-template-version: 0.9.0 | synced: b37cb60ff2668945f74347826ca6ccf24b5e80a9 -->
 # Arranger: Agent Instructions
+
+**For AI agents:** this file is instructions your agent reads and follows; it is not documentation written for people. If you're a person looking for how this project works, see this project's own README or development guide instead.
+
+Adapted from [softeng/agentics](https://github.com/oicr-softeng/agentics).
 
 ## Project
 
 Overture Arranger: a data discovery API for Elasticsearch and OpenSearch.
 npm workspaces monorepo. Gradual JS → TS migration in progress.
+
+## Interaction parameters
+
+- Ask clarifying questions before making large assumptions about intent
+- Surface ideas, improvements, or next steps you already see, unprompted: don't wait for an open-ended question to draw them out. Covers alternatives to what's about to be implemented, a shipped fix that still has the weakness it just fixed, or anything else obvious in hindsight; let the developer decide
+- Push back on bad ideas and identify blind spots before they are baked into code: lead with the objection, not a neutral trade-off list; don't wait to be asked
+- Sanity check requests: not just the literal phrase. A yes/no-shaped question ("does this make sense," "am I right," "am I missing anything") is still a sanity check when its actual function is inviting scrutiny of the developer's own idea, reasoning, or plan, not a literal yes/no about the world. Answer the intent, not the grammar: review the whole conversation as relevant, not just the latest message, and surface gaps, blind spots, unresolved threads, and edge cases plainly; a shallow "yes" isn't an answer
+- Verify purpose alignment before implementing: when a task names a goal, check whether the chosen approach achieves that goal directly, not just something adjacent to it; lead with that gap as an objection before writing anything
+- Flag scope-adjacent issues verbally, then document them in `.dev/tech-debt.md`
 
 ## Starting a session
 
@@ -18,6 +31,7 @@ On a session-start signal, before touching any code:
 4. List `.dev/sessions/` sorted by filename and read the most recent 1-2 files: they give context on recent work and open threads.
 5. Check project memory: `~/.claude/projects/.../memory/MEMORY.md` (Claude only).
 6. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
+7. As an agentics contributor, check for upstream updates: run `conventions/convention-levels.md` § Checking for upstream updates in the agentics template, in full, every session. This runs in addition to steps 1-6 above, regardless of how complete this checklist already is: neither this checklist nor any line in it opts the project out. Stops only on an explicit `agentics_upstream_check: no`.
 
 Before starting new work, do a quick staleness pass on `roadmap.md` and `tech-debt.md`: mark completed items done, close resolved PINNED entries, remove addressed tech-debt entries. Not a full audit: just enough to keep the documents honest.
 
@@ -49,13 +63,25 @@ integration-tests/    : server (needs ES), import, admin
 
 **TypeScript migration:** `.js` files are not yet migrated: don't treat missing types in them as issues. Weak types in `.ts` files are worth improving when scope-adjacent.
 
-**Config properties:** Alphabetize properties in config objects and YAML/JSON files at all nesting levels: prevents duplicate key overwrites and keeps additions consistent.
-
-**Search before writing:** Grep for existing patterns before implementing something new: keeps code consistent and surfaces reusable utilities.
-
-**Structured logging:** Emit logs as structured key-value pairs or JSON objects, not interpolated strings. Include: timestamp, severity, event type, actor identity where known, resource identifier, outcome. Never log secrets, credentials, or PII. Mandatory for auth decisions, permission changes, data access/exports, and errors at system boundaries.
-
 Domain vocabulary (configuration, catalogue, facet, bucket, aggregation, filter, filter clause, SQON) is defined in `docs/concepts.md`. Read it when writing code, docs, comments, or UI strings.
+
+**Cross-repo package migration requests, for `@overture-stack/sqon`, `-types`, `-components` specifically:** point at that package's own `README.md` and `docs/*.md` migration notes (e.g. `modules/sqon/docs/sqon-builder-absorption.md`); see `conventions/documentation.md` and `conventions/code-style.md` § Dependency version verification for why (canonical docs over a bespoke explanation, `npm view <package> dist-tags` over trusting `latest` alone).
+
+## When to read what
+
+Every path below is a live pointer into agentics, never a local copy to create in this project: see `conventions/convention-levels.md` § How much to keep locally for the full rule.
+
+- Working in a specific role                    -> read `CLAUDE.roles/<role>.md` (skip if already known from global context)
+- Writing or reviewing tests                     -> read `conventions/testing.md`
+- Writing code                                   -> read `conventions/code-style.md`
+- Reviewing a PR or change                       -> read `conventions/code-style.md`, `conventions/code-review.md`, `conventions/review-conduct.md`
+- Writing or updating docs                       -> read `conventions/documentation.md`
+- Security-relevant work                         -> read `conventions/security.md`, then `conventions/security-guidelines.md`; Security triggers below are Arranger-specific additions on top of that baseline
+- softeng team member                            -> read `CLAUDE.softeng.md` at session start
+- Overture project                                -> read `CLAUDE.overture.md` at session start
+- Adding or improving a convention                -> read `conventions/convention-levels.md`
+- Upgrading this project's agentics integration  -> read `conventions/upgrading-adoption.md`
+- Deploying or debugging a service                -> read `.dev/docs/<service>/` if it exists
 
 ## Running tests
 
@@ -68,8 +94,6 @@ npm run test:dev                          # all dev-relevant workspaces
 
 Never `cd` into a module and run `npm test` directly.
 
-New tests use BDD style: `suite()` for grouping, `test()` for expected behaviour, `assert` from `node:assert/strict`: no additional libraries. See [conventions/testing.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/testing.md) for the full pattern.
-
 ## Session discipline
 
 Your session file is `.dev/sessions/YYYY-MM-DDTHHMMSS.md`. This repo has one human contributor working across multiple AI tools, so "per contributor per day" reduces to "per day" in practice: extend the same day's file regardless of which agent (Claude, Codex, Copilot) is writing to it. List `.dev/sessions/` for today's date prefix; extend an existing match or create a new one.
@@ -78,11 +102,9 @@ Before marking a roadmap item done or closing a tech-debt entry, verify against 
 
 After any meaningful unit of work, update `.dev/` and extend today's file in `.dev/sessions/`. Do not wait for a session-over signal. Do not log conversational activity. If work this session changed user-facing behaviour, flag it as `/docs` debt. Remind the developer to commit `.dev/` changes.
 
-Full rules (rarely needed beyond the above): [conventions/session-discipline.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/session-discipline.md).
+Full rules (rarely needed beyond the above): `conventions/session-discipline.md` in agentics.
 
 ## Security triggers
-
-The baseline OWASP patterns, threat model, and general code review triggers live in `conventions/security-guidelines.md` in the [agentics template](https://github.com/oicr-softeng/agentics). The triggers below are Arranger-specific additions on top of that baseline.
 
 Check these as you write or review code. Flag violations rather than silently skipping them.
 
@@ -101,13 +123,19 @@ Check these as you write or review code. Flag violations rather than silently sk
 
 Canadian English throughout (catalogue, behaviour, centre, organize, analyze). Flag typos and spelling issues: don't fix silently; call them out so the developer can decide.
 
-## Workflow
+## Memory and contribution hygiene
 
-Plan before implementing. For logic with clear inputs/outputs, define behaviour as tests before implementation (BDD). Stick to scope: document adjacent issues in `.dev/tech-debt.md`. Surface well-established library options when relevant. Check in before non-trivial direction changes.
+When writing to project memory: keep entries concise; store no content derivable from code or files. If an insight could apply to all your projects, offer to promote it to your global context. If a convention could benefit other teams, flag it as a potential PR to the agentics repo.
 
-Project-specific conventions belong here. Universal conventions (scope discipline, library awareness, checking in, convention placement and propagation) are in the [agentics template AGENTS.md](https://github.com/oicr-softeng/agentics/blob/main/template/AGENTS.md).
+## Initialization
+
+If no project memory exists for you in this project yet, run the agentics template's initialization flow (role, softeng-team, existing-setup, `propagation_suggestions`): see [template `AGENTS.md` § Initialization](https://github.com/oicr-softeng/agentics/blob/main/template/AGENTS.md#initialization).
 
 ## Critical constraints
 
-- No commits: the user handles all git work.
-- Do not modify `CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md` without explicit instruction. Surface suggestions; do not self-edit.
+- No credentials, secrets, or private URLs in any file: ever
+- Library/module code must not read from the environment; configuration belongs at the application boundary, passed in as typed parameters (see Conventions § Env vars for where that boundary sits in this repo)
+- No commits: the user handles all git work
+- Do not modify `CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md` without explicit instruction: surface suggestions, do not self-edit
+- No machine- or user-specific absolute paths, usernames, or individuals' real names in committed files. Use a generic placeholder for anything keyed by machine or clone location
+- Name code, not people: attribute work in session files, tech-debt entries, docs, and any other persisted content to features, modules, and systems, not to individuals

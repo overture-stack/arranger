@@ -1,6 +1,6 @@
 {
 	"name": "@overture-stack/sqon",
-	"description": "Shared SQON schema and types for Overture services",
+	"description": "Shared SQON schema and types for Overture services (see README: no stable release yet, use the rc dist-tag)",
 	"version": "0.0.0-dev",
 	"homepage": "https://github.com/overture-stack/arranger#readme",
 	"bugs": {

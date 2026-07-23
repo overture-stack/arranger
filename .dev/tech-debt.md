@@ -11,6 +11,10 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 standalone: yes
 context: `modules/sqon/src/__tests__/jsonSchema.test.ts` and `schema.test.ts` are the remaining files in a `__tests__/` directory after `operators.test.ts` was moved to `src/operators/index.test.ts`. Move `jsonSchema.test.ts` alongside its source and `schema.test.ts` alongside `src/schema/index.ts` (or equivalent source file) to follow the co-location convention. The `__tests__/` directory can then be removed.
 
+### Remove the "no stable release yet" warning once 1.0.0 ships
+standalone: yes
+context: `modules/sqon/README.md` carries a "No stable release yet" section (marked with a removal TODO comment) and `package.json`'s `description` field has a "(see README...)" suffix, both added while `latest` still pointed at a pre-builder-absorption release. Once a real, non-RC `1.0.0` is published under `latest`, remove the README section and revert the description to its original text.
+
 ---
 
 ## build tooling

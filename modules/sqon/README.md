@@ -9,6 +9,18 @@ Shared SQON definitions and query builder for Overture services.
 - Export a JSON Schema derived from the Zod schema.
 - Provide a programmatic builder API for constructing SQON queries.
 
+## Migrating from `sqon-builder`?
+
+See [docs/sqon-builder-absorption.md](docs/sqon-builder-absorption.md) for what changed, why, and a
+before/after migration example.
+
+<!-- TODO: remove this section once a stable (non-RC) 1.0.0 ships, and revert package.json's description to drop the "(see README...)" suffix -->
+
+**No stable release yet.** `npm install @overture-stack/sqon` resolves to the `latest` dist-tag,
+which only updates on a real release cut and can lag behind current work. Install
+`@overture-stack/sqon@rc` for the current pre-release build, and check `npm view
+@overture-stack/sqon dist-tags` before assuming `latest` reflects this README.
+
 ## Usage
 
 ### The recommended pattern: accept `SqonNode`, compose locally
@@ -48,6 +60,15 @@ function parseFilter(raw: unknown): SqonNode {
 }
 ```
 
+**`SqonBuilder.from()` also normalizes operator aliases.** The schema accepts legacy aliases
+(`=`, `>=`, `filter`, etc., see `SQON_OP_ALIASES`) so existing serialized SQONs keep validating, but
+`SqonBuilder.from()` rewrites every leaf's `op` to its canonical form (`in`, `gte`, `wildcard`, ...)
+before you ever see it. If you switch on `node.op` after parsing, go through `SqonBuilder.from()`,
+not `SqonSchema.parse()` directly: the raw schema validates aliases but does not rewrite them, so a
+switch that only checks canonical strings can accept a query that then silently falls through to an
+"unsupported operator" branch. Call the exported `normalizeSqonNode()` yourself if you have a reason
+to use `SqonSchema.parse()` without the builder.
+
 ### Building filters
 
 ```ts
@@ -79,8 +100,19 @@ SqonBuilder.in('status', ['active'])
 | `SqonBuilderHandle` | The chainable handle returned by factory methods. Rarely needs explicit annotation. |
 | `SqonFieldFilter`   | A field-based leaf node (has `content.fieldName`). Used with `removeExactFilter`.   |
 
+### Type guards
+
+| Function                | What it checks                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `isGroupNode(node)`     | Narrows to `SqonCombination`: true for `and`/`or`/`not` nodes.                      |
+| `isFieldFilter(node)`   | Narrows to `SqonFieldFilter`: true for a field-based leaf (has `content.fieldName`, excludes `wildcard`). |
+
+Use these to discriminate a `SqonNode` by shape (combination vs. field filter) instead of
+hand-rolling the same check against `node.op`.
+
 ## Notes
 
 - This package is intentionally both transport- and endpoint-agnostic.
 - Runtime-specific behavior (for example, warnings, normalization side-effects, ACL) belongs in consuming services.
-- The `wildcard` builder method emits `op: 'wildcard'`. The schema also accepts `op: 'filter'` as a legacy alias, so existing serialized SQONs continue to parse and validate correctly.
+- The `wildcard` builder method emits `op: 'wildcard'`. The schema also accepts `op: 'filter'` as a legacy alias; `SqonBuilder.from()` normalizes it to `wildcard` (see "Parsing and validating an incoming SQON" above).
+- `pivot` (on any leaf or combination node) is an optional ES/OpenSearch nested-path scoping field. It has no meaning for a non-ES/OS consumer (e.g. a flat JSONB column): safe to ignore rather than an oversight if your SQL/query generation doesn't reference it.
