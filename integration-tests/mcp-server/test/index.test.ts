@@ -243,7 +243,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 		});
 	});
 
-	suite('Tools: execute-query', () => {
+	suite('Tools: execute_query', () => {
 		executeQuery({ getClient, getServerUrl });
 	});
 

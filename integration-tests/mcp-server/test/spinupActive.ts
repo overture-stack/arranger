@@ -48,6 +48,6 @@ export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
 	test('5.lists the four tools registered by the MCP server', async () => {
 		const { tools } = await getClient().listTools();
 		const names = tools.map((tool) => tool.name).sort();
-		assert.deepEqual(names, ['execute-query', 'get-catalogue-fields', 'get-sqon-schema', 'list-catalogues']);
+		assert.deepEqual(names, ['execute_query', 'get_catalogue_fields', 'get_sqon_schema', 'list_catalogues']);
 	});
 };

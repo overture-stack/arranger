@@ -6,7 +6,7 @@ const JSON_MIME = 'application/json';
 
 export const registerResources = (server: McpServer, { client }: McpServerDeps): void => {
 	server.registerResource(
-		'arranger-server-introspection',
+		'arranger_server_introspection',
 		'arranger://introspection/server',
 		{
 			title: 'Arranger Server Introspection',
@@ -22,7 +22,7 @@ export const registerResources = (server: McpServer, { client }: McpServerDeps):
 	);
 
 	server.registerResource(
-		'arranger-sqon-schema',
+		'arranger_sqon_schema',
 		'arranger://introspection/sqon',
 		{
 			title: 'SQON Schema',
@@ -39,7 +39,7 @@ export const registerResources = (server: McpServer, { client }: McpServerDeps):
 	);
 
 	server.registerResource(
-		'arranger-catalogue-fields',
+		'arranger_catalogue_fields',
 		new ResourceTemplate('arranger://introspection/catalog/{catalogueId}', {
 			list: async () => {
 				const { catalogs: catalogues } = await client.getServerIntrospection();

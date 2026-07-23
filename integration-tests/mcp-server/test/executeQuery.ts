@@ -19,7 +19,7 @@ type AggregationValue = {
 	stats?: { min: number; max: number; avg: number; sum: number; count: number };
 };
 
-/** The structured output shape declared by the execute-query tool. */
+/** The structured output shape declared by the execute_query tool. */
 type ExecuteQueryStructured = {
 	catalogueId: string;
 	documentType: string;
@@ -33,12 +33,12 @@ type ExecuteQueryStructured = {
 };
 
 const callExecuteQuery = (mcpClient: Client, args: Record<string, unknown>) =>
-	mcpClient.callTool({ name: 'execute-query', arguments: args });
+	mcpClient.callTool({ name: 'execute_query', arguments: args });
 
 const getStructured = (result: Awaited<ReturnType<Client['callTool']>>): ExecuteQueryStructured => {
 	assert.notEqual(result.isError, true, `tool call returned isError: ${JSON.stringify(result)}`);
 	const structured = result.structuredContent as ExecuteQueryStructured | undefined;
-	assert.ok(structured, 'expected execute-query to return structuredContent');
+	assert.ok(structured, 'expected execute_query to return structuredContent');
 	return structured;
 };
 
@@ -52,7 +52,7 @@ const getErrorText = (result: Awaited<ReturnType<Client['callTool']>>): string =
 
 /**
  * Connects a second MCP client that advertises the elicitation capability, so the
- * execute-query tool's user-confirmation path runs (the shared suite client does not
+ * execute_query tool's user-confirmation path runs (the shared suite client does not
  * advertise elicitation, so every other test takes the skip-confirmation path).
  */
 const connectElicitingClient = async (
@@ -246,7 +246,7 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		const text = getErrorText(result);
 
 		assert.match(text, /unknown field "vital_status"/);
-		assert.match(text, /get-catalogue-fields/);
+		assert.match(text, /get_catalogue_fields/);
 	});
 
 	test('11.SQON operator invalid for the field type fails validation', async () => {
