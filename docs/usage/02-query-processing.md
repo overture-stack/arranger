@@ -7,7 +7,7 @@ When a user applies filters in a search interface, the request flows through fou
 3. **Arranger Server** translates the GraphQL query into an Elasticsearch query
 4. **Elasticsearch** executes the query and returns results, which flow back through Arranger to the client
 
-This pipeline separates client-side applications from backend Elasticsearch servers.
+This pipeline separates client-side applications from backend Elasticsearch servers. For the concrete request and response shape — the endpoint, `hits`, and `aggregations` — see the [GraphQL API](./graphql-api.md) reference.
 
 :::info **What are SQONs?**
 SQON (Serializable Query Object Notation) is Overture's filter language for communicating queries between system components. The examples below show SQONs in action, followed by detailed explanations of [what SQON is](#sqon-at-a-glance), [why it exists](#why-sqon-exists). For a deeper reference on how to build them using operators, aliases, pivots, and covering common edge cases, see [SQON in detail](./04-sqon-in-detail.md).
