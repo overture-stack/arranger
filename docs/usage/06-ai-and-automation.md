@@ -17,9 +17,9 @@ npm run mcp-server:dev
 
 The server starts on `http://localhost:3100/mcp` by default. Two environment variables are required:
 
-| Variable | Description |
-| -------- | ----------- |
-| `ARRANGER_BASE_URL` | URL of the running Arranger search-server |
+| Variable              | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| `ARRANGER_BASE_URL`   | URL of the running Arranger search-server       |
 | `ARRANGER_CATALOGUES` | Comma-separated list of catalogue IDs to expose |
 
 All other variables (host, port, path, log level, request timeout) have sensible defaults. Copy `apps/mcp-server/.env.schema` to `apps/mcp-server/.env` to start from a working local baseline.
@@ -28,9 +28,10 @@ All other variables (host, port, path, log level, request timeout) have sensible
 
 **Tools** (callable actions):
 
-- `list-catalogues`: returns the catalogues registered on this Arranger instance
-- `get-sqon-schema`: returns the SQON JSON Schema and operator metadata
-- `get-catalogue-fields`: returns field metadata for one catalogue (input: `catalogueId`)
+- `list_catalogues`: returns the catalogues registered on this Arranger instance
+- `get_sqon_schema`: returns the SQON JSON Schema and operator metadata
+- `get_catalogue_fields`: returns field metadata for one catalogue (input: `catalogueId`)
+- `execute_query`: builds, confirms, and executes a SQON-filtered query against one catalogue (input: `{ catalogueId, sqon, queryType = 'hits', fields [], first = 20, offset = 0, sort, aggregationFields = [], includeMissing = true, aggregationsFilterThemselves = false }`)
 
 **Resources** (readable data by URI):
 
@@ -74,5 +75,4 @@ For a detailed walkthrough of the SQON format and how to compose queries, see [B
 
 - **`build-sqon` tool**: a structured input tool for constructing SQON filter clauses without knowing the raw format; tracked in `.dev/docs/build-sqon-tool.md`
 - **Authentication**: the MCP server currently requires no auth; support is planned
-- **Query execution**: tools to run a SQON against a catalogue and return results
 - **Chat interface**: a conversational front-end for non-technical users to search catalogues in plain language

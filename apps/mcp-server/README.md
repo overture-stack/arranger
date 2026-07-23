@@ -10,15 +10,20 @@ The current scaffold implements the Streamable HTTP MCP transport using **v1.x**
 src/
 ├── arranger/
 │   ├── client.ts               # fetches Arranger introspection endpoints
+│   ├── queryBuilder.ts         # utilities for building GQL queries
+│   ├── queryResults.ts         # utilities for compressing GQL query results
+│   ├── queryValidation.ts      # Arranger query validation
 │   ├── types.ts                # response types for introspection payloads
 │   └── validation.ts           # validates the connection to Arranger
 ├── http/
 │   └── app.ts                  # MCP express app with Streamable HTTP transport
 ├── mcp/
+│   ├── executeQueryTool.ts     # execute query tool
 │   ├── resources.ts            # registers MCP resources
 │   └── tools.ts                # registers MCP tools
 ├── utils/
 │   ├── config.ts               # env/config parsing
+│   ├── errors.ts               # error handling utilities
 │   ├── inMemoryEventStore.ts   # in-memory storage util for dev
 │   └── logger.ts               # pino logger wrapper
 ├── index.ts                    # entrypoint for the application
@@ -149,5 +154,4 @@ To test with **LM Studio** instead of MCP Inspector:
 
 - stdin/stdout server transport
 - authentication
-- query execution tools
 - SQON generation helpers beyond introspection exposure

@@ -12,7 +12,7 @@ import { type McpServerDeps } from '#server.js';
 
 /**
  * Compact, LLM-oriented SQON quick reference returned as the human-readable text of the
- * `get-sqon-schema` tool. The full machine-readable JSON Schema, operator list, and aliases
+ * `get_sqon_schema` tool. The full machine-readable JSON Schema, operator list, and aliases
  * are returned alongside it in the tool's `structuredContent`, so nothing is lost: this text
  * is the generation guide, the structuredContent is the validation artifact.
  *
@@ -39,7 +39,7 @@ Field operators (the "op" of a Leaf):
   wildcard                       case-insensitive substring match; SPECIAL shape: {"op":"wildcard","content":{"fieldNames":["<field>"],"value":"<text>"}}  ("fieldNames" is a plural ARRAY; "value" is one string)
 
 How to build a SQON:
-  1. Find each field's path and its allowed operators with get-catalogue-fields.
+  1. Find each field's path and its allowed operators with get_catalogue_fields.
   2. Write every condition as a Leaf: {"op": <op>, "content": {"fieldName": "<field>", "value": <value>}}, except for "wildcard", where "fieldNames" is an array of field paths instead. (See operator table below.)
   3. Wrap all the Leaves in one root Group: {"op":"and","content":[ <leaf>, <leaf>, ... ]}. Use "or" for any-of, or "not" to negate.
   Always use a Group as the root, even for a single condition.
@@ -69,7 +69,7 @@ Natural language to SQON examples:
 export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
 	const { client } = deps;
 	server.registerTool(
-		'list-catalogues',
+		'list_catalogues',
 		{
 			title: 'List Arranger Catalogues',
 			description: 'Returns the catalogues exposed by the connected Arranger server.',
@@ -87,7 +87,7 @@ export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
 	);
 
 	server.registerTool(
-		'get-sqon-schema',
+		'get_sqon_schema',
 		{
 			title: 'Get SQON Schema',
 			description:
@@ -105,7 +105,7 @@ export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
 	);
 
 	server.registerTool(
-		'get-catalogue-fields',
+		'get_catalogue_fields',
 		{
 			title: 'Get Catalogue Fields',
 			description:

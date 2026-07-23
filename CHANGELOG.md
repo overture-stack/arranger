@@ -43,7 +43,7 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 
 - **New `apps/mcp-server`** - A Model Context Protocol server that exposes Arranger catalogues as LLM-queryable resources and tools. Separate Docker image: `ghcr.io/overture-stack/arranger-mcp-server`. Implements the MCP Streamable HTTP transport.
     - Resources: server introspection, SQON schema, per-catalogue fields.
-    - Tools: `list-catalogs`, `get-sqon-schema`, `get-catalog-fields`, `search-catalog`.
+    - Tools: `list_catalogues`, `get_sqon_schema`, `get_catalogue_fields`, `execute_query`.
 
 ### Charts (`@overture-stack/arranger-charts`)
 
