@@ -73,6 +73,6 @@ For a detailed walkthrough of the SQON format and how to compose queries, see [B
 
 ## What's coming
 
-- **`build-sqon` tool**: a structured input tool for constructing SQON filter clauses without knowing the raw format; tracked in `.dev/docs/build-sqon-tool.md`
+- **`build_sqon` tool**: a structured input tool for constructing SQON filter clauses without knowing the raw format; tracked in `.dev/docs/build-sqon-tool.md`
 - **Authentication**: the MCP server currently requires no auth; support is planned
 - **Chat interface**: a conversational front-end for non-technical users to search catalogues in plain language
