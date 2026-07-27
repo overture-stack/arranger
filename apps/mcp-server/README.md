@@ -4,6 +4,17 @@ This app is an MCP server that learns how to talk to Arranger by consuming Arran
 
 The current scaffold implements the Streamable HTTP MCP transport using **v1.x** of the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x).
 
+## Tools
+
+The server registers four tools that cover the full query lifecycle:
+
+| Tool                   | Purpose                                                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `list-catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                        |
+| `get-sqon-schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema. |
+| `get-catalogue-fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.        |
+| `execute-query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                    |
+
 ## Folder Structure
 
 ```text
