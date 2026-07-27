@@ -39,6 +39,10 @@ All other variables (host, port, path, log level, request timeout) have sensible
 - `arranger://introspection/sqon`: SQON schema and operator metadata
 - `arranger://introspection/catalog/{catalogueId}`: per-catalogue field metadata
 
+**Prompts** (callable by clients):
+
+- `query_arranger`: accepts the user's goal as an input, and returns three messages containing the "system prompt" (workflow instructions), a SQON cheat sheet, and the user's goal
+
 ### Connecting a client
 
 Any MCP-compatible client that supports Streamable HTTP can connect. Point it at the MCP server URL (`http://127.0.0.1:3100/mcp` with default config) and use transport type `streamable-http`.
