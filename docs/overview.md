@@ -31,7 +31,7 @@ Arranger integrates with your OpenSearch or Elasticsearch cluster to generate a 
 - **Arranger Server:** The back-end search API service that:
     - Generates a GraphQL API from Elasticsearch mappings
     - Acts as middleware between the UI and Elasticsearch
-    - Simplifies querying and filtering using Serializable Query Object Notation ([SQON](./usage/04-sqon-in-detail.md))
+    - Simplifies querying and filtering using Serializable Query Object Notation ([SQON](./reference/04-sqon-in-detail.md))
     - Provides an intermediary layer to avoid direct interaction with complex Elasticsearch queries
 
 - **Arranger Components:** A library of React components for building interactive search UIs, communicating with Arranger Server to fetch and display data.
@@ -100,9 +100,9 @@ You need a running server connected to your search engine, with at least one cat
 
 1. [Concepts](./concepts.md): the domain model: catalogues, facets, buckets, SQONs
 2. [Setup](./setup.md): prerequisites, environment variables, search engine permissions
-3. [Index mappings](./usage/00-index-mappings.md): what your ES/OS index mapping drives in Arranger
-4. [Catalogue configuration](./usage/01-arranger-configs.md): the four JSON files that define each catalogue
-5. [Feature flags](./usage/08-feature-flags.md): security hardening flags to review before going to production
+3. [Index mappings](./reference/00-index-mappings.md): what your ES/OS index mapping drives in Arranger
+4. [Catalogue configuration](./reference/01-arranger-configs.md): the four JSON files that define each catalogue
+5. [Feature flags](./reference/08-feature-flags.md): security hardening flags to review before going to production
 
 ---
 
@@ -111,9 +111,9 @@ You need a running server connected to your search engine, with at least one cat
 You're implementing a data portal using Arranger Components or writing UI code that queries Arranger.
 
 1. [Concepts](./concepts.md): understand catalogues, facets, and SQONs before writing code
-2. [Catalogue configuration](./usage/01-arranger-configs.md): configure which fields are visible and facetable
-3. [Query processing](./usage/02-query-processing.md): how a user action becomes an Elasticsearch query
-4. [Building SQON queries](./usage/03-building-sqon-queries.md): the `SqonBuilder` API and `addFilterClause`
+2. [Catalogue configuration](./reference/01-arranger-configs.md): configure which fields are visible and facetable
+3. [Query processing](./reference/02-query-processing.md): how a user action becomes an Elasticsearch query
+4. [Building SQON queries](./reference/03-building-sqon-queries.md): the `SqonBuilder` API and `addFilterClause`
 
 ---
 
@@ -121,10 +121,10 @@ You're implementing a data portal using Arranger Components or writing UI code t
 
 You're building an API client, pipeline, or script that sends queries to Arranger.
 
-1. [Query processing](./usage/02-query-processing.md): the SQON to GraphQL to ES pipeline
-2. [Building SQON queries](./usage/03-building-sqon-queries.md): constructing valid SQONs in TypeScript
-3. [SQONs in detail](./usage/04-sqon-in-detail.md): operator reference, aliases, pivot, edge cases
-4. [Introspection API](./usage/05-introspection.md): discover available fields and operators at runtime
+1. [Query processing](./reference/02-query-processing.md): the SQON to GraphQL to ES pipeline
+2. [Building SQON queries](./reference/03-building-sqon-queries.md): constructing valid SQONs in TypeScript
+3. [SQONs in detail](./reference/04-sqon-in-detail.md): operator reference, aliases, pivot, edge cases
+4. [Introspection API](./reference/05-introspection.md): discover available fields and operators at runtime
 
 ---
 
@@ -132,8 +132,8 @@ You're building an API client, pipeline, or script that sends queries to Arrange
 
 You're connecting an AI model, MCP client, or automated pipeline to Arranger.
 
-1. [AI and automation](./usage/06-ai-and-automation.md): MCP server setup, available tools, SQON generation rules
-2. [Introspection API](./usage/05-introspection.md): the live source of truth for field metadata
+1. [AI and automation](./reference/06-ai-and-automation.md): MCP server setup, available tools, SQON generation rules
+2. [Introspection API](./reference/05-introspection.md): the live source of truth for field metadata
 
 ---
 
