@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { type Client } from '@modelcontextprotocol/sdk/client';
@@ -27,11 +27,12 @@ export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
 		assert.equal(info?.name, 'arranger-mcp-server');
 	});
 
-	test('3.advertises resources and tools capabilities', async () => {
+	test('3.advertises resources, tools and prompts capabilities', async () => {
 		const capabilities = getClient().getServerCapabilities();
 		assert.ok(capabilities, 'expected server capabilities to be populated after connect()');
 		assert.ok(capabilities?.resources, 'expected resources capability');
 		assert.ok(capabilities?.tools, 'expected tools capability');
+		assert.ok(capabilities?.prompts, 'expected prompts capability');
 	});
 
 	test('4.lists the three resources registered by the MCP server', async () => {
@@ -49,5 +50,11 @@ export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
 		const { tools } = await getClient().listTools();
 		const names = tools.map((tool) => tool.name).sort();
 		assert.deepEqual(names, ['execute_query', 'get_catalogue_fields', 'get_sqon_schema', 'list_catalogues']);
+	});
+
+	test('6.lists the one prompt registered by the MCP server', async () => {
+		const { prompts } = await getClient().listPrompts();
+		const names = prompts.map((prompt) => prompt.name).sort();
+		assert.deepEqual(names, ['query_arranger']);
 	});
 };

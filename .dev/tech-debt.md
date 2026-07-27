@@ -119,6 +119,21 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 **Fix:** Change the test's argument key to `catalogueId`, and confirm the test still asserts the intended 404/not-found behaviour rather than a schema-validation error.
 **Standalone:** yes; one-line test fix
 
+### `SQON_CHEAT_SHEET` has two consumers and may be retired entirely once `build_sqon` ships
+
+**File:** `apps/mcp-server/src/mcp/sqonCheatSheet.ts`; consumed by `src/mcp/tools.ts` (`get_sqon_schema`) and `src/mcp/prompts.ts` (`query_arranger`)
+**Severity:** low (no defect today; this is a scheduled-obsolescence marker so the cheat sheet is not maintained past its usefulness)
+**Kind:** anticipated redundancy
+**Issue:** The cheat sheet exists to help an LLM synthesize raw SQON by hand. [SQON generation via `build_sqon` tool](roadmap.md#sqon-generation-via-build_sqon-tool) removes the LLM from the synthesis loop entirely: the LLM selects field, operator, and value, and the tool generates validated SQON. At that point the cheat sheet's primary job is gone. `.dev/docs/build-sqon-tool.md` already anticipates this and leaves "keep it as a human-facing reference?" as a separate decision.
+
+Two things make this worth tracking rather than leaving implicit in the design doc:
+
+1. As of 2026-07-27 the cheat sheet has **two** consumers, not one. It was extracted from `tools.ts` into its own module so `query_arranger` could send it inline as text (replacing an embedded resource that carried the raw JSON Schema, which is the validation artifact rather than a generation guide). Retiring it is therefore a two-site decision: the `get_sqon_schema` tool text, and the prompt's second message plus its `## SQON grammar` section.
+2. Inlining it into the prompt is exactly the "SQON schema in a system prompt costs tokens on every request" pattern `build_sqon` was designed to avoid. It is a net reduction against what the prompt sent before (the cheat sheet is smaller than the raw JSON Schema, and it caches cleanly in a stable prefix), so it is an improvement on the status quo, not a new cost. But it is not the destination.
+
+**Fix:** When `build_sqon` ships, revisit all three surfaces together: (a) rewrite `execute_query`'s description from "call `get_sqon_schema`, then write a `sqon`" to "call `build_sqon`, then pass its output"; (b) drop the cheat-sheet message and the `## SQON grammar` section from `query_arranger`, replacing them with a workflow step that calls `build_sqon`; (c) decide whether `get_sqon_schema` keeps the cheat sheet as human-facing text or returns only the machine-readable schema. Note this interacts with the **MCP surface unification** follow-on under [Deprecate `sqon-builder`](roadmap.md#deprecate-sqon-builder), which proposes deriving the cheat sheet from `getSqonFieldOperatorDetails()` so it stays in sync automatically. If `build_sqon` lands first, that derivation work may be unnecessary; sequence the two deliberately rather than doing both.
+**Standalone:** no; gated on `build_sqon` shipping. Do not delete the cheat sheet ahead of that: it is currently the only SQON generation guidance the tools-only MCP clients ever receive, since most hosts do not implement the prompts primitive.
+
 ---
 
 ## monorepo: cross-cutting
