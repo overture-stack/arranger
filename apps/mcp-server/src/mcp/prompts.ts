@@ -43,7 +43,7 @@ this instance are available from the \`get_sqon_schema\` tool.
 
 Work through the following steps in order.
 
-### Step 1 — Identify the relevant catalogue
+### Step 1: Identify the relevant catalogue
 
 Choose the catalogue that best covers the researcher's goal, using the catalogue list \
 and document types above.
@@ -56,22 +56,22 @@ If no catalogue covers the goal, respond with this exact format and stop:
 
 Do not invent catalogue names.
 
-### Step 2 — Load field metadata
+### Step 2: Load field metadata
 
 Use the \`get_catalogue_fields\` tool to load fields for the identified catalogue only. \
 Do not load fields for other catalogues.
 
-### Step 3 — Classify the question
+### Step 3: Classify the question
 
 Classify the goal into one of four question types:
 
-- **Answerable** — the goal maps unambiguously to fields present in the catalogue.
-- **Unanswerable** — the goal references data not exposed by any field in the catalogue.
-- **Ambiguous** — the goal could map to two or more distinct valid SQONs \
+- **Answerable**: the goal maps unambiguously to fields present in the catalogue.
+- **Unanswerable**: the goal references data not exposed by any field in the catalogue.
+- **Ambiguous**: the goal could map to two or more distinct valid SQONs \
 (e.g. a filter vs. an aggregation, or the same term matching multiple fields).
-- **Improper** — a non-query turn (e.g. "thanks", "what can you do?").
+- **Improper**: a non-query turn (e.g. "thanks", "what can you do?").
 
-### Step 4 — Respond based on question type
+### Step 4: Respond based on question type
 
 **Answerable**
 Build the SQON. Present a plain-language confirmation summary using each field's \
@@ -102,10 +102,10 @@ Wait for the researcher to select one, then proceed as Answerable. Format:
 
   Your question could mean two things:
 
-  Option A — [plain description]:
+  Option A: [plain description]
     I'll [what this query does].
 
-  Option B — [plain description]:
+  Option B: [plain description]
     I'll [what this query does].
 
   Which did you mean?
@@ -115,6 +115,11 @@ Respond conversationally. Do not load catalogue metadata, construct a SQON, \
 or trigger a confirmation step.`;
 };
 
+/**
+ * Registers the `query_arranger` prompt, which turns a researcher's natural language goal into
+ * a three-message conversation: workflow instructions built from live catalogue introspection,
+ * the SQON cheat sheet, and the goal itself.
+ */
 export const registerPrompts = (server: McpServer, { client }: McpServerDeps): void => {
 	server.registerPrompt(
 		'query_arranger',
