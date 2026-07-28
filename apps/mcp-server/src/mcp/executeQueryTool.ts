@@ -34,7 +34,7 @@ const inputSchema = {
 		.unknown()
 		.describe(
 			'SQON filter for the query (required). ' +
-				'Call get-sqon-schema before using execute-query for SQON grammar, operators, and worked examples. ' +
+				'Call get_sqon_schema before using execute_query for SQON grammar, operators, and worked examples. ' +
 				'For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null.',
 		),
 	queryType: zod
@@ -47,7 +47,7 @@ const inputSchema = {
 		.array(zod.string().min(1))
 		.optional()
 		.describe(
-			'Dot-notation document fields to return for each hit (e.g. "donor.age_at_diagnosis"). Do not guess field names; use get-catalogue-fields first. Omit to return only the total hit count.',
+			'Dot-notation document fields to return for each hit (e.g. "donor.age_at_diagnosis"). Do not guess field names; use get_catalogue_fields first. Omit to return only the total hit count.',
 		),
 	first: zod
 		.number()
@@ -70,7 +70,7 @@ const inputSchema = {
 		.array(zod.string().min(1))
 		.optional()
 		.describe(
-			'Fields to aggregate. Nested properties use double underscores (e.g. "donor__age_at_diagnosis"); dot notation is also accepted. Do not guess field names; use get-catalogue-fields first. Required when queryType is "aggregations" or "both".',
+			'Fields to aggregate. Nested properties use double underscores (e.g. "donor__age_at_diagnosis"); dot notation is also accepted. Do not guess field names; use get_catalogue_fields first. Required when queryType is "aggregations" or "both".',
 		),
 	includeMissing: zod
 		.boolean()
@@ -115,7 +115,7 @@ const successResult = (structuredContent: ExecuteQueryOutput): ToolResult => ({
 });
 
 /**
- * Collects all validation errors for an execute-query request against the catalogue's
+ * Collects all validation errors for an execute_query request against the catalogue's
  * introspection context: the SQON, the requested hits fields, sort fields, and
  * aggregation fields.
  * @returns The validation errors (empty when the request is valid), the parsed SQON,
@@ -209,7 +209,7 @@ const confirmExecution = async ({
 	return confirmation.action === 'accept' && confirmation.content?.confirm === true;
 };
 
-/** The slice of an Arranger GraphQL response the execute-query tool compacts for the LLM. */
+/** The slice of an Arranger GraphQL response the execute_query tool compacts for the LLM. */
 type ArrangerQueryData = {
 	hits?: {
 		total?: number;
@@ -219,23 +219,23 @@ type ArrangerQueryData = {
 };
 
 /**
- * Registers the `execute-query` tool: builds, confirms, and executes a SQON-filtered
+ * Registers the `execute_query` tool: builds, confirms, and executes a SQON-filtered
  * GraphQL query against one Arranger catalogue, returning a compact result without the
  * GraphQL `edges`/`node` nesting.
  */
 export const registerExecuteQueryTool = (server: McpServer, { client }: McpServerDeps): void => {
 	server.registerTool(
-		'execute-query',
+		'execute_query',
 		{
 			title: 'Execute Arranger Query',
 			description:
 				'Execute a SQON-filtered query against one Arranger catalogue and return matching documents (hits), per-field aggregation summaries, or both. ' +
 				'Before calling this tool you MUST: ' +
-				'1. use list-catalogues to find the catalogue. ' +
-				'2. call get-catalogue-fields to discover valid field names and per-type SQON operators. ' +
-				'3. call get-sqon-schema to learn how to construct valid SQON and see worked examples. ' +
-				'DO NOT guess field names, you MUST call get-catalogue-fields. ' +
-				'DO NOT construct "sqon" without calling get-sqon-schema. ' +
+				'1. use list_catalogues to find the catalogue. ' +
+				'2. call get_catalogue_fields to discover valid field names and per-type SQON operators. ' +
+				'3. call get_sqon_schema to learn how to construct valid SQON and see worked examples. ' +
+				'DO NOT guess field names, you MUST call get_catalogue_fields. ' +
+				'DO NOT construct "sqon" without calling get_sqon_schema. ' +
 				'The user is asked to review and confirm the generated GraphQL query before it runs (when the client supports elicitation).',
 			inputSchema,
 			outputSchema,
@@ -317,7 +317,7 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 				if (response.errors && response.errors.length > 0) {
 					const messages = response.errors.map(formatGraphQLError).join('\n- ');
 					return errorResult(
-						`Arranger rejected the query with GraphQL errors:\n- ${messages}\n\nReview the offending field(s) with get-catalogue-fields and the SQON structure with get-sqon-schema, then retry.`,
+						`Arranger rejected the query with GraphQL errors:\n- ${messages}\n\nReview the offending field(s) with get_catalogue_fields and the SQON structure with get_sqon_schema, then retry.`,
 					);
 				}
 

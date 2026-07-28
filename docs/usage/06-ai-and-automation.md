@@ -17,26 +17,35 @@ npm run mcp-server:dev
 
 The server starts on `http://localhost:3100/mcp` by default. Two environment variables are required:
 
-| Variable | Description |
-| -------- | ----------- |
-| `ARRANGER_BASE_URL` | URL of the running Arranger search-server |
+| Variable              | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| `ARRANGER_BASE_URL`   | URL of the running Arranger search-server       |
 | `ARRANGER_CATALOGUES` | Comma-separated list of catalogue IDs to expose |
 
 All other variables (host, port, path, log level, request timeout) have sensible defaults. Copy `apps/mcp-server/.env.schema` to `apps/mcp-server/.env` to start from a working local baseline.
 
 ### What the server exposes
 
+**Instructions** (sent once, in the `initialize` response):
+
+The server returns a short set of usage instructions that most clients fold into the model's system prompt. It describes what the server is for, requires the model to discover catalogue names, field names, and SQON syntax through the tools below rather than recalling them, and gives the call order (`list_catalogues` → `get_catalogue_fields` → `get_sqon_schema` → `execute_query`). Clients that ignore `instructions` still get the same rules from the tool descriptions, though later in the exchange.
+
 **Tools** (callable actions):
 
-- `list-catalogues`: returns the catalogues registered on this Arranger instance
-- `get-sqon-schema`: returns the SQON JSON Schema and operator metadata
-- `get-catalogue-fields`: returns field metadata for one catalogue (input: `catalogueId`)
+- `list_catalogues`: returns the catalogues registered on this Arranger instance
+- `get_sqon_schema`: returns the SQON JSON Schema and operator metadata
+- `get_catalogue_fields`: returns field metadata for one catalogue (input: `catalogueId`)
+- `execute_query`: builds, confirms, and executes a SQON-filtered query against one catalogue (input: `{ catalogueId, sqon, queryType = 'hits', fields [], first = 20, offset = 0, sort, aggregationFields = [], includeMissing = true, aggregationsFilterThemselves = false }`)
 
 **Resources** (readable data by URI):
 
 - `arranger://introspection/server`: server-wide catalogue inventory
 - `arranger://introspection/sqon`: SQON schema and operator metadata
 - `arranger://introspection/catalog/{catalogueId}`: per-catalogue field metadata
+
+**Prompts** (callable by clients):
+
+- `query_arranger`: accepts the user's goal as an input, and returns three messages containing the "system prompt" (workflow instructions), a SQON cheat sheet, and the user's goal
 
 ### Connecting a client
 
@@ -72,7 +81,6 @@ For a detailed walkthrough of the SQON format and how to compose queries, see [B
 
 ## What's coming
 
-- **`build-sqon` tool**: a structured input tool for constructing SQON filter clauses without knowing the raw format; tracked in `.dev/docs/build-sqon-tool.md`
+- **`build_sqon` tool**: a structured input tool for constructing SQON filter clauses without knowing the raw format; tracked in `.dev/docs/build-sqon-tool.md`
 - **Authentication**: the MCP server currently requires no auth; support is planned
-- **Query execution**: tools to run a SQON against a catalogue and return results
 - **Chat interface**: a conversational front-end for non-technical users to search catalogues in plain language

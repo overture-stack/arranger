@@ -43,7 +43,7 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 
 - **New `apps/mcp-server`** - A Model Context Protocol server that exposes Arranger catalogues as LLM-queryable resources and tools. Separate Docker image: `ghcr.io/overture-stack/arranger-mcp-server`. Implements the MCP Streamable HTTP transport.
     - Resources: server introspection, SQON schema, per-catalogue fields.
-    - Tools: `list-catalogs`, `get-sqon-schema`, `get-catalog-fields`, `search-catalog`.
+    - Tools: `list_catalogues`, `get_sqon_schema`, `get_catalogue_fields`, `execute_query`.
 
 ### Charts (`@overture-stack/arranger-charts`)
 
@@ -81,10 +81,13 @@ The charts module was introduced in this release cycle as a new package.
 
     `filter` is accepted as an alias and normalizes to `wildcard` at query-build time; existing serialized SQONs continue to work without any migration. New SQONs should use `op: "wildcard"`.
 
+- **All operator aliases now normalize on parse, not just `filter`/`wildcard`** - `SqonBuilder.from()` rewrites every leaf's `op` to its canonical form (`=` -> `in`, `>=` -> `gte`, `filter` -> `wildcard`, etc.) before returning, recursively through nested combinations. Previously the schema validated aliases but never normalized them, so code that switched on `.op` after parsing (rather than going through the builder's own methods) could accept a query using an alias and then fail to match any canonical branch. Calling `SqonSchema.parse()` directly still returns the alias unchanged; use the newly-exported `normalizeSqonNode()` if you have a reason to validate without the builder. Also newly exported: `isGroupNode`/`isFieldFilter` type guards for discriminating a `SqonNode` by shape.
+
 ### Infrastructure
 
 - **Turborepo** - Build and test pipeline uses Turborepo for change detection: only affected packages and their dependents rebuild on each commit.
 - **`npm run release:check`** - New script (`scripts/verify-pack.mjs`) verifies that no publishable package contains `file:` dependency references before release.
+- **`@overture-stack/sqon` no longer reads the filesystem at runtime** - Its version constant was previously computed by `readFileSync`-ing the package's own `package.json` at module-init time, a Node-only API with no browser equivalent, breaking any bundler building for a browser target (e.g. Vite) that imports the package, directly or transitively through `arranger-types`/`arranger-components`/`arranger-charts`. The version is now stamped into a generated file at build/test time instead (`scripts/generateVersion.mjs`, wired via `pretest`/`prebuild`); the shipped bundle contains no `node:fs`/`node:path`/`node:url` references. Also added `"sideEffects": false` to the package now that its module graph has no remaining top-level side effects.
 
 ---
 

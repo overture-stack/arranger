@@ -11,6 +11,7 @@ lerna-debug.log
 **/package-lock.json
 
 *.tsbuildinfo
+modules/sqon/src/version/generated.ts
 
 # include, don't ignore
 !.env.test

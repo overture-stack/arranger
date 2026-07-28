@@ -11,6 +11,10 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 standalone: yes
 context: `modules/sqon/src/__tests__/jsonSchema.test.ts` and `schema.test.ts` are the remaining files in a `__tests__/` directory after `operators.test.ts` was moved to `src/operators/index.test.ts`. Move `jsonSchema.test.ts` alongside its source and `schema.test.ts` alongside `src/schema/index.ts` (or equivalent source file) to follow the co-location convention. The `__tests__/` directory can then be removed.
 
+### Remove the "no stable release yet" warning once 1.0.0 ships
+standalone: yes
+context: `modules/sqon/README.md` carries a "No stable release yet" section (marked with a removal TODO comment) and `package.json`'s `description` field has a "(see README...)" suffix, both added while `latest` still pointed at a pre-builder-absorption release. Once a real, non-RC `1.0.0` is published under `latest`, remove the README section and revert the description to its original text.
+
 ---
 
 ## build tooling
@@ -114,6 +118,21 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 **Issue:** The test calls the `get-catalogue-fields` MCP tool with `arguments: { catalogId: 'this-catalogue-does-not-exist' }`, but the tool's actual schema (`apps/mcp-server/src/mcp/tools.ts`) expects `catalogueId`, not `catalogId`. The test likely still passes (wrong key produces a schema-validation error, and the test asserts `isError: true`), but its description claims it is exercising an upstream 404 for an unknown catalogue, not a schema-validation failure. Found while auditing `catalog`/`catalogue` spelling; not fixed as part of that pass since it's a test logic bug, not a spelling issue.
 **Fix:** Change the test's argument key to `catalogueId`, and confirm the test still asserts the intended 404/not-found behaviour rather than a schema-validation error.
 **Standalone:** yes; one-line test fix
+
+### `SQON_CHEAT_SHEET` has two consumers and may be retired entirely once `build_sqon` ships
+
+**File:** `apps/mcp-server/src/mcp/sqonCheatSheet.ts`; consumed by `src/mcp/tools.ts` (`get_sqon_schema`) and `src/mcp/prompts.ts` (`query_arranger`)
+**Severity:** low (no defect today; this is a scheduled-obsolescence marker so the cheat sheet is not maintained past its usefulness)
+**Kind:** anticipated redundancy
+**Issue:** The cheat sheet exists to help an LLM synthesize raw SQON by hand. [SQON generation via `build_sqon` tool](roadmap.md#sqon-generation-via-build_sqon-tool) removes the LLM from the synthesis loop entirely: the LLM selects field, operator, and value, and the tool generates validated SQON. At that point the cheat sheet's primary job is gone. `.dev/docs/build-sqon-tool.md` already anticipates this and leaves "keep it as a human-facing reference?" as a separate decision.
+
+Two things make this worth tracking rather than leaving implicit in the design doc:
+
+1. As of 2026-07-27 the cheat sheet has **two** consumers, not one. It was extracted from `tools.ts` into its own module so `query_arranger` could send it inline as text (replacing an embedded resource that carried the raw JSON Schema, which is the validation artifact rather than a generation guide). Retiring it is therefore a two-site decision: the `get_sqon_schema` tool text, and the prompt's second message plus its `## SQON grammar` section.
+2. Inlining it into the prompt is exactly the "SQON schema in a system prompt costs tokens on every request" pattern `build_sqon` was designed to avoid. It is a net reduction against what the prompt sent before (the cheat sheet is smaller than the raw JSON Schema, and it caches cleanly in a stable prefix), so it is an improvement on the status quo, not a new cost. But it is not the destination.
+
+**Fix:** When `build_sqon` ships, revisit all three surfaces together: (a) rewrite `execute_query`'s description from "call `get_sqon_schema`, then write a `sqon`" to "call `build_sqon`, then pass its output"; (b) drop the cheat-sheet message and the `## SQON grammar` section from `query_arranger`, replacing them with a workflow step that calls `build_sqon`; (c) decide whether `get_sqon_schema` keeps the cheat sheet as human-facing text or returns only the machine-readable schema. Note this interacts with the **MCP surface unification** follow-on under [Deprecate `sqon-builder`](roadmap.md#deprecate-sqon-builder), which proposes deriving the cheat sheet from `getSqonFieldOperatorDetails()` so it stays in sync automatically. If `build_sqon` lands first, that derivation work may be unnecessary; sequence the two deliberately rather than doing both.
+**Standalone:** no; gated on `build_sqon` shipping. Do not delete the cheat sheet ahead of that: it is currently the only SQON generation guidance the tools-only MCP clients ever receive, since most hosts do not implement the prompts primitive.
 
 ---
 
@@ -701,6 +720,8 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 **Issue:** Three publishable packages reference sibling packages via `file:` paths in `dependencies` (e.g. `"@overture-stack/arranger-types": "file:../types"`). npm encodes these verbatim in the published tarball's `package.json`. External consumers get errors like `Package "" refers to a non-existing file '"/Users/.../types"'` because the publishing machine's local paths do not exist in the consumer's environment. `modules/sqon` and `modules/charts` are clean; no `file:` deps.
 
 **Interim fix (implemented):** `scripts/fix-workspace-deps.mjs` rewrites `file:` deps to `^<sibling-version>` ranges before each `npm publish` call in the Jenkins pipeline, then restores `package.json` from git. Local dev is unchanged; `file:` refs continue to work via npm workspaces symlinks. The pipeline publish loop calls the script and restores after each package. Note: alphabetical publish order (`components` and `graphql-router` before `types`) means there is a short window where those packages reference a `types` version not yet on npm. Acceptable for coordinated release runs; Changesets eliminates it by publishing in dependency order.
+
+**Confirmed still live on npm (2026-07-28):** `npm view @overture-stack/arranger-types dependencies` shows `"@overture-stack/sqon": "file:../sqon"` verbatim on both the `latest` and `rc` dist-tags, blocking any external install (surfaced while diagnosing an argo-platform bundling failure that traced back through `arranger-components@rc` -> `arranger-types@rc` -> this). The currently-published tarball predates the interim fix actually running clean, or a step in the publish loop silently didn't apply it that run. A fresh publish through the current pipeline should resolve it without further code changes; worth confirming the publish log actually shows the rewrite step running before assuming a clean republish will fix it.
 
 **Long-term fix: two separate tools, both needed:**
 

@@ -32,6 +32,28 @@ suite('SQON builder', () => {
 		test('throws on a null input', () => {
 			assert.throws(() => SqonBuilder.from(null));
 		});
+
+		test('normalizes an operator alias to its canonical form', () => {
+			const result = SqonBuilder.from({ op: '=', content: { fieldName: 'status', value: ['active'] } }).toValue();
+			assert.deepEqual(result, { op: 'in', content: { fieldName: 'status', value: ['active'] } });
+		});
+
+		test('normalizes an aliased leaf nested inside a combination', () => {
+			const result = SqonBuilder.from({
+				op: 'and',
+				content: [
+					{ op: '>=', content: { fieldName: 'age', value: 18 } },
+					{ op: 'in', content: { fieldName: 'status', value: ['active'] } },
+				],
+			}).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'gte', content: { fieldName: 'age', value: 18 } },
+					{ op: 'in', content: { fieldName: 'status', value: ['active'] } },
+				],
+			});
+		});
 	});
 
 	suite('toString()', () => {

@@ -914,6 +914,8 @@ New workflow: PR authors run `npx changeset` to declare which packages changed a
 sh "npx changeset publish"
 ```
 
+**Enhancement worth layering on top:** a CI check that diffs each package's exported API surface (e.g. against its `index.ts`/`.d.ts`, or via a tool like `api-extractor`) relative to the last published version, and posts a suggested severity (patch/minor/major) as a PR comment or pre-fills the `changeset` prompt. This doesn't replace the author's judgement (breaking-vs-additive calls are too fuzzy to fully automate reliably; manually reconstructing this for 7 packages during an rc round confirmed that), but it gives them a concrete starting point instead of deriving severity from scratch.
+
 **Cleanup when this lands:** `changeset version` rewrites `file:` deps to real version ranges before publishing, making the interim fix-and-restore approach redundant. Remove `scripts/fix-workspace-deps.mjs`, remove the `node scripts/fix-workspace-deps.mjs` and `git checkout` lines from the Jenkins publish loop, and delete the interim tech-debt entry for `file:` local dependencies. `scripts/verify-pack.mjs` (`npm run release:check`) stays as a belt-and-suspenders gate.
 
 ### 3.2 Testcontainers for integration test infrastructure

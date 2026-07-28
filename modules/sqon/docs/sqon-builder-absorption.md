@@ -85,5 +85,19 @@ Key differences:
 - Import is a named export, not a default export.
 - Chain results must be extracted with `.toValue()` before passing outside the builder.
 - `SqonBuilder.from(raw)` parses and validates an unknown input (was `SQON.parse(raw)` in some
-  versions).
+  versions), and additionally normalizes operator aliases (`=`, `>=`, `filter`, ...) to their
+  canonical form. **Prefer `SqonBuilder.from(raw).toValue()` over calling the exported `SqonSchema`
+  Zod schema's own `.parse()` directly for this reason**: `SqonSchema.parse()` alone validates but
+  does not normalize, so code that switches on `.op` after a bare `SqonSchema.parse()` can accept a
+  query using an alias and then fail to match any canonical branch. Use the exported
+  `normalizeSqonNode()` directly if you have a specific reason to call `SqonSchema.parse()` without
+  the builder.
 - All operators are available: `notIn`, `someNotIn`, `all`, `gte`, `lte`, `between`, `wildcard`.
+- `sqon-builder`'s `isArrayFilter`/`isGreaterThanFilter`/`isCombination`-style type-guard functions
+  aren't ported one-for-one, but the same two-way shape distinction they existed for (combination
+  vs. field-based leaf) is exported as `isGroupNode`/`isFieldFilter`. Discriminating further, by
+  specific operator, means checking `node.op` against the exported `sqonFieldOperatorProperties`
+  constants directly; there's no schema-level type for e.g. "range-like ops only".
+- Leaf and combination nodes carry an optional `pivot` field (an ES/OpenSearch nested-path scoping
+  concept). It has no meaning outside an ES/OS query context; a consumer targeting a different data
+  store (e.g. building raw SQL from a SQON) can ignore it.

@@ -3,6 +3,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { createArrangerClient, type ArrangerClient } from '#arranger/client.js';
 import { validateArrangerConnection } from '#arranger/validation.js';
 import { createHttpApp } from '#http/app.js';
+import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
+import { registerPrompts } from '#mcp/prompts.js';
 import { registerResources } from '#mcp/resources.js';
 import { registerTools } from '#mcp/tools.js';
 import { createArrangerMcpConfig, type ArrangerMcpConfig } from '#utils/config.js';
@@ -14,9 +16,13 @@ export type McpServerDeps = {
 };
 
 export const createMcpServer = (deps: McpServerDeps): McpServer => {
-	const server = new McpServer({ name: 'arranger-mcp-server', version: '0.0.0-dev' });
+	const server = new McpServer(
+		{ name: 'arranger-mcp-server', version: '0.0.0-dev' },
+		{ instructions: SERVER_INSTRUCTIONS },
+	);
 	registerResources(server, deps);
 	registerTools(server, deps);
+	registerPrompts(server, deps);
 	return server;
 };
 

@@ -16,6 +16,7 @@ import catalogueAMappings from './assets/catalogue_a.mappings.json' with { type:
 import catalogueBData from './assets/catalogue_b.data.json' with { type: 'json' };
 import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
 import executeQuery from './executeQuery.js';
+import readPrompts from './readPrompts.js';
 import readResources from './readResources.js';
 import readTools from './readTools.js';
 import spinupActive from './spinupActive.js';
@@ -243,8 +244,16 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 		});
 	});
 
-	suite('Tools: execute-query', () => {
+	suite('Tools: execute_query', () => {
 		executeQuery({ getClient, getServerUrl });
+	});
+
+	suite('Prompts', () => {
+		readPrompts({
+			getClient,
+			configuredCatalogues,
+			expectedDocumentTypes,
+		});
 	});
 
 	after(async () => {

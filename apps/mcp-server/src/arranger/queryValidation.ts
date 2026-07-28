@@ -43,7 +43,7 @@ const validateFilterClause = (leaf: SqonNode, context: CatalogueQueryContext, er
 	for (const fieldName of fieldNames) {
 		const field = context.fields[fieldName];
 		if (!field) {
-			errors.push(`SQON references unknown field "${fieldName}". Use get-catalogue-fields to list valid fields.`);
+			errors.push(`SQON references unknown field "${fieldName}". Use get_catalogue_fields to list valid fields.`);
 			continue;
 		}
 
@@ -117,7 +117,7 @@ export const validateHitsFields = (fields: string[], context: CatalogueQueryCont
 	for (const fieldName of fields) {
 		const field = context.fields[fieldName];
 		if (!field) {
-			errors.push(`Unknown field "${fieldName}". Use get-catalogue-fields to list valid fields.`);
+			errors.push(`Unknown field "${fieldName}". Use get_catalogue_fields to list valid fields.`);
 		} else if (CONTAINER_FIELD_TYPES.has(field.type)) {
 			errors.push(
 				`Field "${fieldName}" is a container (type "${field.type}") and cannot be selected directly. Request its child fields instead.`,
@@ -147,7 +147,7 @@ export const validateAggregationFields = (
 		const dotName = toDotNotationFieldName(requested);
 		const field = context.fields[dotName];
 		if (!field) {
-			errors.push(`Unknown aggregation field "${requested}". Use get-catalogue-fields to list valid fields.`);
+			errors.push(`Unknown aggregation field "${requested}". Use get_catalogue_fields to list valid fields.`);
 		} else if (field.type === 'nested') {
 			errors.push(
 				`Field "${requested}" is a nested container and has no aggregation. Aggregate on its child fields instead.`,
@@ -169,4 +169,4 @@ export const validateAggregationFields = (
 export const validateSortFields = (sort: ArrangerSort[], context: CatalogueQueryContext): string[] =>
 	sort
 		.filter(({ fieldName }) => !context.fields[fieldName])
-		.map(({ fieldName }) => `Unknown sort field "${fieldName}". Use get-catalogue-fields to list valid fields.`);
+		.map(({ fieldName }) => `Unknown sort field "${fieldName}". Use get_catalogue_fields to list valid fields.`);

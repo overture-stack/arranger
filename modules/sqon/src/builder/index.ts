@@ -1,3 +1,4 @@
+import { normalizeSqonNode } from '#builder/normalize.js';
 import { reduceSqon } from '#builder/reduce.js';
 import {
 	asArray,
@@ -332,10 +333,14 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
  * ```
  */
 export const SqonBuilder = {
-	/** Parse an unknown value (object or JSON string) as a SQON and return a builder. Throws `ZodError` if invalid. */
+	/**
+	 * Parse an unknown value (object or JSON string) as a SQON and return a builder. Throws `ZodError` if invalid.
+	 * Operator aliases (e.g. `=`, `>=`, `filter`) are normalized to their canonical form (`in`, `gte`, `wildcard`)
+	 * before the builder ever sees them, so every leaf's `.op` downstream is guaranteed canonical.
+	 */
 	from: (input: unknown): SqonBuilderHandle => {
 		const parsed = typeof input === 'string' ? JSON.parse(input) : input;
-		return createBuilder(SqonSchema.parse(parsed));
+		return createBuilder(normalizeSqonNode(SqonSchema.parse(parsed)));
 	},
 
 	/** Start a builder from an empty and-combination. */
