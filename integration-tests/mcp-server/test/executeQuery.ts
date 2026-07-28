@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { Client } from '@modelcontextprotocol/sdk/client';
@@ -36,7 +36,9 @@ const callExecuteQuery = (mcpClient: Client, args: Record<string, unknown>) =>
 	mcpClient.callTool({ name: 'execute_query', arguments: args });
 
 const getStructured = (result: Awaited<ReturnType<Client['callTool']>>): ExecuteQueryStructured => {
-	assert.notEqual(result.isError, true, `tool call returned isError: ${JSON.stringify(result)}`);
+	// Not `notEqual(result.isError, true)`: under node:assert/strict that is notStrictEqual, which
+	// lets a truthy-but-not-`true` isError through. Negating covers every truthy value.
+	assert.ok(!result.isError, `tool call returned isError: ${JSON.stringify(result)}`);
 	const structured = result.structuredContent as ExecuteQueryStructured | undefined;
 	assert.ok(structured, 'expected execute_query to return structuredContent');
 	return structured;

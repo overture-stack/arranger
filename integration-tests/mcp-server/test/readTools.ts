@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { type Client } from '@modelcontextprotocol/sdk/client';
@@ -11,7 +11,9 @@ export type ToolEnv = {
 };
 
 const getTextContent = (result: Awaited<ReturnType<Client['callTool']>>): string => {
-	assert.notEqual(result.isError, true, `tool call returned isError: ${JSON.stringify(result)}`);
+	// Not `notEqual(result.isError, true)`: under node:assert/strict that is notStrictEqual, which
+	// lets a truthy-but-not-`true` isError through. Negating covers every truthy value.
+	assert.ok(!result.isError, `tool call returned isError: ${JSON.stringify(result)}`);
 	assert.ok(Array.isArray(result.content), 'expected tool result content to be an array');
 
 	const [first] = result.content as { type: string; text?: string }[];

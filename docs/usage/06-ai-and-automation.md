@@ -26,6 +26,10 @@ All other variables (host, port, path, log level, request timeout) have sensible
 
 ### What the server exposes
 
+**Instructions** (sent once, in the `initialize` response):
+
+The server returns a short set of usage instructions that most clients fold into the model's system prompt. It describes what the server is for, requires the model to discover catalogue names, field names, and SQON syntax through the tools below rather than recalling them, and gives the call order (`list_catalogues` → `get_catalogue_fields` → `get_sqon_schema` → `execute_query`). Clients that ignore `instructions` still get the same rules from the tool descriptions, though later in the exchange.
+
 **Tools** (callable actions):
 
 - `list_catalogues`: returns the catalogues registered on this Arranger instance
@@ -38,6 +42,10 @@ All other variables (host, port, path, log level, request timeout) have sensible
 - `arranger://introspection/server`: server-wide catalogue inventory
 - `arranger://introspection/sqon`: SQON schema and operator metadata
 - `arranger://introspection/catalog/{catalogueId}`: per-catalogue field metadata
+
+**Prompts** (callable by clients):
+
+- `query_arranger`: accepts the user's goal as an input, and returns three messages containing the "system prompt" (workflow instructions), a SQON cheat sheet, and the user's goal
 
 ### Connecting a client
 
