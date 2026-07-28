@@ -13,6 +13,7 @@
 	},
 	"main": "dist/index.cjs",
 	"types": "dist/index.d.ts",
+	"sideEffects": false,
 	"exports": {
 		".": {
 			"import": "./dist/index.js",
@@ -23,8 +24,11 @@
 	"scripts": {
 		"build": "tsup",
 		"clear:dist": "rm -rf dist",
+		"generateVersion": "node scripts/generateVersion.mjs",
 		"patchTS": "ts-patch install -s",
+		"prebuild": "npm run generateVersion",
 		"prepare": "npm run patchTS",
+		"pretest": "npm run generateVersion",
 		"test": "tsx --test",
 		"test:watch": "npm test -- --watch",
 		"watch": "nodemon -w src -e ts --exec \"npm run clear:dist && npm run build\""

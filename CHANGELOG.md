@@ -87,6 +87,7 @@ The charts module was introduced in this release cycle as a new package.
 
 - **Turborepo** - Build and test pipeline uses Turborepo for change detection: only affected packages and their dependents rebuild on each commit.
 - **`npm run release:check`** - New script (`scripts/verify-pack.mjs`) verifies that no publishable package contains `file:` dependency references before release.
+- **`@overture-stack/sqon` no longer reads the filesystem at runtime** - Its version constant was previously computed by `readFileSync`-ing the package's own `package.json` at module-init time, a Node-only API with no browser equivalent, breaking any bundler building for a browser target (e.g. Vite) that imports the package, directly or transitively through `arranger-types`/`arranger-components`/`arranger-charts`. The version is now stamped into a generated file at build/test time instead (`scripts/generateVersion.mjs`, wired via `pretest`/`prebuild`); the shipped bundle contains no `node:fs`/`node:path`/`node:url` references. Also added `"sideEffects": false` to the package now that its module graph has no remaining top-level side effects.
 
 ---
 
