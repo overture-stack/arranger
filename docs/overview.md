@@ -6,13 +6,13 @@ sidebar_position: 1
 
 Arranger is a versatile, model-agnostic data discovery API for OpenSearch and Elasticsearch, designed to simplify building search interfaces for complex datasets. A React component library is available for generating interactive search UIs.
 
-    :::info Supported search engines
+:::info Supported search engines
 
-    Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7).
+Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7).
 
-    OpenSearch maintains API compatibility with Elasticsearch 7.x, so query syntax and conventions documented here apply to both engines.
+OpenSearch maintains API compatibility with Elasticsearch 7.x, so query syntax and conventions documented here apply to both engines.
 
-    :::
+:::
 
 ## Key Features
 
@@ -55,23 +55,26 @@ The Arranger Components image above highlights three key features:
 
 The Arranger repository can be accessed from our Overture-Stack GitHub page [located here](https://github.com/overture-stack/arranger).
 
-    ```
-    arranger/
-    ├── apps/
-    │   ├── mcp-server/
-    │   └── search-server/
-    ├── docker/
-    ├── integration-tests/
-    │   └── server/
-    ├── modules/
-    │   ├── admin-ui/
-    │   ├── charts/
-    │   ├── components/
-    │   ├── graphql-router/
-    │   ├── sqon/
-    │   └── types/
-    └── scripts/
-    ```
+```
+arranger/
+├── apps/
+│   ├── mcp-server/
+│   └── search-server/
+├── docker/
+├── integration-tests/
+│   ├── admin/
+│   ├── import/
+│   ├── mcp-server/
+│   └── server/
+├── modules/
+│   ├── admin-ui/
+│   ├── charts/
+│   ├── components/
+│   ├── graphql-router/
+│   ├── sqon/
+│   └── types/
+└── scripts/
+```
 
 - **`apps/`**: Runnable server applications:
     - **`search-server/`**: The Arranger search server: a GraphQL service that interfaces with OpenSearch/Elasticsearch and hosts the configuration API.

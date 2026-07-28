@@ -29,6 +29,9 @@ Omitting an argument does not mean "use everything" or "no limit applies." It me
 | Behaviour  | Default                                             | Notes                                                                                          |
 | ---------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Sort order | Your `sort`, with an `_id: asc` tie-breaker appended | Not overridable. The tie-breaker guarantees deterministic ordering across paginated export batches; without it, ties in your sort field could cause rows to be skipped or repeated across batches. |
+| Max rows (`DOWNLOAD_MAX_ROWS`) | `100` | Maximum number of rows a single export returns. Global default applied to all catalogues; set the env var to raise it. |
+| Custom row caps (`ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS`) | `false` | When `false`, requests cannot override the row cap above. Set to `true` to allow per-request row limits. |
+| Stream buffer (`DOWNLOAD_STREAM_BUFFER_SIZE`) | `2000` | Number of rows buffered per batch while streaming an export. |
 
 ## Query validation limits
 

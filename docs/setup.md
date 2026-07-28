@@ -55,7 +55,7 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
         - Ensure all ports are free on your system before starting the environment.
         - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
-        For more information, see our [quickstart documentation linked here](https://docs.overture.bio/docs/other-software/quickstart).
+        For more information, see our [quickstart documentation linked here](/deploy/quickstart).
 
     </details>
 
@@ -68,15 +68,15 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
     cd arranger
     ```
 
-2.  Rename the `.env.arrangerDev` file to `.env`:
+2.  Copy the search server's environment schema to `.env`:
 
     ```bash
-    mv .env.arrangerDev .env
+    cp apps/search-server/.env.schema .env
     ```
 
     :::info
 
-    This `.env` file is preconfigured for the Arranger dev environment quickstart:
+    Populate `.env` for your environment. A minimal configuration for the Arranger dev quickstart looks like this:
 
         ```env
         # ==============================

@@ -6,7 +6,7 @@ Templates for all four files are [in the Arranger repository](https://github.com
 
 ## File locations
 
-Configuration files must be placed in the `configs/` directory under the server's working directory, or in the path specified by the `CONFIG_PATH` environment variable.
+Configuration files must be placed in the `configs/` directory under the server's working directory, or in the path specified by the `CONFIGS_PATH` environment variable.
 
 In a multicatalogue setup, each catalogue gets its own subdirectory named after the catalogue ID:
 
@@ -145,6 +145,6 @@ Only fields with `keyword` or `boolean` types in the index mapping are suitable 
 
 :::tip Portal customization guide
 
-For a step-by-step walkthrough of configuring a complete data portal, including mock data setup and Arranger component integration, see the [platform guide on customizing the data portal](https://docs.overture.bio/guides/administration-guides/customizing-the-data-portal).
+For a step-by-step walkthrough of configuring a complete data portal, including mock data setup and Arranger component integration, see the [platform guide on customizing the data portal](/use/administration/customizing-the-data-portal).
 
 :::

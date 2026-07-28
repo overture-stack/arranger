@@ -29,4 +29,4 @@ An OpenSearch (or Elasticsearch) index mapping defines the fields in your docume
 
 ## Further reading
 
-For a comprehensive guide on creating and managing index mappings in the Overture platform, covering file-centric vs analysis-centric indexing, index templates, aliases, analyzers, and the Maestro indexing pipeline, see the [index mappings guide](https://docs.overture.bio/guides/administration-guides/index-mappings) in the Overture platform documentation.
+For a comprehensive guide on creating and managing index mappings in the Overture platform, covering file-centric vs analysis-centric indexing, index templates, aliases, analyzers, and the Maestro indexing pipeline, see the [index mappings guide](/use/administration/index-mappings) in the Overture platform documentation.
