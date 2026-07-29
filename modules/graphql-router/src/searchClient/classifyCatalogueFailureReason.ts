@@ -85,10 +85,17 @@ export const classifyCatalogueFailureReason = (error: unknown): CatalogueErrorDe
 		};
 	}
 
-	if (findInCauseChain(error, isSchemaBuildError)) {
+	const schemaBuildError = findInCauseChain(error, isSchemaBuildError);
+
+	if (schemaBuildError) {
+		// A schema/endpoint build failure's message already names the specific problem (e.g. which
+		// field produced an invalid GraphQL name), and never carries infra detail like a host or port,
+		// unlike the raw errors the other branches above deliberately keep out of this message.
 		return {
 			code: catalogueErrorCodes.SCHEMA_BUILD_ERROR,
-			message: 'Could not build the GraphQL schema for this catalogue. Check its field, facet, and table configuration.',
+			message:
+				schemaBuildError.message ||
+				'Could not build the GraphQL schema for this catalogue. Check its field, facet, and table configuration.',
 		};
 	}
 

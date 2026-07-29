@@ -203,6 +203,22 @@ Two unrelated bugs found and fixed during this work are tracked there rather tha
 
 _Coordinate with the API version exposure entry; catalogue metadata and server introspection are related surfaces._
 
+### GraphQL name sanitization for field/type names containing invalid characters
+
+_Priority: medium. Confirmed real-world driver: a production catalogue's mapping has field names like `ca19-9_level`, `pd-l1_status`, `pan-trk_ihc_status` (real biomarker naming conventions), which break GraphQL schema generation outright today._
+
+No field, nested type, or document-type name gets validated or sanitized before being used as a GraphQL identifier, anywhere except aggregation field names (`mapping/utils/convertNameForGraphql.ts`, dots only, via `mappingToAggsType.js`/`mappingToAggregationFields.ts`). Every other path (`mappingToScalarFields.js`, `mappingToNestedFields.js`, `mappingToObjectTypes.js`, `mappingToNestedTypes.js`, `createConnectionTypeDefs.js`, `schema/Root.ts`, the document type name itself) concatenates raw ES field/index names straight into generated SDL. A name containing anything outside `[_A-Za-z][_0-9A-Za-z]*` (a hyphen, a leading digit) breaks schema generation with an opaque graphql-js lexer error, with no attribution back to which field caused it.
+
+**Goal:** support any valid JSON/ES field name without requiring config changes. `extended.json`/`table.json`/`facets.json` already match fields by their raw ES path (confirmed in `mappingToScalarFields.js`'s `maybeArray`), so this is purely an internal-code concern: configs should keep looking exactly like the mapping.
+
+**Approach (not yet designed in detail):**
+1. One canonical sanitizer (not just dot-replacement) applied consistently everywhere a name gets built: scalar fields, nested fields/types, object types, and the document type name.
+2. A per-catalogue raw-to-sanitized lookup table, built once at startup, threaded into resolver generation so a query against the sanitized GraphQL name still resolves against the real ES field, generalizing what `convertNameForGraphql` already does narrowly for aggregation dots.
+3. Backward compatibility: existing deployments with already-valid (unsanitized) names must see no schema change.
+4. Collision handling: two distinct raw names sanitizing to the same identifier can't be resolved automatically; this is where the diagnostic below stays load-bearing rather than becoming redundant.
+
+**Interim diagnostic (implemented):** `getTypesWithMappings` (`graphqlRoutes.ts`) validates every field name and the document type name against graphql-js's own `isValidNameError` before attempting schema generation (`mapping/utils/findInvalidGraphqlNames.ts`), collecting every offender in one pass. A catalogue with an invalid name now fails with `schema_build_error` and a message naming the specific field(s), instead of an opaque graphql-js parse error with no attribution. This diagnostic stays valuable once sanitization exists too, as the fallback for whatever it can't resolve (collisions, genuinely unsanitizable input).
+
 ### Per-catalogue config reload without full server restart
 
 _Priority: medium. To be reviewed before committing to a design._

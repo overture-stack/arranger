@@ -208,7 +208,7 @@ export const extendFields = (
 };
 
 export const flattenMappingToFields = (mapping: Record<string, unknown> = {}): FieldFromMapping[] =>
-	flattenMapping(mapping).map(({ field: fieldName = '', type = 'keyword', ...rest }) => ({
+	flattenMapping(mapping).map(({ fieldName = '', type = 'keyword', ...rest }) => ({
 		fieldName,
 		type,
 		...rest,

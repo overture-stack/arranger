@@ -22,6 +22,7 @@ import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
+import findInvalidGraphqlNames from '#mapping/utils/findInvalidGraphqlNames.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
@@ -61,6 +62,16 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 			);
 
 			const fieldsFromMapping = flattenMappingToFields(mappingFromIndex);
+
+			const invalidNames = findInvalidGraphqlNames({
+				documentType: configs?.[configRootProperties.DOCUMENT_TYPE],
+				fieldsFromMapping,
+			});
+
+			if (invalidNames.length > 0) {
+				const details = invalidNames.map(({ path, reason }) => `\`${path}\`: ${reason}`).join('; ');
+				throw schemaBuildError(`Invalid GraphQL name(s) found in this catalogue's mapping: ${details}`, undefined);
+			}
 
 			// Combines the mapping from ES with the "extended" custom configs
 			const extendedFields = await (async () => {
@@ -143,6 +154,12 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 				typesWithMappings,
 			};
 		} catch (error) {
+			// A schema-build error thrown directly above (e.g. the invalid-name check) already carries
+			// its own specific, actionable message; only wrap an error that isn't one of ours yet.
+			if (error instanceof Error && error.name === SCHEMA_BUILD_ERROR_NAME) {
+				throw error;
+			}
+
 			enableDebug &&
 				console.error(
 					`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${error instanceof Error ? error.message : error}`,
@@ -452,7 +469,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 				schemasToMerge.push(networkSchemaResult.data);
 			} else {
 				console.error(
-					`Error creating network schema for catalogue ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
+					`Error creating network schema for catalogue ${configs.catalogId}: ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
 				);
 			}
 		}
@@ -468,10 +485,14 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			schema: fullSchema,
 		};
 	} catch (error: unknown) {
-		console.info(
-			`\n------\nError thrown while creating the GraphQL schemas${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
-		);
-		enableDebug && console.error(error instanceof Error ? error.message : error);
+		// A schema-build error thrown deeper down (e.g. getTypesWithMappings' invalid-name check)
+		// already carries its own specific message; only wrap an error that isn't one of ours yet.
+		// Not logged here: router.ts's own catch already prints the full error (message, cause
+		// chain, stack) behind enableDebug, and the curated code/message summary always logs once
+		// further up, in apps/search-server; repeating it at every intermediate layer was just noise.
+		if (error instanceof Error && error.name === SCHEMA_BUILD_ERROR_NAME) {
+			throw error;
+		}
 
 		throw schemaBuildError('Something went wrong while creating the GraphQL schemas', error);
 	}
@@ -557,16 +578,22 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		];
 	} catch (error) {
 		const message = error instanceof Error ? error.message : `${error}`;
+
+		if (rethrowOnError) {
+			// router.ts's own catch already prints the full error (message, cause chain, stack)
+			// behind enableDebug, and the curated code/message summary always logs once further up,
+			// in apps/search-server; nothing more to log here.
+			throw error;
+		}
+
+		// With rethrowOnError off (the default for a direct getGraphQLRoutes caller), nothing further
+		// up the chain ever sees this failure, the caller only gets the 500 response below, so this
+		// is the only place it's ever visible server-side.
 		console.info(
 			`\n------\nError thrown while generating the GraphQL endpoints${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
 		);
 		console.error(message);
 
-		if (rethrowOnError) {
-			throw error;
-		}
-
-		// if endpoint creation fails and the caller didn't opt into rethrowOnError, let the next server step respond with an error
 		return (req, res) =>
 			res.status(500).send({
 				// TODO: revisit this response

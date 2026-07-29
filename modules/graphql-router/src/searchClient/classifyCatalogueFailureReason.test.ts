@@ -73,15 +73,17 @@ suite('classifyCatalogueFailureReason', () => {
 		assert.equal(result.code, catalogueErrorCodes.MAPPING_FETCH_ERROR);
 	});
 
-	test('classifies an error marked as a schema build failure as schema_build_error', () => {
-		const schemaBuildError = Object.assign(new Error('Something went wrong while creating the GraphQL schemas'), {
-			name: SCHEMA_BUILD_ERROR_NAME,
-		});
+	test('classifies an error marked as a schema build failure as schema_build_error, surfacing its own specific message', () => {
+		const schemaBuildError = Object.assign(
+			new Error('Invalid GraphQL name(s) found in this catalogue\'s mapping: `biomarkers.ca19-9_level`: ...'),
+			{ name: SCHEMA_BUILD_ERROR_NAME },
+		);
 		const outer = new Error('Failed to initialize Arranger server', { cause: schemaBuildError });
 
 		const result = classifyCatalogueFailureReason(outer);
 
 		assert.equal(result.code, catalogueErrorCodes.SCHEMA_BUILD_ERROR);
+		assert.equal(result.message, schemaBuildError.message);
 	});
 
 	test('classifies an error with no identifiable cause as unknown_error', () => {

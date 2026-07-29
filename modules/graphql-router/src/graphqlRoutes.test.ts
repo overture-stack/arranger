@@ -64,4 +64,22 @@ suite('arrangerRoutes rethrowOnError', () => {
 			return true;
 		});
 	});
+
+	test('a mapping with an invalid GraphQL field name rejects naming the offending field, not just a generic graphql-js parse error', async () => {
+		await assert.rejects(
+			arrangerRoutes(
+				buildFailingArrangerRoutesArgs({
+					configs: { documentType: 'donor' } as ConfigsObject<never>,
+					mappingFromIndex: { 'ca19-9_level': { type: 'keyword' } },
+					rethrowOnError: true,
+				}),
+			),
+			(error: unknown) => {
+				const classified = classifyCatalogueFailureReason(error);
+				assert.equal(classified.code, catalogueErrorCodes.SCHEMA_BUILD_ERROR);
+				assert.match(classified.message, /ca19-9_level/);
+				return true;
+			},
+		);
+	});
 });
