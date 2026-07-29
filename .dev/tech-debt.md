@@ -31,6 +31,15 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 
 ## apps/mcp-server
 
+### `test` script's glob silently skips test files outside one specific directory depth
+
+**File:** `apps/mcp-server/package.json` (`test` script: `tsx --test --experimental-test-module-mocks ./src/**/*.test.ts`)
+**Severity:** medium (tests can silently not run in CI with no failure signal; false confidence)
+**Kind:** test infrastructure bug
+**Issue:** `npm run test` executes scripts via a non-interactive `sh`, which does not support globstar (`**` recursive matching) the way an interactive zsh/bash session does. Under plain `sh` glob rules, `**` behaves like a single `*` for one path segment, so `./src/**/*.test.ts` only matches test files exactly two directories below `src/` (e.g. `src/foo/bar.test.ts`), silently skipping test files directly in `src/` (depth 1) and anything three or more levels deep (depth 3+). Confirmed by reproducing the identical bug in `apps/search-server`'s `test` script, since fixed there (see `.dev/roadmap.md` "Multicatalog catalogue lifecycle and metadata"): adding new test files at depth 1 and depth 3 caused `npm test` to report fewer suites than existed, with zero error or warning, only visible by comparing the reported test count against the known file count.
+**Fix:** Change the script to `tsx --test --experimental-test-module-mocks` (no path/glob argument). Node's test runner, when given no positional file arguments, recursively auto-discovers test files from the working directory using its own glob implementation, which correctly handles any nesting depth and isn't subject to the shell's globbing limitations. Confirm the existing mcp-server test suite still reports the same or more passing tests after the change (a regression here would mean some currently-passing suite was, ironically, also being silently skipped).
+**Standalone:** yes; one-line script change, no source changes
+
 ### `InMemoryEventStore` is not suitable for production
 
 **File:** `apps/mcp-server/src/utils/inMemoryEventStore.ts`
@@ -54,7 +63,7 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 **File:** `apps/mcp-server/src/arranger/queryBuilder.ts` (`NUMERIC_AGGREGATION_TYPES`)
 **Severity:** low (duplication / drift risk)
 **Kind:** duplication
-**Issue:** The execute-query builder must know whether a field's generated GraphQL aggregation type is `NumericAggregations` (selected via `stats`) or `Aggregations` (selected via `buckets`). That classification lives in `esToAggTypesMap` in `modules/types/src/elastic/constants.ts`, but the MCP server does not depend on `modules/types`, so the builder carries a local `NUMERIC_AGGREGATION_TYPES` set mirroring it (plus the `number` display type used by catalogue configs). If `esToAggTypesMap` gains or corrects entries, the copy silently diverges and the builder would emit the wrong selection shape for affected field types.
+**Issue:** The `execute_query` builder must know whether a field's generated GraphQL aggregation type is `NumericAggregations` (selected via `stats`) or `Aggregations` (selected via `buckets`). That classification lives in `esToAggTypesMap` in `modules/types/src/elastic/constants.ts`, but the MCP server does not depend on `modules/types`, so the builder carries a local `NUMERIC_AGGREGATION_TYPES` set mirroring it (plus the `number` display type used by catalogue configs). If `esToAggTypesMap` gains or corrects entries, the copy silently diverges and the builder would emit the wrong selection shape for affected field types.
 **Fix:** Either add `@overture-stack/arranger-types` as an mcp-server dependency and derive the set from `esToAggTypesMap`, or (preferred) expose each field's aggregation kind in the catalogue introspection response so MCP consumers need no local mapping at all. The latter aligns with the introspection-as-contract direction of the MCP integration readiness roadmap items.
 **Standalone:** yes; either fix is additive; no behaviour change for current field types
 
@@ -84,7 +93,7 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 **File:** `apps/mcp-server/src/http/app.ts` (`createHttpApp`); `apps/mcp-server/src/utils/config.ts` (`envSchema`)
 **Severity:** critical (OWASP A01: Broken Access Control; any reachable agent can invoke all tools and read all catalogue data)
 **Kind:** missing security control
-**Issue:** The MCP endpoint accepts all incoming requests with no authentication check. In a demo or staging environment accessible over a network, any agent or automated client that can reach the port can call `list-catalogues`, `get-catalogue-fields`, and `search-catalog` without restriction. There is no API key, bearer token, client certificate, or IP allowlist in place.
+**Issue:** The MCP endpoint accepts all incoming requests with no authentication check. In a demo or staging environment accessible over a network, any agent or automated client that can reach the port can call `list_catalogues`, `get_catalogue_fields`, and `execute_query` without restriction. There is no API key, bearer token, client certificate, or IP allowlist in place.
 **Fix:** Add a configurable API key check as middleware in `createHttpApp`, applied before the `postHandler` and `sessionHandler` routes. Read the key from a `MCP_API_KEY` env var; if set, reject requests that do not include `Authorization: Bearer <key>` with a `401`. If unset, warn at startup that the endpoint is unauthenticated. For demo environments, always set `MCP_API_KEY`. For production, explore OAuth 2.0 or mTLS as a stronger option. The MCP SDK does not impose an auth mechanism; the middleware layer is the correct place to enforce it.
 **Standalone:** yes; self-contained middleware addition to `app.ts` plus one new env var in `config.ts`
 
@@ -101,12 +110,12 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
   **Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
   **Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
 
-### `get-catalogue-fields` does not validate `catalogueId` against the configured allowlist
+### `get_catalogue_fields` does not validate `catalogueId` against the configured allowlist
 
-**File:** `apps/mcp-server/src/mcp/tools.ts` (`get-catalogue-fields` tool handler)
+**File:** `apps/mcp-server/src/mcp/tools.ts` (`get_catalogue_fields` tool handler)
 **Severity:** medium (OWASP A03: Injection; unvalidated ID forwarded into URL path; also information disclosure if Arranger hosts undeclared catalogues)
 **Kind:** missing input validation
-**Issue:** The `get-catalogue-fields` tool accepts any non-empty string as `catalogueId` and forwards it directly to `client.getCatalogueIntrospection(catalogueId)`, which calls `GET /introspection/{catalogueId}` on Arranger. The `ARRANGER_CATALOGUES` config declares the intended allowlist, but the tool never checks it. An adversarial agent can probe arbitrary strings: either to enumerate undeclared catalogues on the Arranger instance, or to attempt path traversal in the constructed URL (e.g. `../sqon`).
+**Issue:** The `get_catalogue_fields` tool accepts any non-empty string as `catalogueId` and forwards it directly to `client.getCatalogueIntrospection(catalogueId)`, which calls `GET /introspection/{catalogueId}` on Arranger. The `ARRANGER_CATALOGUES` config declares the intended allowlist, but the tool never checks it. An adversarial agent can probe arbitrary strings: either to enumerate undeclared catalogues on the Arranger instance, or to attempt path traversal in the constructed URL (e.g. `../sqon`).
 **Fix:** In the tool handler, check that `catalogueId` is present in `config.catalogues` before calling the Arranger client. Return an MCP error if it is not. The config is already available via `deps` in `registerTools`.
 **Standalone:** yes; one conditional check in the tool handler; no new dependencies
 
@@ -115,7 +124,7 @@ context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm ho
 **File:** `integration-tests/mcp-server/test/readTools.ts:85`
 **Severity:** low (test asserts the right outcome for the wrong reason)
 **Kind:** test correctness
-**Issue:** The test calls the `get-catalogue-fields` MCP tool with `arguments: { catalogId: 'this-catalogue-does-not-exist' }`, but the tool's actual schema (`apps/mcp-server/src/mcp/tools.ts`) expects `catalogueId`, not `catalogId`. The test likely still passes (wrong key produces a schema-validation error, and the test asserts `isError: true`), but its description claims it is exercising an upstream 404 for an unknown catalogue, not a schema-validation failure. Found while auditing `catalog`/`catalogue` spelling; not fixed as part of that pass since it's a test logic bug, not a spelling issue.
+**Issue:** The test calls the `get_catalogue_fields` MCP tool with `arguments: { catalogId: 'this-catalogue-does-not-exist' }`, but the tool's actual schema (`apps/mcp-server/src/mcp/tools.ts`) expects `catalogueId`, not `catalogId`. The test likely still passes (wrong key produces a schema-validation error, and the test asserts `isError: true`), but its description claims it is exercising an upstream 404 for an unknown catalogue, not a schema-validation failure. Found while auditing `catalog`/`catalogue` spelling; not fixed as part of that pass since it's a test logic bug, not a spelling issue.
 **Fix:** Change the test's argument key to `catalogueId`, and confirm the test still asserts the intended 404/not-found behaviour rather than a schema-validation error.
 **Standalone:** yes; one-line test fix
 
@@ -186,17 +195,20 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Kind:** terminology drift
 **Issue:** As discussed in https://github.com/overture-stack/admin/issues/182 , we have chosen the Canadian spelling `catalogue` over the American `catalog`.
 
-**Done (this pass):** all internal-only code (variables, internal function/type names, comments) and doc prose in `apps/search-server`, `modules/graphql-router`, `modules/types`, and `integration-tests` have been renamed to `catalogue`. `apps/mcp-server` was already migrated in an earlier pass.
+**Already renamed to `catalogue`:** all internal-only code (variables, internal function/type names, comments) and doc prose across `apps/search-server`, `apps/mcp-server`, `modules/graphql-router`, `modules/types`, and `integration-tests` use the `catalogue` spelling. `CatalogsMap` (`apps/search-server/src/configs/types/index.ts`) still uses the old name; unlike the two types below it isn't an external contract concern, just not yet renamed.
 
 **Remaining, deliberately not renamed (external contract surface, needs a coordinated/breaking change, not a text pass):**
 - `catalogId` / `CatalogId` / `CATALOG_ID`: the config JSON key (`base.json`), the route param, and the GraphQL/introspection field. Defined once at `modules/types/src/configs/constants.ts:4`.
 - `catalogs` and `catalogCount` as literal introspection response keys (as opposed to the same words used generically in prose, which are already renamed).
-- `CatalogsMap`, `CatalogFieldIntrospection`, `CatalogIntrospectionResponse`: exported types from `modules/types` / `apps/search-server/src/introspection/types.ts` that `apps/mcp-server` imports directly.
+- `CatalogFieldIntrospection`, `CatalogIntrospectionResponse`: exported types from `apps/search-server/src/introspection/types.ts` that `apps/mcp-server` imports directly (via a raw cross-app file path, see the "Introspection types should be Zod-first" entry above), genuinely external, unlike `CatalogsMap` above.
 - All real catalogue config JSON fixtures (`configTemplates/*.json`, `integration-tests/*/multiconfigs/*/base.json`) and the `configTemplates/configs.json.schema`: their keys are the config-file contract; renaming needs the same migration as `catalogId` above.
 - `integration-tests/server/multiconfigs/catalog1`/`catalog2` directory names, inconsistent with `integration-tests/mcp-server/multiconfigs/catalogue-a`/`catalogue-b`, which already use the correct spelling. A filesystem rename, out of scope for a text-only pass.
 
 **Fix:** when `catalogId`/`catalogs`/`catalogCount` are renamed (see the "Per-catalogue search engine credentials via env vars" and general API contract work in `roadmap.md`), accept both spellings during a deprecation window (config parser accepts either key; API dual-emits) before removing the old one. `apps/mcp-server` will need a matching update wherever it depends on introspection response shapes.
 **Standalone:** the internal rename above was standalone and is done; the remaining contract rename is not standalone, and needs coordinated changes across `modules/types`, `apps/search-server`, `apps/mcp-server`, and any external consumer of the introspection API.
+
+**Missed by the rename above, not decided against:**
+- `apps/mcp-server/src/mcp/resources.ts`: the MCP resource URI template itself still reads `arranger://introspection/catalog/{catalogueId}`, "catalog" in the path segment, "catalogue" in the parameter name. The earlier mcp-server migration renamed the parameter but not the URI itself. Reflected consistently in `docs/usage/06-ai-and-automation.md` and the mcp-server integration tests (`arranger://introspection/catalog/...`), so it's not just one file to fix, everywhere this literal string is read or asserted needs the same rename together. Since this is a URI an MCP client could reasonably treat as a stable identifier, treat as a coordinated rename rather than a quick fix; confirm no external client depends on the current path before changing it.
 
 ---
 
@@ -209,7 +221,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Kind:** terminology drift
 **Issue:** Two clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`. `docs/usage/01-arranger-configs.md` was also flagged originally but is now clean after its 2026-07-07 rewrite; no longer part of this entry.
 
-1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, `configTemplates/configs.json.schema:6`, and in code identifiers (`buildCataloguesFromFolder`, `folderName` in `apps/search-server/src/configs/catalogId.ts:18,20`) that surface in console output. The catalog→catalogue rename already landed on this function's name; only the folder→directory half remains. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
+1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, `configTemplates/configs.json.schema:6`, and in code identifiers (`buildCataloguesFromFolder`, `folderName` in `apps/search-server/src/configs/catalogueId.ts:18,20`) that surface in console output. The catalog→catalogue rename already landed on this function's name; only the folder→directory half remains. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
 
 2. "settings" vs "configuration": "configuration" is canonical for Arranger-level concepts. "Settings" appears in configs.json.schema:29 ("Settings and limits for dataset downloads") and roadmap.md:216-230 (Arranger-level prose, "server-level settings" / "index settings"). Leave ES mapping file "settings" keys and ES-referencing prose untouched.
 
@@ -288,7 +300,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ### Published SQON JSON Schema contains dangling `$ref` pointers after `anyOf` → `oneOf` normalization
 
 **File:** `modules/sqon/src/jsonSchema/runtime.ts` (`normalizeUnionKeywords`)
-**Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get-sqon-schema`)
+**Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get_sqon_schema`)
 **Kind:** bug
 **Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf`, but does not rewrite the `$ref` _path strings_, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
 **Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway; see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
@@ -312,7 +324,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:88`
 **Severity:** medium (valid SQON rejected with an opaque error; hits and aggregations paths behave inconsistently)
 **Kind:** bug
-**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute-query` tool, which forwards SQONs verbatim: an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
+**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute_query` tool, which forwards SQONs verbatim: an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
 **Fix:** Normalize a root-level leaf by wrapping it in `{ op: 'and', content: [leaf] }` before (or inside) `buildAggregations`, matching the hits path's tolerance. The MCP query builder could defensively wrap root leaves too, but the canonical fix belongs in Arranger.
 **Standalone:** yes; small fix in `buildAggregations` plus a unit test for a root-leaf SQON
 
@@ -739,14 +751,14 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 
 ## apps/search-server
 
-### No unit tests for catalog config loading or `catalogId`
+### No unit tests for `fromEnv/` env var aggregation
 
-**Files:** `apps/search-server/src/configs/index.ts`, `apps/search-server/src/configs/catalogId.ts`, `apps/search-server/src/configs/fromFiles/` (4 files), `apps/search-server/src/configs/fromEnv/` (3 files)
-**Severity:** high
+**Files:** `apps/search-server/src/configs/fromEnv/` (3 files)
+**Severity:** low (`configs/index.ts`, `fromFiles/`, and `catalogueId.ts` have test coverage: see `fileHandlers.test.ts`, `configs/index.test.ts`, and `catalogueId.test.ts`; `fromEnv/` remains uncovered)
 **Kind:** missing test coverage
-**Issue:** The catalog loading logic (recursing subdirectories, aggregating config files, generating unique IDs) has no tests. This is startup-critical: bugs cause startup failures or silent misconfiguration in multicatalog deployments. `catalogId.ts` tracks ID uniqueness across loads but is also untested. `fromFiles/` and `fromEnv/` parsing has no coverage either.
-**Fix:** Unit tests using a temporary directory fixture for flat (single-catalog) and nested (multicatalog) layouts; error handling on malformed config files; unique ID generation and collision detection in `catalogId.ts`; env var aggregation in `fromEnv/`.
-**Standalone:** yes; no running server required; mock the filesystem with a temp directory
+**Issue:** `fromEnv/`'s env var aggregation (`aggregator.ts`, `localEnvs.ts`, and the third file in that directory) has no test coverage: defaults, override precedence when both an external config value and an env var are set, and type coercion (`stringToBool`/`stringToNumber`) aren't exercised directly.
+**Fix:** Unit tests covering default values, external-config-overrides-env-var precedence, and coercion edge cases (empty string, non-numeric input).
+**Standalone:** yes; no running server or filesystem required
 
 ### No README
 

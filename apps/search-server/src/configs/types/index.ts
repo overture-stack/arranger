@@ -17,7 +17,7 @@ import {
 	type serverConfigProperties,
 } from './constants.js';
 
-export type CatalogsMap = Record<string, Partial<ArrangerConfigs<any>>>;
+export type CatalogsMap = Record<string, Partial<ArrangerConfigs<ArrangerBaseContext>>>;
 
 export type HealthConfigs = {
 	[serverConfigProperties.PING_MS]: number;

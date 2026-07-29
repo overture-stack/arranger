@@ -54,7 +54,7 @@ integration-tests/    : server (needs ES), import, admin
 
 ## Conventions
 
-**Env vars:** Only `apps/search-server/src/configs/fromEnv/localEnvs.ts` reads `process.env`. Modules receive config as typed function parameters: never `process.env` inside `modules/*`.
+**Env vars:** Only `apps/search-server/src/configs/fromEnv/localEnvs.ts` reads `process.env`. Modules receive config as typed function parameters: never `process.env` inside `modules/*`. When adding a new env var, also add it to `apps/search-server/.env.schema` (and the equivalent in `apps/mcp-server` if that's the app being changed): it's the documented reference for operators and is easy to forget since the code still runs correctly without it.
 
 **Config levels:**
 

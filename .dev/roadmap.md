@@ -133,7 +133,7 @@ Steps:
 1. Publish a final `@overture-stack/sqon-builder` version with a deprecation notice pointing consumers at `@overture-stack/sqon`.
 2. Remove `sqon-builder` as a dependency from this monorepo.
 
-**MCP surface unification** (follow-on): `modules/sqon` now owns all operator metadata via `getSqonFieldOperatorDetails()`. The `get-sqon-schema` MCP tool still returns a hand-maintained prose cheat sheet; the `arranger://introspection/sqon` resource returns raw JSON. Both should derive from `getSqonFieldOperatorDetails()` so they stay in sync automatically as operators are added. Scope this as part of the deprecation PR or immediately after.
+**MCP surface unification** (follow-on): `modules/sqon` now owns all operator metadata via `getSqonFieldOperatorDetails()`. The `get_sqon_schema` MCP tool still returns a hand-maintained prose cheat sheet; the `arranger://introspection/sqon` resource returns raw JSON. Both should derive from `getSqonFieldOperatorDetails()` so they stay in sync automatically as operators are added. Scope this as part of the deprecation PR or immediately after.
 
 ### Consolidate field-type-to-operator rules into `modules/sqon`
 
@@ -292,7 +292,7 @@ This is also more token-efficient than the alternatives: embedding SQON document
 
 **Prerequisite (resolved):** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. This was previously blocked on absorbing full operator coverage into `modules/sqon`; that absorption is now complete (see [Deprecate `sqon-builder`](#deprecate-sqon-builder)) and `modules/sqon`'s `SqonBuilder` already covers `all`, `between`, `gte`, `in`, `lte`, `not-in`, `some-not-in`, and `wildcard`. `build_sqon` can ship with full operator coverage from the start; no partial-coverage phasing is needed.
 
-**Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once the `execute-query` MCP implementation is available and real token budgets can be measured empirically.
+**Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once the `execute_query` MCP implementation is available and real token budgets can be measured empirically.
 
 #### Schema cache invalidation signal (ETag / schema hash)
 
@@ -334,14 +334,14 @@ Several arguments that materially change query results (`hits(first)`, `aggregat
 
 _Priority: medium. Recurring gap logged as a session open thread many times over; never yet promoted to a tracked item._
 
-The published docs site has no coverage of `apps/mcp-server` at all: `execute-query`, `get-sqon-schema`, `get-catalogue-fields`, `list-catalogues`, and (once shipped) `build_sqon` are all undocumented in `/docs`, despite `docs/concepts.md` already positioning Arranger as "a working search API and MCP server for AI agent access."
+The published docs site has no coverage of `apps/mcp-server` at all: `execute_query`, `get_sqon_schema`, `get_catalogue_fields`, `list_catalogues`, and (once shipped) `build_sqon` are all undocumented in `/docs`, despite `docs/concepts.md` already positioning Arranger as "a working search API and MCP server for AI agent access."
 
 **Scope:**
 
-- A dedicated `docs/usage/` page (or an extension of `06-ai-and-automation.md`) covering the full MCP tool surface: what each tool does, its input/output shape, and the elicitation-confirmation flow in `execute-query`.
+- A dedicated `docs/usage/` page (or an extension of `06-ai-and-automation.md`) covering the full MCP tool surface: what each tool does, its input/output shape, and the elicitation-confirmation flow in `execute_query`.
 - To check once `build_sqon` ships: `docs/concepts.md`'s `fieldName`/`fieldNames` definition currently ties both names to appearing "within a filter clause's `content` object"; `build_sqon` makes them flat tool-call arguments instead, so the definition will read narrower than reality unless extended to cover that usage too.
 
-_Coordinate with whichever MCP work lands next; `execute-query` already shipped (#1077), `build_sqon` is still design-only._
+_Coordinate with whichever MCP work lands next; `execute_query` already shipped (#1077), `build_sqon` is still design-only._
 
 ---
 

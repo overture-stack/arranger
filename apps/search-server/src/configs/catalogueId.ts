@@ -6,7 +6,7 @@ import { configRootProperties } from '@overture-stack/arranger-types/configs/con
 
 const hashId = (value: string) => crypto.createHash('sha1').update(value).digest('hex').slice(0, 8);
 
-export const resolveCatalogId = ({
+export const resolveCatalogueId = ({
 	aggregatedConfigs,
 	configsPath,
 	usedIds,
@@ -18,7 +18,7 @@ export const resolveCatalogId = ({
 	const folderName = path.basename(configsPath);
 	const requestedId = aggregatedConfigs[configRootProperties.CATALOG_ID];
 	const baseId = requestedId || (!['config', 'configs'].includes(folderName) && folderName);
-	const finalBaseId = baseId || `catalog-${hashId(configsPath)}`;
+	const finalBaseId = baseId || `catalogue-${hashId(configsPath)}`;
 
 	if (!usedIds.has(finalBaseId)) {
 		usedIds.add(finalBaseId);

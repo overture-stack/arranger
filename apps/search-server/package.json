@@ -18,7 +18,7 @@
 	"scripts": {
 		"dev": "NODE_ENV=development tsx watch --include './src/**/*' --include '../../modules/types/dist/**/*' --include '../../modules/graphql-router/dist/**/*' ./index.ts",
 		"start": "tsx ./index.ts",
-		"test": "tsx --test ./src/**/*.test.ts"
+		"test": "tsx --test"
 	},
 	"dependencies": {
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
