@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import { catalogueErrorCodes, classifyCatalogueFailureReason } from './classifyCatalogueFailureReason.js';
+import {
+	catalogueErrorCodes,
+	classifyCatalogueFailureReason,
+	SCHEMA_BUILD_ERROR_NAME,
+} from './classifyCatalogueFailureReason.js';
 
 suite('classifyCatalogueFailureReason', () => {
 	test('classifies a 404 response error as index_not_found', () => {
@@ -67,6 +71,17 @@ suite('classifyCatalogueFailureReason', () => {
 		const result = classifyCatalogueFailureReason(searchClientError);
 
 		assert.equal(result.code, catalogueErrorCodes.MAPPING_FETCH_ERROR);
+	});
+
+	test('classifies an error marked as a schema build failure as schema_build_error', () => {
+		const schemaBuildError = Object.assign(new Error('Something went wrong while creating the GraphQL schemas'), {
+			name: SCHEMA_BUILD_ERROR_NAME,
+		});
+		const outer = new Error('Failed to initialize Arranger server', { cause: schemaBuildError });
+
+		const result = classifyCatalogueFailureReason(outer);
+
+		assert.equal(result.code, catalogueErrorCodes.SCHEMA_BUILD_ERROR);
 	});
 
 	test('classifies an error with no identifiable cause as unknown_error', () => {

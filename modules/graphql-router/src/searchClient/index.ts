@@ -271,6 +271,7 @@ export {
 	catalogueErrorCodes,
 	type CatalogueErrorDetail,
 	classifyCatalogueFailureReason,
+	SCHEMA_BUILD_ERROR_NAME,
 } from './classifyCatalogueFailureReason.js';
 export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';
 export type { SearchClient, SupportedClientTypes } from './types.js';

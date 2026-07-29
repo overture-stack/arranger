@@ -121,6 +121,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			graphqlOptions,
 			label,
 			mappingFromIndex,
+			rethrowOnError: true,
 		});
 
 		router.use('/', graphQLRoutes);

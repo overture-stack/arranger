@@ -50,7 +50,7 @@ Returns a summary of all catalogues registered on this server instance, along wi
 - The top-level **`status`** is an aggregate over every registered catalogue: `"healthy"` (none failed), `"degraded"` (some failed, at least one available), or `"unhealthy"` (all failed). This is the same computation the server's readiness endpoint uses to decide whether to accept traffic (not yet documented on this page, see the health-checks tech-debt item).
 - Each entry under **`catalogs`** also has its own `status`, scoped to that one catalogue: `"available"` or `"failed"`. This is a different value set from the top-level `status` above; the two share a key name but describe different things.
 - A catalogue is never silently dropped from this list just because it failed to load.
-- **`error`** (an object with a machine-readable `code`: `index_not_found`, `permission_denied`, `connection_error`, `mapping_fetch_error`, or `unknown_error`, plus a short, safe-to-display `message`) is only present on a catalogue entry when its `status` is `"failed"`, omitted entirely otherwise, not set to `null`.
+- **`error`** (an object with a machine-readable `code`: `index_not_found`, `permission_denied`, `connection_error`, `mapping_fetch_error`, `schema_build_error`, or `unknown_error`, plus a short, safe-to-display `message`) is only present on a catalogue entry when its `status` is `"failed"`, omitted entirely otherwise, not set to `null`.
 
 ---
 

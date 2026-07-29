@@ -26,7 +26,7 @@ import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
-import type { SearchClient } from '#searchClient/index.js';
+import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
@@ -36,6 +36,10 @@ export const FALLBACK_LABEL = 'unlabelled catalogue';
 
 /** True when `label` is the placeholder rather than a real catalogue identifier, so callers can omit the label clause from a log line entirely instead of printing it. */
 export const isFallbackLabel = (label = '') => label === FALLBACK_LABEL;
+
+/** Wraps a schema/endpoint-build failure with the marker `classifyCatalogueFailureReason` recognizes, preserving the original error as `cause`. */
+const schemaBuildError = (message: string, cause: unknown): Error =>
+	Object.assign(new Error(message, { cause }), { name: SCHEMA_BUILD_ERROR_NAME });
 
 // TODO: Fix types once SearchClient response types are merged
 const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
@@ -139,8 +143,11 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 				typesWithMappings,
 			};
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : error);
-			throw '  Something went wrong while creating the GraphQL mapping';
+			enableDebug &&
+				console.error(
+					`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${error instanceof Error ? error.message : error}`,
+				);
+			throw schemaBuildError('Something went wrong while creating the GraphQL mapping', error);
 		}
 	}
 
@@ -327,9 +334,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			router.use(mockPath, noSchemaHandler(mockPath));
 		}
 	} catch (err) {
-		enableDebug && console.debug(`  DEBUG: ${err}`);
-		// FIXME: Throw better!
-		throw err;
+		enableDebug && console.debug(`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${err}`);
+		throw schemaBuildError('Something went wrong while starting the GraphQL endpoint', err);
 	}
 
 	router.use(
@@ -462,12 +468,12 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			schema: fullSchema,
 		};
 	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : error;
+		console.info(
+			`\n------\nError thrown while creating the GraphQL schemas${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
+		);
+		enableDebug && console.error(error instanceof Error ? error.message : error);
 
-		console.info('\n------\nError thrown while creating the GraphQL schemas.');
-		console.error(message);
-
-		throw '  Something went wrong while creating the GraphQL schemas';
+		throw schemaBuildError('Something went wrong while creating the GraphQL schemas', error);
 	}
 };
 
@@ -481,6 +487,8 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
 	mappingFromIndex: Record<string, unknown>;
+	/** When true, a schema/endpoint build failure is rethrown instead of caught and turned into a 500-responding handler. Off by default so direct callers of this function keep today's contract (never rejects); `arrangerRouter` opts in, since it already classifies and reports a rejected catalogue as `failed` rather than crashing. */
+	rethrowOnError?: boolean;
 };
 
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
@@ -492,6 +500,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	graphqlOptions = {},
 	label = configs[configRootProperties.DOCUMENT_TYPE] || FALLBACK_LABEL,
 	mappingFromIndex,
+	rethrowOnError = false,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
@@ -548,10 +557,16 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		];
 	} catch (error) {
 		const message = error instanceof Error ? error.message : `${error}`;
-		// if endpoint creation fails, let the next server step to respond with an error
-		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
+		console.info(
+			`\n------\nError thrown while generating the GraphQL endpoints${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
+		);
 		console.error(message);
 
+		if (rethrowOnError) {
+			throw error;
+		}
+
+		// if endpoint creation fails and the caller didn't opt into rethrowOnError, let the next server step respond with an error
 		return (req, res) =>
 			res.status(500).send({
 				// TODO: revisit this response
