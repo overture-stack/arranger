@@ -4,7 +4,7 @@ import path from 'path';
 import { resolveCatalogueId } from './catalogueId.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
-import type { AllServerConfigs, CatalogsMap } from './types/index.js';
+import type { AllServerConfigs, CataloguesMap } from './types/index.js';
 
 const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath,
@@ -14,7 +14,7 @@ const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath: string;
 	configsFromEnv: AllServerConfigs;
 	currentDirectory: string;
-}): Promise<CatalogsMap> => {
+}): Promise<CataloguesMap> => {
 	const usedIds = new Set<string>();
 	const resolvedBase = path.resolve(currentDirectory, catalogueConfigsPath);
 	const entries = await fs.promises.readdir(resolvedBase, { withFileTypes: true });
@@ -43,7 +43,7 @@ const buildCataloguesFromFolder = async ({
 	}
 
 	const subdirectories = getSubdirectories(entries);
-	const cataloguesMap: CatalogsMap = {};
+	const cataloguesMap: CataloguesMap = {};
 
 	if (subdirectories.length === 0) {
 		console.log('No JSON files or subdirectories found. Using env defaults.');

@@ -31,11 +31,12 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 ### Server
 
 - **Multicatalogue support** - A single Arranger server can now serve multiple catalogues simultaneously. Organise configs in subdirectories under `CONFIGS_PATH` (one subdirectory per catalogue). Existing flat layouts continue to work as single-catalogue deployments: no migration required.
+- **Partial catalogue availability** - A catalogue whose search index is missing or unreachable no longer crashes the whole server. It's reported as `failed` (with an `error` object: a machine-readable `code` and a human-readable `message`) in `GET /introspection` and its own `GET /introspection/:catalogueId`, alongside a server-wide `status` (`healthy`/`degraded`/`unhealthy`). Its GraphQL endpoint returns `404` instead of taking the process down. New `GET /ready` readiness endpoint reflects this aggregate for orchestration probes. `GET /ping` (liveness) is unaffected and stays blind to catalogue state on purpose, so a search-engine outage doesn't trigger a restart loop. New `READY_PATH` env var (default `/ready`), mirrors `PING_PATH`.
 - **Introspection API** - New REST endpoints for tooling and LLM integration:
-    - `GET /introspection` - Lists all registered catalogues with their document types, GraphQL paths, and introspection paths.
+    - `GET /introspection` - Lists all registered catalogues with their document types, GraphQL paths, introspection paths, and availability `status`.
     - `GET /introspection/:catalogueId` - Returns all fields for a catalogue, their ES types, and valid SQON operators grouped by field type.
     - `GET /introspection/sqon` - Returns the SQON JSON Schema.
-    - See [docs/usage/04-introspection.md](docs/usage/04-introspection.md) for full API reference.
+    - See [docs/usage/05-introspection.md](docs/usage/05-introspection.md) for full API reference.
 - **Network search federation** - A catalogue can federate queries across multiple remote Arranger nodes via `network.json` config. Supports passthrough headers for forwarding auth tokens to remote nodes.
 - **GraphQL query complexity limits** - Configurable alias count and query depth limits protect against abusive queries. Set via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` env vars or per-catalogue config. Unset by default.
 - **CORS configuration** - `ALLOWED_CORS_ORIGINS` env var controls which origins are permitted. Omit to allow all.

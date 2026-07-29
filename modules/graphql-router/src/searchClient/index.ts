@@ -266,6 +266,12 @@ const buildSearchClient = async (options: { client?: string; node?: string; pass
 
 export default buildSearchClient;
 
+export {
+	type CatalogueErrorCode,
+	catalogueErrorCodes,
+	type CatalogueErrorDetail,
+	classifyCatalogueFailureReason,
+} from './classifyCatalogueFailureReason.js';
 export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';
 export type { SearchClient, SupportedClientTypes } from './types.js';
 export { detectClientTypeFromHeaders, getClientType, resolveClientTypeFromNodeInfo };

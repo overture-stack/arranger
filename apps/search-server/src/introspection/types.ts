@@ -1,4 +1,7 @@
+import type { CatalogueErrorDetail } from '@overture-stack/arranger-graphql-router';
 import type { VersionedSqonJsonSchema } from '@overture-stack/sqon';
+
+import type { CatalogueStatus, ServerAggregateStatus } from '#availability/index.js';
 
 export type IntrospectionResponse = {
 	catalogCount: number;
@@ -7,15 +10,18 @@ export type IntrospectionResponse = {
 		{
 			description?: string;
 			documentType: string;
+			error?: CatalogueErrorDetail;
 			paths: {
 				fields?: string;
 				graphql: string;
 				introspection: string;
 			};
+			status: CatalogueStatus;
 		}
 	>;
 	mode: 'single' | 'multiple';
 	sqonSchemaPath: string;
+	status: ServerAggregateStatus;
 };
 
 export type SqonOperatorDetail = {

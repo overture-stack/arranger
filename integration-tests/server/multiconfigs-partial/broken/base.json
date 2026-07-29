@@ -1,0 +1,6 @@
+{
+	"catalogId": "catalogue-partial-broken",
+	"description": "A catalogue whose index was never created, for testing.",
+	"documentType": "widget",
+	"esIndex": "testing-partial-availability-does-not-exist"
+}

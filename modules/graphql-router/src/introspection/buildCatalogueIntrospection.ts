@@ -1,6 +1,6 @@
 import type { ExtendedConfigs } from '@overture-stack/arranger-types/configs';
 
-// Field type classification sets: verbatim from search-server/catalogDetails.ts.
+// Field type classification sets: verbatim from apps/search-server/src/introspection/serverDetails.ts.
 // Consolidation with modules/sqon operator rules is a separate tech-debt item.
 const NUMERIC_TYPES = new Set(['double', 'float', 'integer', 'long', 'number']);
 const RANGE_TYPES = new Set(['date', ...NUMERIC_TYPES]);

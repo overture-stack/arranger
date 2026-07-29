@@ -29,6 +29,12 @@ context: npm's flat hoisting causes esbuild binary version conflicts across work
 standalone: no
 context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm hoisting problem above: tsup@8.5.1 brings esbuild@^0.27.0, which conflicts with tsx's esbuild@~0.28.0 and bundle-require's peer dep resolution under npm. Revisit after pnpm migration.
 
+### `apps/search-server` and `integration-tests/server` don't rebuild `file:`-referenced workspace packages before testing
+
+standalone: yes
+context: `apps/search-server` depends on `modules/graphql-router` via `"file:../../modules/graphql-router"`, resolved through that package's `dist/` (its `package.json`'s `main`), never live source. Running `search-server`'s or `integration-tests/server`'s tests without first running `npm run build -w modules/graphql-router` silently tests against whatever `dist/` was last built, no warning that it's stale. Concretely hit during the multicatalogue partial-availability work (2026-07-24): the `{ cause: err }` fix in `fetchMapping.ts`/`router.ts` passed every unit test (which import from source via internal path aliases, never crossing the package boundary) but silently produced `unknown_error` instead of `index_not_found` when exercised through a real integration test, because `dist/` was 8 days stale at that point. Only caught because a real end-to-end integration test against live Elasticsearch was written and run (see `integration-tests/server/test/partialAvailability.test.ts`); a unit test alone could not have caught this, by construction.
+fix: add a `pretest` step to `apps/search-server` and `integration-tests/server` that rebuilds their local `file:` dependencies first, or wire `turbo:test`'s dependency graph to do this automatically (Turbo already tracks the monorepo's build graph); at minimum, document prominently in `AGENTS.md`'s "Running tests" section that changes to `modules/*` require an explicit rebuild before testing any consumer app, the current guidance to "always run from the monorepo root" doesn't by itself guarantee a fresh build.
+
 ## apps/mcp-server
 
 ### `test` script's glob silently skips test files outside one specific directory depth
@@ -142,6 +148,49 @@ Two things make this worth tracking rather than leaving implicit in the design d
 
 **Fix:** When `build_sqon` ships, revisit all three surfaces together: (a) rewrite `execute_query`'s description from "call `get_sqon_schema`, then write a `sqon`" to "call `build_sqon`, then pass its output"; (b) drop the cheat-sheet message and the `## SQON grammar` section from `query_arranger`, replacing them with a workflow step that calls `build_sqon`; (c) decide whether `get_sqon_schema` keeps the cheat sheet as human-facing text or returns only the machine-readable schema. Note this interacts with the **MCP surface unification** follow-on under [Deprecate `sqon-builder`](roadmap.md#deprecate-sqon-builder), which proposes deriving the cheat sheet from `getSqonFieldOperatorDetails()` so it stays in sync automatically. If `build_sqon` lands first, that derivation work may be unnecessary; sequence the two deliberately rather than doing both.
 **Standalone:** no; gated on `build_sqon` shipping. Do not delete the cheat sheet ahead of that: it is currently the only SQON generation guidance the tools-only MCP clients ever receive, since most hosts do not implement the prompts primitive.
+
+### `list_catalogues` and the `query_arranger` prompt list every configured catalogue with no regard for `status`
+
+**File:** `apps/mcp-server/src/mcp/tools.ts` (`list_catalogues`); `apps/mcp-server/src/mcp/prompts.ts` (`formatCatalogueSummary`)
+**Severity:** medium (a `failed` catalogue is recommended to the researcher as if queryable; `execute_query` against it then fails with no reason the model can act on other than retrying)
+**Kind:** missing integration with a recently-shipped feature
+**Issue:** [Multicatalog catalogue lifecycle and metadata](roadmap.md#multicatalog-catalogue-lifecycle-and-metadata) added `status`/`error` (`{code, message}`) to every entry in `GET /introspection`'s `catalogs` map, plus a top-level `status` for the server-wide aggregate. This lets a caller tell a catalogue that failed to build (missing index, unreachable cluster) apart from one that's actually available; overture-dev currently has 4 of its 5 catalogues `failed`. Neither MCP consumer reads that field.
+
+`query_arranger`'s `formatCatalogueSummary` consumes `client.getServerIntrospection()` directly with no Zod validation, so the data reaches it untouched. It just isn't used: every catalogue's `id` and `documentType` render unconditionally.
+
+`list_catalogues` is a deeper gap. `tools.ts` runs the response through `serverIntrospectionSchema.parse(data)` first. That schema (see the next entry) doesn't declare `status`/`error`, so Zod's default `.parse()` silently strips those keys before `list_catalogues`'s handler code ever runs. Filtering by `status` there is impossible until the schema is fixed.
+
+Either way, an LLM using either surface has no way to know a listed catalogue is currently unusable until it calls `execute_query` and gets a 404.
+
+**Fix:** Filter or annotate by `status` in both places: at minimum, exclude `failed` (and `disabled`) catalogues from `list_catalogues`'s output and from the prompt's catalogue summary, or surface `status`/`error` alongside each entry so the model can inform the researcher instead of silently picking an unusable catalogue. `query_arranger`'s fix is a self-contained rendering change; `list_catalogues`'s fix depends on the schema fix in the next entry.
+**Standalone:** `query_arranger`'s half yes; `list_catalogues`'s half no, blocked on the schema entry below
+
+### mcp-server's Zod schemas don't declare the 2026-07-24 catalogue status fields
+
+**File:** `apps/mcp-server/src/arranger/types.ts` (`cataloguesSchema`, `serverIntrospectionSchema`, `catalogueIntrospectionSchema`)
+**Severity:** medium (silently strips data for the listing schemas; throws for the per-catalogue schema, see the next entry)
+**Kind:** missing integration with a recently-shipped feature
+**Issue:** None of these three schemas were updated when Arranger's `GET /introspection` and `GET /introspection/:catalogueId` gained `status`/`error` (and a top-level `status`) on 2026-07-24. `cataloguesSchema`/`serverIntrospectionSchema` are plain `zod.object({...})`s with no `.passthrough()`, Zod v3 silently drops keys it doesn't recognize by default, so `list_catalogues` (which runs `serverIntrospectionSchema.parse(data)`) never sees `status` at all, not a rendering gap, the data is gone before that code runs. `catalogueIntrospectionSchema` is worse: it's covered in the entry below.
+**Fix:** Add `status: zod.enum(['available', 'failed', 'disabled', 'loading'])` (optional `error: zod.object({ code: zod.string(), message: zod.string() })`, present only when `status === 'failed'`, omitted rather than `null` when `available`) to `cataloguesSchema`'s per-catalogue object, and a top-level `status` to `serverIntrospectionSchema`. Ideally done as part of the already-logged "Introspection types should be Zod-first" tech-debt item (see the `apps/mcp-server` section above), which would derive these schemas from `search-server`'s own Zod definitions instead of hand-maintaining a second copy that can drift like this.
+**Standalone:** yes; schema-only change, unblocks the `list_catalogues` fix above
+
+### `get_catalogue_fields` and `execute_query` throw a raw Zod validation error for a `failed` catalogue instead of a clean message
+
+**File:** `apps/mcp-server/src/mcp/tools.ts` (`get_catalogue_fields`); `apps/mcp-server/src/mcp/executeQueryTool.ts`
+**Severity:** medium (confirmed not a crash: the MCP SDK's tool dispatcher, `node_modules/@modelcontextprotocol/sdk/dist/cjs/server/mcp.js:138-144`, catches any thrown error and returns a normal `{ isError: true, content: [...] }` tool response; but the message shown to the calling agent is Zod's raw issue-array dump, not Arranger's already-correct, human-readable one)
+**Kind:** bug
+**Issue:** `catalogueIntrospectionSchema` requires `documentType`, `generatedAt`, `meta`, `operators`, and `fields`. A `failed` catalogue's `/introspection/:catalogueId` response (by design, see "Multicatalog catalogue lifecycle and metadata") has none of these: it's `{ catalogueId, status, error: { code, message }, details }`. `catalogueIntrospectionSchema.parse(data)` in both `tools.ts:68` and `executeQueryTool.ts` throws for that shape. An agent asking about a currently-down catalogue (the overture-dev case: 4 of 5) gets a confusing technical validation error at exactly the moment this whole feature was meant to hand it a clear "index not found" instead.
+**Fix:** Either union the schema (`zod.union([catalogueIntrospectionSchema, failedCatalogueSchema])`) and branch on `status` before returning, or check `status` on the raw response before calling `.parse()` and short-circuit into a clean tool response using Arranger's own `error.code`/`error.message` when it's `failed`. The second approach avoids parsing twice and keeps the "what does a failed response look like" logic in one place.
+**Standalone:** yes; depends conceptually on the same status vocabulary as the two entries above but is a self-contained code change
+
+### `validateArrangerConnection` reports a `failed` catalogue as validated
+
+**File:** `apps/mcp-server/src/arranger/validation.ts`
+**Severity:** medium (false confidence at the one place explicitly meant to catch this at startup)
+**Kind:** bug
+**Issue:** The function's own docstring says it ensures "all configured catalogues are available," but it only checks that `client.getCatalogueIntrospection(catalogueId)` resolves without throwing, i.e. that the HTTP request succeeded, and never inspects the response body. A `failed` catalogue's metadata endpoint deliberately returns `200` (by design, so status stays reachable even when the catalogue itself is down), so this validation passes and logs "All configured catalogues validated" even when, per the current overture-dev deployment, 4 of the 5 configured catalogues are actually `failed`.
+**Fix:** After fetching each catalogue's introspection, check its `status`; if `failed`, either throw (matching the function's existing "throw on any problem" contract) or downgrade to a `logger.warn` listing which catalogues are down and their `error.code`/`error.message`, rather than treating a `failed` catalogue identically to a missing one. Needs the schema fix above first (or an inline check against the raw response) since the current `catalogueIntrospectionSchema` can't represent a `failed` response at all.
+**Standalone:** mostly yes; sequence after the schema fix above so it isn't done against data Zod would otherwise strip
 
 ---
 
@@ -274,6 +323,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Issue:** The query processing page explains the pipeline conceptually but has no link to `03-building-sqon-queries.md`, which is the practical follow-up showing how to construct SQONs. Readers who want to go from theory to implementation have no signpost.
 **Fix:** Add a tip callout at the bottom of `02-query-processing.md` pointing to `03-building-sqon-queries.md`.
 **Standalone:** yes; one-line docs addition
+
+### No published docs page for the liveness/readiness health endpoints
+
+**File:** none exists; would live at `docs/usage/` (e.g. `09-health-checks.md`) or as a new section in `docs/setup.md`
+**Severity:** low (operators can still find the endpoints in `.env.schema`/code; no self-serve reference for deployment/probe configuration)
+**Kind:** missing documentation
+**Issue:** Neither `/ping` (liveness, process-alive only, deliberately blind to catalogue state) nor `/ready` (readiness, added 2026-07-24, reflects the `healthy`/`degraded`/`unhealthy` catalogue aggregate from `GET /introspection`, see "Multicatalog catalogue lifecycle and metadata" in `roadmap.md`) is documented anywhere in `/docs`. This isn't a staleness gap, no page ever covered this; someone wiring up Kubernetes probes, a load balancer health check, or any other deployment tooling against these endpoints has to read the source to know they exist, what they return, or the distinction between the two (in particular, why liveness must never depend on catalogue/search-engine state, an easy anti-pattern to fall into).
+**Fix:** Add a docs page or section covering both endpoints: path (configurable via `PING_PATH`/`READY_PATH`), response shape, HTTP status semantics (`/ready` returns `503` only when `unhealthy`), and the liveness-vs-readiness distinction with the reasoning for why liveness stays catalogue-blind. Cross-link from `GET /introspection` in `05-introspection.md`, since its top-level `status` there is the same computation `/ready` uses.
+**Standalone:** yes; documentation addition only, no code changes
 
 ---
 

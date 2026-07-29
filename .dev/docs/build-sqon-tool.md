@@ -28,13 +28,13 @@ Example of the third mistake:
 
 Prompting does not fix this reliably. Putting the SQON schema in a system prompt costs tokens on every request, and the model still has to apply a complex schema correctly under real conditions.
 
-### How `execute-query` handles this today
+### How `execute_query` handles this today
 
-`execute-query` takes a raw `sqon` parameter. It works around this same problem with a "SQON Cheat Sheet," a block of worked examples and grammar rules returned by `get-sqon-schema`. That shipped before this document existed, and was the right call: it let `execute-query` ship without waiting on `build_sqon`.
+`execute_query` takes a raw `sqon` parameter. It works around this same problem with a "SQON Cheat Sheet," a block of worked examples and grammar rules returned by `get_sqon_schema`. That shipped before this document existed, and was the right call: it let `execute_query` ship without waiting on `build_sqon`.
 
 Once `build_sqon` exists, two things change:
 
-- `execute-query`'s instructions change from "call `get-sqon-schema`, then write a `sqon`" to "call `build_sqon`, then pass its output as `sqon`."
+- `execute_query`'s instructions change from "call `get_sqon_schema`, then write a `sqon`" to "call `build_sqon`, then pass its output as `sqon`."
 - The cheat sheet stops being the primary way an LLM constructs a query. It may still be worth keeping as a human-facing reference; that is a separate decision.
 
 Neither of these is a correction to the current implementation. `build_sqon` exists specifically to take over a job the cheat sheet is doing today.
@@ -117,7 +117,7 @@ build_sqon(
 ### Where `build_sqon` sits in the full flow
 
 ```
-get-catalogue-fields    →    LLM confirms plain-English intent    →    build_sqon    →    execute-query
+get_catalogue_fields    →    LLM confirms plain-English intent    →    build_sqon    →    execute_query
   find valid fields               with the user, no tool call          one call        run the final SQON
 ```
 
@@ -201,7 +201,7 @@ The tool's operator descriptions are generated from `getSqonFieldOperatorDetails
 
 ```typescript
 {
-  sqon: SqonNode,    // the built SQON, ready to pass to execute-query
+  sqon: SqonNode,    // the built SQON, ready to pass to execute_query
   summary: string    // plain-English description of the whole SQON
 }
 ```
@@ -253,7 +253,7 @@ SQON already supports this structurally: a combination node's children can be le
 
 ### Things to know about `reduceSqon` before building v3
 
-`reduceSqon` runs automatically inside `SqonBuilder`, and therefore inside `build_sqon`/`combine_sqons`. It does not run on a raw SQON sent straight to `execute-query`.
+`reduceSqon` runs automatically inside `SqonBuilder`, and therefore inside `build_sqon`/`combine_sqons`. It does not run on a raw SQON sent straight to `execute_query`.
 
 - **`not` wraps one item in an array; it does not rewrite the operator.** A negated clause is `{"op":"not","content":[<leaf>]}`, never something like `{"op":"not-gt", ...}`.
 - **Two clauses on the same field and operator get merged, not kept separate.** The merge rule depends on the combinator:

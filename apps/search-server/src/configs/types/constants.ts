@@ -3,6 +3,7 @@ export const serverConfigProperties = {
 	CONFIGS_PATH: 'catalogueConfigsPath',
 	PING_MS: 'pingMs',
 	PING_PATH: 'pingPath',
+	READY_PATH: 'readyPath',
 	SERVER_PORT: 'serverPort',
 } as const;
 

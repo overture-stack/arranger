@@ -4,6 +4,10 @@ export { createSchemasFromConfigs, default as getGraphQLRoutes } from './graphql
 export { default } from './router.js';
 export {
 	default as buildSearchClient,
+	type CatalogueErrorCode,
+	catalogueErrorCodes,
+	type CatalogueErrorDetail,
+	classifyCatalogueFailureReason,
 	getIndexMapping,
 	type SearchClient,
 	type SupportedClientTypes,

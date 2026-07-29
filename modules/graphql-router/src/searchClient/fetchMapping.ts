@@ -97,7 +97,7 @@ export const fetchMapping = async ({
 			return mapping;
 		} catch (err) {
 			enableDebug && console.debug(`\n  DEBUG: ${err}`);
-			throw new Error(`Could not create a mapping`);
+			throw new Error(`Could not create a mapping`, { cause: err });
 		}
 	}
 

@@ -121,8 +121,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		return router;
 	} catch (err) {
 		console.error('\n------\nError initializing Arranger instance:', err);
-		// TODO: create a fallback route to indicate the server needs attention
-		throw new Error('Failed to initialize Arranger server'); // Rethrow for better error propagation
+		throw new Error('Failed to initialize Arranger server', { cause: err });
 	}
 };
 

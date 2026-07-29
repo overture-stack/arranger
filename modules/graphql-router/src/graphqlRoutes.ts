@@ -76,12 +76,12 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					return extendFacets(facetsConfigs, extendedFields);
 				} catch (err) {
 					console.log(
-						'    Something happened while extending the column mappings.\n' +
-							'    Defaulting to "table" config from files.\n',
+						'    Something happened while extending the facet mappings.\n' +
+							'    Defaulting to "facets" config from files.\n',
 					);
 					enableDebug && console.debug(`  DEBUG: ${err}`);
 
-					return configs?.[configRootProperties.TABLE] || [];
+					return configs?.[configRootProperties.FACETS] || [];
 				}
 			})();
 

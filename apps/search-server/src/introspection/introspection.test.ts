@@ -16,6 +16,7 @@ suite('introspection tests', () => {
 
 		assert.equal(result.mode, 'single');
 		assert.equal(result.catalogCount, 1);
+		assert.equal(result.status, 'healthy');
 		assert.deepEqual(result.catalogs, {
 			models: {
 				documentType: 'model',
@@ -24,6 +25,7 @@ suite('introspection tests', () => {
 					graphql: '/graphql',
 					introspection: '/introspection/models',
 				},
+				status: 'available',
 			},
 		});
 		assert.equal(result.sqonSchemaPath, '/introspection/sqon');
@@ -50,6 +52,7 @@ suite('introspection tests', () => {
 					graphql: '/chemistry/graphql',
 					introspection: '/introspection/chemistry',
 				},
+				status: 'available',
 			},
 			imaging: {
 				documentType: 'file',
@@ -57,6 +60,7 @@ suite('introspection tests', () => {
 					graphql: '/imaging/graphql',
 					introspection: '/introspection/imaging',
 				},
+				status: 'available',
 			},
 		});
 	});
@@ -100,5 +104,45 @@ suite('introspection tests', () => {
 		const entry = result.catalogs['models'];
 		assert.ok(entry !== undefined);
 		assert.ok(!('description' in entry));
+	});
+
+	test('includes a failed catalogue in the listing with its error code and message, not just the available ones', () => {
+		const result = buildBaseIntrospection({
+			catalogs: {
+				broken: { documentType: 'file' },
+				healthy: { documentType: 'file' },
+			},
+			catalogueStatuses: {
+				broken: {
+					status: 'failed',
+					error: { code: 'index_not_found', message: 'The configured search index could not be found.' },
+				},
+				healthy: { status: 'available' },
+			},
+		});
+
+		assert.equal(result.catalogCount, 2);
+		assert.equal(result.status, 'degraded');
+		assert.equal(result.catalogs.broken?.status, 'failed');
+		assert.equal(result.catalogs.broken?.error?.code, 'index_not_found');
+		assert.equal(result.catalogs.broken?.error?.message, 'The configured search index could not be found.');
+		assert.equal(result.catalogs.healthy?.status, 'available');
+		assert.equal('error' in (result.catalogs.healthy ?? {}), false);
+	});
+
+	test('reports unhealthy when every catalogue has failed', () => {
+		const result = buildBaseIntrospection({
+			catalogs: {
+				broken: { documentType: 'file' },
+			},
+			catalogueStatuses: {
+				broken: {
+					status: 'failed',
+					error: { code: 'connection_error', message: 'Could not connect to the search engine.' },
+				},
+			},
+		});
+
+		assert.equal(result.status, 'unhealthy');
 	});
 });

@@ -1,37 +1,72 @@
-import arrangerRouter, { type SearchClient } from '@overture-stack/arranger-graphql-router';
+import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
+import arrangerRouter, {
+	type ArrangerBaseContext,
+	classifyCatalogueFailureReason,
+	type SearchClient,
+} from '@overture-stack/arranger-graphql-router';
 import { Router, type Router as ExpressRouter } from 'express';
 
-import type { CatalogsMap } from '#configs/types/index.js';
+import { type CatalogueStatusDetail, catalogueStatuses as CATALOGUE_STATUS } from '#availability/index.js';
+import type { CataloguesMap } from '#configs/types/index.js';
 
-const buildCatalogueRouter = async ({
-	catalogueId,
+export const buildCatalogueRouter = async ({
 	catalogueConfigs,
 	enableDebug,
 	esClient,
 }: {
-	catalogueId: string;
-	catalogueConfigs: CatalogsMap[string];
+	catalogueConfigs: CataloguesMap[string];
 	enableDebug: boolean;
 	esClient?: SearchClient;
-}): Promise<[string, ExpressRouter]> => {
+}): Promise<ExpressRouter> => {
 	const { getServerSideFilter, ...configs } = catalogueConfigs;
-	const catalogueRouter = await arrangerRouter({
+	return arrangerRouter({
 		configs: { enableDebug, ...configs },
 		esClient,
 		getServerSideFilter,
 	});
-	return [catalogueId, catalogueRouter];
+};
+
+/** A catalogue that failed to build still gets a router, so requests get a clear status instead of a generic 404 or a crashed server. */
+const buildFailedCatalogueRouter = ({
+	catalogueConfigs,
+	catalogueId,
+	statusDetail,
+}: {
+	catalogueConfigs: CataloguesMap[string];
+	catalogueId: string;
+	statusDetail: Extract<CatalogueStatusDetail, { status: typeof CATALOGUE_STATUS.FAILED }>;
+}): ExpressRouter => {
+	const router = Router();
+	const typedConfigs = catalogueConfigs as Partial<ConfigsObject<ArrangerBaseContext>>;
+	const metadataBody = {
+		catalogueId,
+		...(typedConfigs.description ? { description: typedConfigs.description } : {}),
+		documentType: typedConfigs.documentType || '',
+		error: statusDetail.error,
+		status: statusDetail.status,
+	};
+
+	router.get('/introspection', (_req, res) => res.json(metadataBody));
+	router.use((_req, res) => res.status(404).json({ ...metadataBody, details: `/introspection/${catalogueId}` }));
+
+	return router;
 };
 
 export default async ({
+	buildCatalogueRouterFn = buildCatalogueRouter,
 	catalogs,
 	enableDebug,
 	esClient,
 }: {
-	catalogs: CatalogsMap;
+	buildCatalogueRouterFn?: typeof buildCatalogueRouter;
+	catalogs: CataloguesMap;
 	enableDebug: boolean;
 	esClient?: SearchClient;
-}): Promise<{ router: Router; catalogueRouters: Record<string, ExpressRouter> }> => {
+}): Promise<{
+	catalogueRouters: Record<string, ExpressRouter>;
+	catalogueStatuses: Record<string, CatalogueStatusDetail>;
+	router: Router;
+}> => {
 	const catalogueEntries = Object.entries(catalogs);
 	const catalogueCount = catalogueEntries.length;
 
@@ -39,31 +74,50 @@ export default async ({
 		throw new Error('No catalogues configured');
 	}
 
-	try {
-		// TODO: (multicatalogue-status): add catalogue-root metadata responses for unavailable catalogues.
-		// With enableDebug, these responses should eventually include richer diagnostics such as stack/context.
-		const cataloguePairs = await Promise.all(
-			catalogueEntries.map(([catalogueId, catalogueConfigs]) =>
-				buildCatalogueRouter({ catalogueId, catalogueConfigs, enableDebug, esClient }),
-			),
-		);
+	const settledResults = await Promise.allSettled(
+		catalogueEntries.map(([, catalogueConfigs]) => buildCatalogueRouterFn({ catalogueConfigs, enableDebug, esClient })),
+	);
 
-		const catalogueRouters = Object.fromEntries(cataloguePairs);
-		const router = Router();
+	const catalogueResults = settledResults.map((result, index) => {
+		const [catalogueId, catalogueConfigs] = catalogueEntries[index] as [string, CataloguesMap[string]];
 
-		if (catalogueCount === 1 && cataloguePairs[0]) {
-			const [, catalogueRouter] = cataloguePairs[0];
-			router.use(catalogueRouter);
-		} else {
-			for (const [catalogueId, catalogueRouter] of cataloguePairs) {
-				router.use(`/${catalogueId}`, catalogueRouter);
-				console.log(`  - Catalogue mounted at /${catalogueId}`);
-			}
+		if (result.status === 'fulfilled') {
+			const statusDetail: CatalogueStatusDetail = { status: CATALOGUE_STATUS.AVAILABLE };
+			return { catalogueId, catalogueRouter: result.value, statusDetail };
 		}
 
-		return { router, catalogueRouters };
-	} catch (err) {
-		console.error('\n------\nError creating catalogue routers:\n', err instanceof Error ? err.message : err);
-		throw new Error('Failure to generate catalogue routing');
+		const error = classifyCatalogueFailureReason(result.reason);
+		const statusDetail: CatalogueStatusDetail = { status: CATALOGUE_STATUS.FAILED, error };
+
+		console.error(
+			`\n------\nCatalogue "${catalogueId}" failed to load (${error.code}: ${error.message}); continuing with the remaining catalogues.\n`,
+		);
+
+		return {
+			catalogueId,
+			catalogueRouter: buildFailedCatalogueRouter({ catalogueConfigs, catalogueId, statusDetail }),
+			statusDetail,
+		};
+	});
+
+	const catalogueRouters = Object.fromEntries(
+		catalogueResults.map(({ catalogueId, catalogueRouter }) => [catalogueId, catalogueRouter]),
+	);
+	const catalogueStatuses = Object.fromEntries(
+		catalogueResults.map(({ catalogueId, statusDetail }) => [catalogueId, statusDetail]),
+	);
+
+	const router = Router();
+	const [singleResult] = catalogueResults;
+
+	if (catalogueCount === 1 && singleResult) {
+		router.use(singleResult.catalogueRouter);
+	} else {
+		for (const { catalogueId, catalogueRouter, statusDetail } of catalogueResults) {
+			router.use(`/${catalogueId}`, catalogueRouter);
+			console.log(`  - Catalogue mounted at /${catalogueId} (${statusDetail.status})`);
+		}
 	}
+
+	return { catalogueRouters, catalogueStatuses, router };
 };

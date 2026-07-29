@@ -14,18 +14,31 @@ Returns a summary of all catalogues registered on this server instance, along wi
 
 ```json
 {
-	"catalogCount": 1,
-	"mode": "single",
+	"catalogCount": 2,
+	"mode": "multiple",
+	"status": "degraded",
 	"sqonSchemaPath": "/introspection/sqon",
 	"catalogs": {
 		"participants": {
 			"description": "Clinical trial participant records.",
 			"documentType": "participant",
 			"paths": {
-				"fields": "/introspection/fields",
-				"graphql": "/graphql",
+				"graphql": "/participants/graphql",
 				"introspection": "/introspection/participants"
-			}
+			},
+			"status": "available"
+		},
+		"biosamples": {
+			"documentType": "biosample",
+			"error": {
+				"code": "index_not_found",
+				"message": "The configured search index could not be found."
+			},
+			"paths": {
+				"graphql": "/biosamples/graphql",
+				"introspection": "/introspection/biosamples"
+			},
+			"status": "failed"
 		}
 	}
 }
@@ -34,6 +47,10 @@ Returns a summary of all catalogues registered on this server instance, along wi
 - `mode` is `"single"` when one catalogue is registered, `"multi"` otherwise.
 - `description` is omitted when not set in the catalogue's `base.json`.
 - `paths.fields` is only present in single-catalogue mode as a convenience alias (see below).
+- The top-level **`status`** is an aggregate over every registered catalogue: `"healthy"` (none failed), `"degraded"` (some failed, at least one available), or `"unhealthy"` (all failed). This is the same computation the server's readiness endpoint uses to decide whether to accept traffic (not yet documented on this page, see the health-checks tech-debt item).
+- Each entry under **`catalogs`** also has its own `status`, scoped to that one catalogue: `"available"` or `"failed"`. This is a different value set from the top-level `status` above; the two share a key name but describe different things.
+- A catalogue is never silently dropped from this list just because it failed to load.
+- **`error`** (an object with a machine-readable `code`: `index_not_found`, `connection_error`, `mapping_fetch_error`, or `unknown_error`, plus a short, safe-to-display `message`) is only present on a catalogue entry when its `status` is `"failed"`, omitted entirely otherwise, not set to `null`.
 
 ---
 
@@ -76,6 +93,23 @@ Returns field-level details for one catalogue: all fields, their Elasticsearch t
 - **`meta.authFiltered`** indicates whether a server-side filter was active when the response was generated (i.e. the field list may be narrowed by access control).
 
 Note: In single-catalogue mode, `/introspection/fields` is an alias for this endpoint, and this disappears when a second catalogue is added. Code that hardcodes `/introspection/fields` should be updated to use the explicit catalogue ID path before adding a second catalogue.
+
+**Failed catalogues:** if a catalogue is registered but its search index couldn't be reached (see `status` in `GET /introspection` above), this endpoint still returns `200`, with a minimal payload instead of the full field/operator listing:
+
+```json
+{
+	"catalogueId": "biosamples",
+	"description": "Tissue sample records.",
+	"documentType": "biosample",
+	"status": "failed",
+	"error": {
+		"code": "index_not_found",
+		"message": "The configured search index could not be found."
+	}
+}
+```
+
+`documentType` and (when configured) `description` come straight from the catalogue's `base.json`, same values `GET /introspection` would show for it, since that much is known from config alone, independent of whether the index is reachable. `description` is omitted when not set, same as everywhere else. Every other path for that catalogue (its GraphQL endpoint included) returns `404` instead, with the same fields plus a `details` pointer back to this endpoint, while it remains `failed`. This endpoint is the one place its status stays reachable without that extra pointer.
 
 ---
 
