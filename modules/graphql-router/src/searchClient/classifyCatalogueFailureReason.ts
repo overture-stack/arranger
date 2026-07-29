@@ -3,6 +3,7 @@ export const catalogueErrorCodes = {
 	CONNECTION_ERROR: 'connection_error',
 	INDEX_NOT_FOUND: 'index_not_found',
 	MAPPING_FETCH_ERROR: 'mapping_fetch_error',
+	PERMISSION_DENIED: 'permission_denied',
 	UNKNOWN_ERROR: 'unknown_error',
 } as const;
 
@@ -53,6 +54,13 @@ export const classifyCatalogueFailureReason = (error: unknown): CatalogueErrorDe
 		return {
 			code: catalogueErrorCodes.INDEX_NOT_FOUND,
 			message: 'The configured search index could not be found.',
+		};
+	}
+
+	if (searchClientError?.statusCode === 401 || searchClientError?.statusCode === 403) {
+		return {
+			code: catalogueErrorCodes.PERMISSION_DENIED,
+			message: 'Access was denied while connecting to the search engine. Check the configured search engine user permissions.',
 		};
 	}
 

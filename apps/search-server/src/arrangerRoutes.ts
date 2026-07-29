@@ -11,15 +11,18 @@ import type { CataloguesMap } from '#configs/types/index.js';
 
 export const buildCatalogueRouter = async ({
 	catalogueConfigs,
+	catalogueId,
 	enableDebug,
 	esClient,
 }: {
 	catalogueConfigs: CataloguesMap[string];
+	catalogueId: string;
 	enableDebug: boolean;
 	esClient?: SearchClient;
 }): Promise<ExpressRouter> => {
 	const { getServerSideFilter, ...configs } = catalogueConfigs;
 	return arrangerRouter({
+		catalogueId,
 		configs: { enableDebug, ...configs },
 		esClient,
 		getServerSideFilter,
@@ -75,7 +78,9 @@ export default async ({
 	}
 
 	const settledResults = await Promise.allSettled(
-		catalogueEntries.map(([, catalogueConfigs]) => buildCatalogueRouterFn({ catalogueConfigs, enableDebug, esClient })),
+		catalogueEntries.map(([catalogueId, catalogueConfigs]) =>
+			buildCatalogueRouterFn({ catalogueConfigs, catalogueId, enableDebug, esClient }),
+		),
 	);
 
 	const catalogueResults = settledResults.map((result, index) => {

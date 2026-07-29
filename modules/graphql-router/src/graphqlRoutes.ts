@@ -31,19 +31,30 @@ import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps }
 import { addContext } from '#utils/context.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 
+/** Placeholder `label` used when no catalogue identifier was provided or configured, e.g. a third-party server embedding a single catalogue with no multicatalogue context to label. */
+export const FALLBACK_LABEL = 'unlabelled catalogue';
+
+/** True when `label` is the placeholder rather than a real catalogue identifier, so callers can omit the label clause from a log line entirely instead of printing it. */
+export const isFallbackLabel = (label = '') => label === FALLBACK_LABEL;
+
 // TODO: Fix types once SearchClient response types are merged
 const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
-	enableDebug,
-	mappingFromIndex,
 	configs,
+	enableDebug,
+	label,
+	mappingFromIndex,
 }: {
 	enableDebug: boolean;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	mappingFromIndex: any;
 	configs: ConfigsObject<Context>;
 }) => {
 	if (Object.keys(configs).length > 0) {
 		try {
-			console.log('  - Now creating a GraphQL mapping based on the ES index:');
+			console.log(
+				`  - Now creating a GraphQL mapping based on the index${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
+			);
 
 			const fieldsFromMapping = flattenMappingToFields(mappingFromIndex);
 
@@ -210,6 +221,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	enableGraphQLBatching = false,
 	esClient,
 	graphqlOptions = {},
+	label,
 	maxAliases,
 	maxDepth,
 	mockSchema,
@@ -221,6 +233,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	enableGraphQLBatching?: boolean;
 	esClient: SearchClient;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	maxAliases?: number;
 	maxDepth?: number;
 	mockSchema: GraphQLSchema;
@@ -230,7 +244,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	const mockPath = '/mock/graphql';
 	const router = Router();
 
-	console.log('\n------\nStarting GraphQL server:');
+	console.log(`\n------\nStarting GraphQL server${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
 
 	const apolloFeatureFlags = disablePlayground && { plugins: [ApolloServerPluginLandingPageDisabled()] };
 	const validationRules = [maxAliasesRule(maxAliases), maxDepthRule(maxDepth)];
@@ -326,7 +340,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		}),
 	);
 
-	console.log('\n  Success!');
+	console.log(`\n  Success!${isFallbackLabel(label) ? '' : ` ("${label}")`}`);
 
 	return router;
 };
@@ -338,6 +352,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	label,
 	mappingFromIndex,
 	setsIndex,
 }: {
@@ -347,6 +362,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	mappingFromIndex: Record<string, unknown>;
 	setsIndex: string;
 }) => {
@@ -358,6 +375,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings<Context>({
 			configs,
 			enableDebug,
+			label,
 			mappingFromIndex,
 		});
 
@@ -435,7 +453,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 
 		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
 
-		console.log('\n  Success!');
+		console.log(`\n  Success!${isFallbackLabel(label) ? '' : ` ("${label}")`}`);
 
 		return {
 			fieldsFromMapping,
@@ -460,8 +478,11 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	mappingFromIndex: Record<string, unknown>;
 };
+
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
 	enableAdmin,
@@ -469,6 +490,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	label = configs[configRootProperties.DOCUMENT_TYPE] || FALLBACK_LABEL,
 	mappingFromIndex,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// TODO: surfacing this variable to be reused later
@@ -482,6 +504,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
+			label,
 			mappingFromIndex,
 			setsIndex,
 		});
@@ -493,6 +516,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			enableGraphQLBatching: configs[configOptionalProperties.ENABLE_GRAPHQL_BATCHING] ?? false,
 			esClient,
 			graphqlOptions,
+			label,
 			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
 			maxDepth: configs[configOptionalProperties.GRAPHQL_MAX_DEPTH],
 			mockSchema,

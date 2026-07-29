@@ -17,6 +17,28 @@ suite('classifyCatalogueFailureReason', () => {
 		assert.equal(result.code, catalogueErrorCodes.INDEX_NOT_FOUND);
 	});
 
+	test('classifies a 403 response error as permission_denied', () => {
+		const searchClientError = Object.assign(new Error('Response Error'), {
+			name: 'ResponseError',
+			statusCode: 403,
+		});
+
+		const result = classifyCatalogueFailureReason(searchClientError);
+
+		assert.equal(result.code, catalogueErrorCodes.PERMISSION_DENIED);
+	});
+
+	test('classifies a 401 response error as permission_denied', () => {
+		const searchClientError = Object.assign(new Error('Response Error'), {
+			name: 'ResponseError',
+			statusCode: 401,
+		});
+
+		const result = classifyCatalogueFailureReason(searchClientError);
+
+		assert.equal(result.code, catalogueErrorCodes.PERMISSION_DENIED);
+	});
+
 	test('classifies a connection error as connection_error', () => {
 		const searchClientError = Object.assign(new Error('connect ECONNREFUSED'), {
 			name: 'ConnectionError',

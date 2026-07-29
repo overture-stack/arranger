@@ -4,7 +4,9 @@ import { suite, test } from 'node:test';
 import { tableDefaults, tableProperties } from '@overture-stack/arranger-types/configs/constants';
 
 import fallbackCatalogConfigs from '#config/constants.js';
-import { mergeConfigs } from './router.js';
+
+import { FALLBACK_LABEL } from './graphqlRoutes.js';
+import { mergeConfigs, resolveLabel } from './router.js';
 
 suite('mergeConfigs', () => {
 	test('preserves all fallback properties when custom config is empty', () => {
@@ -63,5 +65,25 @@ suite('mergeConfigs', () => {
 
 		assert.equal(custom.table[tableProperties.MAX_RESULTS_WINDOW], 5000);
 		assert.equal((custom.table as Record<string, unknown>)[tableProperties.ROW_ID_FIELD_NAME], undefined);
+	});
+});
+
+suite('resolveLabel', () => {
+	test('prefers catalogueId when provided', () => {
+		const result = resolveLabel({ catalogueId: 'donor', documentType: 'participant' });
+
+		assert.equal(result, 'donor');
+	});
+
+	test('falls back to documentType when catalogueId is not provided', () => {
+		const result = resolveLabel({ documentType: 'participant' });
+
+		assert.equal(result, 'participant');
+	});
+
+	test('falls back to the placeholder when neither catalogueId nor documentType is provided', () => {
+		const result = resolveLabel({});
+
+		assert.equal(result, FALLBACK_LABEL);
 	});
 });

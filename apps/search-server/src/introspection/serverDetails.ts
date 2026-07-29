@@ -39,8 +39,8 @@ const buildServerDetails = ({
 					catalogueId,
 					{
 						...(typedConfigs.description ? { description: typedConfigs.description } : {}),
-						...(statusDetail.status === CATALOGUE_STATUS.FAILED ? { error: statusDetail.error } : {}),
 						documentType: typedConfigs.documentType || '',
+						...(statusDetail.status === CATALOGUE_STATUS.FAILED ? { error: statusDetail.error } : {}),
 						paths: {
 							...(catalogCount === 1 ? { fields: '/introspection/fields' } : {}),
 							graphql: getCatalogueGraphqlPath({ catalogCount, catalogueId }),

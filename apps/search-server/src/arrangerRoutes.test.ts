@@ -48,6 +48,24 @@ suite('arrangerRoutes', () => {
 		);
 	});
 
+	test("forwards each catalogue's own key as catalogueId to buildCatalogueRouterFn", async () => {
+		const receivedCatalogueIds: string[] = [];
+
+		await arrangerRoutes({
+			buildCatalogueRouterFn: async ({ catalogueId }) => {
+				receivedCatalogueIds.push(catalogueId);
+				return fakeAvailableRouter();
+			},
+			catalogs: {
+				donor: { documentType: 'donor' },
+				participant: { documentType: 'participant' },
+			},
+			enableDebug: false,
+		});
+
+		assert.deepEqual(receivedCatalogueIds.sort(), ['donor', 'participant']);
+	});
+
 	test('one catalogue failing to build does not prevent the others from becoming available', async () => {
 		const result = await arrangerRoutes({
 			buildCatalogueRouterFn: async ({ catalogueConfigs }) => {

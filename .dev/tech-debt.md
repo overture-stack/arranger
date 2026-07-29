@@ -259,6 +259,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Missed by the rename above, not decided against:**
 - `apps/mcp-server/src/mcp/resources.ts`: the MCP resource URI template itself still reads `arranger://introspection/catalog/{catalogueId}`, "catalog" in the path segment, "catalogue" in the parameter name. The earlier mcp-server migration renamed the parameter but not the URI itself. Reflected consistently in `docs/usage/06-ai-and-automation.md` and the mcp-server integration tests (`arranger://introspection/catalog/...`), so it's not just one file to fix, everywhere this literal string is read or asserted needs the same rename together. Since this is a URI an MCP client could reasonably treat as a stable identifier, treat as a coordinated rename rather than a quick fix; confirm no external client depends on the current path before changing it.
 
+### `CHANGELOG.md` bullets use a space-hyphen-space title/description connector throughout
+
+**File:** `CHANGELOG.md` (33 bullets, e.g. `- **Partial catalogue availability** - A catalogue...`)
+**Severity:** low (style convention violation only, no functional impact)
+**Kind:** style / convention drift
+**Issue:** Every top-level bullet in the file follows `- **Title** - description`, using `` - `` (space-hyphen-space) as the connector between the bold title and its description. This project's style convention forbids space-hyphen-space as a sentence connector (a colon is required instead). Found while adding a new clause to the "Partial catalogue availability" bullet; the new clause was written with a colon per convention, so it now sits inconsistently next to the bullet's own pre-existing " - " connector.
+**Fix:** Bulk-replace `` ** - `` with `` **: `` across the file (verify with `grep -c` before and after, per this project's bulk text-replacement convention), then spot-check that no legitimate mid-sentence hyphen or numeric range was caught by the pattern.
+**Standalone:** yes; mechanical text replacement, no content changes
+
 ---
 
 ## docs [URGENT: reminder every session]
@@ -403,6 +412,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Issue:** `& Record<string, unknown>` allows callers to pass arbitrary keys without type errors. Exists to accommodate undeclared options but defeats the purpose of the explicit type.
 **Fix:** Enumerate all legitimate extra options explicitly, then remove `& Record<string, unknown>`.
 **Standalone:** yes; purely additive type change, no runtime impact
+
+### Network schema error log uses a space-hyphen-space connector
+
+**File:** `modules/graphql-router/src/graphqlRoutes.ts` (`createSchemasFromConfigs`, network aggregation error branch)
+**Severity:** low (style convention violation only, no functional impact)
+**Kind:** style / convention drift
+**Issue:** `` `Error creating network schema for catalogue ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.` `` uses `` - `` (space-hyphen-space) as a sentence connector, which this project's style convention forbids (a colon or rephrase is required instead). Found while touching adjacent log lines in the same file for catalogue-failure logging improvements; not fixed in that pass since this line was untouched by it.
+**Fix:** Rephrase, e.g. `` `Error creating network schema for catalogue ${configs.catalogId}: ${networkSchemaResult.case}. No network search can be added to the GQL schema.` ``.
+**Standalone:** yes; one-line message rewording
 
 ### Apollo Server 3 is EOL: replace, don't upgrade
 
