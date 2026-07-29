@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import path from 'path';
 
+import type { ArrangerBaseContext } from '@overture-stack/arranger-graphql-router';
 import type { ConfigsObject as ArrangerConfigs } from '@overture-stack/arranger-types/configs';
 import { configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 
@@ -11,7 +12,7 @@ export const resolveCatalogueId = ({
 	configsPath,
 	usedIds,
 }: {
-	aggregatedConfigs: Partial<ArrangerConfigs>;
+	aggregatedConfigs: Partial<ArrangerConfigs<ArrangerBaseContext>>;
 	configsPath: string;
 	usedIds: Set<string>;
 }) => {

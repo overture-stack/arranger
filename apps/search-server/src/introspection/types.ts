@@ -1,3 +1,5 @@
+import type { VersionedSqonJsonSchema } from '@overture-stack/sqon';
+
 export type IntrospectionResponse = {
 	catalogCount: number;
 	catalogs: Record<
@@ -30,7 +32,7 @@ export type SqonIntrospectionResponse = {
 		combination: string[];
 		field: SqonOperatorDetail[];
 	};
-	schema: Record<string, unknown>;
+	schema: VersionedSqonJsonSchema;
 	title: string;
 	version: string;
 };

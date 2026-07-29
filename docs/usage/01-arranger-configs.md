@@ -97,6 +97,8 @@ Configures the columns in the data results table.
 - `jsonPath`: For nested data, the JSON path used to extract the value from the GraphQL response.
 - `query`: For nested data, the GraphQL sub-query fragment for this field.
 
+`columns` is optional. If omitted, the table falls back to the first 10 non-nested, non-object fields from `extended.json`.
+
 ## facets.json
 
 Defines which fields appear as filterable facet panels.
@@ -123,6 +125,8 @@ Defines which fields appear as filterable facet panels.
 - `isActive`: Whether this aggregation is computed. Set to `false` to disable a facet without removing it from the config.
 - `show`: Whether to display this facet panel in the UI.
 - `fieldName`: The field to aggregate on.
+
+`aggregations` is optional. If omitted, up to 10 facets are derived from `extended.json` instead, excluding ID fields and nested or object-typed fields.
 
 :::info Nested fields in facets.json use double underscores
 

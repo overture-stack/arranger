@@ -3,6 +3,7 @@ export { addFilterClause, type ScalarFilter, type TextFilter } from './builder/f
 export { normalizeSqonNode } from './builder/normalize.js';
 export { checkMatchingArrays, checkMatchingFilter, emptySqon, isFieldFilter, isGroupNode } from './builder/utils.js';
 export { getSqonJsonSchema, getVersionedSqonJsonSchema } from './jsonSchema/index.js';
+export type { JsonSchemaObject, SqonJsonSchema, VersionedSqonJsonSchema } from './jsonSchema/index.js';
 export {
 	getSqonFieldOperatorDetails,
 	isSqonCanonicalOp,

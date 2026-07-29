@@ -319,6 +319,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Update the comment to reference `serverDetails.ts`, or remove the provenance note if it no longer adds value.
 **Standalone:** yes; one-line comment fix
 
+### Sets query filter reads `INDEX` for both `index` and `type`
+
+**File:** `modules/graphql-router/src/middleware/buildQuery/index.js:214-215`
+**Severity:** medium (a Sets filter's ES `terms` lookup query likely targets the wrong document type)
+**Kind:** bug
+**Issue:** The `terms` filter built for a Sets-based query reads `sets[setsProperties.INDEX]` for both the `index` and `type` fields: `type: sets[setsProperties.INDEX]` should almost certainly read `sets[setsProperties.TYPE]`. Found while tracing `SetsConfigs` consumers to confirm making its `index`/`type` fields optional wouldn't introduce a new runtime risk; both fields are always populated by graphql-router's own fallback defaults regardless, so this bug predates and is unaffected by that change.
+**Fix:** Change the second field to `type: sets[setsProperties.TYPE]`. Confirm via a test that a Sets-based query actually resolves against the configured `type`, not `index`, before treating this as fixed: the current behaviour may have gone unnoticed because both default to the same value (`'arranger-sets'`) in every existing deployment and test fixture.
+**Standalone:** yes; one-line fix, but needs its own test coverage and verification against a real Sets deployment where index and type genuinely differ
+
 ### `buildAggregations` crashes when the SQON root is a leaf filter clause
 
 **File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:88`

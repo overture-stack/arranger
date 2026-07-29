@@ -16,10 +16,10 @@ import type { FieldFromMapping } from './types.js';
 import { toQuery } from './utils/columnsToGraphql.js';
 
 export const extendColumns = (tableConfig: TableConfigs, extendedFields: ExtendedConfigs[]): TableConfigs => {
-	const columnsFromConfig = tableConfig?.[tableProperties.COLUMNS];
+	const columnsFromConfig = tableConfig?.[tableProperties.COLUMNS] ?? [];
 	const hasColumnsConfig = columnsFromConfig?.length > 0;
 
-	hasColumnsConfig || console.log('  - No Columns config present. Defaulting to first 5 extended fields.');
+	hasColumnsConfig || console.log('  - No Columns config present. Defaulting to first 10 extended fields.');
 
 	// TODO: D.R.Y. this thing -> invert by going through the mapping, then reaching into the configs' "extended"
 
@@ -113,10 +113,10 @@ export const extendColumns = (tableConfig: TableConfigs, extendedFields: Extende
 };
 
 export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: ExtendedConfigs[]) => {
-	const aggsFromConfig = facetsConfig?.[facetsProperties.AGGS];
+	const aggsFromConfig = facetsConfig?.[facetsProperties.AGGS] ?? [];
 	const hasAggsConfig = aggsFromConfig?.length > 0;
 
-	hasAggsConfig || console.log('  - No Aggregations config present. Defaulting to first 5 extended fields.');
+	hasAggsConfig || console.log('  - No Aggregations config present. Defaulting to first 10 extended fields.');
 
 	// TODO: D.R.Y. this thing
 

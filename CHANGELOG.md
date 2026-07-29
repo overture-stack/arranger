@@ -24,6 +24,10 @@ See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
 - **Server abstracted into its own application** (`apps/search-server`) - The Arranger search server is now a separate app rather than part of the main module, making the core routing logic in `modules/graphql-router` easier to compose in custom deployments.
 - **New `modules/sqon` package** (`@overture-stack/arranger-sqon`) - Centralises SQON schema definitions, operator metadata, and validation. Shared by server and client code.
 
+### Types (`@overture-stack/arranger-types`)
+
+- **`table.columns`, `facets.aggs`, `sets.index`/`type`, and `charts.query` are now optional**: none of these are validated by `arrangerRouter`'s own config validation, and all are given complete defaults when omitted, so requiring them from callers didn't match how they're actually used (matching how `downloads`'s fields were already optional). Non-breaking: any config that already provided these continues to work unchanged.
+
 ### Server
 
 - **Multicatalogue support** - A single Arranger server can now serve multiple catalogues simultaneously. Organise configs in subdirectories under `CONFIGS_PATH` (one subdirectory per catalogue). Existing flat layouts continue to work as single-catalogue deployments: no migration required.
@@ -80,6 +84,8 @@ The charts module was introduced in this release cycle as a new package.
 - **`wildcard` is now the canonical op for text-pattern search** - The operator that performs case-insensitive substring matching across multiple fields was previously named `filter`. That name was misleading in two ways: it collides with the generic meaning of "filter" (every SQON op is a filter), and it falsely implies fuzzy/approximate matching, which is a distinct ES/OS feature (Levenshtein edit-distance) that does not exist yet. The operation is implemented with an ES/OS `wildcard` query, so `wildcard` is the name it carries going forward.
 
     `filter` is accepted as an alias and normalizes to `wildcard` at query-build time; existing serialized SQONs continue to work without any migration. New SQONs should use `op: "wildcard"`.
+
+- **`VersionedSqonJsonSchema`, `SqonJsonSchema`, and `JsonSchemaObject` now exported from the package root**: previously only reachable through an internal path. Needed by any consumer that wants to reference the real shape of `getVersionedSqonJsonSchema()`'s return value instead of a hand-duplicated, looser type.
 
 - **All operator aliases now normalize on parse, not just `filter`/`wildcard`** - `SqonBuilder.from()` rewrites every leaf's `op` to its canonical form (`=` -> `in`, `>=` -> `gte`, `filter` -> `wildcard`, etc.) before returning, recursively through nested combinations. Previously the schema validated aliases but never normalized them, so code that switched on `.op` after parsing (rather than going through the builder's own methods) could accept a query using an alias and then fail to match any canonical branch. Calling `SqonSchema.parse()` directly still returns the alias unchanged; use the newly-exported `normalizeSqonNode()` if you have a reason to validate without the builder. Also newly exported: `isGroupNode`/`isFieldFilter` type guards for discriminating a `SqonNode` by shape.
 
