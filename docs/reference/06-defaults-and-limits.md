@@ -39,10 +39,10 @@ Omitting an argument does not mean "use everything" or "no limit applies." It me
 | ------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
 | `GRAPHQL_MAX_ALIASES` | 15 aliased fields per query   | Set the env var, or `maxAliases` in a catalogue's `base.json` (per-catalogue config wins).      |
 | `GRAPHQL_MAX_DEPTH`   | 7 levels of selection nesting | Set the env var, or `maxDepth` in a catalogue's `base.json` (per-catalogue config wins).        |
-| `MAX_RESULTS_WINDOW`  | 10000 hits per query          | Set the env var, or `maxResultsWindow` in a catalogue's `table.json`. See [Migrating to 3.1](../migration/v3.1.md#max_results_window-is-now-enforced) for details. |
+| `MAX_RESULTS_WINDOW`  | 10000 hits per query          | Set the env var, or `maxResultsWindow` in a catalogue's `table.json`. See [Migrating to 3.1](./08-Migration/v3.1.md#max_results_window-is-now-enforced) for details. |
 
 Both `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` apply their defaults whether or not you've set the corresponding environment variable: there is no "unset means unlimited" state for either.
 
 :::info
-If you're generating queries programmatically, including through the [MCP server](./06-ai-and-automation.md), assume every default above applies unless you set the value yourself. Only `trackTotalHits` is visible via schema introspection; the rest require reading this page.
+If you're generating queries programmatically, including through the [MCP server](../mcp-server.md), assume every default above applies unless you set the value yourself. Only `trackTotalHits` is visible via schema introspection; the rest require reading this page.
 :::

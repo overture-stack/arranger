@@ -113,7 +113,7 @@ The client sends the SQON to Arranger as part of a GraphQL request:
 - **Sorting** (line 26): Order of results (empty in this example)
 
 :::tip
-This example sets `first: 20` explicitly. If `first` is omitted entirely, it defaults to 10, along with a number of other non-obvious defaults for aggregations and downloads; see [Defaults and Limits](./07-defaults-and-limits.md) for the full list.
+This example sets `first: 20` explicitly. If `first` is omitted entirely, it defaults to 10, along with a number of other non-obvious defaults for aggregations and downloads; see [Defaults and Limits](./06-defaults-and-limits.md) for the full list.
 :::
 
 </details>

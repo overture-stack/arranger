@@ -23,6 +23,7 @@ OpenSearch maintains API compatibility with Elasticsearch 7.x, so query syntax a
     - SQON integration for human-readable and machine-processable search queries
 - **Model-Agnostic:** Works with any properly structured OpenSearch or Elasticsearch index.
 - **Integration-Ready:** The search API integrates with any web front end; a React component library is included for building search UIs.
+- **Federated Search:** One query can report aggregate counts across several independently operated Arranger servers. Each site keeps its own index and records; only counts cross the wire. See [Federated search](./federated-search.md).
 
 ## System Architecture
 
@@ -105,7 +106,7 @@ You need a running server connected to your search engine, with at least one cat
 2. [Setup](./setup.md): prerequisites, environment variables, search engine permissions
 3. [Index mappings](./reference/00-index-mappings.md): what your ES/OS index mapping drives in Arranger
 4. [Catalogue configuration](./reference/01-arranger-configs.md): the four JSON files that define each catalogue
-5. [Feature flags](./reference/08-feature-flags.md): security hardening flags to review before going to production
+5. [Feature flags](./reference/07-feature-flags.md): security hardening flags to review before going to production
 
 ---
 
@@ -117,6 +118,7 @@ You're implementing a data portal using Arranger Components or writing UI code t
 2. [Catalogue configuration](./reference/01-arranger-configs.md): configure which fields are visible and facetable
 3. [Query processing](./reference/02-query-processing.md): how a user action becomes an Elasticsearch query
 4. [Building SQON queries](./reference/03-building-sqon-queries.md): the `SqonBuilder` API and `addFilterClause`
+5. [Arranger Charts](./charts.md): React charts that visualize a catalogue's aggregation data
 
 ---
 
@@ -131,16 +133,27 @@ You're building an API client, pipeline, or script that sends queries to Arrange
 
 ---
 
+**Federating across several Arranger servers**
+
+Multiple organisations each run their own Arranger, and you want one portal reporting totals across all of them.
+
+1. [Federated search](./federated-search.md): how federation works, configuration, the query shape, and its limitations
+2. [Catalogue configuration](./reference/01-arranger-configs.md): the per-catalogue files each participating node needs
+3. [Feature flags](./reference/07-feature-flags.md): `disableGraphQLIntrospection` must be `false` on every remote node
+4. [Arranger Charts](./charts.md): `NetworkNodesChart` for showing per-node hit counts
+
+---
+
 **Integrating AI or automation**
 
 You're connecting an AI model, MCP client, or automated pipeline to Arranger.
 
-1. [AI and automation](./reference/06-ai-and-automation.md): MCP server setup, available tools, SQON generation rules
+1. [Arranger MCP server](./mcp-server.md): MCP server setup, available tools, SQON generation rules
 2. [Introspection API](./reference/05-introspection.md): the live source of truth for field metadata
 
 ---
 
 **Upgrading from 3.0.x or consolidating instances**
 
-- [Migrating to 3.1](./migration/v3.1.md): breaking changes (env var renames, image rename, multicatalogue layout)
-- [Consolidating multiple instances](./migration/v3.1.md#consolidating-multiple-single-catalogue-instances): step-by-step guide to the multicatalogue directory layout
+- [Migrating to 3.1](./reference/08-Migration/v3.1.md): breaking changes (env var renames, image rename, multicatalogue layout)
+- [Consolidating multiple instances](./reference/08-Migration/v3.1.md#consolidating-multiple-single-catalogue-instances): step-by-step guide to the multicatalogue directory layout

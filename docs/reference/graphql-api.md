@@ -69,7 +69,7 @@ with variables:
 | Argument | Type | Purpose |
 |---|---|---|
 | `filters` | `JSON` (SQON) | The filter to apply; omit to match all records. |
-| `first` | `Int` | Page size (defaults to 10 — see [Defaults and Limits](./07-defaults-and-limits.md)). |
+| `first` | `Int` | Page size (defaults to 10 — see [Defaults and Limits](./06-defaults-and-limits.md)). |
 | `offset` | `Int` | Number of records to skip. |
 | `sort` | `[Sort]` | Ordering; each `Sort` is `{ fieldName, order, mode, missing }`. |
 | `searchAfter` | `JSON` | Cursor for deep pagination, taken from a prior page's `edges.searchAfter`. |

@@ -15,7 +15,7 @@ This file covers high-level release notes for the Arranger project as a whole. W
 - **Docker image `arranger-server` renamed to `arranger-search-server`**: Update `docker-compose.yml`, Helm values, and any deployment manifests.
 - **`MAX_RESULTS_WINDOW` is now enforced**: Previously present in the env schema but not applied; now caps query results at `10000` by default. Deployments that return more than 10,000 documents must set this explicitly (via env var or per-catalogue `table.json`).
 
-See [docs/migration/v3.1.md](docs/migration/v3.1.md) for upgrade instructions.
+See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) for upgrade instructions.
 
 ---
 

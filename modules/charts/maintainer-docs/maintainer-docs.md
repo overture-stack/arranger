@@ -62,7 +62,7 @@ Applications using the library must be wrapped in the required provider hierarch
 	<SunburstChart
 		fieldName="primary_diagnosis__cancer_type_code"
 		maxSegments={5}
-		mapping={(key) => lookupMap[key]}
+		mapper={(key) => lookupMap[key]}
 		handlers={{ onClick: handleSunburstClick }}
 	/>
 </ChartsThemeProvider>

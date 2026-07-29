@@ -2,6 +2,8 @@
 
 Each catalogue in Arranger is controlled by four JSON configuration files. Together they define which index to connect to, how fields are labelled for display, which columns appear in the data table, and which fields are exposed as facet panels.
 
+A fifth file, `network.json`, is optional and only needed to federate queries across several Arranger servers. It is documented separately in [Federated search](../federated-search.md#with-search-server-configuration-files).
+
 Templates for all four files are [in the Arranger repository](https://github.com/overture-stack/arranger/tree/main/apps/search-server/configTemplates). The full JSON schema describing every available option is at [`configTemplates/configs.json.schema`](https://github.com/overture-stack/arranger/blob/main/apps/search-server/configTemplates/configs.json.schema).
 
 ## File locations
