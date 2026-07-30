@@ -13,53 +13,9 @@ Before you begin, ensure you have the following installed on your system:
 
 ## Developer Setup
 
-This guide will walk you through setting up a complete development environment, including Arranger and its complementary services.
+The Arranger repository ships everything needed for local development: a `docker-compose.yml` defining a search engine, `make` targets to drive it, and a script that seeds test documents. No other repository is required.
 
 ### Setting up supporting services
-
-We'll use the Overture quickstart service, a flexible Docker Compose setup, to spin up Arranger's complementary services.
-
-1.  Clone the quickstart repository and navigate to its directory:
-
-    ```bash
-    git clone -b quickstart https://github.com/overture-stack/prelude.git
-    cd prelude
-    ```
-
-2.  Run the appropriate start command for your operating system:
-
-    | Operating System | Command                  |
-    | ---------------- | ------------------------ |
-    | Unix/macOS       | `make arrangerDev`       |
-    | Windows          | `./make.bat arrangerDev` |
-
-    <details>
-    	<summary>**Click here for a detailed breakdown**</summary>
-
-        This command will set up all complementary services for Arranger development as follows:
-
-        ![arrangerDev](./assets/arrangerDev.svg 'Arranger Dev Environment')
-
-        | Service       | Port   | Description                                     | Purpose in Arranger Development                                  |
-        | ------------- | ------ | ----------------------------------------------- | ---------------------------------------------------------------- |
-        | Conductor     | `9204` | Orchestrates deployments and environment setups | Manages the overall development environment                      |
-        | Elasticsearch | `9200` | Distributed search and analytics engine         | Provides fast and scalable search capabilities over indexed data |
-        | Stage         | `3000` | Web Portal Scaffolding                          | Houses Arranger's search UI components                           |
-
-        :::note Supported search engines
-
-        Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7). OpenSearch maintains API compatibility with ES 7.x, so query syntax and conventions apply to both engines.
-
-        :::
-
-        - Ensure all ports are free on your system before starting the environment.
-        - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
-
-        For more information, see our [quickstart documentation linked here](/deploy/quickstart).
-
-    </details>
-
-### Running the Arranger-Server
 
 1.  Clone Arranger and navigate to its directory:
 
@@ -68,52 +24,109 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
     cd arranger
     ```
 
-2.  Copy the search server's environment schema to `.env`:
+2.  Start Elasticsearch:
 
     ```bash
-    cp apps/search-server/.env.schema .env
+    make start-es
+    ```
+
+3.  Seed it with test documents:
+
+    ```bash
+    make seed-es
+    ```
+
+    <details>
+    	<summary>**Click here for a detailed breakdown**</summary>
+
+        `make start-es` brings up the `elasticsearch` service from the repository's `docker-compose.yml`, and `make seed-es` loads the mock documents under `docker/elasticsearch/documents` into the `file_centric_1.0` index.
+
+        | Service       | Port           | Description                             | Purpose in Arranger Development                                  |
+        | ------------- | -------------- | --------------------------------------- | ---------------------------------------------------------------- |
+        | Elasticsearch | `9200`, `9300` | Distributed search and analytics engine | Provides fast and scalable search capabilities over indexed data |
+
+        The cluster runs **with authentication enabled** (`xpack.security.enabled: "true"`). The Makefile defines the credentials it uses and passes them through to Docker Compose:
+
+        | Variable  | Value                 |
+        | --------- | --------------------- |
+        | `ES_USER` | `elastic`             |
+        | `ES_PASS` | `unsafePassword123`   |
+        | `ES_HOST` | `http://localhost:9200` |
+
+        Override them by exporting different values before running `make`, or with an `.env.testing` file at the repository root, which the Makefile includes when present.
+
+        Two further targets bring up more of the stack, and are useful when you want a containerized server rather than one running on your host:
+
+        | Command             | Services started                                              |
+        | ------------------- | ------------------------------------------------------------- |
+        | `make start-es`     | Elasticsearch only                                            |
+        | `make start-server` | The Arranger server only (`5050`)                             |
+        | `make start`        | Elasticsearch, Kibana (`5601`), the server (`5050`), and a Stage UI (`3000`) |
+
+        :::note Supported search engines
+
+        Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7). OpenSearch maintains API compatibility with ES 7.x, so query syntax and conventions apply to both engines. Note that `docker-compose.yml` defines an Elasticsearch service only, so a local OpenSearch cluster has to be supplied separately.
+
+        :::
+
+        - Ensure these ports are free on your system before starting the environment.
+        - You may need to adjust the ports in `docker-compose.yml` if you have conflicts with existing services.
+        - `make ps` shows what is running; `make clean` tears the stack down and removes its volumes.
+
+    </details>
+
+### Running the Arranger-Server
+
+1.  Copy the search server's environment schema into place:
+
+    ```bash
+    cp apps/search-server/.env.schema apps/search-server/.env
     ```
 
     :::info
 
-    Populate `.env` for your environment. A minimal configuration for the Arranger dev quickstart looks like this:
+    The server loads its `.env` from its own workspace directory, so the file must be at `apps/search-server/.env` rather than the repository root. A minimal configuration matching the Elasticsearch instance started above looks like this:
 
         ```env
         # ==============================
         # Arranger Environment Variables
         # ==============================
 
-        # Arranger Variables
+        # Server
+        SERVER_PORT=5050
         ENABLE_LOGS=false
 
-        # Elasticsearch/Opensearch Variables
-        ES_HOST=http://elasticsearch:9200
+        # Search engine connection
+        ES_HOST=http://localhost:9200
         ES_USER=elastic
-        ES_PASS=myelasticpassword
-        SEARCH_ENGINE=elasticsearch
+        ES_PASS=unsafePassword123
 
-        # Stage Variables
-        REACT_APP_BASE_URL=http://localhost:3000
+        # Catalogue configuration
+        CONFIGS_PATH=../../docker/server
         ```
 
         <details>
           <summary>**Click here for a detailed explanation of Arranger's environment variables**</summary>
 
-          **Arranger Variables**
+          **Server**
+          - `SERVER_PORT`: The port the search server listens on
           - `ENABLE_LOGS`: Determines whether logging is enabled
 
-          **Elasticsearch Variables**
-          - `ES_HOST`: The URL of your Elasticsearch instance
-          - `ES_USER` and `ES_PASS`: The credentials for accessing Elasticsearch
+          **Search engine connection**
+          - `ES_HOST`: The URL of your Elasticsearch or OpenSearch instance. Use `localhost` when the server runs on your host and the cluster runs in Docker; the container hostname `elasticsearch` only resolves from inside the Compose network.
+          - `ES_USER` and `ES_PASS`: The credentials for accessing the cluster, matching the values the Makefile passes to Docker Compose
+          - `SEARCH_ENGINE`: Either `elasticsearch` or `opensearch`. Leave it unset to auto-detect from the cluster.
 
-          **Stage Variables**
-          - `REACT_APP_BASE_URL`: The base URL for your front-end application (Stage)
-          - `REACT_APP_ARRANGER_ADMIN_ROOT`: The URL for the Arranger GraphQL endpoint
+          **Catalogue configuration**
+          - `CONFIGS_PATH`: Directory holding the per-catalogue JSON config files, resolved relative to the server's workspace directory. The repository's example catalogue lives at `docker/server`, hence `../../docker/server`. Its `base.json` sets `index` to `file_centric_1.0` and `documentType` to `file`, matching the data `make seed-es` loads.
+          - `ES_INDEX` and `DOCUMENT_TYPE` are required, but are normally set per catalogue in `base.json` as above. Per-catalogue file values always take precedence over these environment defaults.
+
+          The schema file lists the remaining variables, including feature flags, GraphQL security limits, and download settings.
         </details>
 
     :::
 
-3.  Install the required npm packages:
+2.  Install the required npm packages:
 
     ```bash
     npm install
@@ -126,11 +139,17 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
 
     :::
 
-4.  Run the Arranger server:
+3.  Run the Arranger server:
 
     ```bash
-    npm run server
+    npm run dev:server
     ```
+
+    :::tip
+
+    `npm run dev:server` runs the server in watch mode, rebuilding `sqon`, `types`, and `graphql-router` as you change them. To run the built server instead, use `npm run server`.
+
+    :::
 
 Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphql`.
 

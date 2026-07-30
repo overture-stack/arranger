@@ -43,11 +43,13 @@ integration-tests/
 Start a local search engine and seed test data:
 
 ```bash
-make start          # starts Elasticsearch via docker-compose
-make seed-es        # seeds test documents
+make start-es       # starts Elasticsearch alone, for a host-run dev server
+make seed-es        # seeds test documents into file_centric_1.0
 ```
 
-The local stack runs without authentication. If you need to test against a secured cluster (OpenSearch or Elasticsearch with the security plugin enabled), see the [search engine permissions reference](docs/setup.md#search-engine-permissions) in the setup documentation for the minimum permissions required per feature.
+`make start` brings up Elasticsearch, Kibana and a containerized Arranger server together; prefer `make start-es` when you are going to run the server yourself with `npm run dev:server`.
+
+The local cluster **does** run with authentication: `docker-compose.yml` sets `xpack.security.enabled: "true"`, and the Makefile passes the credentials it defines (`ES_USER=elastic`, `ES_PASS=unsafePassword123`) through to both the cluster and the containerized server. Use those same values in `apps/search-server/.env` when running the server on the host. For the minimum permissions each feature needs on a cluster you do not control, see the [search engine permissions reference](docs/setup.md#search-engine-permissions) in the setup documentation.
 
 Start the development server (watches `sqon`, `types`, `graphql-router`, and `search-server`):
 
