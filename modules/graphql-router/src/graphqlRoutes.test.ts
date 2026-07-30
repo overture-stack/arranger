@@ -5,7 +5,7 @@ import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 
 import { catalogueErrorCodes, classifyCatalogueFailureReason } from '#searchClient/index.js';
 
-import arrangerRoutes, { FALLBACK_LABEL, isFallbackLabel } from './graphqlRoutes.js';
+import arrangerRoutes, { createSchemasFromConfigs, FALLBACK_LABEL, isFallbackLabel } from './graphqlRoutes.js';
 
 suite('isFallbackLabel', () => {
 	test('returns true for the fallback label', () => {
@@ -65,12 +65,15 @@ suite('arrangerRoutes rethrowOnError', () => {
 		});
 	});
 
-	test('a mapping with an invalid GraphQL field name rejects naming the offending field, not just a generic graphql-js parse error', async () => {
+	test('two fields colliding on the same sanitized GraphQL name reject naming both offenders, not just a generic graphql-js parse error', async () => {
 		await assert.rejects(
 			arrangerRoutes(
 				buildFailingArrangerRoutesArgs({
 					configs: { documentType: 'donor' } as ConfigsObject<never>,
-					mappingFromIndex: { 'ca19-9_level': { type: 'keyword' } },
+					mappingFromIndex: {
+						'ca19-9_level': { type: 'keyword' },
+						ca19_9_level: { type: 'keyword' },
+					},
 					rethrowOnError: true,
 				}),
 			),
@@ -78,8 +81,31 @@ suite('arrangerRoutes rethrowOnError', () => {
 				const classified = classifyCatalogueFailureReason(error);
 				assert.equal(classified.code, catalogueErrorCodes.SCHEMA_BUILD_ERROR);
 				assert.match(classified.message, /ca19-9_level/);
+				assert.match(classified.message, /ca19_9_level/);
 				return true;
 			},
 		);
+	});
+});
+
+suite('field name sanitization', () => {
+	test('a mapping with a hyphenated nested field name now builds a schema instead of failing', async () => {
+		const result = await createSchemasFromConfigs({
+			configs: { documentType: 'donor' } as ConfigsObject<never>,
+			enableDebug: false,
+			esClient: {} as never,
+			getServerSideFilter: (() => undefined) as never,
+			mappingFromIndex: {
+				biomarker: {
+					type: 'nested',
+					properties: { 'ca19-9_level': { type: 'keyword' } },
+				},
+			},
+			setsIndex: 'test-sets',
+		});
+
+		assert.ok(result.schema);
+		const typeNames = result.schema.toConfig().types.map((t) => t.name);
+		assert.ok(typeNames.some((name) => name.endsWith('Biomarker')), `expected a "...Biomarker" type, got: ${typeNames}`);
 	});
 });

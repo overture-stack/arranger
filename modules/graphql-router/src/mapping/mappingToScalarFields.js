@@ -1,3 +1,5 @@
+import { identityGraphqlNameRegistry } from './utils/graphqlNameRegistry.js';
+
 export let esToGraphqlTypeMap = {
 	boolean: 'Boolean',
 	byte: 'Int',
@@ -22,16 +24,18 @@ const maybeArray = (fieldName, extendedFields, type, parent) => {
 		: type;
 };
 
-export default (mapping, extendedFields, parent) => {
+/**
+ * Builds one SDL field entry per scalar ES field at this nesting level, e.g. `donor_id: String`.
+ * `registry` supplies the GraphQL-safe field name; `fieldName` (raw) is still what's matched
+ * against `extendedFields`, since those configs reference fields by their raw ES path.
+ */
+export default (mapping, extendedFields, parent, registry = identityGraphqlNameRegistry) => {
 	return Object.entries(mapping)
 		.filter(([, metadata]) => Object.keys(esToGraphqlTypeMap).includes(metadata.type))
-		.map(
-			([fieldName, metadata]) =>
-				`${fieldName}: ${maybeArray(
-					fieldName,
-					extendedFields,
-					esToGraphqlTypeMap[metadata.type],
-					parent,
-				)}`,
-		);
+		.map(([fieldName, metadata]) => {
+			const fullFieldName = [parent, fieldName].filter(Boolean).join('.');
+			const graphqlName = registry.toGraphqlLeafName(fullFieldName);
+
+			return `${graphqlName}: ${maybeArray(fieldName, extendedFields, esToGraphqlTypeMap[metadata.type], parent)}`;
+		});
 };

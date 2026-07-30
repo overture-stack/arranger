@@ -22,14 +22,14 @@ const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 	return results;
 };
 
-const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedFieldNames }) => {
+const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath = {}, hits, nestedFieldNames }) => {
 	const resolveCopiedTo = ({ node }) => {
 		const foundValues = Object.entries(copyToSourceFields).reduce((acc, pair) => {
 			const copyToField = pair[0];
 			const sourceField = pair[1];
 			const found = {};
 
-			found[copyToField] = flattenDeep(
+			found[graphqlNameByPath[copyToField] ?? copyToField] = flattenDeep(
 				sourceField.map((path) =>
 					JSONPath({
 						json: node,
@@ -62,7 +62,11 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 				const areHitsNested = nestedFieldNames?.includes(fullPath);
 				const hitsAreActuallyNested = areHitsNested && Array.isArray(hits);
 
-				acc[fieldName] = hitsAreActuallyNested
+				// The GraphQL schema may expose this field under a sanitized name (see
+				// mapping/utils/graphqlNameRegistry.ts); the raw key stays on `source` too (harmless,
+				// since nothing in the schema ever asks for it), this just also adds the one resolvers
+				// actually look up.
+				acc[graphqlNameByPath[fullPath] ?? fieldName] = hitsAreActuallyNested
 					? {
 							hits: {
 								edges: hits.map((node) => ({
@@ -122,6 +126,7 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 export const hitsToEdges = ({
 	copyToSourceFields = {},
 	extendedFields = [],
+	graphqlNameByPath = {},
 	hits,
 	nestedFieldNames,
 	Parallel,
@@ -149,6 +154,7 @@ export const hitsToEdges = ({
 		const params = {
 			copyToSourceFields,
 			extendedFieldsObj,
+			graphqlNameByPath,
 			hits: chunk,
 			nestedFieldNames,
 		};
@@ -261,6 +267,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 				hitsToEdges({
 					copyToSourceFields,
 					extendedFields,
+					graphqlNameByPath: type.graphqlNameRegistry?.leafNamesByPath,
 					hits,
 					nestedFieldNames,
 					Parallel,

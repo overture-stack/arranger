@@ -203,22 +203,6 @@ Two unrelated bugs found and fixed during this work are tracked there rather tha
 
 _Coordinate with the API version exposure entry; catalogue metadata and server introspection are related surfaces._
 
-### GraphQL name sanitization for field/type names containing invalid characters
-
-_Priority: medium. Confirmed real-world driver: a production catalogue's mapping has field names like `ca19-9_level`, `pd-l1_status`, `pan-trk_ihc_status` (real biomarker naming conventions), which break GraphQL schema generation outright today._
-
-No field, nested type, or document-type name gets validated or sanitized before being used as a GraphQL identifier, anywhere except aggregation field names (`mapping/utils/convertNameForGraphql.ts`, dots only, via `mappingToAggsType.js`/`mappingToAggregationFields.ts`). Every other path (`mappingToScalarFields.js`, `mappingToNestedFields.js`, `mappingToObjectTypes.js`, `mappingToNestedTypes.js`, `createConnectionTypeDefs.js`, `schema/Root.ts`, the document type name itself) concatenates raw ES field/index names straight into generated SDL. A name containing anything outside `[_A-Za-z][_0-9A-Za-z]*` (a hyphen, a leading digit) breaks schema generation with an opaque graphql-js lexer error, with no attribution back to which field caused it.
-
-**Goal:** support any valid JSON/ES field name without requiring config changes. `extended.json`/`table.json`/`facets.json` already match fields by their raw ES path (confirmed in `mappingToScalarFields.js`'s `maybeArray`), so this is purely an internal-code concern: configs should keep looking exactly like the mapping.
-
-**Approach (not yet designed in detail):**
-1. One canonical sanitizer (not just dot-replacement) applied consistently everywhere a name gets built: scalar fields, nested fields/types, object types, and the document type name.
-2. A per-catalogue raw-to-sanitized lookup table, built once at startup, threaded into resolver generation so a query against the sanitized GraphQL name still resolves against the real ES field, generalizing what `convertNameForGraphql` already does narrowly for aggregation dots.
-3. Backward compatibility: existing deployments with already-valid (unsanitized) names must see no schema change.
-4. Collision handling: two distinct raw names sanitizing to the same identifier can't be resolved automatically; this is where the diagnostic below stays load-bearing rather than becoming redundant.
-
-**Interim diagnostic (implemented):** `getTypesWithMappings` (`graphqlRoutes.ts`) validates every field name and the document type name against graphql-js's own `isValidNameError` before attempting schema generation (`mapping/utils/findInvalidGraphqlNames.ts`), collecting every offender in one pass. A catalogue with an invalid name now fails with `schema_build_error` and a message naming the specific field(s), instead of an opaque graphql-js parse error with no attribution. This diagnostic stays valuable once sanitization exists too, as the fallback for whatever it can't resolve (collisions, genuinely unsanitizable input).
-
 ### Per-catalogue config reload without full server restart
 
 _Priority: medium. To be reviewed before committing to a design._
@@ -280,6 +264,8 @@ _Priority: medium. Design-first, breaking API change._
 The current response model (`hits { total, edges { node { ... } } }`) is a GraphQL convention borrowed from the Relay cursor-based pagination spec. It is verbose, unfamiliar to users not steeped in Relay, and maps awkwardly to the flat document structure of most Arranger catalogs.
 
 The goal is a more declarative, JSON-friendly model that maps closer to actual data shapes while remaining model-agnostic. This is a breaking change to the GraphQL API surface and affects any consumer of Arranger. It should be designed in coordination with the core module extraction, since the core module's output contract defines what "a result" looks like before it reaches any transport layer.
+
+**Related, worth designing together:** the same question applies to aggregations specifically. The `__`-joined flat aggregation name (e.g. `biomarker__ca19_9_level`, see `mapping/utils/graphqlNameFns.ts` in `modules/types`) exists because `mappingToAggsType`'s Aggregations type folds every ES `object`-typed sub-path into one flat field list; only ES `nested`-typed fields get their own separate `...Aggregations` type today. Nothing in GraphQL requires this: a fully hierarchical Aggregations type per object-nesting level (mirroring what the main scalar/nested schema already does) would eliminate the need to flatten, and encode, a dotted path into a single name at all. This is a redesign of `mappingToAggsType`/`mappingToNestedTypes`'s aggregation branch, not a quick fix, but both this and the hits/edges/nodes redesign above are ultimately about the schema carrying more Relay/graph-theory-flavored convention than the underlying (flat, ES-document-shaped) data needs.
 
 _Design-first. Coordinate with Arranger core module extraction. Will require a migration path for existing consumers._
 
@@ -735,6 +721,16 @@ Adopting Radix UI as part of the Emotion replacement would provide a strong a11y
 Scope: audit against WCAG 2.1 AA, prioritize high-impact gaps (keyboard navigation, screen reader support, colour contrast), remediate as part of the Components modernization effort.
 
 _Coordinate with Emotion replacement; doing both together is much cheaper than doing a11y as a separate pass._
+
+### Storybook (or similar) for `modules/components`/`modules/charts`, carrying their own integration tests
+
+_Priority: medium. Confirmed real gap: no test today exercises "server builds a schema this way" through to "the UI queries and renders it correctly."_
+
+There is currently no integration testing between the UI packages and a real running `search-server`. `integration-tests/import` is a pure module-resolution smoke test (checks exports are `defined`, nothing functional). `integration-tests/server` is real ES + real `search-server`, but entirely server-side, no UI/component involvement. `modules/components`' own Jest suite is unit-level and thin (per the Components modernization section above and existing tech-debt entries), mostly pure-function tests, not full rendering against real data.
+
+This gap let a real cross-package mismatch ship unnoticed during this session's GraphQL name sanitization work: the UI packages had their own independent, duplicated copies of the raw-to-GraphQL-name transform (`LiveAdvancedFacetView.js`, `Aggregations.jsx`, `Stats.jsx`, `charts/arranger/mapping.ts`, and others), each only handling dots, none aware of the server's fuller sanitization. Only caught by reasoning through it by hand, not by any test.
+
+Storybook (or an equivalent tool) would give `modules/components`/`modules/charts` a place to run against realistic, representative data shapes (including edge cases like unusual field names) with visual/interaction assertions, closing the gap between "package imports without crashing" and "actually renders correct results for real server responses." Scope not yet detailed: candidate approach is stories per component family (Aggregations, facets, charts) backed by fixture data mirroring real catalogue mappings, potentially with visual regression testing.
 
 ---
 

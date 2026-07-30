@@ -22,7 +22,7 @@ import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
-import findInvalidGraphqlNames from '#mapping/utils/findInvalidGraphqlNames.js';
+import { buildGraphqlNameRegistry } from '#mapping/utils/graphqlNameRegistry.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
@@ -63,14 +63,22 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 
 			const fieldsFromMapping = flattenMappingToFields(mappingFromIndex);
 
-			const invalidNames = findInvalidGraphqlNames({
+			// Field names are sanitized into valid GraphQL identifiers below (see graphqlNameRegistry.ts);
+			// the one thing sanitization can't resolve on its own is two distinct raw fields colliding on
+			// the same sanitized name.
+			const graphqlNameRegistry = buildGraphqlNameRegistry({
 				documentType: configs?.[configRootProperties.DOCUMENT_TYPE],
 				fieldsFromMapping,
 			});
 
-			if (invalidNames.length > 0) {
-				const details = invalidNames.map(({ path, reason }) => `\`${path}\`: ${reason}`).join('; ');
-				throw schemaBuildError(`Invalid GraphQL name(s) found in this catalogue's mapping: ${details}`, undefined);
+			if (graphqlNameRegistry.collisions.length > 0) {
+				const details = graphqlNameRegistry.collisions
+					.map(({ graphqlName, rawPaths }) => `\`${graphqlName}\`: ${rawPaths.join(', ')}`)
+					.join('; ');
+				throw schemaBuildError(
+					`Two or more fields in this catalogue's mapping collide on the same GraphQL name: ${details}`,
+					undefined,
+				);
 			}
 
 			// Combines the mapping from ES with the "extended" custom configs
@@ -147,6 +155,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 				},
 				mapping: mappingFromIndex,
+				registry: graphqlNameRegistry,
 			});
 
 			return {
@@ -319,6 +328,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			// TODO: invalid types between router and the app expected by apolloServer. Works as is but types are not valid.
 			apolloServer.applyMiddleware({
 				app: router,
+				// The app already enforces its own CORS policy (see apps/search-server/src/server.ts);
+				// Apollo's own default here would layer a second, permissive policy on top, disagreeing
+				// with (and undermining) whatever origin restriction the app configured.
+				cors: false,
 				path: mainPath,
 			});
 
@@ -343,6 +356,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 			apolloMockServer.applyMiddleware({
 				app: router,
+				// See the equivalent comment on apolloServer.applyMiddleware above.
+				cors: false,
 				path: '/mock/graphql',
 			});
 

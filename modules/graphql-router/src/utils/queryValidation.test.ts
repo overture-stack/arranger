@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import { buildSchema, parse, validate } from 'graphql';
+import { buildSchema, getIntrospectionQuery, parse, validate } from 'graphql';
 
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 
@@ -76,5 +76,46 @@ suite('maxDepthRule', () => {
 		const query = `{ nested { b { b { b { b { b { a } } } } } } }`;
 		const errors = run([maxDepthRule()], query);
 		assert.equal(errors.length, 0);
+	});
+
+	test('does not count introspection meta-fields toward depth', () => {
+		const query = `{
+			__schema {
+				types {
+					fields {
+						type {
+							ofType {
+								ofType {
+									ofType {
+										ofType {
+											name
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}`;
+		const errors = run([maxDepthRule()], query);
+		assert.equal(errors.length, 0);
+	});
+
+	test('passes the real client-generated IntrospectionQuery (its TypeRef fragment nests ofType 9 levels deep)', () => {
+		// TypeRef is a standalone top-level fragment definition typed `on __Type`, not something
+		// nested under a `__schema`/`__type` field, so a check on field names alone misses it.
+		const errors = run([maxDepthRule()], getIntrospectionQuery());
+		assert.equal(errors.length, 0);
+	});
+
+	test('still enforces the limit for a normal field alongside an introspection field', () => {
+		const query = `{
+			__schema { types { name } }
+			nested { b { b { b { b { b { b { a } } } } } } }
+		}`;
+		const errors = run([maxDepthRule()], query);
+		assert.equal(errors.length > 0, true);
+		assert.match(errors[0].message, /depth limit exceeded/);
 	});
 });

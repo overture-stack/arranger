@@ -9,11 +9,22 @@ import {
 	facetsProperties,
 	tableProperties,
 } from '@overture-stack/arranger-types/configs/constants';
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import { startCase } from 'lodash-es';
 
 import flattenMapping from './flattenMapping.js';
 import type { FieldFromMapping } from './types.js';
 import { toQuery } from './utils/columnsToGraphql.js';
+
+/**
+ * Matches a `facets.json` aggregation entry's `fieldName` against an extended field's raw ES path.
+ * Prefers a direct raw-path match; falls back to un-escaping the legacy `__`-flattened form some
+ * existing `facets.json` files still use for nested fields, from before configs could reference
+ * them by their natural raw path the same way `extended.json`/`table.json` already do.
+ * TODO: remove the legacy `__` fallback in 3.2, once existing `facets.json` files have migrated.
+ */
+const matchesExtendedField = (aggFieldName: string, extendedFieldName: string): boolean =>
+	extendedFieldName === aggFieldName || extendedFieldName === aggFieldName.replace(/__/g, '.');
 
 export const extendColumns = (tableConfig: TableConfigs, extendedFields: ExtendedConfigs[]): TableConfigs => {
 	const columnsFromConfig = tableConfig?.[tableProperties.COLUMNS] ?? [];
@@ -123,9 +134,7 @@ export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: Extend
 	const aggs = hasAggsConfig
 		? aggsFromConfig
 				.map((agg) => {
-					const extendedObj = extendedFields?.find(
-						(obj) => obj.fieldName === agg.fieldName.replace(/__/g, '.'),
-					);
+					const extendedObj = extendedFields?.find((obj) => matchesExtendedField(agg.fieldName, obj.fieldName));
 
 					return agg.fieldName
 						? {
@@ -151,10 +160,7 @@ export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: Extend
 						['nested', 'object'].includes(agg[dataFieldProperties.DISPLAY_TYPE])
 						? null
 						: {
-								[dataFieldProperties.FIELD_NAME]: agg[dataFieldProperties.FIELD_NAME].replaceAll(
-									'.',
-									'__',
-								),
+								[dataFieldProperties.FIELD_NAME]: sanitizeGraphqlFlatName(agg[dataFieldProperties.FIELD_NAME]),
 								// defines aggregation type (component used in facets)
 								[dataFieldProperties.DISPLAY_TYPE]: agg[dataFieldProperties.DISPLAY_TYPE],
 								// TODO: determine what "isActive" does, vs "show"

@@ -1,4 +1,5 @@
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import getFields from 'graphql-fields';
 
 import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/index.js';
@@ -50,24 +51,16 @@ export type AggregationsQueryVariables = {
 	include_missing: boolean;
 };
 
-/**
- * Replaces all `.` symbols in the keys of an Aggregation Map with `__`.
- * GraphQL fields cannot use the `.` symbol, they may only be alphanumeric or underscores.
- *
- * For example, `donor.age` will become `donor__age`.
- */
+/** Renames one Aggregation Map key from its raw ES field path to its GraphQL-safe name (see `sanitizeGraphqlFlatName`), e.g. `donor.age` becomes `donor__age`. */
 const toGraphqlField = (acc: AllAggregationsMap, [a, b]: [string, CommonAggregationProperties]) => ({
 	...acc,
-	[a.replace(/\./g, '__')]: b,
+	[sanitizeGraphqlFlatName(a)]: b,
 });
 
 /**
- * Update the AllAggregationsMap to make field names safe for use with GraphQL. All values are unchanged,
- * while all property strings have `.` values replaced with `__` to make them safe for Graphql.
- *
- * For example, `donor.age` will become `donor__age`.
- *
- * Elasticsearch uses dot notation for nested fields, but graphql field names may not use the `.` symbol.
+ * Update the AllAggregationsMap to make field names safe for use with GraphQL. All values are
+ * unchanged; every property key is renamed to its GraphQL-safe name via `sanitizeGraphqlFlatName`,
+ * the same rule the schema itself was built with, so a query's aggregation keys always match.
  */
 export const aggregationsToGraphql = (aggregations: AllAggregationsMap): AllAggregationsMap => {
 	return Object.entries(aggregations).reduce<AllAggregationsMap>(toGraphqlField, {});
