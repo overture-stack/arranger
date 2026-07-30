@@ -288,43 +288,14 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Either add a `.env.arrangerDev` template at the repo root, or rewrite step 2 to describe the actual setup process (e.g. copy from `.env.schema` and fill in values, or document required env vars inline). The `.env` content shown in the info callout in `setup.md` is a reasonable starting point for the template.
 **Standalone:** yes; documentation or file addition only
 
-### Federated search has no `.dev/docs/` implementation guide
+### Network/federated search feature is undocumented
 
-**File:** `modules/graphql-router/src/network/`
-**Severity:** low (consumer-facing documentation now exists; contributor-facing depth does not)
+**File:** `modules/graphql-router/src/network/` (in progress)
+**Severity:** medium (feature exists; operators and integrators have no documentation for it)
 **Kind:** missing documentation
-**Issue:** The consumer-facing half of this entry is done: `docs/federated-search.md` (2026-07-29) covers configuration for both the `search-server` and library layers, the GraphQL query shape and arguments, per-node status reporting, the three failure modes, and the current limitations. "Network search", "network aggregation" and "federated search" are synonyms; the page states this and uses "federated search" throughout, with `network` reserved for configuration and GraphQL identifiers.
-
-What remains is contributor-facing depth, which per `conventions/documentation.md` belongs in `.dev/docs/`: the startup discovery sequence, the `AggregationAccumulator` merge algorithm, how local nodes are invoked through in-process resolvers rather than HTTP, and the schema-merge path (`createSchemaFromNetworkConfig` → `mergeSchemas`).
-**Fix:** Add `.dev/docs/federated-search-internals.md` and cross-link it from `docs/federated-search.md` using a full GitHub URL.
-**Standalone:** yes; documentation only
-
-### `gqlHealthCheck` is dead code
-
-**File:** `modules/graphql-router/src/network/health.ts`
-**Severity:** low (no functional impact; misleading to a reader looking for node health monitoring)
-**Kind:** dead code
-**Issue:** `gqlHealthCheck` is exported but never imported anywhere in the monorepo. Nothing polls remote node health: node status in the federated response is derived only from startup field discovery and the outcome of the current query. A reader who finds this function reasonably assumes live health monitoring exists.
-**Fix:** Either delete it, or wire it into a startup and/or periodic health check and report the result on the `network.nodes` status. Deleting is the smaller change; wiring it up is the more useful one, since a node that fails startup discovery is currently stuck in `ERROR` until the querying server restarts.
-**Standalone:** yes
-
-### Failed federated nodes report `hits: 0`, so summed network totals silently under-count
-
-**File:** `modules/graphql-router/src/network/resolvers/index.ts`, `modules/graphql-router/src/network/resolvers/aggregations.ts`
-**Severity:** medium (a portal can present an incomplete total as complete)
-**Kind:** API design
-**Issue:** A node that fails startup discovery or fails the current query is reported in `network.nodes` with `status: "ERROR"` and `hits: 0`. Zero is indistinguishable from "genuinely no matches" to any consumer that sums `nodes[].hits` without inspecting `status`, so a partial outage renders as a smaller-but-plausible total rather than a visible error. The same applies to the merged `aggregations`: the failed node contributes nothing at all, not even the `___aggregation_not_available___` sentinel bucket that a *connected* node lacking a field contributes.
-**Fix:** Make the absence explicit rather than zero: `hits: null` for errored nodes would force consumers to handle the case, but is a breaking schema change. A non-breaking interim step is to document it (done in `docs/federated-search.md` § Node status and failures) and to have `NetworkNodesChart` visually distinguish errored nodes. Decide alongside the hits/edges/nodes redesign in `.dev/roadmap.md`.
-**Standalone:** no; the schema change should be considered with the hits redesign
-
-### Stale TODO comment in `network/index.ts` about failed node reporting
-
-**File:** `modules/graphql-router/src/network/index.ts`
-**Severity:** low (misleading comment only)
-**Kind:** stale comment
-**Issue:** The comment reads "Nodes that fail to fetch on startup are removed from gql schema and are never queried or reported on in" (sentence also truncated). The second half is no longer true: `createResolvers` builds `failedRemoteNodeInfo` and `missingLocalNodeInfo` and merges them into the `nodes` response, so failed nodes *are* reported, with `status: "ERROR"` and their error message. What remains true is that they are never re-queried until the process restarts.
-**Fix:** Reword to state the actual behaviour: failed nodes are excluded from the queryable schema and never retried, but are reported in `network.nodes` as errored.
-**Standalone:** yes
+**Issue:** The network/federated search feature (cross-catalogue and cross-instance querying) has no published docs. "Network search" and "federated search" are synonyms for this feature; use "federated search" in consumer-facing docs.
+**Fix:** Once the feature stabilizes, add a `docs/usage/` page covering configuration, query patterns, and limitations. Implementation detail belongs in `.dev/docs/`.
+**Standalone:** no; blocked on feature stabilisation
 
 ### Arranger Components has no published docs page
 
@@ -475,7 +446,7 @@ What remains is contributor-facing depth, which per `conventions/documentation.m
 **Severity:** low
 **Kind:** design-smell
 **Issue:** `hasValidConfig(documentType, index)` is a 2.x legacy query that validates a catalogue by matching an ES index name against registered aliases. The 3.x equivalent is `GET /introspection`, which identifies catalogues by `documentType` without coupling the frontend to ES index names. `hasValidConfig` is still present and still functional, but it encourages the wrong integration pattern and creates a maintenance surface as the schema evolves.
-**Fix:** Formally mark `hasValidConfig` as deprecated in the schema (add `@deprecated` directive with migration note pointing to `GET /introspection`). Schedule removal for a future major release. Migration guidance for consumers is documented in [docs/reference/08-Migration/v3.1.md](../docs/reference/08-Migration/v3.1.md#replace-hasvalidconfig-with-the-introspection-api).
+**Fix:** Formally mark `hasValidConfig` as deprecated in the schema (add `@deprecated` directive with migration note pointing to `GET /introspection`). Schedule removal for a future major release. Migration guidance for consumers is documented in [docs/migration/v3.1.md](../docs/migration/v3.1.md#replace-hasvalidconfig-with-the-introspection-api).
 **Standalone:** yes; adding a `@deprecated` directive is a non-breaking additive change
 
 ### Download route body is brittle
