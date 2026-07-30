@@ -12,9 +12,9 @@ Arranger is a versatile, model-agnostic data discovery API for OpenSearch and El
 
 Technical resources for those working with or contributing to the project are available from our official documentation site, the following content can also be read and updated within the `/docs` folder of this repository.
 
-- **[Arranger Overview](https://docs.overture.bio/docs/core-software/Arranger/overview)**
-- [**Setting up the Development Enviornment**](https://docs.overture.bio/docs/core-software/Arranger/setup)
-- [**Common Usage Docs**](https://docs.overture.bio/docs/core-software/Arranger/setup)
+- **[Arranger Overview](https://docs.overture.bio/develop/Arranger/overview)**
+- [**Setting up the Development Enviornment**](https://docs.overture.bio/develop/Arranger/setup)
+- [**Common Usage Docs**](https://docs.overture.bio/develop/Arranger/setup)
 
 ## Development Environment
 
@@ -27,7 +27,7 @@ Technical resources for those working with or contributing to the project are av
 ## Support & Contributions
 
 - For support, feature requests, and bug reports, please see our [Support Guide](https://docs.overture.bio/community/support).
-- For detailed information on how to contribute to this project, please see our [Contributing Guide](https://docs.overture.bio/docs/contribution).
+- For detailed information on how to contribute to this project, please see our [Contributing Guide](https://docs.overture.bio/develop/contributing).
 
 ## Related Software
 
@@ -45,7 +45,7 @@ The Overture platform includes the following components:
 | [Lyric](https://github.com/overture-stack/lyric)        | A model-agnostic, tabular data submission system                                          |
 | [Lectern](https://github.com/overture-stack/lectern)    | Schema Manager, designed to validate, store, and manage collections of data dictionaries. |
 
-If you'd like to get started using our platform [check out our quickstart guides](https://docs.overture.bio/guides/getting-started)
+If you'd like to get started using our platform [check out our quickstart guides](https://docs.overture.bio/deploy)
 
 ## Funding Acknowledgement
 
