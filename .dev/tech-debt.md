@@ -337,6 +337,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Add a docs page or section covering both endpoints: path (configurable via `PING_PATH`/`READY_PATH`), response shape, HTTP status semantics (`/ready` returns `503` only when `unhealthy`), and the liveness-vs-readiness distinction with the reasoning for why liveness stays catalogue-blind. Cross-link from `GET /introspection` in `05-introspection.md`, since its top-level `status` there is the same computation `/ready` uses.
 **Standalone:** yes; documentation addition only, no code changes
 
+### README, package.json engines and the Dockerfiles disagree on the Node version
+
+**Files:** `README.md:21`; `package.json` (`engines.node`); `docker/Dockerfile.local:13,27,83`; `docker/Dockerfile.jenkins:13,36`
+**Severity:** medium (a contributor following the README may install a version the tooling does not actually want, and the published `engines` constraint is what consumers of the packages resolve against)
+**Kind:** prerequisite drift across three sources of truth
+**Issue:** Three different Node versions are stated for the same project. `README.md` lists "Node.js (v22 or higher)" under Development Environment, `package.json` declares `engines.node: ">=20.0.0"`, and every stage in both Dockerfiles builds `FROM node:24-alpine`. There is no `.nvmrc`, `.node-version`, or `volta` block to break the tie, and no CI workflow in this repo to infer the tested version from. Found while fixing link hygiene in the README, so the docs half was in scope but resolving the disagreement is not a documentation question: which value is correct depends on what the tooling actually requires and what the published packages intend to support.
+**Fix:** Decide the authoritative version first, then make the three agree. Likely shape: pin the intended development version in a `.nvmrc` (or `volta`) so there is one machine-readable source, set `engines.node` to the lowest version actually supported by consumers (which may legitimately stay below the development version), align the Dockerfiles, and have the README cite the pinned value rather than restating a number. Note the README claim was deliberately left untouched pending this decision.
+**Standalone:** no; needs a decision on the supported and intended Node versions before any file changes
+
 ---
 
 ## modules/sqon

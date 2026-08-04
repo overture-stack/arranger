@@ -147,6 +147,6 @@ Only fields with `keyword` or `boolean` types in the index mapping are suitable 
 
 :::tip Portal customization guide
 
-For a step-by-step walkthrough of configuring a complete data portal, including mock data setup and Arranger component integration, see the [platform guide on customizing the data portal](/use/administration/customizing-the-data-portal).
+For a step-by-step walkthrough of configuring a complete data portal, including mock data setup and Arranger component integration, see the [platform guide on customizing the data portal](https://docs.overture.bio/use/administration/customizing-the-data-portal).
 
 :::

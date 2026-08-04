@@ -119,5 +119,5 @@ GraphQL's built-in introspection (`__schema` / `__type`) also works, but it is g
 The `filters` argument on both `hits` and `aggregations` takes a **SQON**, Arranger's JSON filter language. Build it separately and pass it as a variable, as shown above. See [Building SQON queries](./03-building-sqon-queries.md) and [SQON in detail](./04-sqon-in-detail.md).
 
 :::info **Need Help?**
-If you encounter any issues or have questions, please don't hesitate to reach out through our [**support page**](/community/support) or our [**discussion forum**](https://github.com/overture-stack/docs/discussions?discussions_q=).
+If you encounter any issues or have questions, please don't hesitate to reach out through our [**support page**](https://docs.overture.bio/community/support) or our [**discussion forum**](https://github.com/overture-stack/docs/discussions?discussions_q=).
 :::
