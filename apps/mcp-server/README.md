@@ -10,10 +10,10 @@ The server registers four tools that cover the full query lifecycle:
 
 | Tool                   | Purpose                                                                                                                        |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `list-catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                        |
-| `get-sqon-schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema. |
-| `get-catalogue-fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.        |
-| `execute-query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                    |
+| `list_catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                        |
+| `get_sqon_schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema. |
+| `get_catalogue_fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.        |
+| `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                    |
 
 ## Folder Structure
 

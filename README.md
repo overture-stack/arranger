@@ -10,11 +10,11 @@ Arranger is a versatile, model-agnostic data discovery API for OpenSearch and El
 
 ## Documentation
 
-Technical resources for those working with or contributing to the project are available from our official documentation site, the following content can also be read and updated within the `/docs` folder of this repository.
+Technical resources for those working with or contributing to the project live in the `/docs` folder of this repository, and are also published, fully rendered, on our [official documentation site](https://docs.overture.bio/develop/Arranger/overview).
 
-- **[Arranger Overview](https://docs.overture.bio/develop/Arranger/overview)**
-- [**Setting up the Development Environment**](https://docs.overture.bio/develop/Arranger/setup)
-- [**Reference Docs**](https://docs.overture.bio/develop/Arranger/reference)
+- **[Arranger Overview](./docs/overview.md)**
+- [**Setting up the Development Environment**](./docs/setup.md)
+- [**Reference Docs**](./docs/reference/reference.mdx)
 
 ## Development Environment
 
@@ -27,7 +27,7 @@ Technical resources for those working with or contributing to the project are av
 ## Support & Contributions
 
 - For support, feature requests, and bug reports, please see our [Support Guide](https://docs.overture.bio/community/support).
-- For detailed information on how to contribute to this project, please see our [Contributing Guide](https://docs.overture.bio/develop/contributing).
+- For detailed information on how to contribute to this project, please see our [Contributing Guide](./CONTRIBUTING.md).
 
 ## Related Software
 
