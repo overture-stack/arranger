@@ -45,8 +45,6 @@ The Overture platform includes the following components:
 | [Lyric](https://github.com/overture-stack/lyric)        | A model-agnostic, tabular data submission system                                          |
 | [Lectern](https://github.com/overture-stack/lectern)    | Schema Manager, designed to validate, store, and manage collections of data dictionaries. |
 
-If you'd like to get started using our platform [check out our quickstart guides](https://docs.overture.bio/deploy)
-
 ## Funding Acknowledgement
 
 Overture is supported by grant #U24CA253529 from the National Cancer Institute at the US National Institutes of Health, and additional funding from Genome Canada, the Canada Foundation for Innovation, the Canadian Institutes of Health Research, Canarie, and the Ontario Institute for Cancer Research.
