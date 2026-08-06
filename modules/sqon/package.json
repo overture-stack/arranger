@@ -31,7 +31,7 @@
 		"pretest": "npm run generateVersion",
 		"test": "tsx --test",
 		"test:watch": "npm test -- --watch",
-		"watch": "nodemon -w src -e ts --exec \"npm run clear:dist && npm run build\""
+		"watch": "nodemon -w src -e ts --ignore src/version/generated.ts --exec \"npm run clear:dist && npm run build\""
 	},
 	"dependencies": {
 		"zod": "^3.24.2",
