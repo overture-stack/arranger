@@ -29,6 +29,9 @@ Omitting an argument does not mean "use everything" or "no limit applies." It me
 | Behaviour  | Default                                             | Notes                                                                                          |
 | ---------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Sort order | Your `sort`, with an `_id: asc` tie-breaker appended | Not overridable. The tie-breaker guarantees deterministic ordering across paginated export batches; without it, ties in your sort field could cause rows to be skipped or repeated across batches. |
+| Max rows (`DOWNLOAD_MAX_ROWS`) | `100` | Maximum number of rows a single export returns. Global default applied to all catalogues; set the env var to raise it. |
+| Custom row caps (`ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS`) | `false` | When `false`, requests cannot override the row cap above. Set to `true` to allow per-request row limits. |
+| Stream buffer (`DOWNLOAD_STREAM_BUFFER_SIZE`) | `2000` | Number of rows buffered per batch while streaming an export. |
 
 ## Query validation limits
 
@@ -36,10 +39,10 @@ Omitting an argument does not mean "use everything" or "no limit applies." It me
 | ------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
 | `GRAPHQL_MAX_ALIASES` | 15 aliased fields per query   | Set the env var, or `maxAliases` in a catalogue's `base.json` (per-catalogue config wins).      |
 | `GRAPHQL_MAX_DEPTH`   | 7 levels of selection nesting | Set the env var, or `maxDepth` in a catalogue's `base.json` (per-catalogue config wins).        |
-| `MAX_RESULTS_WINDOW`  | 10000 hits per query          | Set the env var, or `maxResultsWindow` in a catalogue's `table.json`. See [Migrating to 3.1](../migration/v3.1.md#max_results_window-is-now-enforced) for details. |
+| `MAX_RESULTS_WINDOW`  | 10000 hits per query          | Set the env var, or `maxResultsWindow` in a catalogue's `table.json`. See [Migrating to 3.1](./08-Migration/v3.1.md#max_results_window-is-now-enforced) for details. |
 
 Both `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` apply their defaults whether or not you've set the corresponding environment variable: there is no "unset means unlimited" state for either.
 
 :::info
-If you're generating queries programmatically, including through the [MCP server](./06-ai-and-automation.md), assume every default above applies unless you set the value yourself. Only `trackTotalHits` is visible via schema introspection; the rest require reading this page.
+If you're generating queries programmatically, including through the [MCP server](../mcp-server.md), assume every default above applies unless you set the value yourself. Only `trackTotalHits` is visible via schema introspection; the rest require reading this page.
 :::

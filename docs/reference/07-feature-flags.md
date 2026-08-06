@@ -7,7 +7,7 @@ Arranger ships a set of boolean feature flags that turn optional behaviour on or
 
 `apps/search-server/.env.schema` is the canonical list of every env var Arranger reads, with its default value. This page explains what each feature flag actually does and, where relevant, why the default is what it is.
 
-For numeric query-validation limits (`GRAPHQL_MAX_ALIASES`, `GRAPHQL_MAX_DEPTH`, `MAX_RESULTS_WINDOW`) and other invisible query defaults, see [Defaults and Limits](./07-defaults-and-limits.md) instead; they're a related but separate category from the on/off flags on this page.
+For numeric query-validation limits (`GRAPHQL_MAX_ALIASES`, `GRAPHQL_MAX_DEPTH`, `MAX_RESULTS_WINDOW`) and other invisible query defaults, see [Defaults and Limits](./06-defaults-and-limits.md) instead; they're a related but separate category from the on/off flags on this page.
 
 ---
 
@@ -17,7 +17,7 @@ These two flags close specific, identified attack surface. Both default to the p
 
 | Flag | Env var | Default | What it does | Recommendation |
 | --- | --- | --- | --- | --- |
-| `disableGraphQLIntrospection` | `DISABLE_GRAPHQL_INTROSPECTION` | `false` (`true` when `NODE_ENV=production`) | Disables GraphQL's built-in `__schema`/`__type` introspection system, which otherwise exposes full schema structure (type names, field names, arguments) to any client. | Recommended in production (OWASP A02: Security Misconfiguration). See the [Introspection API](./05-introspection.md#graphql-introspection) page for full detail, including a caveat for federated (network aggregation) deployments: a node serving as a remote target must keep this disabled, since the aggregating node discovers its schema via `__type` at startup. |
+| `disableGraphQLIntrospection` | `DISABLE_GRAPHQL_INTROSPECTION` | `false` (`true` when `NODE_ENV=production`) | Disables GraphQL's built-in `__schema`/`__type` introspection system, which otherwise exposes full schema structure (type names, field names, arguments) to any client. | Recommended in production (OWASP A02: Security Misconfiguration). See the [Introspection API](./05-introspection.md#graphql-introspection) page for full detail. **Caveat for [federated search](../federated-search.md):** a node serving as a remote target must keep this flag `false`, since the querying node discovers its schema via `__type` at startup. |
 | `enableGraphQLBatching` | `ENABLE_GRAPHQL_BATCHING` | `false` | Enables array-based GraphQL query batching (sending multiple operations in a single HTTP request, each executed in parallel). | Disabled by default and expected to stay that way: Arranger has no legitimate internal use for HTTP-level batching, and unrestricted batching can be used to bypass request-level rate limiting and amplify the cost of a single request. Only enable if a specific consumer genuinely relies on batched requests. |
 
 Field-name suggestions in GraphQL error messages (`"Did you mean ...?"`, which can leak schema structure even with introspection disabled) are stripped unconditionally and have no flag; there's nothing to configure.

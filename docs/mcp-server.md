@@ -1,14 +1,16 @@
-# AI and automation
-
-Arranger exposes its catalogue data and query tools to AI models, scripts, and pipelines through two surfaces: a REST introspection API and a dedicated MCP server. This page introduces both and points to where to go next.
-
+---
+sidebar_position: 5
 ---
 
-## MCP server
+# Arranger MCP server
+
+The Arranger MCP server exposes a running Arranger instance's catalogue data and query tools to AI models, scripts, and pipelines. It is one of two surfaces for that purpose; the other is the [Introspection API](./reference/05-introspection.md), a set of read-only REST endpoints that any client can call directly.
 
 The `arranger-mcp-server` package implements the [Model Context Protocol](https://modelcontextprotocol.io/) over Streamable HTTP. Connect any MCP-compatible AI client to it and the client can discover available catalogues, retrieve field metadata and the SQON schema, and construct search queries: without needing Arranger-specific integration code on the model side.
 
-### Quick start
+---
+
+## Quick start
 
 ```bash
 # from the monorepo root
@@ -24,7 +26,7 @@ The server starts on `http://localhost:3100/mcp` by default. Two environment var
 
 All other variables (host, port, path, log level, request timeout) have sensible defaults. Copy `apps/mcp-server/.env.schema` to `apps/mcp-server/.env` to start from a working local baseline.
 
-### What the server exposes
+## What the server exposes
 
 **Instructions** (sent once, in the `initialize` response):
 
@@ -47,7 +49,7 @@ The server returns a short set of usage instructions that most clients fold into
 
 - `query_arranger`: accepts the user's goal as an input, and returns three messages containing the "system prompt" (workflow instructions), a SQON cheat sheet, and the user's goal
 
-### Connecting a client
+## Connecting a client
 
 Any MCP-compatible client that supports Streamable HTTP can connect. Point it at the MCP server URL (`http://127.0.0.1:3100/mcp` with default config) and use transport type `streamable-http`.
 
@@ -63,7 +65,7 @@ For **LM Studio** and other model hosts, follow the client's documentation to ad
 
 ## SQON generation
 
-When constructing SQONs from a script, pipeline, or model, use the [introspection API](./05-introspection.md) to derive field names, types, and valid operators at runtime rather than hard-coding them. This keeps the client current when a catalogue mapping changes.
+When constructing SQONs from a script, pipeline, or model, use the [introspection API](./reference/05-introspection.md) to derive field names, types, and valid operators at runtime rather than hard-coding them. This keeps the client current when a catalogue mapping changes.
 
 Safe defaults for programmatic SQON construction:
 
@@ -75,7 +77,7 @@ Safe defaults for programmatic SQON construction:
 - Do not invent `pivot` values; derive them from the live catalogue mapping or omit them
 - Use `not-in` for value exclusion, not `not { in: [...] }`: combining the two is a double negative
 
-For a detailed walkthrough of the SQON format and how to compose queries, see [Building SQON queries](./03-building-sqon-queries.md).
+For a detailed walkthrough of the SQON format and how to compose queries, see [Building SQON queries](./reference/03-building-sqon-queries.md).
 
 ---
 

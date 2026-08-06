@@ -7,7 +7,7 @@ When a user applies filters in a search interface, the request flows through fou
 3. **Arranger Server** translates the GraphQL query into an Elasticsearch query
 4. **Elasticsearch** executes the query and returns results, which flow back through Arranger to the client
 
-This pipeline separates client-side applications from backend Elasticsearch servers.
+This pipeline separates client-side applications from backend Elasticsearch servers. For the concrete request and response shape — the endpoint, `hits`, and `aggregations` — see the [GraphQL API](./graphql-api.md) reference.
 
 :::info **What are SQONs?**
 SQON (Serializable Query Object Notation) is Overture's filter language for communicating queries between system components. The examples below show SQONs in action, followed by detailed explanations of [what SQON is](#sqon-at-a-glance), [why it exists](#why-sqon-exists). For a deeper reference on how to build them using operators, aliases, pivots, and covering common edge cases, see [SQON in detail](./04-sqon-in-detail.md).
@@ -113,7 +113,7 @@ The client sends the SQON to Arranger as part of a GraphQL request:
 - **Sorting** (line 26): Order of results (empty in this example)
 
 :::tip
-This example sets `first: 20` explicitly. If `first` is omitted entirely, it defaults to 10, along with a number of other non-obvious defaults for aggregations and downloads; see [Defaults and Limits](./07-defaults-and-limits.md) for the full list.
+This example sets `first: 20` explicitly. If `first` is omitted entirely, it defaults to 10, along with a number of other non-obvious defaults for aggregations and downloads; see [Defaults and Limits](./06-defaults-and-limits.md) for the full list.
 :::
 
 </details>
@@ -224,5 +224,5 @@ If you want the full SQON reference, including operators, aliases, pivot behavio
 :::
 
 :::info **Need Help?**
-If you encounter any issues or have questions, please don't hesitate to reach out through our relevant [**community support channels**](https://docs.overture.bio/community/support).
+If you encounter any issues or have questions, please don't hesitate to reach out through our [**support page**](https://docs.overture.bio/community/support) or our [**discussion forum**](https://github.com/overture-stack/docs/discussions?discussions_q=).
 :::

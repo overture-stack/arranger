@@ -2,11 +2,13 @@
 
 Each catalogue in Arranger is controlled by four JSON configuration files. Together they define which index to connect to, how fields are labelled for display, which columns appear in the data table, and which fields are exposed as facet panels.
 
+A fifth file, `network.json`, is optional and only needed to federate queries across several Arranger servers. It is documented separately in [Federated search](../federated-search.md#with-search-server-configuration-files).
+
 Templates for all four files are [in the Arranger repository](https://github.com/overture-stack/arranger/tree/main/apps/search-server/configTemplates). The full JSON schema describing every available option is at [`configTemplates/configs.json.schema`](https://github.com/overture-stack/arranger/blob/main/apps/search-server/configTemplates/configs.json.schema).
 
 ## File locations
 
-Configuration files must be placed in the `configs/` directory under the server's working directory, or in the path specified by the `CONFIG_PATH` environment variable.
+Configuration files must be placed in the `configs/` directory under the server's working directory, or in the path specified by the `CONFIGS_PATH` environment variable.
 
 In a multicatalogue setup, each catalogue gets its own subdirectory named after the catalogue ID:
 
@@ -145,6 +147,6 @@ Only fields with `keyword` or `boolean` types in the index mapping are suitable 
 
 :::tip Portal customization guide
 
-For a step-by-step walkthrough of configuring a complete data portal, including mock data setup and Arranger component integration, see the [platform guide on customizing the data portal](https://docs.overture.bio/guides/administration-guides/customizing-the-data-portal).
+For a step-by-step walkthrough of configuring a complete data portal, including mock data setup and Arranger component integration, see the [platform guide on customizing the data portal](https://docs.overture.bio/use/administration/customizing-the-data-portal).
 
 :::
