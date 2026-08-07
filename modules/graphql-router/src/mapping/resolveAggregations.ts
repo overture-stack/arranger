@@ -1,4 +1,5 @@
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+import { configOptionalProperties } from '@overture-stack/arranger-types/configs/constants';
 import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import getFields from 'graphql-fields';
 
@@ -80,6 +81,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		graphqlResolveInfo,
 	) => {
 		const nestedFieldNames = type.nested_fieldNames;
+		const nestingPrefix = type.config?.[configOptionalProperties.NESTING_PREFIX];
 
 		const { esClient } = context;
 
@@ -91,6 +93,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		const query = buildQuery({
 			caller: 'resolveAggregations',
 			nestedFieldNames,
+			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
 				serverSideFilter: getServerSideFilter && getServerSideFilter(context),
@@ -108,6 +111,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			sqon: resolvedFilter,
 			graphqlFields,
 			nestedFieldNames,
+			nestingPrefix,
 			aggregationsFilterThemselves: aggregations_filter_themselves,
 		});
 
@@ -126,6 +130,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		const aggregations = flattenAggregations({
 			aggregations: response?.body?.aggregations,
 			includeMissing: include_missing,
+			nestingPrefix,
 		});
 
 		return aggregations;

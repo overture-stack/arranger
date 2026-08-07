@@ -3,8 +3,9 @@ import { JSONPath } from 'jsonpath-plus';
 import { chunk, isObject, flattenDeep } from 'lodash-es';
 
 // import { ENV_CONFIG } from '#config/index.js';
-import { tableDefaults } from '@overture-stack/arranger-types/configs/constants';
+import { configOptionalProperties, tableDefaults } from '@overture-stack/arranger-types/configs/constants';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
+import { applyNestingPrefix, applyNestingPrefixToFieldNames, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
 import compileFilter from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
@@ -198,6 +199,8 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 	) => {
 		const fields = getFields(info);
 		const nestedFieldNames = type.nested_fieldNames;
+		const nestingPrefix = type.config?.[configOptionalProperties.NESTING_PREFIX];
+		const esNestedFieldNames = applyNestingPrefixToFieldNames(nestedFieldNames, nestingPrefix) ?? nestedFieldNames;
 
 		const { esClient } = context;
 		const { extendedFields } = type;
@@ -205,6 +208,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 		const query = buildQuery({
 			caller: 'resolveHits',
 			nestedFieldNames,
+			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: filters || { op: 'and', content: [] },
 				serverSideFilter: getServerSideFilter(context),
@@ -220,12 +224,13 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 		if (sort && sort.length) {
 			// TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
 			body.sort = sort.map(({ fieldName, missing, order, ...rest }) => {
-				const nested_path = nestedFieldNames
-					.filter((nestedFieldName) => fieldName.indexOf(nestedFieldName) === 0)
+				const esFieldName = applyNestingPrefix(fieldName, nestingPrefix);
+				const nested_path = esNestedFieldNames
+					.filter((nestedFieldName) => esFieldName.indexOf(nestedFieldName) === 0)
 					.reduce((deepestPath, path) => (deepestPath.length > path.length ? deepestPath : path), '');
 
 				return {
-					[fieldName]: {
+					[esFieldName]: {
 						missing: missing
 							? missing === 'first'
 								? '_first'
@@ -247,20 +252,24 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 		const copyToSourceFields = findCopyToSourceFields(type.mapping);
 
+		// A per-field _source pattern list can't be prefixed field-by-field without risking a
+		// mismatch against a GraphQL-sanitized name; requesting the whole envelope is a strict
+		// superset of any narrower list, so it's the simple, always-correct choice here.
+		const sourceFields = nestingPrefix
+			? [nestingPrefix]
+			: [...((fields.edges && Object.keys(fields.edges.node || {})) || []), ...Object.values(copyToSourceFields)];
+
 		const searchResult = await esSearch(esClient)({
 			index: type.index,
 			size: applyResultsWindow(first, type.config?.table?.maxResultsWindow),
 			from: offset,
 			track_total_hits: trackTotalHits,
-			_source: [
-				...((fields.edges && Object.keys(fields.edges.node || {})) || []),
-				...Object.values(copyToSourceFields),
-			],
+			_source: sourceFields,
 			track_scores: !!score,
 			body,
 		});
 
-		const hits = searchResult?.body?.hits || { hits: [], total: { value: 0 } };
+		const hits = unwrapHits(searchResult?.body?.hits, nestingPrefix) || { hits: [], total: { value: 0 } };
 
 		return {
 			edges: () =>

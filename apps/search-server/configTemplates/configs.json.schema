@@ -16,6 +16,15 @@
 	// Index name or alias in Elasticsearch/OpenSearch
 *	"esIndex": "file_centric_1.0",
 
+	// Optional. For a data source whose documents wrap all their real content inside one
+	// top-level property (e.g. a Lyric-sourced catalogue, nested under "data"): unwraps the
+	// mapping and every query/response at that path, so extended.json/facets.json/table.json
+	// can still use clean, unprefixed field names. A dotted path (e.g. "envelope.payload")
+	// walks down through that many levels. A configured value that doesn't match the real
+	// mapping fails the catalogue at startup rather than silently ignoring it. See
+	// docs/reference/01-arranger-configs.md for full detail, including caveats.
+	"nestingPrefix": "data",
+
 	///////////// Feature flags /////////////
 
 	"disableDownloads": false,

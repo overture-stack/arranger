@@ -246,6 +246,88 @@ suite('middleware/buildAggregations', () => {
 		assert.deepEqual(actualOutput, expectedOutput);
 	});
 
+	test('2b.buildAggregations applies a configured nestingPrefix to ES field paths while keeping response keys clean', () => {
+		const nestedFieldNames = ['biomarker'];
+
+		const input = {
+			aggregationsFilterThemselves: false,
+			graphqlFields: {
+				biomarker__alc: { buckets: { key: {} } },
+			},
+			nestedFieldNames,
+			nestingPrefix: 'data',
+			query: {
+				bool: {
+					must: [
+						{
+							nested: {
+								path: 'data.biomarker',
+								query: {
+									bool: {
+										must: [
+											{
+												terms: {
+													'data.biomarker.alc': ['5'],
+													boost: 0,
+												},
+											},
+										],
+									},
+								},
+							},
+						},
+					],
+				},
+			},
+			sqon: {
+				content: [
+					{
+						content: {
+							fieldName: 'biomarker.alc',
+							value: ['5'],
+						},
+						op: 'in',
+					},
+				],
+				op: 'and',
+			},
+		};
+
+		const expectedOutput = {
+			'biomarker.alc:global': {
+				global: {},
+				aggs: {
+					'biomarker.alc:nested': {
+						nested: { path: 'data.biomarker' },
+						aggs: {
+							'data.biomarker:filtered': {
+								filter: {
+									bool: {
+										should: [],
+									},
+								},
+								aggs: {
+									'biomarker.alc:missing': {
+										aggs: { rn: { reverse_nested: {} } },
+										missing: { field: 'data.biomarker.alc' },
+									},
+									'biomarker.alc': {
+										aggs: { rn: { reverse_nested: {} } },
+										terms: { field: 'data.biomarker.alc', size: 300000 },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		};
+
+		const actualOutput = buildAggregations(input);
+
+		assert.deepEqual(actualOutput, expectedOutput);
+	});
+
 	test('3.buildAggregations should handle `aggregations_filter_themselves` variable set to false', () => {
 		const sqon = {
 			content: [

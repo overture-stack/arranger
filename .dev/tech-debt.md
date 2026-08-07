@@ -477,15 +477,6 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
    **Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
    **Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
 
-### Configured download row cap (`downloads.maxRows`) is never enforced due to a property-name mismatch
-
-**File:** `modules/graphql-router/src/utils/getAllData.js:70-77`; property names defined in `modules/types/src/configs/constants.ts:100-104`
-**Severity:** high (OWASP A05: Security Misconfiguration; a resource-exhaustion control operators believe is active silently does nothing)
-**Kind:** bug
-**Issue:** `getAllData.js` reads `downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS` and `downloadProperties.MAX_DOWNLOAD_ROWS` to compute `maxHits`, but `downloadProperties` (in `modules/types/src/configs/constants.ts:100-104`) only defines `ALLOW_CUSTOM_MAX_ROWS` and `MAX_ROWS`. Both lookups resolve to `undefined`, so `maxHits` is always falsy, and `total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount` (line 77) always takes the unbounded branch. An operator who sets `downloads.maxRows` in `base.json`, believing it caps export size (the fallback constant `DOWNLOAD_MAX_ROWS = 100` in `modules/graphql-router/src/config/constants.ts:11` implies this is meant to be enforced), gets no enforcement at all: downloads are unbounded regardless of configuration.
-**Fix:** Rename the two lookups in `getAllData.js:70-73` to the property names that actually exist (`ALLOW_CUSTOM_MAX_ROWS`, `MAX_ROWS`), or vice versa if `MAX_DOWNLOAD_ROWS`/`ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS` are the intended canonical names and `modules/types` should be updated instead. Add a unit test asserting that a configured `maxRows` actually caps `total` in `getAllData`, since this exact class of bug (a property-name drift between the config-defining package and a consumer) would otherwise recur silently.
-**Standalone:** yes; either fix is a small, self-contained rename plus a regression test
-
 ### `filterNodesByNodeId` has no tests
 
 **File:** `modules/graphql-router/src/network/utils/nodeFilter.ts`
@@ -518,14 +509,6 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Kind:** missing test coverage
 **Issue:** `getESAliases` has two distinct code paths: alias found (returns the backing index name) and no match (returns `esIndex` as-is); neither has a unit test. Mock the `cat.aliases` response to cover both branches.
 **Standalone:** yes; unit test only, no application changes
-
-### No unit tests for `getAllData` pagination
-
-**File:** `modules/graphql-router/src/utils/getAllData.js`
-**Severity:** low (missing test coverage)
-**Kind:** missing test coverage
-**Issue:** `getAllData` uses `search_after` cursor pagination across batches; neither the cursor handoff between pages nor the single-page short-circuit (all results fit in one batch) has a unit test.
-**Standalone:** yes; unit test only; mock the `esClient.search` call
 
 ### No unit tests for `resolveSetsInSqon` set expansion
 
@@ -857,4 +840,13 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 **Issue:** PR #1076 makes `nodeId` load-bearing for `NetworkNodesChart` rendering and for `filterNodesByNodeId`'s node-scoped filtering, but the config type keeps it optional with no startup check. An operator who configures multiple remote/local nodes without `nodeId` gets no error and no warning: `normalizeNetworkConfig`'s custom-request header matching silently falls back to `graphqlUrl` + `displayName` matching (correct, but a quieter code path than `nodeId` matching), and any UI feature depending on `nodeId`-based node filtering simply won't work, discoverable only by an operator noticing the feature doesn't do anything. Flagged in PR #1076 review as "TODO for another PR": https://github.com/overture-stack/arranger/pull/1076#discussion_r3424291614
 **Fix:** In `normalizeNetworkConfig` (or wherever network config is validated at boot, alongside the existing `console.warn` calls in `apps/search-server/src/configs/fromFiles/fileHandlers.ts`), warn when `remoteNodeExtendedConfigs` (or the local node config) contains more than one node and any entry is missing `nodeId`. Message should name which node(s) lack it and note that node-scoped filtering and per-node chart features require it.
 **Standalone:** yes; additive validation/logging only, no change to existing fallback-matching behaviour
+
+### `modules/graphql-router` reads `process.env` directly, breaking the module/app boundary
+
+**File:** `modules/graphql-router/src/mapping/resolveHits.js:164` (`systemCores = process?.env?.SYSTEM_CORES || 2`, a default parameter value on `hitsToEdges`)
+**Severity:** low (works today; a latent boundary violation, not a live bug)
+**Kind:** architecture violation
+**Issue:** Established convention: apps read `process.env`, modules receive typed params (see [[feedback_separation_of_concerns]] in project memory). `hitsToEdges` is the sole exception, reading `SYSTEM_CORES` straight from the environment instead of accepting it as a parameter. `SYSTEM_CORES` doesn't appear anywhere else in the codebase, not in `apps/search-server/.env.schema`, not in any `configOptionalProperties`, not threaded through as an explicit argument by `resolveHits.js`'s own default export when it calls `hitsToEdges` internally, so this isn't just an internal-vs-external-config style choice, it's an undocumented, unwired env var a deployer has no way to discover short of reading this one line of module source.
+**Fix:** Add `SYSTEM_CORES` to `apps/search-server/.env.schema` and `configOptionalProperties`, read it once at the app layer the same way every other env-derived config value is, and pass it into `hitsToEdges` as an explicit `systemCores` parameter from `resolveHits.js`'s default export, dropping the `process.env` read from the module entirely.
+**Standalone:** yes; small, self-contained wiring fix, no behavioural change to the "ludicrous mode" chunking logic itself
 

@@ -3,6 +3,7 @@ export const catalogueErrorCodes = {
 	CONNECTION_ERROR: 'connection_error',
 	INDEX_NOT_FOUND: 'index_not_found',
 	MAPPING_FETCH_ERROR: 'mapping_fetch_error',
+	NESTING_PREFIX_NOT_FOUND: 'nesting_prefix_not_found',
 	PERMISSION_DENIED: 'permission_denied',
 	SCHEMA_BUILD_ERROR: 'schema_build_error',
 	UNKNOWN_ERROR: 'unknown_error',
@@ -18,6 +19,9 @@ export type CatalogueErrorDetail = {
 
 /** `Error.name` a caller sets to mark "this catalogue's GraphQL schema or endpoint failed to build", so it can be classified here without importing anything from the module that throws it. */
 export const SCHEMA_BUILD_ERROR_NAME = 'SchemaBuildError';
+
+/** `Error.name` set when a catalogue's configured `nestingPrefix` doesn't match anything in its real index mapping. */
+export const NESTING_PREFIX_NOT_FOUND_ERROR_NAME = 'NestingPrefixNotFoundError';
 
 // Names used by both @elastic/elasticsearch and @opensearch-project/opensearch client errors
 // for a failure to reach or get a timely response from the cluster, as opposed to a valid
@@ -48,6 +52,9 @@ const isSearchClientError = (value: unknown): value is SearchClientErrorShape =>
 
 const isSchemaBuildError = (value: unknown): value is Error =>
 	value instanceof Error && value.name === SCHEMA_BUILD_ERROR_NAME;
+
+const isNestingPrefixNotFoundError = (value: unknown): value is Error =>
+	value instanceof Error && value.name === NESTING_PREFIX_NOT_FOUND_ERROR_NAME;
 
 /**
  * Classifies why a catalogue failed to load into a machine-readable error code and a curated,
@@ -82,6 +89,15 @@ export const classifyCatalogueFailureReason = (error: unknown): CatalogueErrorDe
 		return {
 			code: catalogueErrorCodes.MAPPING_FETCH_ERROR,
 			message: 'Could not fetch or parse the index mapping for this catalogue.',
+		};
+	}
+
+	const nestingPrefixError = findInCauseChain(error, isNestingPrefixNotFoundError);
+
+	if (nestingPrefixError) {
+		return {
+			code: catalogueErrorCodes.NESTING_PREFIX_NOT_FOUND,
+			message: nestingPrefixError.message,
 		};
 	}
 

@@ -271,6 +271,7 @@ export {
 	catalogueErrorCodes,
 	type CatalogueErrorDetail,
 	classifyCatalogueFailureReason,
+	NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
 	SCHEMA_BUILD_ERROR_NAME,
 } from './classifyCatalogueFailureReason.js';
 export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';

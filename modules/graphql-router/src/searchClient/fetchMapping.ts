@@ -1,5 +1,6 @@
 import type { CatAliasesAliasesRecord } from '@elastic/elasticsearch/api/types';
 
+import { NESTING_PREFIX_NOT_FOUND_ERROR_NAME } from './classifyCatalogueFailureReason.js';
 import type { SearchClient } from './types.js';
 
 const REQUEST_TIMEOUT = 10000;
@@ -105,27 +106,69 @@ export const fetchMapping = async ({
 };
 
 /**
- * Fetches the ES index mapping and strips the reserved "id" field.
- * This is the main entry point for any code that needs an index mapping:
- * it owns the ES I/O and the one GraphQL-specific pre-processing step.
+ * Unwraps a mapping's fields from beneath a configured `nestingPrefix` (e.g. "data"), so a
+ * catalogue whose real documents wrap all their content inside one top-level property (a data
+ * source's own envelope shape, not something Arranger's own config should have to mirror) can
+ * still be configured with clean, unprefixed field names in extended.json/facets.json/table.json.
+ * A dotted prefix (e.g. "envelope.payload") walks down through that many nested levels.
+ *
+ * A configured `nestingPrefix` that doesn't match the real mapping throws rather than silently
+ * falling back to the unwrapped mapping: the resulting schema would build fine but show every
+ * field as null, the exact symptom this feature exists to fix, now self-inflicted by a config
+ * typo with nothing but a log line as a clue. Throwing instead surfaces it as a real catalogue
+ * failure (`nesting_prefix_not_found`) through the same partial-availability mechanism other
+ * mapping problems already use.
+ *
+ * @param mapping - The raw ES mapping properties tree, as returned by `fetchMapping`. Untyped (`any`) to match `fetchMapping`'s own current return typing; see its `TODO`.
+ * @param nestingPrefix - The dotted path, if any, that the mapping's real fields are nested under.
+ * @returns The mapping properties found at `nestingPrefix`, or `mapping` unchanged if no prefix is configured.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const unwrapMapping = (mapping: any, nestingPrefix?: string) => {
+	if (!nestingPrefix || !mapping) {
+		return mapping;
+	}
+
+	const unwrapped = nestingPrefix
+		.split('.')
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		.reduce((node: any, segment) => node?.[segment]?.properties, mapping);
+
+	if (!unwrapped) {
+		throw Object.assign(new Error(`Configured nestingPrefix "${nestingPrefix}" was not found in the index mapping.`), {
+			name: NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
+		});
+	}
+
+	return unwrapped;
+};
+
+/**
+ * Fetches the ES index mapping, unwraps it from beneath an optional `nestingPrefix`, and strips
+ * the reserved "id" field. This is the main entry point for any code that needs an index mapping:
+ * it owns the ES I/O and the GraphQL-specific pre-processing steps.
  *
  * TODO: Return type definition once SearchClient response types are merged
  */
 export const getIndexMapping = async ({
 	enableDebug,
+	nestingPrefix,
 	searchClient,
 	esIndex,
 }: {
 	enableDebug?: boolean;
+	nestingPrefix?: string;
 	searchClient: SearchClient;
 	esIndex: string;
 }) => {
 	if (searchClient && esIndex) {
-		const { mapping } = await fetchMapping({
+		const { mapping: mappingFromIndex } = await fetchMapping({
 			enableDebug,
 			searchClient,
 			esIndex,
 		});
+
+		const mapping = unwrapMapping(mappingFromIndex, nestingPrefix);
 
 		if (mapping && Object.hasOwn(mapping, 'id')) {
 			// FIXME: Figure out a solution to map this to something else rather than dropping it

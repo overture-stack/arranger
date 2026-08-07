@@ -178,6 +178,7 @@ export type ConfigsObject<Context> = {
 		[configOptionalProperties.ES_HOST]: string;
 		[configOptionalProperties.GRAPHQL_MAX_ALIASES]: number;
 		[configOptionalProperties.GRAPHQL_MAX_DEPTH]: number;
+		[configOptionalProperties.NESTING_PREFIX]: string;
 		[configOptionalProperties.NETWORK_AGGREGATION]?: NetworkConfig<Context>;
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries

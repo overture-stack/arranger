@@ -1,8 +1,9 @@
 import { get } from 'lodash-es';
 
 import { HISTOGRAM, STATS, MISSING, CARDINALITY, RANGE } from './constants.js';
+import { unwrapSource } from './utils/nestingPrefix.js';
 
-function flattenAggregations({ aggregations, includeMissing = true }) {
+function flattenAggregations({ aggregations, includeMissing = true, nestingPrefix }) {
 	return Object.entries(aggregations).reduce((prunedAggs, [key, value]) => {
 		const [field, aggregationType = null] = key.split(':');
 
@@ -36,7 +37,7 @@ function flattenAggregations({ aggregations, includeMissing = true }) {
 							doc_count: rn ? rn.doc_count : bucket.doc_count,
 							...(bucket[`${field}.hits`]
 								? {
-										top_hits: bucket[`${field}.hits`]?.hits?.hits[0]?._source || {},
+										top_hits: unwrapSource(bucket[`${field}.hits`]?.hits?.hits[0]?._source, nestingPrefix) || {},
 									}
 								: {}),
 							...(bucket['term_filters']
@@ -51,7 +52,7 @@ function flattenAggregations({ aggregations, includeMissing = true }) {
 		} else {
 			return {
 				...prunedAggs,
-				...flattenAggregations({ aggregations: value, includeMissing }),
+				...flattenAggregations({ aggregations: value, includeMissing, nestingPrefix }),
 			};
 		}
 	}, {});

@@ -42,6 +42,28 @@ Connects the catalogue to its Elasticsearch index.
 - `documentType`: The top-level name used in the generated GraphQL schema (e.g. `file`, `participant`, `analysis`). This becomes the root query field: `{ file { hits { ... } } }`.
 - `esIndex`: The name of the Elasticsearch index or alias to query.
 
+### nestingPrefix (optional)
+
+For a data source whose real documents wrap all their content inside one top-level envelope property, rather than exposing fields directly. This is a common shape for data submitted through Lyric, Overture's clinical data submission service, which nests every submitted field under a top-level `data` property alongside its own metadata (`entityName`, `organization`, and similar), instead of indexing those fields at the top level.
+
+```json
+{
+  "documentType": "donor",
+  "esIndex": "donor",
+  "nestingPrefix": "data"
+}
+```
+
+With `nestingPrefix` set, `extended.json`/`facets.json`/`table.json` keep referencing clean, unprefixed field names (`age_at_menarche`, not `data.age_at_menarche`) exactly as they would for a catalogue with no envelope at all; Arranger re-applies the prefix internally against the real Elasticsearch paths for every query, aggregation, sort, and read. A dotted path (e.g. `"envelope.payload"`) walks down through that many nested levels, for a data source with a deeper envelope shape.
+
+**Before setting this, confirm the real index mapping actually nests fields under this path.** A configured `nestingPrefix` that doesn't match the real mapping fails the catalogue at startup (reported via `GET /introspection` with error code `nesting_prefix_not_found`, the same partial-availability mechanism used for other mapping problems) rather than silently falling back to the unwrapped mapping.
+
+**Two things worth knowing before enabling it:**
+
+- **Bandwidth**: because a per-field `_source` request can't safely be narrowed to only the fields a specific query selected without risking a mismatch against a sanitized GraphQL name, Arranger requests the entire envelope from Elasticsearch for every hit when `nestingPrefix` is set, not just the selected fields. This is more data transferred per request than a catalogue with no envelope, though nothing outside the envelope is ever fetched.
+- **Field-level access control**: if a future release adds field-level authorization (restricting which fields a given user can see), it will need to account for this catalogue's fetch-everything behaviour specifically. Fetching a field's value and filtering it out of the response afterward is not equivalent to never having fetched it.
+- **Environment-variable configuration cannot set this today.** `nestingPrefix` is only readable from a catalogue's `base.json` file; there is currently no corresponding environment variable.
+
 ## extended.json
 
 Maps every field to its display name and controls which fields are visible.

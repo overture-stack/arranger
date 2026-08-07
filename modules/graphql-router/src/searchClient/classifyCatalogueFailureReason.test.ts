@@ -4,6 +4,7 @@ import { suite, test } from 'node:test';
 import {
 	catalogueErrorCodes,
 	classifyCatalogueFailureReason,
+	NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
 	SCHEMA_BUILD_ERROR_NAME,
 } from './classifyCatalogueFailureReason.js';
 
@@ -84,6 +85,18 @@ suite('classifyCatalogueFailureReason', () => {
 
 		assert.equal(result.code, catalogueErrorCodes.SCHEMA_BUILD_ERROR);
 		assert.equal(result.message, schemaBuildError.message);
+	});
+
+	test('classifies an error marked as a nesting-prefix mismatch as nesting_prefix_not_found, surfacing its own specific message', () => {
+		const nestingPrefixError = Object.assign(new Error('Configured nestingPrefix "data" was not found in the index mapping.'), {
+			name: NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
+		});
+		const outer = new Error('Failed to initialize Arranger server', { cause: nestingPrefixError });
+
+		const result = classifyCatalogueFailureReason(outer);
+
+		assert.equal(result.code, catalogueErrorCodes.NESTING_PREFIX_NOT_FOUND);
+		assert.equal(result.message, nestingPrefixError.message);
 	});
 
 	test('classifies an error with no identifiable cause as unknown_error', () => {

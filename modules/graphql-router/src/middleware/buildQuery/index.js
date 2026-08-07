@@ -38,6 +38,7 @@ import {
 	wrapNested,
 	wrapShould,
 } from '#middleware/utils/esFilter.js';
+import { applyNestingPrefixToFieldNames, applyNestingPrefixToSqon } from '#middleware/utils/nestingPrefix.js';
 
 import normalizeFilters from './normalizeFilters.js';
 
@@ -289,11 +290,11 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	}
 };
 
-export default function ({ caller = 'unknown', nestedFieldNames = [], filters: rawFilters }) {
+export default function ({ caller = 'unknown', nestedFieldNames = [], nestingPrefix, filters: rawFilters }) {
 	if (Object.keys(rawFilters || {}).length === 0) return {};
 
 	return opSwitch({
-		nestedFieldNames,
-		filter: normalizeFilters(rawFilters),
+		nestedFieldNames: applyNestingPrefixToFieldNames(nestedFieldNames, nestingPrefix) ?? nestedFieldNames,
+		filter: normalizeFilters(applyNestingPrefixToSqon(rawFilters, nestingPrefix)),
 	});
 }

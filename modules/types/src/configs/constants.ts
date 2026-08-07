@@ -43,6 +43,7 @@ export const configOptionalProperties = {
 	EXTENDED: 'extended',
 	GRAPHQL_MAX_ALIASES: 'maxAliases',
 	GRAPHQL_MAX_DEPTH: 'maxDepth',
+	NESTING_PREFIX: 'nestingPrefix',
 	SEARCH_ENGINE: 'searchEngine',
 	SETS: 'sets',
 	...configFeatureFlagProperties,

@@ -90,6 +90,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		const mappingFromIndex = await getIndexMapping({
 			enableDebug,
+			nestingPrefix: configs[configOptionalProperties.NESTING_PREFIX],
 			searchClient: esClient,
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});
