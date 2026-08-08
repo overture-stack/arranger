@@ -6,7 +6,7 @@ import { merge } from 'lodash-es';
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
-import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel } from '#graphqlRoutes.js';
+import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
 import { getIndexMapping } from '#searchClient/index.js';
 import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
@@ -66,7 +66,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	const label = resolveLabel({ catalogueId, documentType: aggregatedConfigs[configRootProperties.DOCUMENT_TYPE] });
 
 	// TODO: set up a real logger... winston or pino?
-	console.log(`\n------\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
+	console.log(`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
 
 	try {
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
@@ -141,7 +141,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		// still carries the original error for that classification to inspect.
 		aggregatedConfigs.enableDebug &&
 			console.error(
-				`\n------\nError initializing Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
+				`\n${logSeparator(label)}\nError initializing Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
 				err,
 			);
 		throw new Error('Failed to initialize Arranger server', { cause: err });

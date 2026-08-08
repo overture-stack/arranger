@@ -1,22 +1,26 @@
 import { setsMapping } from '#schema/index.js';
+import { logSeparator } from '#utils/label.js';
 import { type SearchClient } from '#searchClient/types.js';
 
 export const initializeSets = async ({
 	enableSets = false,
 	enableDebug,
 	esClient,
+	label,
 	setsIndex: setsIndexName,
 }: {
 	enableSets?: boolean;
 	enableDebug?: boolean;
 	esClient: SearchClient;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	setsIndex: string;
 }): Promise<void> => {
 	if (!enableSets) {
 		return;
 	}
 
-	console.log(`\n------\nConfiguring Sets index: ${setsIndexName}`);
+	console.log(`\n${logSeparator(label)}\nConfiguring Sets index: ${setsIndexName}`);
 
 	if ((await esClient.indices.exists({ index: setsIndexName }))?.statusCode === 404) {
 		console.log(`  - Attempting to create Sets index "${setsIndexName}"...`);

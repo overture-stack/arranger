@@ -2,6 +2,7 @@ import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 import arrangerRouter, {
 	type ArrangerBaseContext,
 	classifyCatalogueFailureReason,
+	logSeparator,
 	type SearchClient,
 } from '@overture-stack/arranger-graphql-router';
 import { Router, type Router as ExpressRouter } from 'express';
@@ -95,7 +96,7 @@ export default async ({
 		const statusDetail: CatalogueStatusDetail = { status: CATALOGUE_STATUS.FAILED, error };
 
 		console.error(
-			`\n------\nCatalogue "${catalogueId}" failed to load (${error.code}: ${error.message}); continuing with the remaining catalogues.\n`,
+			`\n${logSeparator(catalogueId)}\nCatalogue "${catalogueId}" failed to load (${error.code}: ${error.message}); continuing with the remaining catalogues.\n`,
 		);
 
 		return {

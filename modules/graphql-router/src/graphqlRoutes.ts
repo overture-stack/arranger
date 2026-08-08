@@ -30,13 +30,10 @@ import type { SchemaTypesTuple } from '#schema/types.js';
 import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addContext } from '#utils/context.js';
+import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 
-/** Placeholder `label` used when no catalogue identifier was provided or configured, e.g. a third-party server embedding a single catalogue with no multicatalogue context to label. */
-export const FALLBACK_LABEL = 'unlabelled catalogue';
-
-/** True when `label` is the placeholder rather than a real catalogue identifier, so callers can omit the label clause from a log line entirely instead of printing it. */
-export const isFallbackLabel = (label = '') => label === FALLBACK_LABEL;
+export { FALLBACK_LABEL, isFallbackLabel, logSeparator };
 
 /** Wraps a schema/endpoint-build failure with the marker `classifyCatalogueFailureReason` recognizes, preserving the original error as `cause`. */
 const schemaBuildError = (message: string, cause: unknown): Error =>
@@ -277,7 +274,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	const mockPath = '/mock/graphql';
 	const router = Router();
 
-	console.log(`\n------\nStarting GraphQL server${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
+	console.log(`\n${logSeparator(label)}\nStarting GraphQL server${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
 
 	const apolloFeatureFlags = disablePlayground && { plugins: [ApolloServerPluginLandingPageDisabled()] };
 	const validationRules = [maxAliasesRule(maxAliases), maxDepthRule(maxDepth)];
@@ -573,12 +570,13 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 				enableSets: configs[configFeatureFlagProperties.ENABLE_SETS] ?? false,
 				enableDebug,
 				esClient,
+				label,
 				setsIndex,
 			});
 		} catch (setsError) {
 			const message = setsError instanceof Error ? setsError.message : `${setsError}`;
 			console.error(
-				`\n------\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+				`\n${logSeparator(label)}\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
 			);
 		}
 
@@ -605,7 +603,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		// up the chain ever sees this failure, the caller only gets the 500 response below, so this
 		// is the only place it's ever visible server-side.
 		console.info(
-			`\n------\nError thrown while generating the GraphQL endpoints${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
+			`\n${logSeparator(label)}\nError thrown while generating the GraphQL endpoints${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
 		);
 		console.error(message);
 

@@ -1,9 +1,9 @@
+import { configOptionalProperties, tableDefaults } from '@overture-stack/arranger-types/configs/constants';
 import getFields from 'graphql-fields';
 import { JSONPath } from 'jsonpath-plus';
 import { chunk, isObject, flattenDeep } from 'lodash-es';
 
 // import { ENV_CONFIG } from '#config/index.js';
-import { configOptionalProperties, tableDefaults } from '@overture-stack/arranger-types/configs/constants';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, applyNestingPrefixToFieldNames, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
@@ -23,7 +23,24 @@ const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 	return results;
 };
 
-const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath = {}, hits, nestedFieldNames }) => {
+const processChunk = ({
+	copyToSourceFields,
+	extendedFieldsObj,
+	graphqlNameByPath = {},
+	hits,
+	nestedFieldNames,
+	nestingPrefix,
+}) => {
+	const warnings = [];
+	// unwrapSource (middleware/utils/nestingPrefix.ts) merges the envelope's contents onto the top
+	// level but deliberately leaves the envelope key itself in place, on the assumption that it's
+	// inert since the schema never references it. That held before this file did anything more than
+	// pass values through unchanged; now that array-vs-scalar mismatches get coerced and warned
+	// about below, walking into that leftover key produces a second, spurious warning for a path
+	// (e.g. "data.x") no real GraphQL query can ever select. Skipping it here, not in nestingPrefix.ts,
+	// since this is the one place that leftover key's presence actually causes an observable problem.
+	const envelopeKey = nestingPrefix?.split('.')[0];
+
 	const resolveCopiedTo = ({ node }) => {
 		const foundValues = Object.entries(copyToSourceFields).reduce((acc, pair) => {
 			const copyToField = pair[0];
@@ -45,7 +62,7 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath
 		return foundValues;
 	};
 
-	return hits.map((hit) => {
+	const results = hits.map((hit) => {
 		const joinParent = (parent, fieldName) => (parent ? `${parent}.${fieldName}` : fieldName);
 
 		const resolveNested = ({ node, nestedFieldNames, parent = '' }) => {
@@ -58,16 +75,46 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath
 				const fieldName = entry[0];
 				const hits = entry[1];
 
+				if (parent === '' && fieldName === envelopeKey) {
+					return acc;
+				}
+
 				// TODO: inner hits query if necessary
 				const fullPath = joinParent(parent, fieldName);
 				const areHitsNested = nestedFieldNames?.includes(fullPath);
 				const hitsAreActuallyNested = areHitsNested && Array.isArray(hits);
+				const graphqlName = graphqlNameByPath[fullPath] ?? fieldName;
+
+				// ES never enforces a field's cardinality against its mapping: any keyword/text/etc.
+				// field can hold an array of values on a given document regardless of whether
+				// extended.json declares `isArray`. Without `isArray`, the schema types the field as
+				// a plain scalar, and `Object.assign(hits.constructor(), ...)` below would otherwise
+				// round-trip an array of primitives unchanged (lodash's `isObject` treats arrays as
+				// objects too), letting it reach GraphQL's own scalar serializer, which throws
+				// ("String cannot represent value: [...]") and nulls the whole hit. Coercing to the
+				// first value here keeps the response usable; the dropped values are recorded so
+				// they aren't just silently lost.
+				if (
+					Array.isArray(hits) &&
+					hits.length > 0 &&
+					!hitsAreActuallyNested &&
+					!extendedFieldsObj?.[fullPath]?.isArray
+				) {
+					if (hits.length > 1) {
+						// Structured, not a pre-built message: one of these gets recorded per affected
+						// hit, so the resolver aggregates them into a single summary line per field
+						// per request rather than logging one line per hit (see `hitsToEdges` caller).
+						warnings.push({ field: graphqlName, fullPath, valueCount: hits.length });
+					}
+					acc[graphqlName] = hits[0];
+					return acc;
+				}
 
 				// The GraphQL schema may expose this field under a sanitized name (see
 				// mapping/utils/graphqlNameRegistry.ts); the raw key stays on `source` too (harmless,
 				// since nothing in the schema ever asks for it), this just also adds the one resolvers
 				// actually look up.
-				acc[graphqlNameByPath[fullPath] ?? fieldName] = hitsAreActuallyNested
+				acc[graphqlName] = hitsAreActuallyNested
 					? {
 							hits: {
 								edges: hits.map((node) => ({
@@ -122,6 +169,8 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath
 			),
 		};
 	});
+
+	return { results, warnings };
 };
 
 export const hitsToEdges = ({
@@ -130,6 +179,7 @@ export const hitsToEdges = ({
 	graphqlNameByPath = {},
 	hits,
 	nestedFieldNames,
+	nestingPrefix,
 	Parallel,
 	systemCores = process?.env?.SYSTEM_CORES || 2,
 }) => {
@@ -158,6 +208,7 @@ export const hitsToEdges = ({
 			graphqlNameByPath,
 			hits: chunk,
 			nestedFieldNames,
+			nestingPrefix,
 		};
 
 		//Parallel.spawn output has a .then but it's not returning an actual promise
@@ -181,9 +232,15 @@ export const hitsToEdges = ({
 	});
 
 	return Promise.all(chunkPromises)
-		.then((chunks) => {
-			return chunks.reduce((acc, chunk) => acc.concat(chunk), []);
-		})
+		.then((chunks) =>
+			chunks.reduce(
+				(acc, chunk) => ({
+					results: acc.results.concat(chunk.results),
+					warnings: acc.warnings.concat(chunk.warnings),
+				}),
+				{ results: [], warnings: [] },
+			),
+		)
 		.catch((err) => console.log('err', err));
 };
 
@@ -279,7 +336,35 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 					graphqlNameByPath: type.graphqlNameRegistry?.leafNamesByPath,
 					hits,
 					nestedFieldNames,
+					nestingPrefix,
 					Parallel,
+				}).then(({ results, warnings }) => {
+					if (warnings.length) {
+						// Aggregated per field, not logged per hit: a query touching many hits with the
+						// same misconfigured field would otherwise produce one near-identical line per
+						// hit. `type.name` and the client's named operation (if it sent one) are the
+						// two things a bare per-occurrence message was missing: which catalogue this
+						// came from, and which query to go trace it back to.
+						const operationName = info.operation?.name?.value ?? 'unnamed query';
+						const byField = warnings.reduce((acc, warning) => {
+							(acc[warning.fullPath] ??= { ...warning, hitCount: 0 }).hitCount++;
+							return acc;
+						}, {});
+						const summaries = Object.values(byField).map(({ field, fullPath, hitCount }) => ({
+							catalogue: type.name,
+							field,
+							fullPath,
+							hitCount,
+							message: `Field "${field}" held multiple values on ${hitCount} of ${results.length} hits; only the first value is shown for each.`,
+							operationName,
+							totalHits: results.length,
+						}));
+						context.warnings = [...(context.warnings || []), ...summaries];
+						summaries.forEach((summary) =>
+							console.warn(`  WARNING [${summary.catalogue}/${summary.operationName}]: ${summary.message}`),
+						);
+					}
+					return results;
 				}),
 			total: () => hits.total.value,
 		};
