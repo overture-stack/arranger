@@ -7,19 +7,35 @@ import { hitsToEdges } from '#mapping/resolveHits.js';
 
 import nestedFieldNames from './mockData/nestedFieldNames.json';
 import expectedEdges from './mockData/wrangledExpectedEdges.json';
-import hits from './mockData/wrangledHits.json';
+import hitsFixture from './mockData/wrangledHits.json';
+
+// processChunk mutates each hit's `_source` in place; a fresh clone per test keeps that
+// mutation from leaking into a later test that imports the same cached JSON module object
+// (a real query never reuses a previously-mutated ES response the way two tests sharing one
+// import would).
+const cloneHits = () => structuredClone(hitsFixture);
+
+const extendedFields = [
+	{ fieldName: 'participants.available_data_types', isArray: true },
+	{ fieldName: 'participants.family.family_compositions.available_data_types', isArray: true },
+	{
+		fieldName: 'participants.family.family_compositions.family_members.available_data_types',
+		isArray: true,
+	},
+];
 
 suite('mapping/hitsToEdges', () => {
 
 	test('1.hitsToEdges should be accurate',
 		(_unusedTestCtx, done) => {
 			hitsToEdges({
-				hits,
+				extendedFields,
+				hits: cloneHits(),
 				nestedFieldNames,
 				Parallel
 			})
-				.then((edges) => {
-					assert.deepEqual(edges, expectedEdges);
+				.then(({ results }) => {
+					assert.deepEqual(results, expectedEdges);
 					done();
 				});
 		}
@@ -31,13 +47,14 @@ suite('mapping/hitsToEdges', () => {
 
 			try {
 				const edgesPromise = hitsToEdges({
-					hits,
+					extendedFields,
+					hits: cloneHits(),
 					nestedFieldNames,
 					Parallel
 				})
-					.then((edges) => {
+					.then(({ results }) => {
 						complete = true;
-						assert.deepEqual(edges, expectedEdges);
+						assert.deepEqual(results, expectedEdges);
 					});
 
 				// Verify it's non-blocking (this is what you want to test)

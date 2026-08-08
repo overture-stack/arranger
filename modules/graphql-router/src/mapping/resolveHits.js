@@ -1,9 +1,9 @@
+import { configOptionalProperties, tableDefaults } from '@overture-stack/arranger-types/configs/constants';
 import getFields from 'graphql-fields';
 import { JSONPath } from 'jsonpath-plus';
 import { chunk, isObject, flattenDeep } from 'lodash-es';
 
 // import { ENV_CONFIG } from '#config/index.js';
-import { configOptionalProperties, tableDefaults } from '@overture-stack/arranger-types/configs/constants';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, applyNestingPrefixToFieldNames, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
@@ -24,6 +24,8 @@ const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 };
 
 const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath = {}, hits, nestedFieldNames }) => {
+	const warnings = [];
+
 	const resolveCopiedTo = ({ node }) => {
 		const foundValues = Object.entries(copyToSourceFields).reduce((acc, pair) => {
 			const copyToField = pair[0];
@@ -45,7 +47,7 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath
 		return foundValues;
 	};
 
-	return hits.map((hit) => {
+	const results = hits.map((hit) => {
 		const joinParent = (parent, fieldName) => (parent ? `${parent}.${fieldName}` : fieldName);
 
 		const resolveNested = ({ node, nestedFieldNames, parent = '' }) => {
@@ -62,12 +64,38 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath
 				const fullPath = joinParent(parent, fieldName);
 				const areHitsNested = nestedFieldNames?.includes(fullPath);
 				const hitsAreActuallyNested = areHitsNested && Array.isArray(hits);
+				const graphqlName = graphqlNameByPath[fullPath] ?? fieldName;
+
+				// ES never enforces a field's cardinality against its mapping: any keyword/text/etc.
+				// field can hold an array of values on a given document regardless of whether
+				// extended.json declares `isArray`. Without `isArray`, the schema types the field as
+				// a plain scalar, and `Object.assign(hits.constructor(), ...)` below would otherwise
+				// round-trip an array of primitives unchanged (lodash's `isObject` treats arrays as
+				// objects too), letting it reach GraphQL's own scalar serializer, which throws
+				// ("String cannot represent value: [...]") and nulls the whole hit. Coercing to the
+				// first value here keeps the response usable; the dropped values are recorded so
+				// they aren't just silently lost.
+				if (
+					Array.isArray(hits) &&
+					hits.length > 0 &&
+					!hitsAreActuallyNested &&
+					!extendedFieldsObj?.[fullPath]?.isArray
+				) {
+					if (hits.length > 1) {
+						warnings.push({
+							field: graphqlName,
+							message: `Field "${fullPath}" holds ${hits.length} values but is not configured with isArray; only the first value ("${hits[0]}") is shown.`,
+						});
+					}
+					acc[graphqlName] = hits[0];
+					return acc;
+				}
 
 				// The GraphQL schema may expose this field under a sanitized name (see
 				// mapping/utils/graphqlNameRegistry.ts); the raw key stays on `source` too (harmless,
 				// since nothing in the schema ever asks for it), this just also adds the one resolvers
 				// actually look up.
-				acc[graphqlNameByPath[fullPath] ?? fieldName] = hitsAreActuallyNested
+				acc[graphqlName] = hitsAreActuallyNested
 					? {
 							hits: {
 								edges: hits.map((node) => ({
@@ -122,6 +150,8 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, graphqlNameByPath
 			),
 		};
 	});
+
+	return { results, warnings };
 };
 
 export const hitsToEdges = ({
@@ -181,9 +211,15 @@ export const hitsToEdges = ({
 	});
 
 	return Promise.all(chunkPromises)
-		.then((chunks) => {
-			return chunks.reduce((acc, chunk) => acc.concat(chunk), []);
-		})
+		.then((chunks) =>
+			chunks.reduce(
+				(acc, chunk) => ({
+					results: acc.results.concat(chunk.results),
+					warnings: acc.warnings.concat(chunk.warnings),
+				}),
+				{ results: [], warnings: [] },
+			),
+		)
 		.catch((err) => console.log('err', err));
 };
 
@@ -280,6 +316,16 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 					hits,
 					nestedFieldNames,
 					Parallel,
+				}).then(({ results, warnings }) => {
+					if (warnings.length) {
+						// Kept on `context` (plain, server-agnostic) rather than any Apollo-specific
+						// mechanism, so a later response-formatting layer (whichever GraphQL server is
+						// in front of this resolver) can surface these to the caller; for now this at
+						// least keeps them from being silently lost.
+						context.warnings = [...(context.warnings || []), ...warnings];
+						warnings.forEach((warning) => console.warn(`  WARNING: ${warning.message}`));
+					}
+					return results;
 				}),
 			total: () => hits.total.value,
 		};
