@@ -84,9 +84,21 @@ export default ({ getClient, configuredCatalogues, expectedFieldsByCatalogue }: 
 	test("4.'get_catalogue_fields' returns an error for an unknown catalogue", async () => {
 		const result = await getClient().callTool({
 			name: 'get_catalogue_fields',
-			arguments: { catalogId: 'this-catalogue-does-not-exist' },
+			arguments: { catalogueId: 'this-catalogue-does-not-exist' },
 		});
 
 		assert.equal(result.isError, true, 'expected tool call to surface the upstream Arranger 404 as an MCP error');
+
+		// Asserting on the text as well: this test previously passed the argument as `catalogId`,
+		// so it exercised schema validation of a missing required field rather than the upstream
+		// 404 its name claims.
+		const [first] = result.content as { type: string; text?: string }[];
+		assert.match(first?.text ?? '', /this-catalogue-does-not-exist/);
+	});
+
+	test("5.'get_catalogue_fields' rejects a missing catalogueId argument", async () => {
+		const result = await getClient().callTool({ name: 'get_catalogue_fields', arguments: {} });
+
+		assert.equal(result.isError, true, 'expected a missing required argument to be rejected');
 	});
 };

@@ -41,15 +41,6 @@ context: `docker-compose.yml` defines only `elasticsearch`, `kibana`, `server` a
 
 ## apps/mcp-server
 
-### `test` script's glob silently skips test files outside one specific directory depth
-
-**File:** `apps/mcp-server/package.json` (`test` script: `tsx --test --experimental-test-module-mocks ./src/**/*.test.ts`)
-**Severity:** medium (tests can silently not run in CI with no failure signal; false confidence)
-**Kind:** test infrastructure bug
-**Issue:** `npm run test` executes scripts via a non-interactive `sh`, which does not support globstar (`**` recursive matching) the way an interactive zsh/bash session does. Under plain `sh` glob rules, `**` behaves like a single `*` for one path segment, so `./src/**/*.test.ts` only matches test files exactly two directories below `src/` (e.g. `src/foo/bar.test.ts`), silently skipping test files directly in `src/` (depth 1) and anything three or more levels deep (depth 3+). Confirmed by reproducing the identical bug in `apps/search-server`'s `test` script, since fixed there (see `.dev/roadmap.md` "Multicatalog catalogue lifecycle and metadata"): adding new test files at depth 1 and depth 3 caused `npm test` to report fewer suites than existed, with zero error or warning, only visible by comparing the reported test count against the known file count.
-**Fix:** Change the script to `tsx --test --experimental-test-module-mocks` (no path/glob argument). Node's test runner, when given no positional file arguments, recursively auto-discovers test files from the working directory using its own glob implementation, which correctly handles any nesting depth and isn't subject to the shell's globbing limitations. Confirm the existing mcp-server test suite still reports the same or more passing tests after the change (a regression here would mean some currently-passing suite was, ironically, also being silently skipped).
-**Standalone:** yes; one-line script change, no source changes
-
 ### `InMemoryEventStore` is not suitable for production
 
 **File:** `apps/mcp-server/src/utils/inMemoryEventStore.ts`
@@ -129,18 +120,20 @@ context: `docker-compose.yml` defines only `elasticsearch`, `kibana`, `server` a
 **Fix:** In the tool handler, check that `catalogueId` is present in `config.catalogues` before calling the Arranger client. Return an MCP error if it is not. The config is already available via `deps` in `registerTools`.
 **Standalone:** yes; one conditional check in the tool handler; no new dependencies
 
-### `readTools.ts` integration test exercises the wrong failure path
+### `integration-tests/mcp-server` is never typechecked
 
-**File:** `integration-tests/mcp-server/test/readTools.ts:85`
-**Severity:** low (test asserts the right outcome for the wrong reason)
-**Kind:** test correctness
-**Issue:** The test calls the `get_catalogue_fields` MCP tool with `arguments: { catalogId: 'this-catalogue-does-not-exist' }`, but the tool's actual schema (`apps/mcp-server/src/mcp/tools.ts`) expects `catalogueId`, not `catalogId`. The test likely still passes (wrong key produces a schema-validation error, and the test asserts `isError: true`), but its description claims it is exercising an upstream 404 for an unknown catalogue, not a schema-validation failure. Found while auditing `catalog`/`catalogue` spelling; not fixed as part of that pass since it's a test logic bug, not a spelling issue.
-**Fix:** Change the test's argument key to `catalogueId`, and confirm the test still asserts the intended 404/not-found behaviour rather than a schema-validation error.
-**Standalone:** yes; one-line test fix
+**File:** `integration-tests/mcp-server/tsconfig.json`; `integration-tests/mcp-server/package.json` (`test` script)
+**Severity:** low (no runtime defect; type errors in the suite and in the app source it imports go unnoticed)
+**Kind:** test infrastructure gap
+**Issue:** The suite runs under `tsx --test`, which strips types without checking them, and no script invokes `tsc` for this project. Its `tsconfig.json` also omits `strict`, unlike `apps/mcp-server`'s, so pointing `tsc` at it produces spurious errors instead of real ones: without `strictNullChecks`, Zod infers every schema property as optional, and `apps/mcp-server/src/mcp/*.ts` reports ~8 assignability errors that its own strict config does not. Running with `--strict` instead surfaces ~12 genuine pre-existing errors across `index.test.ts` (`esClient` possibly undefined, an `enableNetworkAggregation` option that no longer exists on `ArrangerServer`'s config type), `readResources.ts` (text/blob content union not narrowed), and `modules/graphql-router`.
+**Fix:** Add `"strict": true` to the project's `tsconfig.json`, fix the errors it surfaces, and add a `typecheck` script so the suite is checked rather than only executed. Worth doing alongside the same treatment for `integration-tests/server` and `integration-tests/import`, which likely share the shape.
+**Standalone:** yes, but not a one-liner: enabling strict is the easy half, the ~12 errors it exposes are the work
 
-### `SQON_CHEAT_SHEET` has two consumers and may be retired entirely once `build_sqon` ships
+### `SQON_CHEAT_SHEET`'s remaining consumer needs a keep-or-drop decision now that `build_sqon` has shipped
 
-**File:** `apps/mcp-server/src/mcp/sqonCheatSheet.ts`; consumed by `src/mcp/tools.ts` (`get_sqon_schema`) and `src/mcp/prompts.ts` (`query_arranger`)
+**Status (2026-08-10):** narrowed, not closed. `build_sqon` has shipped, and parts (a) and (b) of the fix below are done: `execute_query`'s description now routes through `build_sqon`, and `query_arranger` no longer sends the cheat sheet or carries a `## SQON grammar` section. Only part (c) is open, so the cheat sheet now has **one** consumer, `get_sqon_schema`.
+
+**File:** `apps/mcp-server/src/mcp/sqonCheatSheet.ts`; consumed by `src/mcp/tools.ts` (`get_sqon_schema`)
 **Severity:** low (no defect today; this is a scheduled-obsolescence marker so the cheat sheet is not maintained past its usefulness)
 **Kind:** anticipated redundancy
 **Issue:** The cheat sheet exists to help an LLM synthesize raw SQON by hand. [SQON generation via `build_sqon` tool](roadmap.md#sqon-generation-via-build_sqon-tool) removes the LLM from the synthesis loop entirely: the LLM selects field, operator, and value, and the tool generates validated SQON. At that point the cheat sheet's primary job is gone. `.dev/docs/build-sqon-tool.md` already anticipates this and leaves "keep it as a human-facing reference?" as a separate decision.

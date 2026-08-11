@@ -1,10 +1,8 @@
 /**
- * Compact, LLM-oriented SQON quick reference. Shared by two surfaces: it is the human-readable
- * text of the `get_sqon_schema` tool, and it is sent inline by the `query_arranger` prompt so the
- * grammar is present before the model starts building a SQON. The full machine-readable JSON
- * Schema, operator list, and aliases travel separately in that tool's `structuredContent`, so
- * nothing is lost: this text is the generation guide, the structuredContent is the validation
- * artifact.
+ * Compact, LLM-oriented SQON quick reference. It is the human-readable text of the
+ * `get_sqon_schema` tool. The full machine-readable JSON Schema, operator list, and aliases
+ * travel separately in that tool's `structuredContent`, so nothing is lost: this text is the
+ * generation guide, the structuredContent is the validation artifact.
  *
  * Smaller LLMs pattern-match examples far more reliably than they "execute" a recursive JSON
  * Schema, so this leads with the single most common mistake (fieldName/value placed beside "op"

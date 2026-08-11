@@ -111,7 +111,9 @@ suite('validateSqon', () => {
 		assert.equal(result.valid, false);
 		assert.ok(
 			!result.valid &&
-				result.errors.some((error) => error.includes('Valid operators: in, not-in, some-not-in, all, wildcard.')),
+				result.errors.some((error) =>
+					error.includes('Valid operators: in, not-in, some-not-in, all, wildcard.'),
+				),
 		);
 	});
 });
