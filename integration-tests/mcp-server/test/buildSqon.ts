@@ -222,7 +222,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 		);
 
 		assert.match(text, /No SQON was built/);
-		assert.match(text, /clauses\[0\]: Unknown field "not_a_field"/);
+		assert.match(text, /clauses\[0\]: unknown field "not_a_field"/);
 		assert.match(text, /clauses\[2\]: /);
 		assert.ok(!text.includes('clauses[1]: '), 'expected the valid clause not to be reported');
 	});
@@ -236,7 +236,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 			}),
 		);
 
-		assert.match(text, /operator "gt" is not valid for field "vital_status"/);
+		assert.match(text, /clauses\[0\]: operator "gt" is not valid for field "vital_status"/);
 	});
 
 	test("11.rejects an existing SQON built against another catalogue's fields", async () => {
@@ -252,7 +252,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 			}),
 		);
 
-		assert.match(text, /unknown field "vital_status"/);
+		assert.match(text, /SQON references unknown field "vital_status"/);
 		assert.match(text, /rebuild the query for "catalogue-b"/);
 	});
 
