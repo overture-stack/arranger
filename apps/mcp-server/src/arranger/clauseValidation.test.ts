@@ -92,14 +92,14 @@ suite('validateClauses', () => {
 		test('rejects a field the catalogue does not have, and points at get_catalogue_fields', () => {
 			const errors = validate({ fieldName: 'not.a.field', operator: 'in', value: ['A'] });
 			assert.equal(errors.length, 1);
-			assert.ok(errors[0].includes('Unknown field "not.a.field"'));
+			assert.ok(errors[0].includes('clauses[0]: unknown field "not.a.field"'));
 			assert.ok(errors[0].includes('get_catalogue_fields'));
 		});
 
 		test('reports only the unknown field when the operator is also wrong for it', () => {
 			const errors = validate({ fieldName: 'not.a.field', operator: 'gt', value: 'not-a-number' });
 			assert.equal(errors.length, 1);
-			assert.ok(errors[0].includes('Unknown field'));
+			assert.ok(errors[0].includes('clauses[0]: unknown field'));
 		});
 	});
 
@@ -107,7 +107,9 @@ suite('validateClauses', () => {
 		test('rejects an operator the field type does not accept, and lists the ones it does', () => {
 			const errors = validate({ fieldName: 'donor.sex', operator: 'gt', value: 40 });
 			assert.equal(errors.length, 1);
-			assert.ok(errors[0].includes('operator "gt" is not valid for field "donor.sex" (type "keyword")'));
+			assert.ok(
+				errors[0].includes('clauses[0]: operator "gt" is not valid for field "donor.sex" (type "keyword")'),
+			);
 			assert.ok(errors[0].includes('in, not-in, some-not-in, all, wildcard'));
 		});
 

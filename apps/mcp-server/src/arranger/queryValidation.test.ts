@@ -50,7 +50,10 @@ suite('validateSqon', () => {
 		const sqon = { op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } };
 		const result = validateSqon(sqon, context);
 		assert.equal(result.valid, false);
-		assert.ok(!result.valid && result.errors.some((error) => error.includes('unknown field "not.a.field"')));
+		assert.ok(
+			!result.valid &&
+				result.errors.some((error) => error.includes('SQON references unknown field "not.a.field"')),
+		);
 	});
 
 	test('rejects an operator that is not valid for the field type', () => {
@@ -102,7 +105,9 @@ suite('validateSqon', () => {
 		const sqon = { op: 'wildcard', content: { fieldNames: ['donor.sex', 'bad.field'], value: 'blood' } };
 		const result = validateSqon(sqon, context);
 		assert.equal(result.valid, false);
-		assert.ok(!result.valid && result.errors.some((error) => error.includes('unknown field "bad.field"')));
+		assert.ok(
+			!result.valid && result.errors.some((error) => error.includes('SQON references unknown field "bad.field"')),
+		);
 	});
 
 	test('lists valid operators by canonical name in operator errors', () => {

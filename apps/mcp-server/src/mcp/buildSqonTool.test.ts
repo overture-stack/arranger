@@ -564,7 +564,7 @@ suite('build_sqon existingSqon', () => {
 			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
 		});
 		assert.ok(message.includes('valid individually, but the resulting SQON is not'));
-		assert.ok(message.includes('unknown field "file.size"'));
+		assert.ok(message.includes('SQON references unknown field "file.size"'));
 		assert.ok(message.includes('rebuild the query for "participants"'));
 	});
 });
@@ -590,7 +590,7 @@ suite('build_sqon clause validation', () => {
 				{ fieldName: 'donor.age_at_diagnosis', operator: 'gt', value: '40' },
 			],
 		});
-		assert.ok(message.includes('clauses[0]: Unknown field "not.a.field"'));
+		assert.ok(message.includes('clauses[0]: unknown field "not.a.field"'));
 		assert.ok(message.includes('clauses[2]: '));
 		assert.ok(!message.includes('clauses[1]: '));
 	});

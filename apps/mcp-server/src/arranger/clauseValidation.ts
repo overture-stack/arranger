@@ -27,6 +27,8 @@ const RANGE_OPERATORS = new Set(['gt', 'gte', 'lt', 'lte', 'between']);
  * when the clause is valid. Ordered cheapest-first, and stops at the first failure: a clause with
  * two problems is fixed by re-reading the same field metadata either way, and two messages for one
  * clause reads as two broken clauses.
+ * @remarks Every message returned here is a sentence fragment completing the `clauses[i]: ` prefix
+ * added by `validateClauses`, so none of them capitalize their first word.
  * @param clause - `build_sqon` clause to be validated
  * @param context - the relevant catalogue's fields, including their types and valid SQON operators
  * @returns The first validation error found, or undefined if the clause is valid.
@@ -40,7 +42,7 @@ const validateClause = (clause: SqonClauseInput, context: CatalogueQueryContext)
 
 	const field = context.fields[fieldName];
 	if (!field) {
-		return `Unknown field "${fieldName}". Use get_catalogue_fields to list valid field names; do not guess.`;
+		return `unknown field "${fieldName}". Use get_catalogue_fields to list valid field names; do not guess.`;
 	}
 
 	// Normalizing both sides matches validateFilterClause in queryValidation.ts. The input enum is
