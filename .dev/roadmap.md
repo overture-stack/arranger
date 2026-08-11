@@ -17,11 +17,13 @@ Arranger's catalogue configuration (`base.json`, `extended.json`, `facets.json`,
 **Proposal:** a CLI (for example `npm run config:plan`, run from `apps/search-server`) that takes a configuration directory and a target ES/OS connection (local, staging, or production, read-only) and prints a diff of what would change: which facets would appear or disappear, which table columns would change, which fields referenced in configuration are missing from the live mapping (or vice versa), and any validation errors, all without starting the GraphQL server or writing anything to the target cluster. Modelled on a "plan before apply" workflow.
 
 **Why this is well-scoped to start now:**
+
 - Reinforces the [Admin UI replacement](#admin-ui-replacement) direction directly: the deprecated `admin-ui` mutated configuration as live state in an ES index, which is documented as a design mistake. A plan/preview CLI is the opposite pattern (configuration as data, reviewed before being applied) and gives the eventual admin UI replacement a validation primitive to build on rather than starting from nothing.
 - Naturally absorbs [Config validation with structured errors and tests](#config-validation-with-structured-errors-and-tests): the Zod-based validation that item already calls for is exactly what a `plan` command needs before it can produce a meaningful diff. Building them together avoids writing the validation logic twice.
 - Does not need to wait for [Arranger config separation](#arranger-config-separation) or [Arranger core module extraction](#arranger-core-module-extraction): it can validate configuration in its current, coupled shape today, the same way the config-validation item is already scoped to do. It becomes cleaner to implement once those land, but nothing blocks starting now.
 
 **Open questions for design:**
+
 - **Read-only credential:** the CLI must never write to the target index; needs a documented minimum-permission credential (read mapping, read aliases only), consistent with the least-privilege direction in [Decouple startup health check from application credential](#decouple-startup-health-check-from-application-credential).
 - **Output format:** a human-readable terminal diff is the minimum bar. A machine-readable (JSON) output mode would let this run as a CI check on configuration pull requests (fail the build if a change would silently drop a facet, for instance), a natural follow-on once the CLI itself exists.
 - **Scope of "diff":** start with facets, columns, and fields, all directly derived from configuration plus mapping. Whether to also diff the resolved GraphQL SDL is a heavier lift and a reasonable phase two, since Arranger's schema also includes code-authored parts (Root query shape, SQON input types) that a config-vs-mapping diff alone would not cover.
@@ -130,6 +132,7 @@ This is a directional goal, not an actionable item yet.
 _Priority: next. Absorption into `modules/sqon` is complete (builder API, reduceSqon, filter manipulation, from(), all operators, correct type boundary). Remaining: formal deprecation and removal._
 
 Steps:
+
 1. Publish a final `@overture-stack/sqon-builder` version with a deprecation notice pointing consumers at `@overture-stack/sqon`.
 2. Remove `sqon-builder` as a dependency from this monorepo.
 
@@ -183,6 +186,7 @@ A `failed` catalogue carries an `error` object: `code` (a machine-readable strin
 **Server-level status:** a small aggregate over enabled (non-`disabled`) catalogues, used by the readiness endpoint below. `healthy`: no enabled catalogue is `failed` (true whether every catalogue is `available`, every one is `disabled`, or a mix). `degraded`: at least one `available` and at least one `failed`, the overture-dev case. `unhealthy`: every enabled catalogue is `failed`, likely something systemic rather than "data isn't indexed yet", and the one state that should actually affect a readiness probe. Carries no failure explanation of its own, that's a catalogue-level concern. Open follow-up: how `loading` catalogues factor into this aggregate, deferred until `loading` is observable.
 
 **Endpoints:**
+
 - `GET /introspection/:catalogId` (the existing per-catalogue introspection route) returns `200` whenever the server itself is healthy, with `status`, `error` (only when `failed`), `documentType`, and (when configured) `description`, the same values the server-wide listing shows for that catalogue. With `enableDebug`, optionally richer diagnostics.
 - `GET /introspection` (server-wide listing) includes every configured catalogue by default, including ones that failed to load, each with its `status`/`error`, plus a top-level `status` for the aggregate. Catalogue IDs are operator-defined identifiers, not sensitive data; revisit whether this listing should be admin-gated once Usher/ABAC lands (see "Auth and field/record-level access control" below), not before.
 - A `failed` catalogue's GraphQL endpoint returns `404` with the same `status`/`error` body plus a `details` pointer back to the metadata endpoint, instead of crashing the process.
@@ -197,6 +201,7 @@ Tests: `searchClient/classifyCatalogueFailureReason.test.ts`, `availability/comp
 Two unrelated bugs found and fixed during this work are tracked there rather than duplicated here: `getConfigFromFiles` silently swallowing a malformed catalogue config, and `apps/search-server`'s `test` script glob silently skipping test files at certain depths (the identical bug in `apps/mcp-server` is logged separately, not fixed here).
 
 **What's not yet done:**
+
 - `disabled` and `loading` don't have anything producing them yet (see above).
 - Admin-gating the server-wide listing once Usher/ABAC lands.
 - A Prometheus metrics endpoint for per-catalogue historical/alertable detail (see Ideation section).
@@ -214,6 +219,7 @@ Investigation found per-catalogue state (ES/OS client, GraphQL schema, Express r
 Two carve-outs would need care in any implementation: the optional shared `esClient` injection path (`apps/search-server/src/server.ts:14,64`) forces one client onto all catalogues if used, and the introspection router map (`apps/search-server/src/introspection/index.ts:9-43`) would need its entry swapped in lockstep with any router swap, or it could keep referencing a torn-down catalogue.
 
 **Proposed incremental path, not yet committed to:**
+
 1. Manual reload trigger for a single catalogue (for example an admin-gated `POST /:catalogId/reload`) that re-runs `buildCatalogueRouter()` and swaps its entry in a `Map<catalogId, Router>` behind a thin dereferencing middleware, replacing Express's static mount.
 2. Opt-in file-watching (for example `chokidar`) on each catalogue's config directory, calling the same reload path automatically; this is where the md5-checksum logic currently living in the Helm chart could move into the app itself.
 3. Coordinate with "Multicatalog catalogue lifecycle and metadata" above: a catalogue mid-reload is a natural fit for the `available`/`failed`/`disabled` status model already being planned there, so a client hitting the catalogue during a reload gets a real status rather than a race condition.
@@ -297,11 +303,13 @@ Consumers that build on Arranger (portal frontends, and internally `modules/char
 
 ### MCP integration readiness
 
-Six targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation; the fifth is a follow-up question from a documentation fix logged during a downstream PR review; the sixth is the accumulated `/docs` gap the other five (and everything already shipped) have left behind.
+Six targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation; the fifth is a follow-up question from a documentation fix logged during a downstream PR review; the sixth is the accumulated `/docs` gap the other five (and everything already shipped) have left behind. The fourth is now done; the other five remain open.
 
-#### SQON generation via `build_sqon` tool
+#### SQON generation via `build_sqon` tool [done]
 
-_Priority: high. Somewhat urgent: MCP SQON generation is currently hit-or-miss in practice._
+_Shipped 2026-08-10 (#1080), version 1: the scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`) with one `and`/`or` combination per call. Text operators and mixed AND/OR nesting are deliberately deferred; see § Phasing in `.dev/docs/build-sqon-tool.md` for the v2/v3 shape. The design and implementation records are `.dev/docs/build-sqon-tool.md` and `.dev/docs/build-sqon-implementation.md`._
+
+_Priority when open: high. Somewhat urgent: MCP SQON generation was hit-or-miss in practice._
 
 LLMs asked to generate SQONs by inference produce inconsistent results. The root cause is training-data staleness: operator names, value schemas, combination nesting rules, and field-type constraints in model training data are incomplete or incorrect relative to the current spec. Prompting alone cannot reliably compensate for this.
 
@@ -309,11 +317,11 @@ The fix is to remove the LLM from the SQON synthesis loop. Add a `build_sqon` MC
 
 This is also more token-efficient than the alternatives: embedding SQON documentation in a system prompt and relying on the `/introspection` endpoint as a runtime SQON guide both consume context window on every request. A tool call is cheaper and fully deterministic.
 
-**Scope:**
+**Scope, as built:**
 
-1. **`build_sqon` tool** in `apps/mcp-server/src/mcp/tools.ts`: accepts `field`, `operator`, `value`, and optional `combination` type; calls `SqonBuilder` internally; returns a validated SQON object.
-2. **Agent-optimized tool description**: the tool schema carries descriptions that guide the LLM toward correct parameter selection: valid operators per field type (from `getSqonFieldOperatorDetails()`) and value type hints. The tool's own description is the spec; the LLM does not need SQON documentation injected into every prompt.
-3. **Versioned changelog**: as the SQON schema evolves, the tool interface is versioned and its changelog is machine-readable. Agent behaviour decouples from model training data; the tool's current description is always authoritative.
+1. **`build_sqon` tool** in `apps/mcp-server/src/mcp/buildSqonTool.ts`, registered from `mcp/tools.ts`: accepts a `catalogueId`, one `combination` (`and`/`or`), a list of `clauses` (`fieldName`, `operator`, `value`, optional `negate`), and an optional `existingSqon`; validates every clause against that catalogue's introspection; folds them with `addFilterClause`; returns the SQON with a plain-English `summary`, a submitted-versus-final clause count, and a note when the two differ. One call carries the whole batch: the originally-scoped one-clause-per-call shape was rejected during design, because a per-clause call turns an N-condition query into N round trips and makes a rejected clause N/2 calls of wasted work on average (see § Why one call builds a whole batch in `.dev/docs/build-sqon-tool.md`).
+2. **Agent-optimized tool description** [done]: the operator descriptions are generated at module load from `getSqonFieldOperatorDetails()`, so they cannot drift from `modules/sqon`, and are attached per schema branch rather than once for all operators, which keeps the emitted JSON Schema roughly a third smaller than repeating the full list on every branch. The batch-level guidance sits on the `clauses` array, once.
+3. **Versioned changelog** [not done]: the tool interface is not versioned and carries no machine-readable changelog. Version 1's operator coverage is described in the tool's own input schema, which is authoritative but not versioned. Revisit if and when a v2 changes the input shape rather than only extending it.
 
 **Prerequisite (resolved):** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. This was previously blocked on absorbing full operator coverage into `modules/sqon`; that absorption is now complete (see [Deprecate `sqon-builder`](#deprecate-sqon-builder)) and `modules/sqon`'s `SqonBuilder` already covers `all`, `between`, `gte`, `in`, `lte`, `not-in`, `some-not-in`, and `wildcard`. `build_sqon` can ship with full operator coverage from the start; no partial-coverage phasing is needed.
 
@@ -359,14 +367,14 @@ Several arguments that materially change query results (`hits(first)`, `aggregat
 
 _Priority: medium. Recurring gap logged as a session open thread many times over; never yet promoted to a tracked item._
 
-The published docs site has no coverage of `apps/mcp-server` at all: `execute_query`, `get_sqon_schema`, `get_catalogue_fields`, `list_catalogues`, and (once shipped) `build_sqon` are all undocumented in `/docs`, despite `docs/concepts.md` already positioning Arranger as "a working search API and MCP server for AI agent access."
+**Partly closed 2026-08-10.** `docs/usage/06-ai-and-automation.md` was promoted to a top-level `docs/mcp-server.md` (#1089), which now names all five tools with their input shapes, the call order, and `build_sqon`'s output contract. What is still missing is depth: each tool's full output shape, worked request/response examples, and the elicitation-confirmation flow in `execute_query`, which remains documented nowhere a reader of `/docs` will find it.
 
 **Scope:**
 
-- A dedicated `docs/usage/` page (or an extension of `06-ai-and-automation.md`) covering the full MCP tool surface: what each tool does, its input/output shape, and the elicitation-confirmation flow in `execute_query`.
-- To check once `build_sqon` ships: `docs/concepts.md`'s `fieldName`/`fieldNames` definition currently ties both names to appearing "within a filter clause's `content` object"; `build_sqon` makes them flat tool-call arguments instead, so the definition will read narrower than reality unless extended to cover that usage too.
+- Extend `docs/mcp-server.md` (or split a dedicated reference page out of it) to cover each tool's input _and_ output shape with worked examples, and the elicitation-confirmation flow in `execute_query`.
+- ~~To check once `build_sqon` ships: `docs/concepts.md`'s `fieldName`/`fieldNames` definition~~ done 2026-08-10: the definition now covers both positions, the `content` object and a flat clause-building argument, and the vocabulary table entry matches.
 
-_Coordinate with whichever MCP work lands next; `execute_query` already shipped (#1077), `build_sqon` is still design-only._
+_Coordinate with whichever MCP work lands next; `execute_query` shipped in #1077 and `build_sqon` in #1080, both now named in `docs/mcp-server.md`._
 
 ---
 
@@ -446,12 +454,13 @@ The SQON schema: same shape as `wildcard` (`fieldNames` array + `value` string),
 
 ```json
 {
-  "op": "fuzzy",
-  "content": { "fieldNames": ["donor.name"], "value": "john smit" }
+	"op": "fuzzy",
+	"content": { "fieldNames": ["donor.name"], "value": "john smit" }
 }
 ```
 
 **Implementation notes:**
+
 - `multi_match` with `fuzziness: "AUTO"` is the natural ES/OS translation; the current `getWildcardFilter` in `graphql-router` is the reference implementation to branch from
 - Nested field grouping logic from `getWildcardFilter` carries over: nested fields must be wrapped per path
 - A new `SqonBuilder.fuzzy()` builder method and a new `FuzzyFilterSchema` in `modules/sqon` are needed; the schema change is additive
@@ -637,6 +646,7 @@ _Priority: medium. Extends existing behaviour uniformly._
 The `displayValues` feature maps raw field values to human-readable labels (e.g. `"M"` → `"Male"`). Confirmed source of truth: `extendFields` (`modules/graphql-router/src/mapping/extendMapping.ts:184-196`) populates a flat `displayValues: Record<string, string>` per field, typed as `ExtendedMappingInterface.displayValues` (`modules/components/src/DataContext/types.ts:41`) and exposed via GraphQL: the same shape is already fetched and available to every consumer regardless of agg type.
 
 **Confirmed current state, by component:**
+
 - **BooleanAggs: implemented.** `BooleanAggs/index.tsx:24` destructures `displayValues` (as `extendedDisplayKeys`), merges it with defaults at lines 49-57, and it drives the toggle labels at lines 131 and 152.
 - **TermAggs: not implemented.** `TermAggs/TermAggs.jsx:96` has only `// TODO: displayValues may fit here`; `decorateBuckets` maps `bucket.key_as_string ?? bucket.key` through a generic string formatter (`translateSQONValue`), not a config-driven label lookup. No `displayValues` prop is accepted anywhere in the file.
 - **RangeAgg / DatesAgg: not implemented.** No trace of `displayValues` in either component.
@@ -670,11 +680,11 @@ A catalogue's real ES/OS documents can wrap all their content under one top-leve
 
 - **Mapping ingestion** (`searchClient/fetchMapping.ts`'s `unwrapMapping`): `getIndexMapping` unwraps the mapping once at startup, so schema generation, field discovery, and `extended.json`/`facets.json`/`table.json` all operate on clean, unprefixed names. Verified against a real, updated donor-catalogue mapping in `overture/infra` (all 246 configured fields resolve, including hyphenated names and the primary key).
 - **Per-request query/response translation** (`middleware/utils/nestingPrefix.ts`): a shared utility (`applyNestingPrefix`, `applyNestingPrefixToFieldNames`, `applyNestingPrefixToSqon`, `unwrapSource`, `unwrapHits`) applied at each pipeline's entry point, rather than threading `nestingPrefix` awareness into every filter-op builder or `_source` reader individually:
-  - `buildQuery`/`buildAggregations` prefix their incoming SQON and `nestedFieldNames` once at entry; the 7 filter-op builders, `esFilter.js`'s nested-path wrapper, `getNestedSqonFilters.js`, and the SQON-side of `injectNestedFiltersToAggs.js` needed zero changes, since they were already fully parametrized by their inputs.
-  - `buildAggregations`/`createFieldAggregation.js` needed one real untangling: the pre-existing `field` variable conflated the ES query path with the response/bucket key name. Split into `fieldName` (clean, drives every response key) and `esFieldName` (prefixed, drives every ES query clause) throughout both files, plus the one comparison in `injectNestedFiltersToAggs.js` that needed the same prefix applied to compare correctly.
-  - `resolveHits.js`/`resolveSets.js`/`getAllData.js` prefix their own sort-building (a query-building concern outside `buildQuery`) and unwrap returned `_source` via `unwrapHits`/`unwrapSource` immediately after the ES call, so every downstream reader sees already-clean data with no changes needed. `resolveHits.js`'s per-field `_source` request-filter is replaced with the envelope key alone when a prefix is configured (a strict superset of any narrower list, avoiding a subtly-wrong per-field pattern match against a possibly GraphQL-sanitized name). **Flagged as a concrete future incompatibility, not just a current-state note:** see [Auth and field/record-level access control](#auth-and-field-record-level-access-control)'s "Field-level access" bullet, this fetch-everything shape needs to be revisited once field-level grants exist.
-  - `flattenAggregations.js`'s one `top_hits` `_source` read is unwrapped the same way.
-  - A configured `nestingPrefix` that doesn't match the real index mapping fails the catalogue outright (`nesting_prefix_not_found`, via the existing partial-availability mechanism) rather than silently falling back to the still-wrapped mapping. The original fallback-plus-`console.warn` design would have reproduced the exact "everything is null" symptom this feature exists to fix, self-inflicted by a config typo with only a log line as the clue.
+    - `buildQuery`/`buildAggregations` prefix their incoming SQON and `nestedFieldNames` once at entry; the 7 filter-op builders, `esFilter.js`'s nested-path wrapper, `getNestedSqonFilters.js`, and the SQON-side of `injectNestedFiltersToAggs.js` needed zero changes, since they were already fully parametrized by their inputs.
+    - `buildAggregations`/`createFieldAggregation.js` needed one real untangling: the pre-existing `field` variable conflated the ES query path with the response/bucket key name. Split into `fieldName` (clean, drives every response key) and `esFieldName` (prefixed, drives every ES query clause) throughout both files, plus the one comparison in `injectNestedFiltersToAggs.js` that needed the same prefix applied to compare correctly.
+    - `resolveHits.js`/`resolveSets.js`/`getAllData.js` prefix their own sort-building (a query-building concern outside `buildQuery`) and unwrap returned `_source` via `unwrapHits`/`unwrapSource` immediately after the ES call, so every downstream reader sees already-clean data with no changes needed. `resolveHits.js`'s per-field `_source` request-filter is replaced with the envelope key alone when a prefix is configured (a strict superset of any narrower list, avoiding a subtly-wrong per-field pattern match against a possibly GraphQL-sanitized name). **Flagged as a concrete future incompatibility, not just a current-state note:** see [Auth and field/record-level access control](#auth-and-field-record-level-access-control)'s "Field-level access" bullet, this fetch-everything shape needs to be revisited once field-level grants exist.
+    - `flattenAggregations.js`'s one `top_hits` `_source` read is unwrapped the same way.
+    - A configured `nestingPrefix` that doesn't match the real index mapping fails the catalogue outright (`nesting_prefix_not_found`, via the existing partial-availability mechanism) rather than silently falling back to the still-wrapped mapping. The original fallback-plus-`console.warn` design would have reproduced the exact "everything is null" symptom this feature exists to fix, self-inflicted by a config typo with only a log line as the clue.
 
 Verified with unit tests at every layer, not just the shared utility: `nestingPrefix.test.ts` for the pure helpers; targeted cases added to `buildQuery.test.js`, `buildAggregations.test.js`, `injectNestedFiltersToAggs.test.js`, and `flattenAggregations.test.js` for the query/aggregation pipelines; `fetchMapping.test.ts` and `classifyCatalogueFailureReason.test.ts` for the mapping-ingestion and catalogue-failure behaviour; and full GraphQL-execution tests (`resolveHits.integration.test.js`, `resolveAggregations.test.ts`, `resolveSets.test.js`) for the resolver-level integration (sort-building, `_source` requests, `unwrapHits`/`unwrapSource`), the layer most likely to hide a real bug since it's where several independently-correct pieces are wired together. That integration-level testing pass caught one: `resolveSets.js`'s default sort (`_id`, an ES meta field, not part of the document's own data) was being incorrectly prefixed too, fixed to special-case it. The duplicated "is this field nested" prefix-matching logic each pipeline already had did not need consolidating to implement this: every one of those call sites was already correctly parametrized by whatever `nestedFieldNames` it was given, so feeding each a prefixed list was sufficient without touching the duplicated logic itself.
 
@@ -691,6 +701,7 @@ _Priority: medium. Ongoing maintenance cost that compounds over time._
 The components package still uses patterns that predate React hooks: `recompose` (an HOC composition library), `component-component` (a render-prop state machine), and class-based components throughout. These are no longer idiomatic React and make the codebase harder to read, test, and extend.
 
 **Confirmed scope, by grep:**
+
 - `recompose`: 4 files (`Tabs.jsx`, `Query.jsx`, `QuickSearch/QuickSearchQuery.js`, `Arranger/MatchBox.jsx`).
 - `component-component`: 10 files, concentrated in one directory; 7 of the 10 are in `AdvancedSqonBuilder/` (`index.jsx`, `SqonEntry.js`, `sqonPieces/FieldOp.jsx`, `sqonPieces/BooleanOp.jsx`, `filterComponents/BooleanFilter.jsx`, `filterComponents/RangeFilter.js`, `filterComponents/TermFilter.jsx`); the rest are `AdvancedFacetView/index.jsx`, `State.js`, and `utils/ExtendedMappingProvider.jsx`. Migrating `AdvancedSqonBuilder` alone closes most of this.
 - Class components: 21 files. Not confined to obviously-legacy code: alongside `Query.jsx`, `State.js`, and `AdvancedFacetView/*`, the pattern also cuts through the theme engine (`ThemeContext/index.tsx`, `Table/helpers/context.tsx`, `DataContext/index.tsx`) and the Aggs family (`aggregations/RangeAgg.jsx`, `aggregations/DatesAgg.jsx`, `aggregations/AggsState.ts`); code that's otherwise already modernized in other respects.
