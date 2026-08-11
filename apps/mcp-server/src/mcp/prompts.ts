@@ -2,7 +2,6 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { z as zod } from 'zod';
 
 import { type ArrangerServerIntrospection } from '#arranger/types.js';
-import { SQON_CHEAT_SHEET } from '#mcp/sqonCheatSheet.js';
 import { type McpServerDeps } from '#server.js';
 
 /**
@@ -30,12 +29,6 @@ executing.
 ## Available catalogues
 
 ${catalogueSummary}
-
-## SQON grammar
-
-A SQON quick reference (grammar, field operators, and worked examples) is provided \
-in the next message. The full machine-readable JSON Schema and operator metadata for \
-this instance are available from the \`get_sqon_schema\` tool.
 
 ---
 
@@ -86,7 +79,8 @@ Wait for explicit confirmation before executing. Format:
   This will query the '[catalogueId]' catalogue.
   Is this [the data you're looking for / what you're looking for]?
 
-Do not execute until the researcher confirms.
+Do not execute until the researcher confirms. Once confirmed, call \`build_sqon\` with all the \
+conditions in one call. Then call \`execute_query\` with the returned \`sqon\` unchanged.
 
 **Unanswerable (field missing from catalogue)**
 Decline to construct a SQON. Surface the closest available field display names. \
@@ -117,8 +111,8 @@ or trigger a confirmation step.`;
 
 /**
  * Registers the `query_arranger` prompt, which turns a researcher's natural language goal into
- * a three-message conversation: workflow instructions built from live catalogue introspection,
- * the SQON cheat sheet, and the goal itself.
+ * a two-message conversation: workflow instructions built from live catalogue introspection,
+ * and the goal itself.
  */
 export const registerPrompts = (server: McpServer, { client }: McpServerDeps): void => {
 	server.registerPrompt(
@@ -143,13 +137,6 @@ export const registerPrompts = (server: McpServer, { client }: McpServerDeps): v
 						content: {
 							type: 'text',
 							text: buildSystemPrompt(introspection),
-						},
-					},
-					{
-						role: 'user',
-						content: {
-							type: 'text',
-							text: SQON_CHEAT_SHEET,
 						},
 					},
 					{

@@ -15,6 +15,7 @@ import catalogueAData from './assets/catalogue_a.data.json' with { type: 'json' 
 import catalogueAMappings from './assets/catalogue_a.mappings.json' with { type: 'json' };
 import catalogueBData from './assets/catalogue_b.data.json' with { type: 'json' };
 import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
+import buildSqon from './buildSqon.js';
 import executeQuery from './executeQuery.js';
 import readPrompts from './readPrompts.js';
 import readResources from './readResources.js';
@@ -242,6 +243,10 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			expectedDocumentTypes,
 			expectedFieldsByCatalogue,
 		});
+	});
+
+	suite('Tools: build_sqon', () => {
+		buildSqon({ getClient });
 	});
 
 	suite('Tools: execute_query', () => {

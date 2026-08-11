@@ -56,7 +56,7 @@
 		"server": "npm run start -w apps/search-server",
 		"server:dev": "npm run dev -w apps/search-server",
 		"test": "npm run test --ws --if-present",
-		"test:dev": "npm run test -w modules/sqon -w modules/types -w modules/graphql-router -w apps/search-server -w integration-tests/import",
+		"test:dev": "npm run test -w modules/sqon -w modules/types -w modules/graphql-router -w apps/search-server -w apps/mcp-server -w integration-tests/import",
 		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch -w modules/components -w integration-tests/import\"",
 		"turbo:build": "npx turbo run build",
 		"turbo:test": "npx turbo run test",

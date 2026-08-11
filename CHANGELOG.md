@@ -38,7 +38,7 @@ See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) f
     - `GET /introspection`: Lists all registered catalogues with their document types, GraphQL paths, introspection paths, and availability `status`.
     - `GET /introspection/:catalogueId`: Returns all fields for a catalogue, their ES types, and valid SQON operators grouped by field type.
     - `GET /introspection/sqon`: Returns the SQON JSON Schema.
-    - See [docs/usage/05-introspection.md](docs/usage/05-introspection.md) for full API reference.
+    - See [docs/reference/05-introspection.md](docs/reference/05-introspection.md) for full API reference.
 - **Network search federation**: A catalogue can federate queries across multiple remote Arranger nodes via `network.json` config. Supports passthrough headers for forwarding auth tokens to remote nodes.
 - **GraphQL query complexity limits**: Configurable alias count and query depth limits protect against abusive queries. Set via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` env vars or per-catalogue config. Unset by default.
 - **CORS configuration**: `ALLOWED_CORS_ORIGINS` env var controls which origins are permitted. Omit to allow all.
@@ -51,7 +51,8 @@ See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) f
 
 - **New `apps/mcp-server`**: A Model Context Protocol server that exposes Arranger catalogues as LLM-queryable resources and tools. Separate Docker image: `ghcr.io/overture-stack/arranger-mcp-server`. Implements the MCP Streamable HTTP transport.
     - Resources: server introspection, SQON schema, per-catalogue fields.
-    - Tools: `list_catalogues`, `get_sqon_schema`, `get_catalogue_fields`, `execute_query`.
+    - Tools: `list_catalogues`, `get_sqon_schema`, `get_catalogue_fields`, `build_sqon`, `execute_query`.
+- **`build_sqon` tool**: builds a validated SQON from plain `fieldName`/`operator`/`value` clauses, so a model selects conditions instead of writing query JSON. Every clause is checked against the catalogue's own field types and valid operators before anything is built, and one error is reported per invalid clause rather than stopping at the first, so a whole batch can be corrected in one resubmission. Returns the SQON alongside a plain-English `summary` built from the catalogue's display names (for reading back to the user before the query runs), and reports when equivalent clauses merged during the build so a lower filter count than was submitted is explained rather than silent. Optionally extends the SQON from an earlier call via `existingSqon`, for narrowing a query that already ran. Version 1 covers the scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`) with one `and`/`or` per call; text-search operators and mixed AND/OR nesting still require a hand-written `sqon` passed to `execute_query`. The server instructions, `execute_query`'s description, and the `query_arranger` prompt now all route SQON construction through this tool. See [docs/mcp-server.md](docs/mcp-server.md) for the full tool surface.
 
 ### Charts (`@overture-stack/arranger-charts`)
 

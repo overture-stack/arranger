@@ -48,10 +48,16 @@ export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
 		assert.deepEqual(uris, expected);
 	});
 
-	test('5.lists the four tools registered by the MCP server', async () => {
+	test('5.lists the five tools registered by the MCP server', async () => {
 		const { tools } = await getClient().listTools();
 		const names = tools.map((tool) => tool.name).sort();
-		assert.deepEqual(names, ['execute_query', 'get_catalogue_fields', 'get_sqon_schema', 'list_catalogues']);
+		assert.deepEqual(names, [
+			'build_sqon',
+			'execute_query',
+			'get_catalogue_fields',
+			'get_sqon_schema',
+			'list_catalogues',
+		]);
 	});
 
 	test('6.lists the one prompt registered by the MCP server', async () => {
@@ -76,7 +82,7 @@ export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
 
 		assert.ok(instructions.includes('## Never guess'), 'expected a never-guess section');
 
-		for (const toolName of ['list_catalogues', 'get_catalogue_fields', 'get_sqon_schema', 'execute_query']) {
+		for (const toolName of ['list_catalogues', 'get_catalogue_fields', 'build_sqon', 'execute_query']) {
 			assert.ok(instructions.includes(toolName), `expected the instructions to name ${toolName}`);
 		}
 
