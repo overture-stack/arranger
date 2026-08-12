@@ -50,13 +50,13 @@
 		"dist"
 	],
 	"scripts": {
-		"build": "tsup",
+		"build": "wireit",
 		"clear:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
 		"test": "tsx --test",
 		"test:watch": "npm test -- --watch",
-		"watch": "nodemon -w src -w ../sqon/dist -e ts --exec \"npm run build\""
+		"watch": "WIREIT_WATCH=true npm run build"
 	},
 	"dependencies": {
 		"@overture-stack/sqon": "file:../sqon"
@@ -64,7 +64,6 @@
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.0",
 		"@types/node": "^22.19.13",
-		"nodemon": "^3.1.9",
 		"tsup": "^6.7.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.8.2",
@@ -73,5 +72,20 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"type": "module"
+	"type": "module",
+	"wireit": {
+		"build": {
+			"command": "tsup --tsconfig tsconfig.release.json",
+			"dependencies": [
+				"../sqon:build"
+			],
+			"files": [
+				"src/**/*.ts",
+				"tsconfig.release.json"
+			],
+			"output": [
+				"dist/**"
+			]
+		}
+	}
 }

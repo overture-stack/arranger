@@ -1,4 +1,5 @@
 export { SqonBuilder, type SqonBuilderHandle, type SqonFieldFilter, type SqonFieldFilterKey } from './builder/index.js';
+export { asCombination } from './builder/asCombination.js';
 export { addFilterClause, type ScalarFilter, type TextFilter } from './builder/filter.js';
 export { normalizeSqonNode } from './builder/normalize.js';
 export { checkMatchingArrays, checkMatchingFilter, emptySqon, isFieldFilter, isGroupNode } from './builder/utils.js';

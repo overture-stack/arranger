@@ -229,18 +229,18 @@ The wildcard operator translates to an ES/OS `wildcard` query with `case_insensi
 
 Arranger accepts several shorthand aliases in addition to canonical operators.
 
-| Alias | Canonical Operator |
-| ----- | ------------------ |
-| `=`   | `in`               |
-| `==`  | `in`               |
-| `===` | `in`               |
-| `!=`  | `not-in`           |
-| `!==` | `not-in`           |
-| `>`   | `gt`               |
-| `>=`  | `gte`              |
-| `<`   | `lt`               |
-| `<=`  | `lte`              |
-| `filter` | `wildcard`      |
+| Alias    | Canonical Operator |
+| -------- | ------------------ |
+| `=`      | `in`               |
+| `==`     | `in`               |
+| `===`    | `in`               |
+| `!=`     | `not-in`           |
+| `!==`    | `not-in`           |
+| `>`      | `gt`               |
+| `>=`     | `gte`              |
+| `<`      | `lt`               |
+| `<=`     | `lte`              |
+| `filter` | `wildcard`         |
 
 For interoperability, the canonical operator names are always preferred when generating new SQONs.
 
@@ -456,6 +456,41 @@ Examples include:
 - wildcard-like strings such as `ABC*`
 
 These are still ordinary SQON values structurally, but Arranger may compile them into specialized Elasticsearch queries.
+
+### `in` and "`not` of `not-in`" aren't the same, for a nested field
+
+**TLDR:** on a field inside a nested list (like `items` in the basket example above), `in` means "at least one item matches"; "`not` of `not-in`" means "every item matches" (including a basket with no items at all). They aren't interchangeable, even though negating `not-in` looks like it should just hand you back `in`.
+
+```json
+{ "op": "in", "content": { "fieldName": "items.color", "value": ["red"] } }
+```
+
+```json
+{
+	"op": "not",
+	"content": [{ "op": "not-in", "content": { "fieldName": "items.color", "value": ["red"] } }]
+}
+```
+
+Both read, in plain English, as "an item is red." Only the first one reliably means that.
+
+<details>
+<summary><b>Why: a nested filter only ever asks "does at least one item match"</b></summary>
+
+`in` on a nested field asks Elasticsearch "does at least one item match red?" `not-in` asks the mirror question, "does at least one item match something other than red?" Both are answered the same way: find one matching item, anywhere in the list.
+
+The problem is negating that question from the outside. "Not (at least one item is some other colour)" doesn't mean "at least one item is red," it means "every item is red" (there's no item left that could be some other colour), including the case where there are no items at all, which trivially satisfies "every item is X" for any X. That's a general fact about "at least one of these matches" questions, not specific to Arranger or to any particular field or value:
+
+- **A basket with no `items` at all:** `in: 'red'` doesn't match: there's no item to be red. The double-negated form does match, vacuously ("every item is red" is trivially true when there are no items).
+- **A basket with a mix of colours, only some red:** `in: 'red'` matches: at least one item qualifies. The double-negated form doesn't: it needs every item to be red, not just one.
+
+They only agree when a basket's items are uniformly all-red or all-not-red, and even then the no-items case still diverges.
+
+Pivot doesn't change any of this: pivot scopes *multiple* conditions to the same nested item (see [Pivot](#pivot) above); it has no effect on negating a *single* condition, which is what's happening here.
+
+This applies to any value on a nested field, not just an ordinary one like `'red'`. It's also why negating a `__missing__` check the same way is surprising: `__missing__` is just a value from the query builder's perspective, so it inherits the exact same gotcha. If you specifically want "at least one item is missing this field," the same rule applies: use `in` with `__missing__` directly rather than negating `not-in`.
+
+</details>
 
 ## Introspection
 

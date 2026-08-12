@@ -39,6 +39,7 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 		console.log('\n  Success!');
 
 		const app = express();
+		// Also blocks Playground/Sandbox in-browser when restrictive; see docs/reference/07-feature-flags.md.
 		app.use(cors(allowedCorsOrigins?.length ? { origin: allowedCorsOrigins } : undefined));
 		app.use(json({ limit: '50mb' }));
 		app.use(urlencoded({ extended: false, limit: '50mb' }));

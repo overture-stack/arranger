@@ -1,3 +1,4 @@
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import { Component } from '@reach/component-component';
 import { sortBy, get } from 'lodash-es';
 
@@ -187,7 +188,7 @@ const TermFilter = (props) => {
 		opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
 	} = props;
 
-	const gqlField = fieldName.split('.').join('__');
+	const gqlField = sanitizeGraphqlFlatName(fieldName);
 	const query = `
 		query($sqon: JSON){
 			${arrangerIndex} {

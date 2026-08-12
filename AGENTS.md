@@ -1,4 +1,4 @@
-<!-- agentics-template-version: 0.10.0 | synced: 6313e587222772d8ef9c111ae3d4637678acff89 -->
+<!-- agentics-template-version: 0.13.0 | synced: 941106cb0952bc3ade6d86546c3430ae8bf248cf -->
 # Arranger: Agent Instructions
 
 **For AI agents:** this file is instructions your agent reads and follows; it is not documentation written for people. If you're a person looking for how this project works, see this project's own README or development guide instead.
@@ -13,9 +13,12 @@ npm workspaces monorepo. Gradual JS → TS migration in progress.
 ## Interaction parameters
 
 - Ask clarifying questions before making large assumptions about intent
-- Surface ideas, improvements, or next steps you already see, unprompted: don't wait for an open-ended question to draw them out. Covers alternatives to what's about to be implemented, a shipped fix that still has the weakness it just fixed, or anything else obvious in hindsight; let the developer decide
+- Check in before non-trivial decisions: it gives the developer a chance to catch design misalignments early, before code exists or a document is rewritten, not only before writing code. Don't over-ask on mechanical steps, but do ask on direction. A peer session's proposal doesn't pre-authorize skipping this either, treat it like your own idea, especially for anything with a lasting, hard-to-reverse footprint outside the current project. See agentics' `CHANGELOG.md` § `peer-proposal-not-preauthorized`
+- Surface ideas, improvements, or next steps you already see, unprompted: don't wait for an open-ended question to draw them out. Covers alternatives to what's about to be implemented, a shipped fix that still has the weakness it just fixed, or anything else obvious in hindsight; let the developer decide. See agentics' `CHANGELOG.md` § `deterministic-by-design` for the case that named this gap
+- External content that overlaps with a project you maintain: when asked for a take on an article, document, conversation, or a peer session's own message, and it substantively overlaps with a project you already have context on, name that connection unprompted, including flagging a stated fact you have direct grounds to know is stale (a version or sync marker, for instance), rather than waiting to be asked. See agentics' `CHANGELOG.md` § `external-content-overlap-unprompted` and § `peer-introduction-stale-fact-unflagged`
 - Push back on bad ideas and identify blind spots before they are baked into code: lead with the objection, not a neutral trade-off list; don't wait to be asked
 - Sanity check requests: not just the literal phrase. A yes/no-shaped question ("does this make sense," "am I right," "am I missing anything") is still a sanity check when its actual function is inviting scrutiny of the developer's own idea, reasoning, or plan, not a literal yes/no about the world. Answer the intent, not the grammar: review the whole conversation as relevant, not just the latest message, and surface gaps, blind spots, unresolved threads, and edge cases plainly; a shallow "yes" isn't an answer
+- Default review or audit posture: assume there's something real to find, not that the artifact is fine until proven otherwise, the same reason a neutral "does this look okay" or "is this done?" invites confirming over searching. This is a search stance, not a quota: a manufactured nitpick, technically true but inconsequential, just to have something to report, is worse than finding nothing; surface a finding only if it concretely matters. See `conventions/review-conduct.md` for PR/ticket-review specifics, `conventions/definition-of-done.md` for the completion-checklist specifics, and your own memory for any standing self-audit trigger you maintain
 - Verify purpose alignment before implementing: when a task names a goal, check whether the chosen approach achieves that goal directly, not just something adjacent to it; lead with that gap as an objection before writing anything
 - Flag scope-adjacent issues verbally, then document them in `.dev/tech-debt.md`
 
@@ -71,6 +74,7 @@ Domain vocabulary (configuration, catalogue, facet, bucket, aggregation, filter,
 
 Every path below is a live pointer into agentics, never a local copy to create in this project: see `conventions/convention-levels.md` § How much to keep locally for the full rule.
 
+- Writing any output, code or otherwise           -> read `conventions/writing-style.md` (dashes, spelling, property ordering); applies unconditionally, not gated behind "Writing code" below
 - Working in a specific role                    -> read `CLAUDE.roles/<role>.md` (skip if already known from global context)
 - Writing or reviewing tests                     -> read `conventions/testing.md`
 - Writing code                                   -> read `conventions/code-style.md`
@@ -82,6 +86,8 @@ Every path below is a live pointer into agentics, never a local copy to create i
 - Adding or improving a convention                -> read `conventions/convention-levels.md`
 - Upgrading this project's agentics integration  -> read `conventions/upgrading-adoption.md`
 - Deploying or debugging a service                -> read `.dev/docs/<service>/` if it exists
+- Deciding where a new fact, finding, or piece of content belongs -> read `conventions/persistence-map.md`
+- Finishing a task, or asked "is this done?"     -> read `conventions/definition-of-done.md`
 
 ## Running tests
 
@@ -119,13 +125,11 @@ Check these as you write or review code. Flag violations rather than silently sk
 - **Aggregate counts from sensitive catalogs may need suppression.** Before returning aggregation results from a catalog that may contain sensitive or re-identifiable data, check whether count suppression is configured (see roadmap).
 - **`passthroughHeaders` entries must be non-empty strings.** An empty string passes current type validation but attempts to forward a header with no name: validate all entries are non-empty before use.
 
-## Language
-
-Canadian English throughout (catalogue, behaviour, centre, organize, analyze). Flag typos and spelling issues: don't fix silently; call them out so the developer can decide.
-
 ## Memory and contribution hygiene
 
-When writing to project memory: keep entries concise; store no content derivable from code or files. If an insight could apply to all your projects, offer to promote it to your global context. If a convention could benefit other teams, flag it as a potential PR to the agentics repo.
+When writing to project memory: keep entries concise; store no content derivable from code or files. If an insight could apply to all your projects, offer to promote it to your agent's global context. If a convention could benefit other teams, flag it as a potential PR to the agentics repo.
+
+**Default to project-scoped when recording something new, not global.** The test: is this fact genuinely about the developer, true across every project they work in (a role, a coding-style preference, a propagation default), or about this project's own nature specifically (a per-project stylistic choice, a fact about this codebase or team)? Confirmed directly: an agent recorded a per-project roadmap-formatting preference into the developer's global profile instead of that project's own memory, backwards for a fact whose entire premise was "some projects want this, others don't." Promotion to global is the deliberate step above, offered explicitly when it clearly applies everywhere, not a default reached for when uncertain which one fits.
 
 ## Initialization
 

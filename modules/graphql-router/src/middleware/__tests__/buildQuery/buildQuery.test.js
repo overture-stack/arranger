@@ -1098,6 +1098,41 @@ suite('middleware/buildQuery', () => {
 		assert.deepEqual(buildQuery(input), output);
 	});
 
+	test('11b.buildQuery correctly prefixes a real nested-within-nested field (e.g. treatment.chemotherapy), matching donor.yaml\'s actual structure', () => {
+		const input = {
+			nestingPrefix: 'data',
+			nestedFieldNames: ['treatment', 'treatment.chemotherapy'],
+			filters: {
+				op: '=',
+				content: { fieldName: 'treatment.chemotherapy.drug_name', value: ['Cisplatin'] },
+			},
+		};
+
+		const output = {
+			nested: {
+				path: 'data.treatment',
+				query: {
+					bool: {
+						must: [
+							{
+								nested: {
+									path: 'data.treatment.chemotherapy',
+									query: {
+										bool: {
+											must: [{ terms: { 'data.treatment.chemotherapy.drug_name': ['Cisplatin'], boost: 0 } }],
+										},
+									},
+								},
+							},
+						],
+					},
+				},
+			},
+		};
+
+		assert.deepEqual(buildQuery(input), output);
+	});
+
 	test('12.buildQuery leaves field paths unprefixed when no nestingPrefix is configured', () => {
 		const input = {
 			nestedFieldNames: ['biomarker'],

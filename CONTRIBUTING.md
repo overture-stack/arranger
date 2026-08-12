@@ -25,13 +25,14 @@ We use GitHub issues and pull requests for communication related to code changes
 
 ### Branch Organization
 
-We use the following standard branches:
+We use the following branches:
 
-- `main` is for stable production code
-- `develop` is the integration branch for new features
-- `feature/<name>` for feature branches
-- `release/v<version>` for release branches
-- `hotfix/<name>` for hotfix branches
+- `main` - active development. All feature branches target `main`. Package versions are `0.0.0-dev` here by design; versioning is a release-branch concern.
+- `release` - production releases. Merge `main` in, bump versions, push to trigger Jenkins.
+- `release-test` - pre-release testing. Same pipeline as `release` but npm packages are published under the `rc` dist-tag so the `latest` tag is not updated.
+- Feature branches - use `feat/<name>` or a ticket-scoped name (e.g. `feat/admin_177-mcp-execute-query`), opened as pull requests against `main`.
+
+See [`.dev/docs/release-process.md`](./.dev/docs/release-process.md) for the full release SOP: what gets published, versioning conventions, and step-by-step instructions for cutting a release.
 
 ## Pull Requests
 

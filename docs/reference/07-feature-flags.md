@@ -35,6 +35,8 @@ These flags turn off a feature entirely. None carry a security recommendation ei
 | `disablePlayground` | `DISABLE_GRAPHQL_PLAYGROUND` | `false` | Disables the GraphQL Playground UI at the catalogue's GraphQL endpoint. |
 | `enableSets` | `ENABLE_SETS` | `false` | Enables saved Sets (create/query saved document groupings). Off by default because the feature is incomplete: only creation exists today, with no list/delete/update; see the Sets roadmap item for status before enabling in a real deployment. |
 
+Leaving `disablePlayground` at `false` doesn't guarantee Playground/Sandbox actually loads: a restrictive `ALLOWED_CORS_ORIGINS` blocks it too when opened directly in a browser, since the embedded Sandbox UI runs from Apollo's own origin (`studio.apollographql.com`), not from any origin on that list. That origin isn't added automatically: doing so would hardcode a third-party origin into a security-relevant allowlist based on an unrelated feature flag. Add it explicitly to `ALLOWED_CORS_ORIGINS` if Sandbox access against a CORS-restricted deployment is actually wanted; otherwise use curl/Postman/Insomnia against the endpoint instead.
+
 ---
 
 ## Server-level flags

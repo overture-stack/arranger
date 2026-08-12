@@ -10,7 +10,11 @@
 		"noUncheckedIndexedAccess": true,
 		"outDir": "./dist",
 		"paths": {
-			"#*": ["./src/*"]
+			"#*": ["./src/*"],
+			// IDE-only: lets VS Code's IntelliSense see live sqon source without a rebuild.
+			// tsconfig.release.json resets this back to the entry above, so the real build
+			// (and this package's watch script, which runs against tsconfig.release.json) is unaffected.
+			"@overture-stack/sqon": ["../sqon/src/index.ts"]
 		},
 		"plugins": [
 			{
@@ -21,7 +25,10 @@
 				"afterDeclarations": true
 			}
 		],
-		"rootDir": "./src",
+		// rootDir is intentionally NOT "./src" here: the sqon source alias above pulls files in
+		// from outside src/, which a hard rootDir rejects (TS6059). tsconfig.release.json sets
+		// rootDir: "./src" explicitly, since its paths reset means that constraint is safe there.
+		"rootDir": "../..",
 		"strict": true,
 		"types": ["node"],
 		"verbatimModuleSyntax": true

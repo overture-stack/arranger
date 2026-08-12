@@ -22,7 +22,7 @@
 		}
 	},
 	"scripts": {
-		"build": "tsup",
+		"build": "wireit",
 		"clear:dist": "rm -rf dist",
 		"generateVersion": "node scripts/generateVersion.mjs",
 		"patchTS": "ts-patch install -s",
@@ -31,7 +31,7 @@
 		"pretest": "npm run generateVersion",
 		"test": "tsx --test",
 		"test:watch": "npm test -- --watch",
-		"watch": "nodemon -w src -e ts --ignore src/version/generated.ts --exec \"npm run clear:dist && npm run build\""
+		"watch": "WIREIT_WATCH=true npm run build"
 	},
 	"dependencies": {
 		"zod": "^3.24.2",
@@ -41,7 +41,6 @@
 		"@tsconfig/node22": "^22.0.0",
 		"tsup": "^6.7.0",
 		"@types/node": "^22.19.13",
-		"nodemon": "^3.1.9",
 		"tsx": "^4.19.2",
 		"typescript": "^5.8.2",
 		"typescript-transform-paths": "^3.5.6"
@@ -52,5 +51,17 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"type": "module"
+	"type": "module",
+	"wireit": {
+		"build": {
+			"command": "tsup",
+			"files": [
+				"src/**/*.ts",
+				"!src/version/generated.ts"
+			],
+			"output": [
+				"dist/**"
+			]
+		}
+	}
 }

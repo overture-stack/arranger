@@ -185,4 +185,99 @@ suite('arrangerRoutes', () => {
 	test('the real buildCatalogueRouter is used by default when no override is provided', () => {
 		assert.equal(typeof buildCatalogueRouter, 'function');
 	});
+
+	const fakeRouterReporting = (catalogueId: string) => {
+		const router = Router();
+		router.all(/.*/, (req, res) => res.json({ catalogueId, path: req.path }));
+		return router;
+	};
+
+	test('a documentType naming exactly one catalogue is resolved to the real catalogueId in the request path', async () => {
+		const { router } = await arrangerRoutes({
+			buildCatalogueRouterFn: async ({ catalogueId }) => fakeRouterReporting(catalogueId),
+			catalogs: {
+				donor: { documentType: 'donor' },
+				mutation: { documentType: 'records' },
+			},
+			enableDebug: false,
+		});
+
+		const baseUrl = runOn(router);
+		const response = await fetch(`${baseUrl}/records/graphql`, { method: 'POST' });
+		const body = (await response.json()) as Record<string, unknown>;
+
+		assert.equal(response.status, 200);
+		assert.equal(body.catalogueId, 'mutation');
+		assert.equal(body.path, '/graphql');
+	});
+
+	test('a literal catalogueId is left unrewritten even when the same string could also be read as a documentType', async () => {
+		const { router } = await arrangerRoutes({
+			buildCatalogueRouterFn: async ({ catalogueId }) => fakeRouterReporting(catalogueId),
+			catalogs: {
+				donor: { documentType: 'records' },
+				records: { documentType: 'donor' },
+			},
+			enableDebug: false,
+		});
+
+		const baseUrl = runOn(router);
+		const response = await fetch(`${baseUrl}/records/graphql`, { method: 'POST' });
+		const body = (await response.json()) as Record<string, unknown>;
+
+		assert.equal(body.catalogueId, 'records');
+	});
+
+	test('a documentType shared by several catalogues returns 409 instead of silently picking one', async () => {
+		const { router } = await arrangerRoutes({
+			buildCatalogueRouterFn: async ({ catalogueId }) => fakeRouterReporting(catalogueId),
+			catalogs: {
+				correlation: { documentType: 'records' },
+				mutation: { documentType: 'records' },
+			},
+			enableDebug: false,
+		});
+
+		const baseUrl = runOn(router);
+		const response = await fetch(`${baseUrl}/records/graphql`, { method: 'POST' });
+		const body = (await response.json()) as Record<string, unknown>;
+
+		assert.equal(response.status, 409);
+		assert.equal(body.documentType, 'records');
+		assert.equal((body.error as { code: string }).code, 'ambiguous_document_type');
+		assert.deepEqual((body.matchingCatalogueIds as string[]).sort(), ['correlation', 'mutation']);
+	});
+
+	test('an identifier matching no catalogue at all still 404s, unaffected by the resolution logic', async () => {
+		const { router } = await arrangerRoutes({
+			buildCatalogueRouterFn: async ({ catalogueId }) => fakeRouterReporting(catalogueId),
+			catalogs: {
+				donor: { documentType: 'donor' },
+				mutation: { documentType: 'records' },
+			},
+			enableDebug: false,
+		});
+
+		const baseUrl = runOn(router);
+		const response = await fetch(`${baseUrl}/nonexistent/graphql`, { method: 'POST' });
+
+		assert.equal(response.status, 404);
+	});
+
+	test('a query string surviving a documentType-to-catalogueId rewrite reaches the catalogue router intact', async () => {
+		const fakeQueryReportingRouter = Router();
+		fakeQueryReportingRouter.all(/.*/, (req, res) => res.json({ query: req.query }));
+
+		const { router } = await arrangerRoutes({
+			buildCatalogueRouterFn: async () => fakeQueryReportingRouter,
+			catalogs: { mutation: { documentType: 'records' } },
+			enableDebug: false,
+		});
+
+		const baseUrl = runOn(router);
+		const response = await fetch(`${baseUrl}/records/graphql?foo=bar`, { method: 'POST' });
+		const body = (await response.json()) as Record<string, unknown>;
+
+		assert.deepEqual(body.query, { foo: 'bar' });
+	});
 });

@@ -1,3 +1,4 @@
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import { get } from 'lodash-es';
 import { Fragment } from 'react';
 import Spinner from 'react-spinkit';
@@ -6,7 +7,7 @@ import { AggsState } from '#aggregations/index.js';
 import Query from '#Query.js';
 import formatNumber from '#utils/formatNumber.js';
 
-export const underscoreField = (str) => (str || '').split('.').join('__');
+export const underscoreField = (str) => sanitizeGraphqlFlatName(str || '');
 
 export const accessor = ({ aggsField, dataAccessor }) =>
 	`${underscoreField(aggsField?.fieldName)}.${dataAccessor || (aggsField?.isTerms ? `buckets.length` : `stats.count`)}`;

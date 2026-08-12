@@ -94,6 +94,25 @@ Returns field-level details for one catalogue: all fields, their Elasticsearch t
 
 Note: In single-catalogue mode, `/introspection/fields` is an alias for this endpoint, and this disappears when a second catalogue is added. Code that hardcodes `/introspection/fields` should be updated to use the explicit catalogue ID path before adding a second catalogue.
 
+### `:catalogueId` also accepts a `documentType`
+
+The path segment accepts either a catalogue's real `catalogueId` or its `documentType`, provided the `documentType` names exactly one catalogue on this server. A real `catalogueId` is always checked first and always wins, so this can never route to the wrong catalogue because of a naming collision.
+
+`documentType` has no uniqueness guarantee (see [Concepts](../concepts.md#catalogues-and-configuration)), so a value shared by more than one catalogue returns `409` instead of silently resolving to one of them:
+
+```json
+{
+	"documentType": "records",
+	"error": {
+		"code": "ambiguous_document_type",
+		"message": "documentType \"records\" matches multiple catalogues; use the catalogue id instead."
+	},
+	"matchingCatalogueIds": ["mutation", "correlation", "protein", "expression"]
+}
+```
+
+`/{catalogueId}/graphql` accepts the same rules, in the leading path segment.
+
 **Failed catalogues:** if a catalogue is registered but its search index couldn't be reached (see `status` in `GET /introspection` above), this endpoint still returns `200`, with a minimal payload instead of the full field/operator listing:
 
 ```json
@@ -134,4 +153,4 @@ By default, GraphQL introspection is disabled when `NODE_ENV=production` and ena
 
 Disabling GraphQL introspection is recommended in production to avoid exposing schema structure to clients through `__schema`/`__type` queries (OWASP A02).
 
-**Caveat - network aggregation:** When [federated search](../federated-search.md) is active, Arranger queries each remote node's GraphQL endpoint using `__type` to discover its aggregation field types at startup. If a remote node has GraphQL introspection disabled, that node's schema discovery fails and it is reported as an errored node with zero hits for the lifetime of the querying server's process. Until this dependency is replaced with a REST-based discovery call, do not set `disableGraphQLIntrospection: true` on any node that serves as a remote target in a federated deployment.
+**Network aggregation caveat:** When [federated search](../federated-search.md) is active, Arranger queries each remote node's GraphQL endpoint using `__type` to discover its aggregation field types at startup. If a remote node has GraphQL introspection disabled, that node's schema discovery fails and it is reported as an errored node with zero hits for the lifetime of the querying server's process. Until this dependency is replaced with a REST-based discovery call, do not set `disableGraphQLIntrospection: true` on any node that serves as a remote target in a federated deployment.

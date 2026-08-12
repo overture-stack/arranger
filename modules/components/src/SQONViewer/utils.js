@@ -179,6 +179,11 @@ export const replaceFilterSQON = (q, ctxq) => {
 	return merged.content.length ? merged : null;
 };
 
+// Normalizes a leaf value-SQON's value(s) to an array, whether the underlying value is a bare
+// scalar or already an array, matching the pattern already used everywhere else in this file
+// (combineValues, addInValue, setSQON, makeSQON).
+export const getValueSQONValues = (valueSQON) => [].concat(valueSQON?.content?.value ?? []);
+
 export const currentFilterValue = (sqon, entity = null) =>
 	sqon?.content?.find(({ op, content }) => isWildcardFilter(op) && (!entity || entity === content.entity))?.content
 		?.value || '';

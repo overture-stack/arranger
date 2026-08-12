@@ -20,13 +20,13 @@
 	"scripts": {
 		"build:babel": "babel src --copy-files --extensions .tsx,.ts,.js,.jsx --out-dir dist",
 		"build:declarations": "tsc --emitDeclarationOnly --project tsconfig.release.json",
-		"build": "concurrently -n babel,tsc -c yellow,blue -P 'npm:build:babel -- {@}' 'npm:build:declarations -- {@}' --",
+		"build": "wireit",
 		"clear:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
 		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config=jest.config.ts",
 		"test:watch": "npm test -- --watch",
-		"watch": "npm run clear:dist && npm run build -- --watch"
+		"watch": "WIREIT_WATCH=true npm run build"
 	},
 	"dependencies": {
 		"@overture-stack/arranger-types": "file:../types",
@@ -86,7 +86,6 @@
 		"@types/react-spinkit": "^3.0.7",
 		"@types/url-join": "^4.0.1",
 		"babel-plugin-module-resolver": "^5.0.0",
-		"concurrently": "^9.1.2",
 		"eslint-plugin-jsx-a11y": "^6.10.2",
 		"eslint-plugin-react": "^7.37.4",
 		"eslint-plugin-react-hooks": "^5.2.0",
@@ -113,5 +112,21 @@
 	},
 	"overrides": {
 		"minimist": "^1.2.6"
+	},
+	"wireit": {
+		"build": {
+			"command": "npm run build:babel && npm run build:declarations",
+			"dependencies": [
+				"../types:build",
+				"../sqon:build"
+			],
+			"files": [
+				"src/**/*",
+				"tsconfig.release.json"
+			],
+			"output": [
+				"dist/**"
+			]
+		}
 	}
 }

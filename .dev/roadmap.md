@@ -359,7 +359,7 @@ _Requires a mapping-to-schema pass change. Operators who want richer description
 
 #### Make invisible query defaults visible via SDL (research)
 
-_Priority: low. The documentation gap is closed (see `docs/usage/07-defaults-and-limits.md`); this is the follow-up question of whether the underlying defaults should also become schema-visible._
+_Priority: low. The documentation gap is closed (see `docs/reference/06-defaults-and-limits.md`); this is the follow-up question of whether the underlying defaults should also become schema-visible._
 
 Several arguments that materially change query results (`hits(first)`, `aggregations.buckets(max)`, `histogram(interval)`, `range(ranges)`, `cardinality(precision_threshold)`, `top_hits(size)`, `include_missing`) default in resolver code rather than as GraphQL SDL argument defaults, unlike `hits(trackTotalHits: Boolean = true)`, which does have a real SDL default. A human reading the defaults-and-limits doc now has the answer, but an LLM or codegen tool working from the schema alone still doesn't. Worth revisiting once the SDL surface is being touched for other reasons anyway, for example alongside [SQON documentation in schema descriptions](#sqon-documentation-in-schema-descriptions) above: would adding real `= value` defaults to these arguments change resolver behaviour in any edge case (for instance, distinguishing "explicitly passed 10" from "omitted"), or is it a safe, additive schema change?
 
@@ -371,7 +371,7 @@ _Priority: medium. Recurring gap logged as a session open thread many times over
 
 **Scope:**
 
-- Extend `docs/mcp-server.md` (or split a dedicated reference page out of it) to cover each tool's input _and_ output shape with worked examples, and the elicitation-confirmation flow in `execute_query`.
+- A dedicated `docs/reference/` page (or an extension of `mcp-server.md`) covering the full MCP tool surface: what each tool does, its input/output shape, and the elicitation-confirmation flow in `execute_query`.
 - ~~To check once `build_sqon` ships: `docs/concepts.md`'s `fieldName`/`fieldNames` definition~~ done 2026-08-10: the definition now covers both positions, the `content` object and a flat clause-building argument, and the vocabulary table entry matches.
 
 _Coordinate with whichever MCP work lands next; `execute_query` shipped in #1077 and `build_sqon` in #1080, both now named in `docs/mcp-server.md`._
@@ -472,6 +472,8 @@ The SQON schema: same shape as `wildcard` (`fieldNames` array + `value` string),
 ### GA4GH Beacon v2 module
 
 _Priority: low. Design-first; no implementation until arranger-core extraction is further along._
+
+**Prior art:** an early Beacon **v1** spike (query-existence endpoint against `referenceName`/`start`/`end`/`referenceBases`, not the v2 entry-type/filtering-terms model below) was prototyped once and never landed; found while surveying old stashed work. It was placeholder-heavy (hardcoded index name, no integration with Arranger's actual catalogue config or SQON) and targets the wrong (v1) spec, so there's nothing to port forward, but it's worth knowing the ES-query-translation problem has been poked at before.
 
 A new `modules/beacon-router` package (`@overture-stack/arranger-beacon-router`) that implements the
 [GA4GH Beacon v2](https://github.com/ga4gh-beacon/beacon-v2) REST API as an optional Express
@@ -678,13 +680,14 @@ _Resolved. Both phases implemented and verified._
 
 A catalogue's real ES/OS documents can wrap all their content under one top-level envelope property (confirmed real-world case: Lyric-sourced catalogues nest everything under a `data` property, a Lyric design choice Arranger works around rather than requiring upstream to change). Setting a catalogue's `nestingPrefix` config (e.g. `"data"`, or a dotted path for deeper envelopes) makes it behave, end to end, exactly like an unwrapped catalogue:
 
-- **Mapping ingestion** (`searchClient/fetchMapping.ts`'s `unwrapMapping`): `getIndexMapping` unwraps the mapping once at startup, so schema generation, field discovery, and `extended.json`/`facets.json`/`table.json` all operate on clean, unprefixed names. Verified against a real, updated donor-catalogue mapping in `overture/infra` (all 246 configured fields resolve, including hyphenated names and the primary key).
+- **Mapping ingestion** (`searchClient/fetchMapping.ts`'s `unwrapMapping`): `getIndexMapping` unwraps the mapping once at startup, so schema generation, field discovery, and `extended.json`/`facets.json`/`table.json` all operate on clean, unprefixed names. Verified against a real, enveloped catalogue's mapping (all 246 configured fields resolve, including hyphenated names and the primary key).
 - **Per-request query/response translation** (`middleware/utils/nestingPrefix.ts`): a shared utility (`applyNestingPrefix`, `applyNestingPrefixToFieldNames`, `applyNestingPrefixToSqon`, `unwrapSource`, `unwrapHits`) applied at each pipeline's entry point, rather than threading `nestingPrefix` awareness into every filter-op builder or `_source` reader individually:
     - `buildQuery`/`buildAggregations` prefix their incoming SQON and `nestedFieldNames` once at entry; the 7 filter-op builders, `esFilter.js`'s nested-path wrapper, `getNestedSqonFilters.js`, and the SQON-side of `injectNestedFiltersToAggs.js` needed zero changes, since they were already fully parametrized by their inputs.
     - `buildAggregations`/`createFieldAggregation.js` needed one real untangling: the pre-existing `field` variable conflated the ES query path with the response/bucket key name. Split into `fieldName` (clean, drives every response key) and `esFieldName` (prefixed, drives every ES query clause) throughout both files, plus the one comparison in `injectNestedFiltersToAggs.js` that needed the same prefix applied to compare correctly.
     - `resolveHits.js`/`resolveSets.js`/`getAllData.js` prefix their own sort-building (a query-building concern outside `buildQuery`) and unwrap returned `_source` via `unwrapHits`/`unwrapSource` immediately after the ES call, so every downstream reader sees already-clean data with no changes needed. `resolveHits.js`'s per-field `_source` request-filter is replaced with the envelope key alone when a prefix is configured (a strict superset of any narrower list, avoiding a subtly-wrong per-field pattern match against a possibly GraphQL-sanitized name). **Flagged as a concrete future incompatibility, not just a current-state note:** see [Auth and field/record-level access control](#auth-and-field-record-level-access-control)'s "Field-level access" bullet, this fetch-everything shape needs to be revisited once field-level grants exist.
     - `flattenAggregations.js`'s one `top_hits` `_source` read is unwrapped the same way.
     - A configured `nestingPrefix` that doesn't match the real index mapping fails the catalogue outright (`nesting_prefix_not_found`, via the existing partial-availability mechanism) rather than silently falling back to the still-wrapped mapping. The original fallback-plus-`console.warn` design would have reproduced the exact "everything is null" symptom this feature exists to fix, self-inflicted by a config typo with only a log line as the clue.
+  - Unwrapping the mapping before schema generation is also a security-relevant side effect, not just a correctness one: see `.dev/docs/nesting-prefix.md` for why, and the confirmed depth numbers.
 
 Verified with unit tests at every layer, not just the shared utility: `nestingPrefix.test.ts` for the pure helpers; targeted cases added to `buildQuery.test.js`, `buildAggregations.test.js`, `injectNestedFiltersToAggs.test.js`, and `flattenAggregations.test.js` for the query/aggregation pipelines; `fetchMapping.test.ts` and `classifyCatalogueFailureReason.test.ts` for the mapping-ingestion and catalogue-failure behaviour; and full GraphQL-execution tests (`resolveHits.integration.test.js`, `resolveAggregations.test.ts`, `resolveSets.test.js`) for the resolver-level integration (sort-building, `_source` requests, `unwrapHits`/`unwrapSource`), the layer most likely to hide a real bug since it's where several independently-correct pieces are wired together. That integration-level testing pass caught one: `resolveSets.js`'s default sort (`_id`, an ES meta field, not part of the document's own data) was being incorrectly prefixed too, fixed to special-case it. The duplicated "is this field nested" prefix-matching logic each pipeline already had did not need consolidating to implement this: every one of those call sites was already correctly parametrized by whatever `nestedFieldNames` it was given, so feeding each a prefixed list was sufficient without touching the duplicated logic itself.
 
@@ -696,9 +699,11 @@ The `modules/components` package carries significant legacy weight and has accum
 
 ### Components module modernization
 
-_Priority: medium. Ongoing maintenance cost that compounds over time._
+_Priority: medium-high for the `recompose` removal specifically; medium for the rest. Confirmed compatibility risk, not just a style concern._
 
 The components package still uses patterns that predate React hooks: `recompose` (an HOC composition library), `component-component` (a render-prop state machine), and class-based components throughout. These are no longer idiomatic React and make the codebase harder to read, test, and extend.
+
+**`recompose` is a confirmed, not just theoretical, compatibility risk.** It's abandoned (`0.30.0`, last published 2023-03-03, no updates since) and calls `React.createFactory()` internally. That function was deprecated in React 16.9 and is **removed entirely** in React 19 (confirmed against React's own official upgrade guide: "React.createFactory is no longer exported"), not merely warned about. `package.json`'s `peerDependencies` already advertises `"react": "^17.0.0 || ^18.0.0 || ^19.0.0"`; any consumer that actually upgrades to React 19 today would hit a hard crash in every one of the 4 files below, despite the peer range claiming support. Removing `recompose` specifically (not the other two patterns) is what closes this gap.
 
 **Confirmed scope, by grep:**
 
@@ -724,20 +729,19 @@ The table component introduced a theming system (`modules/components/src/ThemeCo
 
 **Known unaddressed split:** `modules/charts` has its own separate `ChartsThemeProvider` (colour array, a `components` override slot including `TooltipComp`/`Loader`) with no connection to `modules/components`' `ThemeContext`. Whether these should ever merge is an open question, not yet scoped. Note `TooltipComp` specifically is declared but not actually wired up yet, see [tech-debt: `TooltipComp` theme override is declared but never wired up](tech-debt.md#tooltipcomp-theme-override-is-declared-but-never-wired-up).
 
-_Coordinate with the Emotion replacement decision before investing heavily beyond the Tooltip step; the styling mechanism affects how theming is implemented for anything larger._
+_Coordinate with the Emotion replacement (decided: ShadCN/Base UI + `cva`, see below) before investing heavily beyond the Tooltip step; the styling mechanism affects how theming is implemented for anything larger._
 
 ### Replace Emotion with a less constrained styling solution
 
-_Priority: medium-high. Blocks or complicates several other component improvements._
+_Priority: medium-high. Decided 2026-08-04: ShadCN, on Base UI, with `cva` for variant styling. Blocks or complicates several other component improvements until implemented._
 
-Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Confirmed footprint: 46 files in the module import from `@emotion/*`, essentially the entire styled-component surface and not a contained corner of it, with 39 files using the `css` template-literal prop and 6 using `styled(...)`. This is a module-wide migration, not a localized swap. Two alternatives worth evaluating:
+Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Confirmed footprint: 46 files in the module import from `@emotion/*`, essentially the entire styled-component surface and not a contained corner of it, with 39 files using the `css` template-literal prop and 6 using `styled(...)`. This is a module-wide migration, not a localized swap.
 
-- **Radix UI**: headless, unstyled accessible primitives. Provides behaviour (keyboard nav, ARIA, focus management) without imposing styles. Arranger would own all visual styling.
-- **ShadCN**: built on Radix with Tailwind CSS. Provides a starting set of styled components as copy-paste source rather than as a runtime dependency. More opinionated but faster to an initial working UI.
+**Decision:** ShadCN with Tailwind CSS, using [`cva`](https://cva.style) (class-variance-authority) to author variant-driven component APIs. Adopted from research already done in another Overture project. As of shadcn's July 2026 changelog, Base UI (not Radix) is shadcn's default primitive layer: built by the same team behind Radix, at `@base-ui/react@1.6.0`, with new projects created via `shadcn/create` picking it over Radix roughly 2 to 1, and it ships primitives Radix never had (Combobox, Autocomplete, Number Field, Checkbox Group, object-valued Select). Radix itself is not deprecated (shadcn ships every update for both libraries), so this is a "faster-moving option from the same lineage" choice, not an abandoned-library workaround.
 
-These are architecturally different from Emotion; the choice has downstream effects on the component API, the theming model, and how much visual work integrators need to do. A proof-of-concept with one or two components is strongly recommended before committing.
+A proof-of-concept with one or two components is still recommended before the full migration, to validate the component API and theming model shift in practice.
 
-_This decision gates the theming extension work. Make this call before extending the current Emotion-based theme infrastructure._
+_This decision gates the theming extension work below, which is now unblocked to proceed against ShadCN/Base UI's theming model once the proof-of-concept lands._
 
 ### Accessibility (a11y) audit and remediation
 
@@ -745,11 +749,11 @@ _Priority: medium. Natural companion to Components modernization and Emotion rep
 
 No systematic accessibility audit has been done on `modules/components`. The components are used in clinical and research data portals where accessibility compliance may be required by policy or law.
 
-Adopting Radix UI as part of the Emotion replacement would provide a strong a11y baseline at low cost; Radix handles ARIA roles, keyboard navigation, and focus management natively. Doing a11y remediation and the Emotion replacement together is substantially cheaper than a separate pass.
+Adopting Base UI as part of the Emotion replacement (see decision above) would provide a strong a11y baseline at low cost; Base UI, like Radix before it, handles ARIA roles, keyboard navigation, and focus management natively. Doing a11y remediation and the Emotion replacement together is substantially cheaper than a separate pass.
 
 Scope: audit against WCAG 2.1 AA, prioritize high-impact gaps (keyboard navigation, screen reader support, colour contrast), remediate as part of the Components modernization effort.
 
-_Coordinate with Emotion replacement; doing both together is much cheaper than doing a11y as a separate pass._
+_Coordinate with the Emotion replacement (decided: ShadCN/Base UI + `cva`); doing both together is much cheaper than doing a11y as a separate pass._
 
 ### Storybook (or similar) for `modules/components`/`modules/charts`, carrying their own integration tests
 
@@ -772,6 +776,8 @@ _Priority: low. Basic protections are already in place._
 Alias count and depth limits are implemented (`maxAliasesRule`, `maxDepthRule` in `graphql-router`, configurable via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` environment variables). These address the specific DoS vectors that were identified.
 
 A more thorough approach would assign cost weights to individual field resolvers and reject queries that exceed a total complexity budget, so a query with 10 expensive aggregation fields costs more than 10 cheap scalar fields. The `graphql-query-complexity` library handles this well. This is a hardening step worth doing eventually, but not urgent given the current protections.
+
+**Real-world interaction confirmed with the `nestingPrefix` feature:** the default limit is already tight against genuinely nested clinical schemas, confirmed directly against a real, enveloped catalogue's mapping (single-level nesting alone reaches depth 9, already two over the default). See `.dev/docs/nesting-prefix.md` for the full rationale and confirmed numbers; raising `GRAPHQL_MAX_DEPTH` for any specific deployment whose real nesting exceeds the default is a deployment-config decision tracked in that deployment's own devctx, not here.
 
 **Related, now closed:** array-based HTTP batching (multiple GraphQL operations in a single POST body, each executed in parallel via `Promise.all`) was a separate vector from alias/depth abuse: it bypasses request-level rate limiting and multiplies cost per request, and neither `maxAliasesRule` nor `maxDepthRule` caps the number of operations in a batch, only the cost of each one. Flagged by an external HCMI pentest report (2026-07-20). Fixed by gating on a new `enableGraphQLBatching` feature flag (`apollo-server-express`'s `allowBatchedHttpRequests` option, previously left at its permissive library default). Unlike the other `disable*` flags it's wired inverted, `enable*` and disabled by default, since Arranger has no legitimate internal use for HTTP-level batching: default `false` (batching rejected unless explicitly enabled), opt in only if a consumer genuinely relies on it. See `modules/graphql-router/README.md` feature-flags table.
 
@@ -951,6 +957,8 @@ The existing version-check in Stage 6 (`local_version != remote_version`) alread
 3. **New publish stage:** A new Jenkins stage, scoped to `main`, that dynamically constructs the pre-release version and publishes with `--tag next`.
 
 _Depends on Phases 2.1 and 2.2 being complete. The Docker change can land independently; the NPM change follows._
+
+**Follow-on, once this ships: Stage-side auto-consumption.** With a continuously-published `next` npm tag, Stage (or any downstream consumer) could auto-bump to it (Renovate, or a scheduled Jenkins job) and redeploy automatically, making `modules/components`/`modules/charts` changes testable live in-cluster shortly after merging to Arranger's `main`, instead of the current manual `npm link` workflow. Route this at a separate canary/preview deployment, not Stage's shared dev deployment that other people rely on for unrelated testing, so an in-progress component change never surprises someone else using dev for something else. Not yet scoped or actioned; parking here until the `next` tag publish itself ships.
 
 ---
 

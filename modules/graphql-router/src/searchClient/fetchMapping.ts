@@ -49,17 +49,14 @@ export const checkESAlias = (aliases: CatAliasesAliasesRecord[], possibleAlias: 
  * Resolves the index alias if one exists, then retrieves the index mapping from the search engine.
  * Throws if the search client is missing, the index cannot be found, or the response cannot be parsed.
  *
- * @param enableDebug - When `true`, caught errors are logged to `console.debug` before being rethrown.
  * @param searchClient - The SearchClient used to perform requests of the search engine.
  * @param esIndex - The index name or alias to fetch the mapping for.
  * @returns An object containing the resolved `index` name, full `mappings` response for the index, field-level `mapping` properties, and the `alias` if one was found.
  */
 export const fetchMapping = async ({
-	enableDebug,
 	searchClient,
 	esIndex,
 }: {
-	enableDebug?: boolean;
 	searchClient: SearchClient;
 	esIndex: string;
 }) => {
@@ -97,7 +94,10 @@ export const fetchMapping = async ({
 
 			return mapping;
 		} catch (err) {
-			enableDebug && console.debug(`\n  DEBUG: ${err}`);
+			// Not logged here: this rethrow's `cause` carries the original error up to the caller
+			// that already prints it (router.ts's own catch, alongside the boot-log divider). Logging
+			// it here too printed the same failure twice, and printed the first copy before the
+			// divider that's supposed to introduce it, since this fires deeper in the call stack.
 			throw new Error(`Could not create a mapping`, { cause: err });
 		}
 	}
@@ -118,6 +118,13 @@ export const fetchMapping = async ({
  * typo with nothing but a log line as a clue. Throwing instead surfaces it as a real catalogue
  * failure (`nesting_prefix_not_found`) through the same partial-availability mechanism other
  * mapping problems already use.
+ *
+ * Unwrapping here, before schema generation, also keeps every field's real query depth one level
+ * shallower per prefix segment than it would be if the envelope were left in the schema as its
+ * own GraphQL type. That's a real, confirmed security-relevant side effect, not just tidiness:
+ * `GRAPHQL_MAX_DEPTH` (a DoS guard) is already tight against genuinely nested schemas, and an
+ * unremoved envelope layer would tax that same budget on every field. See
+ * `.dev/docs/nesting-prefix.md` for the full rationale and confirmed depth numbers.
  *
  * @param mapping - The raw ES mapping properties tree, as returned by `fetchMapping`. Untyped (`any`) to match `fetchMapping`'s own current return typing; see its `TODO`.
  * @param nestingPrefix - The dotted path, if any, that the mapping's real fields are nested under.
@@ -163,7 +170,6 @@ export const getIndexMapping = async ({
 }) => {
 	if (searchClient && esIndex) {
 		const { mapping: mappingFromIndex } = await fetchMapping({
-			enableDebug,
 			searchClient,
 			esIndex,
 		});
