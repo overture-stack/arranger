@@ -529,6 +529,8 @@ suite('build_sqon existingSqon', () => {
 		assert.equal(output.clauseCount, 1);
 	});
 
+	// The alias is normalized before the catalogue check, not just before the fold: an existing SQON
+	// spelling `gte` as `>=` must not be reported as an operator this catalogue does not accept.
 	test('normalizes an operator alias in an existing SQON rather than rejecting it', async () => {
 		const { output } = await buildSqon({
 			catalogueId: 'participants',
@@ -563,9 +565,68 @@ suite('build_sqon existingSqon', () => {
 			clauses: [inClause('study', ['A'])],
 			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
 		});
-		assert.ok(message.includes('valid individually, but the resulting SQON is not'));
-		assert.ok(message.includes('SQON references unknown field "file.size"'));
+		assert.ok(message.startsWith('No SQON was built.'));
+		assert.ok(message.includes('existingSqon references unknown field "file.size"'));
 		assert.ok(message.includes('rebuild the query for "participants"'));
+	});
+
+	test('rejects an existing SQON whose operator does not fit the field it names in this catalogue', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['A'])],
+			existingSqon: { op: 'gt', content: { fieldName: 'donor.sex', value: 40 } },
+		});
+		assert.ok(message.includes('existingSqon operator "gt" is not valid for field "donor.sex"'));
+	});
+
+	// The regression this batching exists for: before it, validateClauses returned first and the
+	// existingSqon mismatch only surfaced on a second call, after the clauses had been fixed.
+	test('reports an unusable existingSqon and an invalid clause in the same response', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.sex', operator: 'gt', value: 40 }],
+			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
+		});
+		assert.ok(message.includes('existingSqon references unknown field "file.size"'));
+		assert.ok(message.includes('clauses[0]: '));
+		assert.ok(message.includes('rebuild the query for "participants"'));
+	});
+
+	test('reports a structurally invalid existingSqon alongside an invalid clause, not instead of it', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('not.a.field', ['A'])],
+			existingSqon: { op: 'in', value: ['A'] },
+		});
+		assert.ok(message.includes('existingSqon is not a valid SQON'));
+		assert.ok(message.includes('clauses[0]: unknown field "not.a.field"'));
+		// The rebuild advice speaks to a SQON built for another catalogue. A value that is not a SQON
+		// at all already carries its own remedy, so pointing at catalogues would be misdirection.
+		assert.ok(!message.includes('rebuild the query'));
+	});
+
+	test('lists existingSqon before the clauses, since a base query from another catalogue has to go first', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.sex', operator: 'gt', value: 40 }],
+			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
+		});
+		assert.ok(message.indexOf('existingSqon references') < message.indexOf('clauses[0]: '));
+	});
+
+	test('does not offer the rebuild advice when only the clauses are at fault', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.sex', operator: 'gt', value: 40 }],
+			existingSqon: wrappedRoot,
+		});
+		assert.ok(message.includes('clauses[0]: '));
+		assert.ok(!message.includes('rebuild the query'));
 	});
 });
 

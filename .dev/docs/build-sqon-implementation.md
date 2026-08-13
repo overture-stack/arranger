@@ -616,10 +616,12 @@ Remove this once `buildAggregations` is fixed, and leave the docstring pointing 
 
 ## Step 8: the handler and registration
 
-Order matters. Resolve the catalogue first so nothing else runs against a down catalogue; validate clauses before folding so errors carry clause indices; validate the built SQON after folding so `existing_sqon` problems surface too.
+Order matters. Resolve the catalogue first so nothing else runs against a down catalogue; validate **both** inputs, `existingSqon` and the clauses, before folding either, so one response carries every problem with the call; keep a post-fold `validateSqon` as a failsafe for a fold that mangles valid inputs.
+
+**Corrected 2026-08-12, after review of #1091.** This step originally validated `existingSqon` in two places, neither of them part of the clause batch: a structural check that returned before `validateClauses` ran, and the catalogue check on the folded SQON, reachable only once every clause had passed. Both broke the design document's single-round-trip guarantee for a call carrying an invalid clause alongside an unusable `existingSqon`: the clauses were reported, the model fixed them, and only the resubmission revealed the `existingSqon` problem. `resolveExistingSqon` below returns errors instead of a result, so they merge into the clause list. The catalogue check can move ahead of the fold because a fold never invents a field name or rewrites a leaf's operator, so the two inputs together account for every leaf of the output.
 
 ```typescript
-async ({ catalogueId, clauses, combination, existing_sqon: rawExistingSqon }) => {
+async ({ catalogueId, clauses, combination, existingSqon: rawExistingSqon }) => {
 	try {
 		const resolution = await resolveCatalogue(client, config, catalogueId);
 		if ('error' in resolution) {
@@ -628,39 +630,28 @@ async ({ catalogueId, clauses, combination, existing_sqon: rawExistingSqon }) =>
 		const { fields, operators } = resolution.introspection;
 		const context: CatalogueQueryContext = { fields, operators };
 
-		let existingSqon: SqonNode | undefined;
-		if (rawExistingSqon !== undefined) {
-			const parsed = SqonSchema.safeParse(rawExistingSqon);
-			if (!parsed.success) {
-				const issues = parsed.error.issues.map(
-					(issue) => `- at ${issue.path.join('.') || 'root'}: ${issue.message}`,
-				);
-				return errorResult(
-					`existing_sqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existing_sqon to start a new query.\n${issues.join('\n')}`,
-				);
-			}
-			existingSqon = normalizeSqonNode(parsed.data);
-		}
-
-		const clauseErrors = validateClauses(clauses, context);
-		if (clauseErrors.length > 0) {
+		// `existingSqon` errors lead, since a base query built for another catalogue has to be
+		// dropped before the clause fixes are worth making.
+		const existing = resolveExistingSqon(rawExistingSqon, context);
+		const errors = [...existing.errors, ...validateClauses(clauses, context)];
+		if (errors.length > 0) {
 			return errorResult(
-				`No SQON was built. Fix every clause listed, then resubmit the whole batch:\n${clauseErrors.join('\n')}`,
+				composeValidationError({ catalogueId, catalogueMismatch: existing.catalogueMismatch, errors }),
 			);
 		}
 
-		const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon }));
+		const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon: existing.sqon }));
 
-		// Catches what the input schema cannot: fields referenced by existing_sqon that this
-		// catalogue does not have, and any structural surprise from the fold itself.
+		// A failsafe, not a user-facing check: both inputs were already validated against the
+		// catalogue, so a failure here is a defect in the fold rather than a fixable request.
 		const validation = validateSqon(sqon, context);
 		if (!validation.valid) {
 			return errorResult(
-				`The clauses were valid individually, but the resulting SQON is not:\n- ${validation.errors.join('\n- ')}\nIf existing_sqon came from a different catalogue, rebuild the query for "${catalogueId}" instead of extending it.`,
+				`build_sqon combined valid inputs into an invalid SQON, so nothing was returned:\n- ${validation.errors.join('\n- ')}\nThis is a defect in the tool, not in the request: resubmitting the same inputs will not help. Tell the user what happened rather than retrying.`,
 			);
 		}
 
-		const submittedCount = clauses.length + (existingSqon ? countFilterClauses(existingSqon) : 0);
+		const submittedCount = clauses.length + (existing.sqon ? countFilterClauses(existing.sqon) : 0);
 		const filterCount = countFilterClauses(sqon);
 		const notes =
 			filterCount < submittedCount
@@ -684,7 +675,41 @@ async ({ catalogueId, clauses, combination, existing_sqon: rawExistingSqon }) =>
 
 Copy `errorResult` and `successResult` from [`executeQueryTool.ts`](../../apps/mcp-server/src/mcp/executeQueryTool.ts). An `isError: true` result skips output-schema validation in the SDK, so an error result correctly needs no `structuredContent`; a success result must always carry it once `outputSchema` is declared.
 
-Do not route a bad `existing_sqon` through `describeExecutionError`. It maps every `ZodError` to "Arranger returned a response that did not match the expected introspection schema … indicates an Arranger version mismatch," which is wrong and unactionable for caller-supplied input. Parsing with `SqonSchema.safeParse` instead of letting `SqonBuilder.from()` throw keeps that path controlled. `SqonSchema` is already exported, so this needs no new export from `modules/sqon`.
+Do not route a bad `existingSqon` through `describeExecutionError`. It maps every `ZodError` to "Arranger returned a response that did not match the expected introspection schema … indicates an Arranger version mismatch," which is wrong and unactionable for caller-supplied input. Parsing with `SqonSchema.safeParse` instead of letting `SqonBuilder.from()` throw keeps that path controlled. `SqonSchema` is already exported, so this needs no new export from `modules/sqon`.
+
+The handler leans on two helpers of its own, `resolveExistingSqon` and `composeValidationError`, plus one new export from `queryValidation.ts` that the first of them calls. All three are described below.
+
+`resolveExistingSqon` returns `{ sqon?, errors, catalogueMismatch }` rather than an early result, which is what lets its errors travel with the clause errors; a structural failure short-circuits the catalogue walk, since there is no tree to walk, but is still returned rather than thrown. `sqon` is absent whenever `errors` is non-empty, and the handler must not fold a resolution that carries errors:
+
+```typescript
+const resolveExistingSqon = (raw: unknown, context: CatalogueQueryContext): ExistingSqonResolution => {
+	if (raw === undefined) {
+		return { catalogueMismatch: false, errors: [] };
+	}
+
+	const parsed = SqonSchema.safeParse(raw);
+	if (!parsed.success) {
+		const issues = parsed.error.issues.map((issue) => `  - at ${issue.path.join('.') || 'root'}: ${issue.message}`);
+		return {
+			catalogueMismatch: false,
+			errors: [
+				`existingSqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existingSqon to start a new query.\n${issues.join('\n')}`,
+			],
+		};
+	}
+
+	const sqon = normalizeSqonNode(parsed.data);
+	// Normalized first, so an operator alias in an existing SQON is checked in its canonical form
+	// rather than rejected as an operator the catalogue does not advertise.
+	const errors = validateSqonFields(sqon, context, { subject: 'existingSqon' });
+
+	return errors.length > 0 ? { catalogueMismatch: true, errors } : { catalogueMismatch: false, sqon, errors };
+};
+```
+
+`validateSqonFields` is a new export from `arranger/queryValidation.ts`: the semantic half of `validateSqon`, taking an already-parsed `SqonNode` and returning a plain error list, with a `subject` option naming the input under validation (`existingSqon` here, defaulting to `SQON` so `execute_query`'s messages are unchanged). `validateSqon` now delegates its own walk to it, so there is one implementation of the field-and-operator rules, not two.
+
+`composeValidationError` assembles the one message: the `No SQON was built. Fix everything listed, then resubmit the whole batch:` header, the errors in list order, and the `If existingSqon came from a different catalogue, drop it and rebuild the query for "<catalogueId>".` line. That last line is appended only for the catalogue-mismatch case, which is why `resolveExistingSqon` returns a `catalogueMismatch` flag rather than the caller inferring it from a non-empty `errors`: the advice is misdirection both when only the clauses are at fault and when `existingSqon` is not a SQON at all, since that message already says to pass the previous `sqon` back unchanged or omit it.
 
 Registration takes `config` as well as `client` from `deps`:
 
@@ -726,16 +751,18 @@ npm run test -w apps/mcp-server
 
 There is no `executeQueryTool.test.ts`, so the pattern to follow is: keep the handler thin, export the logic, and test the exports.
 
-| Target               | Cases                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `describeOperators`  | for each branch group, every operator in that group gets a line, and no operator outside it appears; across all three, every member of `BUILD_SQON_OPERATORS` is described exactly once and no alias or out-of-scope operator (`all`, `some-not-in`, `wildcard`, `fuzzy`) appears anywhere. This is what catches both a new operator landing in `modules/sqon` without a decision here, and a branch enum value left undescribed |
-| `clauseSchema`       | accepts `in` with an array and with a bare scalar; rejects `gt` with an array, `between` with one or three values, `in` with `[]`, any text operator, and any alias operator (`>=`, `=`)                                                                                                                                                                                                                                         |
-| `validateClauses`    | unknown field; operator invalid for the field type; `negate` with `not-in`; quoted bound on a numeric field; accepted quoted bound on a `date` field; descending `between`; two invalid clauses in one batch both reported with correct indices; valid batch returns `[]`                                                                                                                                                        |
-| `resolveCatalogue`   | id outside `config.catalogues` returns an error and makes **no** client call; 404 returns the not-on-server message; a `{status:'failed', error:{code,message}}` body returns Arranger's own code and message and never reaches `catalogueIntrospectionSchema`; a healthy body parses                                                                                                                                            |
-| `summarizeSqon`      | each of the ten operators; a `not` wrapper; a nested group parenthesized; a bare leaf; `{op:'and',content:[]}`; a single-child `and` renders without parentheses; display name preferred over field name; unknown field falls back to the field name                                                                                                                                                                             |
-| `countFilterClauses` | leaf, flat group, nested group, empty group, single-child group                                                                                                                                                                                                                                                                                                                                                                  |
-| `foldClauses`        | three clauses under `and` and under `or`; single clause returns a bare leaf; negated single clause returns a root `not`; `gt 50` then `gt 70` under `and` reduces to one `gt 70`; folding onto an `existing_sqon`                                                                                                                                                                                                                |
-| `normalizeRoot`      | a leaf is wrapped in `{op:'and',content:[leaf]}`; a group is returned unchanged; a root `not` is returned unchanged; wrapping is idempotent                                                                                                                                                                                                                                                                                      |
+| Target                  | Cases                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `describeOperators`     | for each branch group, every operator in that group gets a line, and no operator outside it appears; across all three, every member of `BUILD_SQON_OPERATORS` is described exactly once and no alias or out-of-scope operator (`all`, `some-not-in`, `wildcard`, `fuzzy`) appears anywhere. This is what catches both a new operator landing in `modules/sqon` without a decision here, and a branch enum value left undescribed |
+| `clauseSchema`          | accepts `in` with an array and with a bare scalar; rejects `gt` with an array, `between` with one or three values, `in` with `[]`, any text operator, and any alias operator (`>=`, `=`)                                                                                                                                                                                                                                         |
+| `validateClauses`       | unknown field; operator invalid for the field type; `negate` with `not-in`; quoted bound on a numeric field; accepted quoted bound on a `date` field; descending `between`; two invalid clauses in one batch both reported with correct indices; valid batch returns `[]`                                                                                                                                                        |
+| `resolveCatalogue`      | id outside `config.catalogues` returns an error and makes **no** client call; 404 returns the not-on-server message; a `{status:'failed', error:{code,message}}` body returns Arranger's own code and message and never reaches `catalogueIntrospectionSchema`; a healthy body parses                                                                                                                                            |
+| `summarizeSqon`         | each of the ten operators; a `not` wrapper; a nested group parenthesized; a bare leaf; `{op:'and',content:[]}`; a single-child `and` renders without parentheses; display name preferred over field name; unknown field falls back to the field name                                                                                                                                                                             |
+| `countFilterClauses`    | leaf, flat group, nested group, empty group, single-child group                                                                                                                                                                                                                                                                                                                                                                  |
+| `foldClauses`           | three clauses under `and` and under `or`; single clause returns a bare leaf; negated single clause returns a root `not`; `gt 50` then `gt 70` under `and` reduces to one `gt 70`; folding onto an `existingSqon`                                                                                                                                                                                                                 |
+| `validateSqonFields`    | default subject reads `SQON ...`, matching what `validateSqon` reported before the split; a given subject reaches both the unknown-field and the invalid-operator message; one error per invalid leaf across nested combinations; a valid SQON returns `[]`                                                                                                                                                                      |
+| `existingSqon` batching | an `existingSqon` from another catalogue reported alongside an invalid clause in one response, `existingSqon` first; a structurally invalid `existingSqon` reported alongside an invalid clause rather than instead of it; an `existingSqon` operator that does not fit the field it names; the rebuild advice withheld when only the clauses are at fault; an operator alias in `existingSqon` still accepted                   |
+| `normalizeRoot`         | a leaf is wrapped in `{op:'and',content:[leaf]}`; a group is returned unchanged; a root `not` is returned unchanged; wrapping is idempotent                                                                                                                                                                                                                                                                                      |
 
 `resolveCatalogue`'s tests need a stub `ArrangerClient`. The workspace test script already runs with `--experimental-test-module-mocks`, and `arranger/validation.test.ts` is the existing precedent for faking the client.
 
@@ -860,8 +887,9 @@ graphql-router's `opSwitch` gives `in`-like values magic meanings: a value conta
 - [x] `resolveCatalogue`: `status: 'failed'` short-circuited on the raw response, before Zod parsing
 - [x] `mcp/buildSqonTool.ts`: `foldClauses`, with the `undefined` guard
 - [x] `mcp/buildSqonTool.ts`: `normalizeRoot`, applied on output only, with the removal condition documented
-- [x] `mcp/buildSqonTool.ts`: handler, in the order catalogue, existing_sqon, clauses, fold, `validateSqon`
-- [x] `existing_sqon` parsed with `SqonSchema.safeParse`, not via a thrown `ZodError`
+- [x] `mcp/buildSqonTool.ts`: handler, in the order catalogue, then `existingSqon` and clauses validated together into one error list, fold, `validateSqon` as a failsafe (reordered 2026-08-12; the original order let clause errors mask an `existingSqon` mismatch until a second call)
+- [x] `existingSqon` parsed with `SqonSchema.safeParse`, not via a thrown `ZodError`
+- [x] `arranger/queryValidation.ts`: `validateSqonFields` split out of `validateSqon` so an already-parsed node can be checked against the catalogue, with a `subject` naming the input in each message
 - [x] `registerBuildSqonTool` wired into `mcp/tools.ts`, taking `config` as well as `client`
 - [x] No elicitation in this tool
 - [ ] Decide whether `get_catalogue_fields` gets the same allowlist check in this pass
@@ -871,6 +899,8 @@ graphql-router's `opSwitch` gives `in`-like values magic meanings: a value conta
 - [x] `mcp/buildSqonTool.test.ts`: description generation, schema accept/reject, fold shapes, `normalizeRoot`
 - [x] `mcp/buildSqonTool.test.ts`: `resolveCatalogue` across all four cases, with a stubbed client
 - [x] `arranger/clauseValidation.test.ts`: every validation branch, plus a multi-error batch
+- [x] `arranger/queryValidation.test.ts`: `validateSqonFields`, including the default subject matching the pre-split wording
+- [x] `mcp/buildSqonTool.test.ts`: an unusable `existingSqon` and an invalid clause reported in one response, in that order, for both the structural and the wrong-catalogue case
 - [x] `arranger/sqonSummary.test.ts`: every operator, negation, nesting, empty SQON, display names
 - [x] Fold shapes asserted through the registered handler rather than by exporting `foldClauses`/`normalizeRoot`; the bare-leaf-then-wrap behaviour is covered by the single-clause and empty-`existingSqon` cases
 - [x] `npm run test -w apps/mcp-server` passes from the monorepo root (189 tests)

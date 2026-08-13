@@ -252,7 +252,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 			}),
 		);
 
-		assert.match(text, /SQON references unknown field "vital_status"/);
+		assert.match(text, /existingSqon references unknown field "vital_status"/);
 		assert.match(text, /rebuild the query for "catalogue-b"/);
 	});
 
@@ -402,6 +402,29 @@ export default ({ getClient }: BuildSqonEnv) => {
 		assert.deepEqual(
 			(structured.hits ?? []).map((hit) => hit.sample_id),
 			['b-001'],
+		);
+	});
+
+	test('20.reports an unusable existingSqon and an invalid clause in the same response', async () => {
+		const text = getErrorText(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-b',
+				combination: 'and',
+				// Invalid for two independent reasons: the clause names a field of catalogue-a, and so
+				// does the existing SQON.
+				clauses: [{ fieldName: 'vital_status', operator: 'in', value: ['Alive'] }],
+				existingSqon: {
+					op: 'and',
+					content: [{ op: 'in', content: { fieldName: 'age_at_diagnosis', value: [40] } }],
+				},
+			}),
+		);
+
+		assert.match(text, /existingSqon references unknown field "age_at_diagnosis"/);
+		assert.match(text, /clauses\[0\]: unknown field "vital_status"/);
+		assert.ok(
+			text.indexOf('existingSqon references') < text.indexOf('clauses[0]: '),
+			'expected the existingSqon problem to be listed before the clause problems',
 		);
 	});
 };

@@ -12,7 +12,7 @@ import { z as zod } from 'zod';
 
 import { validateClauses } from '#arranger/clauseValidation.js';
 import { type ArrangerClient, ArrangerRequestError } from '#arranger/client.js';
-import { validateSqon, type CatalogueQueryContext } from '#arranger/queryValidation.js';
+import { validateSqon, validateSqonFields, type CatalogueQueryContext } from '#arranger/queryValidation.js';
 import { countFilterClauses, summarizeSqon } from '#arranger/sqonSummary.js';
 import { catalogueIntrospectionSchema, type ArrangerCatalogueIntrospection } from '#arranger/types.js';
 import { type McpServerDeps } from '#server.js';
@@ -224,6 +224,93 @@ const resolveCatalogue = async (
 type BuildSqonClause = zod.infer<ReturnType<typeof clauseSchema>>;
 
 /**
+ * An `existingSqon` input after validation: the parsed, normalized node when it is usable, plus
+ * every problem found with it. The two are independent by design, so the caller can collect these
+ * errors alongside the clause errors and report the whole batch at once.
+ *
+ * `sqon` is absent whenever `errors` is non-empty, and a caller must never fold an `existingSqon`
+ * that came back with errors: for a structural failure there is nothing to fold, and folding past a
+ * catalogue mismatch would build a SQON the target catalogue cannot run.
+ *
+ * `catalogueMismatch` separates the two failures, because they take different advice. A SQON naming
+ * fields this catalogue does not have is usually one built for another catalogue, and the fix is to
+ * rebuild. A value that is not a SQON at all carries its own remedy in its message, and telling the
+ * caller to consider which catalogue it came from would point at the wrong thing.
+ */
+type ExistingSqonResolution = { sqon?: SqonNode; errors: string[]; catalogueMismatch: boolean };
+
+/**
+ * Validates the optional `existingSqon` input against the shared SQON schema and then against the
+ * catalogue, without stopping the caller from validating the new clauses too.
+ *
+ * The catalogue check runs here, before the fold, rather than on the folded result: a fold never
+ * invents a field name or rewrites a leaf's operator, so every leaf of the output comes from either
+ * this input or a clause, and checking both inputs separately catches the same problems one
+ * round-trip earlier. Checking the folded SQON instead meant a call carrying both an invalid clause
+ * and an `existingSqon` from another catalogue only ever reported the clauses, hiding the mismatch
+ * behind a resubmission.
+ *
+ * Structural failure short-circuits the catalogue check, since there is no tree to walk, but it is
+ * still returned as an error rather than thrown, so the caller can report it next to clause errors.
+ *
+ * @param raw - The unvalidated `existingSqon` argument, or undefined when the caller omitted it.
+ * @param context - The target catalogue's fields and per-type operator rules from introspection.
+ *
+ * @returns The normalized SQON to fold onto, or the reasons it cannot be used.
+ */
+const resolveExistingSqon = (raw: unknown, context: CatalogueQueryContext): ExistingSqonResolution => {
+	if (raw === undefined) {
+		return { catalogueMismatch: false, errors: [] };
+	}
+
+	const parsed = SqonSchema.safeParse(raw);
+	if (!parsed.success) {
+		const issues = parsed.error.issues.map((issue) => `  - at ${issue.path.join('.') || 'root'}: ${issue.message}`);
+		return {
+			catalogueMismatch: false,
+			errors: [
+				`existingSqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existingSqon to start a new query.\n${issues.join('\n')}`,
+			],
+		};
+	}
+
+	const sqon = normalizeSqonNode(parsed.data);
+	// Normalized first, so an operator alias in an existing SQON is checked in its canonical form
+	// rather than rejected as an operator the catalogue does not advertise.
+	const errors = validateSqonFields(sqon, context, { subject: 'existingSqon' });
+
+	return errors.length > 0 ? { catalogueMismatch: true, errors } : { catalogueMismatch: false, sqon, errors };
+};
+
+/**
+ * Composes the single error result for a call whose inputs did not validate, listing every problem
+ * found across `existingSqon` and the clauses so the whole batch can be fixed in one resubmission.
+ *
+ * @param errors - Every validation message, `existingSqon` first.
+ * @param catalogueId - The catalogue the call targeted, named in the rebuild advice.
+ * @param catalogueMismatch - Whether `existingSqon` named fields this catalogue does not have, the
+ * one failure the rebuild advice speaks to. Withheld otherwise, since it is misdirection when the
+ * clauses alone are at fault, or when `existingSqon` is not a SQON at all.
+ *
+ * @returns The message body for the error result.
+ */
+const composeValidationError = ({
+	catalogueId,
+	catalogueMismatch,
+	errors,
+}: {
+	catalogueId: string;
+	catalogueMismatch: boolean;
+	errors: string[];
+}): string => {
+	const rebuildAdvice = catalogueMismatch
+		? `\nIf existingSqon came from a different catalogue, drop it and rebuild the query for "${catalogueId}".`
+		: '';
+
+	return `No SQON was built. Fix everything listed, then resubmit the whole batch:\n${errors.join('\n')}${rebuildAdvice}`;
+};
+
+/**
  * Folds every clause into one SQON, making one `addFilterClause` call per clause. Internal to the
  * handler: the model only ever sees the single `build_sqon` call. `reduceSqon` runs inside each
  * fold, so equivalent clauses on the same field merge as they are added.
@@ -324,39 +411,37 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 				const { fields, operators } = resolution.introspection;
 				const context: CatalogueQueryContext = { fields, operators };
 
-				let existingSqon: SqonNode | undefined;
-				if (rawExistingSqon !== undefined) {
-					const parsed = SqonSchema.safeParse(rawExistingSqon);
-					if (!parsed.success) {
-						const issues = parsed.error.issues.map(
-							(issue) => `- at ${issue.path.join('.') || 'root'}: ${issue.message}`,
-						);
-						return errorResult(
-							`existingSqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existingSqon to start a new query.\n${issues.join('\n')}`,
-						);
-					}
-					existingSqon = normalizeSqonNode(parsed.data);
-				}
-
-				const clauseErrors = validateClauses(clauses, context);
-				if (clauseErrors.length > 0) {
+				// Both inputs are validated before either is acted on, and their errors are reported
+				// together: an invalid clause and an unusable existingSqon in the same call are one
+				// resubmission to fix, not two. `existingSqon` errors lead, since a base query built for
+				// another catalogue has to be dropped before the clause fixes are worth making.
+				const existing = resolveExistingSqon(rawExistingSqon, context);
+				const errors = [...existing.errors, ...validateClauses(clauses, context)];
+				if (errors.length > 0) {
 					return errorResult(
-						`No SQON was built. Fix every clause listed, then resubmit the whole batch:\n${clauseErrors.join('\n')}`,
+						composeValidationError({
+							catalogueId,
+							catalogueMismatch: existing.catalogueMismatch,
+							errors,
+						}),
 					);
 				}
 
-				const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon }));
+				const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon: existing.sqon }));
 
-				// Catches what the input schema cannot: fields referenced by existing_sqon that this
-				// catalogue does not have, and any structural surprise from the fold itself.
+				// A failsafe, not a user-facing check: every field name and operator in this SQON was
+				// already validated on the way in, as either a clause or part of existingSqon, so a
+				// failure here means the fold itself produced something the catalogue cannot run.
+				// Reaching it is a defect in this tool rather than a fixable input, which is why the
+				// message says not to retry. Kept because v2 and v3 add folds this cannot yet see.
 				const validation = validateSqon(sqon, context);
 				if (!validation.valid) {
 					return errorResult(
-						`The clauses were valid individually, but the resulting SQON is not:\n- ${validation.errors.join('\n- ')}\nIf existingSqon came from a different catalogue, rebuild the query for "${catalogueId}" instead of extending it.`,
+						`build_sqon combined valid inputs into an invalid SQON, so nothing was returned:\n- ${validation.errors.join('\n- ')}\nThis is a defect in the tool, not in the request: resubmitting the same inputs will not help. Tell the user what happened rather than retrying.`,
 					);
 				}
 
-				const submittedCount = clauses.length + (existingSqon ? countFilterClauses(existingSqon) : 0);
+				const submittedCount = clauses.length + (existing.sqon ? countFilterClauses(existing.sqon) : 0);
 				const filterCount = countFilterClauses(sqon);
 				const notes =
 					filterCount < submittedCount

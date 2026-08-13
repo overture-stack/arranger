@@ -190,6 +190,8 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 
 **What batching requires the tool to do in return:** check every clause before responding, and report every invalid one in the same error message, not just the first. If the tool stopped at the first bad clause, the LLM would fix it, resubmit, and only then discover a second problem, costing the exact round trip batching was meant to remove.
 
+**This obligation covers the whole input, not only `clauses`** (corrected 2026-08-12, after review of #1091). The shipped tool originally validated `existingSqon` in two places that both sat outside the clause batch: a structural check that returned before `validateClauses` ran, and a catalogue check on the folded SQON that ran only after `validateClauses` had passed. A call carrying both an invalid clause and an `existingSqon` this catalogue cannot run therefore reported only the clauses, and the mismatch surfaced on the next call, which is the round trip this section exists to prevent. `existingSqon` is now validated against the catalogue independently of the fold and its errors join the same list, so one response carries every problem with the call. See [Error handling](#error-handling).
+
 ### Why `build_sqon` needs a `catalogueId`
 
 **The choice:** whether `build_sqon` takes a `catalogueId` at all, or builds purely from what's in the `clauses` array.
@@ -248,6 +250,17 @@ the value instead of excluding it.
 ```
 
 Nothing is applied until every clause passes. Partial success is not a state this tool has to handle.
+
+**`existingSqon` is checked in the same pass, and reported in the same message.** Both ways it can be unusable, a value that is not a SQON at all and a SQON naming fields the target catalogue does not have, produce entries in the same list as the clause errors, ahead of them:
+
+```
+No SQON was built. Fix everything listed, then resubmit the whole batch:
+existingSqon references unknown field "file.size". Use get_catalogue_fields to list valid fields.
+clauses[0]: operator "gt" is not valid for field "donor.sex" (type "keyword"). ...
+If existingSqon came from a different catalogue, drop it and rebuild the query for "participants".
+```
+
+`existingSqon` leads because a base query built for another catalogue has to be dropped before the clause fixes are worth making. The rebuild advice is appended only for the catalogue-mismatch case: an `existingSqon` that is not a SQON at all carries its own remedy in its own message, and asking which catalogue it came from would point at the wrong thing. The catalogue check runs on `existingSqon` directly rather than on the folded result, which it can do because a fold never invents a field name or rewrites a leaf's operator: every leaf of the output comes from either `existingSqon` or a clause, so validating the two inputs separately catches everything validating the output would, one round trip earlier. The post-fold `validateSqon` call remains as a failsafe for a fold that mangles valid inputs, and says so: reaching it is a defect in the tool, not a fixable request.
 
 ---
 
