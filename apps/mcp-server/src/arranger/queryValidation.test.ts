@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
+import { SqonSchema } from '@overture-stack/sqon';
+
 import {
 	validateAggregationFields,
 	validateHitsFields,
 	validateSortFields,
 	validateSqon,
+	validateSqonFields,
 	type CatalogueQueryContext,
 } from '#arranger/queryValidation.js';
 
@@ -120,6 +123,45 @@ suite('validateSqon', () => {
 					error.includes('Valid operators: in, not-in, some-not-in, all, wildcard.'),
 				),
 		);
+	});
+});
+
+suite('validateSqonFields', () => {
+	test('returns no errors for a SQON whose every leaf fits the catalogue', () => {
+		const sqon = { op: 'in', content: { fieldName: 'donor.sex', value: ['Female'] } };
+		assert.deepEqual(validateSqonFields(SqonSchema.parse(sqon), context), []);
+	});
+
+	test('names the SQON generically by default, matching what validateSqon reports', () => {
+		const sqon = { op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } };
+		assert.deepEqual(validateSqonFields(SqonSchema.parse(sqon), context), [
+			'SQON references unknown field "not.a.field". Use get_catalogue_fields to list valid fields.',
+		]);
+	});
+
+	test('names the specific input under validation when given a subject', () => {
+		const sqon = { op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } };
+		assert.deepEqual(validateSqonFields(SqonSchema.parse(sqon), context, { subject: 'existingSqon' }), [
+			'existingSqon references unknown field "not.a.field". Use get_catalogue_fields to list valid fields.',
+		]);
+	});
+
+	test('applies the subject to operator errors as well as unknown fields', () => {
+		const sqon = { op: 'gt', content: { fieldName: 'donor.sex', value: 5 } };
+		const errors = validateSqonFields(SqonSchema.parse(sqon), context, { subject: 'existingSqon' });
+		assert.equal(errors.length, 1);
+		assert.ok(errors[0].startsWith('existingSqon operator "gt" is not valid for field "donor.sex"'));
+	});
+
+	test('reports one error per invalid leaf across nested combinations', () => {
+		const sqon = {
+			op: 'and',
+			content: [
+				{ op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } },
+				{ op: 'or', content: [{ op: 'between', content: { fieldName: 'donor.sex', value: [1, 2] } }] },
+			],
+		};
+		assert.equal(validateSqonFields(SqonSchema.parse(sqon), context).length, 2);
 	});
 });
 
