@@ -1,13 +1,14 @@
-import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 import arrangerRouter, {
 	type ArrangerBaseContext,
 	classifyCatalogueFailureReason,
 	logSeparator,
 	type SearchClient,
 } from '@overture-stack/arranger-graphql-router';
+import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 import { Router, type Router as ExpressRouter } from 'express';
 
 import { type CatalogueStatusDetail, catalogueStatuses as CATALOGUE_STATUS } from '#availability/index.js';
+import findCatalogueByIdentifier from '#catalogues/findCatalogueByIdentifier.js';
 import type { CataloguesMap } from '#configs/types/index.js';
 
 export const buildCatalogueRouter = async ({
@@ -123,6 +124,31 @@ export default async ({
 			router.use(`/${catalogueId}`, catalogueRouter);
 			console.log(`  - Catalogue mounted at /${catalogueId} (${statusDetail.status})`);
 		}
+
+		router.use('/:catalogueIdentifier', (req, res, next) => {
+			const match = findCatalogueByIdentifier({
+				catalogs,
+				identifier: req.params.catalogueIdentifier,
+			});
+
+			if (match.outcome === 'ambiguous') {
+				return res.status(409).json({
+					documentType: req.params.catalogueIdentifier,
+					error: {
+						code: 'ambiguous_document_type',
+						message: `documentType "${req.params.catalogueIdentifier}" matches multiple catalogues; use the catalogue id instead.`,
+					},
+					matchingCatalogueIds: match.matchingCatalogueIds,
+				});
+			}
+
+			const catalogueRouter = match.outcome === 'matched' ? catalogueRouters[match.catalogueId] : undefined;
+			if (!catalogueRouter) {
+				return next();
+			}
+
+			return catalogueRouter(req, res, next);
+		});
 	}
 
 	return { catalogueRouters, catalogueStatuses, router };
