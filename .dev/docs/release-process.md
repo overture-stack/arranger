@@ -162,13 +162,13 @@ git add <bumped package.json files> package-lock.json
 git commit -m "$(cat <<'EOF'
 version bumps for all
 
-sqon: 1.0.0-rc.1 -> 1.0.0-rc.2
-types: 1.0.0-rc.2 -> 1.0.0-rc.3
-graphql-router: 1.0.0-rc.3 -> 1.0.0-rc.4
-components: 3.0.8-rc.2 -> 3.1.0-rc.1
-charts: 0.1.0-rc.1 -> 0.1.0-rc.2
-mcp-server: 0.1.0-rc.1 -> 0.1.0-rc.2
-search-server: 3.1.0-rc.1 -> 3.1.0-rc.2
+apps/mcp-server: 0.1.0-rc.1 -> 0.1.0-rc.2
+apps/search-server: 3.1.0-rc.1 -> 3.1.0-rc.2
+modules/charts: 0.1.0-rc.1 -> 0.1.0-rc.2
+modules/components: 3.0.8-rc.2 -> 3.1.0-rc.1
+modules/graphql-router: 1.0.0-rc.3 -> 1.0.0-rc.4
+modules/sqon: 1.0.0-rc.1 -> 1.0.0-rc.2
+modules/types: 1.0.0-rc.2 -> 1.0.0-rc.3
 EOF
 )"
 ```
@@ -180,9 +180,10 @@ without wading through the full code diff. This matches existing history on `rel
 (e.g. `82563b8f Merge branch 'main' into release-test` followed by `10aedfd6 version bumps for all`;
 `21511c01 Merge...` followed by `0ec58fc6 bump graphql-router@1.0.0-rc.3`). Commit message style
 in this repo: short lowercase subject (`version bumps for all`, `bump X@version`, `bump rc 2
-version for A, B and C`), optionally with a body listing `package: old -> new` for anything
-touching more than one or two packages (the multi-line body format is a refinement introduced in
-the 2026-07-20 round; earlier bump commits had no body at all).
+version for A, B and C`), optionally with a body listing `<workspace path>: old -> new` for
+anything touching more than one or two packages (the full workspace path, e.g.
+`modules/graphql-router`, not just the package's short name, disambiguates unambiguously against
+the actual directory layout; adopted 2026-08-14, see §8's closing note for the earlier style).
 
 ### Handoff
 
@@ -367,6 +368,10 @@ search-server: 3.1.0-rc.1 -> 3.1.0-rc.2
 Resulting commits on `release-test` (unpushed as of this writing, left for the user to review
 and push): `Merge branch 'main' into release-test`, then `version bumps for all` with the above
 list in the commit body.
+
+**Note on the labels above:** this round used each package's short name (`sqon`, `types`, ...).
+A later round (2026-08-14) switched to the full workspace path (`modules/sqon`, `apps/search-server`,
+...) instead, see §4's current template. Historical record, not restated here to match.
 
 ---
 

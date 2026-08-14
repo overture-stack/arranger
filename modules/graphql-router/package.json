@@ -27,6 +27,9 @@
 			"default": "./dist/download/index.js"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"imports": {
 		"#configs": "./configs/*",
 		"#*": "./src/*"
