@@ -28,16 +28,18 @@ Example of the third mistake:
 
 Prompting does not fix this reliably. Putting the SQON schema in a system prompt costs tokens on every request, and the model still has to apply a complex schema correctly under real conditions.
 
-### How `execute-query` handles this today
+### How `execute_query` handles this today
 
-`execute-query` takes a raw `sqon` parameter. It works around this same problem with a "SQON Cheat Sheet," a block of worked examples and grammar rules returned by `get-sqon-schema`. That shipped before this document existed, and was the right call: it let `execute-query` ship without waiting on `build_sqon`.
+`execute_query` takes a raw `sqon` parameter. It works around this same problem with a "SQON Cheat Sheet," a block of worked examples and grammar rules returned by `get_sqon_schema`. That shipped before this document existed, and was the right call: it let `execute_query` ship without waiting on `build_sqon`.
 
 Once `build_sqon` exists, two things change:
 
-- `execute-query`'s instructions change from "call `get-sqon-schema`, then write a `sqon`" to "call `build_sqon`, then pass its output as `sqon`."
+- `execute_query`'s instructions change from "call `get_sqon_schema`, then write a `sqon`" to "call `build_sqon`, then pass its output as `sqon`."
 - The cheat sheet stops being the primary way an LLM constructs a query. It may still be worth keeping as a human-facing reference; that is a separate decision.
 
 Neither of these is a correction to the current implementation. `build_sqon` exists specifically to take over a job the cheat sheet is doing today.
+
+**Status 2026-08-10:** the first has happened. `execute_query`'s description, `SERVER_INSTRUCTIONS`, and the `query_arranger` prompt all route through `build_sqon` now, and the prompt no longer carries the cheat sheet or a grammar section. The second is still open: `get_sqon_schema` remains the cheat sheet's one consumer, and whether it keeps it as human-facing text is the open decision tracked in `.dev/tech-debt.md`.
 
 ---
 
@@ -47,10 +49,10 @@ The MCP server exposes a `build_sqon` tool. Instead of asking the model to write
 
 **The analogy:** a bank form asks "Account type: [Chequing / Savings]," not "describe your account needs in the format our ledger uses." The applicant fills named blanks; the form produces the correctly-structured output.
 
-| Role | Responsibility |
-| --- | --- |
-| **LLM** | Picks the right field, operator, and value from what the schema allows. |
-| **Tool** | Builds and validates the SQON from those picks. |
+| Role     | Responsibility                                                          |
+| -------- | ----------------------------------------------------------------------- |
+| **LLM**  | Picks the right field, operator, and value from what the schema allows. |
+| **Tool** | Builds and validates the SQON from those picks.                         |
 
 The LLM never sees or writes SQON structure directly. The tool makes every structural decision.
 
@@ -74,6 +76,7 @@ LLM: "I'll build a query with three conditions, all combined with AND:
 User: "Yes"
 
 build_sqon(
+  catalogueId: "donor_data",
   combination: "and",
   clauses: [
     { fieldName: "study_id", operator: "in", value: ["A", "B"] },
@@ -92,6 +95,7 @@ One call builds the whole query.
 
 ```
 build_sqon(
+  catalogueId: "donor_data",
   combination: "and",
   clauses: [
     { fieldName: "donor.age", negate: true, operator: "gt", value: 70 }
@@ -102,12 +106,13 @@ build_sqon(
 
 `negate: true` on `not-in` or `some-not-in` is a double negative. The tool rejects it (see [Error handling](#error-handling)).
 
-**Adding to an existing query:** pass `existing_sqon`, the output of an earlier, separate `build_sqon` call. This is for a later conversation turn adding a condition to a query that already ran, not for the normal case of building one query in one call:
+**Adding to an existing query:** pass `existingSqon`, the output of an earlier, separate `build_sqon` call. This is for a later conversation turn adding a condition to a query that already ran, not for the normal case of building one query in one call:
 
 ```
 build_sqon(
+  catalogueId: "donor_data",
   combination: "and",
-  existing_sqon: {...},
+  existingSqon: {...},
   clauses: [
     { fieldName: "donor.vital_status", operator: "in", value: ["Deceased"] }
   ]
@@ -117,11 +122,19 @@ build_sqon(
 ### Where `build_sqon` sits in the full flow
 
 ```
-get-catalogue-fields    →    LLM confirms plain-English intent    →    build_sqon    →    execute-query
+get_catalogue_fields    →    LLM confirms plain-English intent    →    build_sqon    →    execute_query
   find valid fields               with the user, no tool call          one call        run the final SQON
 ```
 
-`build_sqon` only builds; it does not execute. This lets the LLM show the user the query before anything runs.
+### Why `build_sqon` and `execute_query` stay separate calls
+
+**The choice:** whether `build_sqon` stays a separate, non-executing call, or its logic gets absorbed into `execute_query` so the flow drops to `list_catalogues` → `get_catalogue_fields` → `execute_query` (`execute_query` accepting `clauses`/`combination` directly, alongside or instead of a raw `sqon`).
+
+**Option A: merge into `execute_query`, one fewer round trip.** This looks like it follows from the same round-trip-minimization reasoning used elsewhere in this document (see "Why one call builds a whole batch" above), so it's worth being explicit about why that reasoning doesn't transfer here: that argument was about reducing _retries on malformed input_. This is a different question, whether there's a mandatory pause between building a query and running it against real data, and that's a safety property, not an error-recovery cost.
+
+**Option B: keep them separate, chosen.** `execute_query` already has its own confirmation step: where the client supports MCP's elicitation capability, it shows the generated GraphQL query and waits for the user to confirm before running it. But elicitation support is inconsistent across MCP clients today. For a client that doesn't support it, `build_sqon` returning `{ sqon, summary }` without executing anything is the _only_ guaranteed pause before real data gets touched: the tool-call boundary itself forces a stop, whatever the model does next is a separate, deliberate call. Merging the two would make that pause optional, present only for clients with elicitation support, and reliant on the model's own conversational discipline everywhere else. Keeping them separate makes the safety a property of the flow rather than of a client capability that may or may not be there.
+
+**A secondary reason, lower stakes than the one above:** `execute_query` already shipped with a stable, `sqon`-only input. Giving it a second input mode (`clauses`/`combination`) is a larger, backward-compatibility-sensitive change to an established tool, versus adding a new, purely additive one.
 
 ---
 
@@ -131,8 +144,9 @@ get-catalogue-fields    →    LLM confirms plain-English intent    →    build
 
 ```typescript
 build_sqon(input: {
+  catalogueId: string,
   combination: "and" | "or",
-  existing_sqon?: SqonNode,
+  existingSqon?: SqonNode,
   clauses: Array<{
     fieldName?: string,          // for scalar operators
     fieldNames?: string[],       // for text operators (wildcard, fuzzy); mutually exclusive with fieldName
@@ -143,8 +157,9 @@ build_sqon(input: {
 }) => { sqon: SqonNode, summary: string }
 ```
 
+- `catalogueId` identifies which catalogue's field types to validate operators against (see [Why `build_sqon` needs a `catalogueId`](#why-build_sqon-needs-a-catalogueid) below). The LLM already has it by this point: `get_catalogue_fields` requires it and always precedes `build_sqon` in the flow.
 - Every clause is flat: `fieldName`/`fieldNames`, `operator`, `value`, and `negate` sit directly on it. Nothing is nested inside another object.
-- `combination` applies to every clause in the batch, and to `existing_sqon` if provided. All clauses in one call must combine the same way, all AND or all OR. Mixing the two needs v3 (below).
+- `combination` applies to every clause in the batch, and to `existingSqon` if provided. All clauses in one call must combine the same way, all AND or all OR. Mixing the two needs v3 (below).
 - `fieldName` (singular) is for one field. `fieldNames` (plural) is for text-search operators that match across several fields at once. A clause provides exactly one of the two.
 
 ### Why clauses are a flat list, not one nested object
@@ -170,26 +185,38 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 
 **Two more costs of the one-call-per-clause design, beyond round-trip count:**
 
-- Each call needed the previous call's result (`existing_sqon`), so calls had to happen one after another. Nothing could run in parallel.
+- Each call needed the previous call's result (`existingSqon`), so calls had to happen one after another. Nothing could run in parallel.
 - Every round trip re-sends the tool's full menu, every tool's name, description, and schema, not just the one being called. Fewer round trips means paying that cost less often.
 
 **What batching requires the tool to do in return:** check every clause before responding, and report every invalid one in the same error message, not just the first. If the tool stopped at the first bad clause, the LLM would fix it, resubmit, and only then discover a second problem, costing the exact round trip batching was meant to remove.
 
+### Why `build_sqon` needs a `catalogueId`
+
+**The choice:** whether `build_sqon` takes a `catalogueId` at all, or builds purely from what's in the `clauses` array.
+
+**Option A: no `catalogueId`.** `build_sqon` only checks a clause's _shape_ (is `operator` valid for `fieldName` vs. `fieldNames`, is `value` the right type, is this a double negation). It never asks whether `gt` actually makes sense on the field named in this clause. This is defensible: `get_catalogue_fields` already returns each field's ES type plus a type-to-operator map, so the LLM has everything it needs to pick a valid operator before ever calling `build_sqon`. Trusting that is one less input to the tool and one less thing the handler depends on.
+
+**Option B: require `catalogueId`, chosen.** The handler looks up the actual field type for each clause (via the same catalogue introspection `get_catalogue_fields` already calls) and rejects an operator that doesn't fit it. The case Option A misses concretely: the LLM writes `{ fieldName: "donor.gender", operator: "gt", value: 5 }`, gender is a text field, `gt` doesn't apply. Under Option A, `build_sqon` builds it anyway, since nothing there knows what type `donor.gender` is, and the mistake isn't caught until `execute_query` runs it against Arranger and it fails. That's the same round-trip cost the batching decision above was designed to avoid, just moved one tool call later. Catching it in `build_sqon` instead costs nothing extra from the LLM's side: it already has `catalogueId` in hand from the `get_catalogue_fields` call that has to precede `build_sqon` in the flow anyway.
+
+**Why this isn't optional once the tool's own claims are taken seriously:** the Implementation guidance below already says the handler checks "does the operator fit the field's actual type." That check is not possible without knowing which catalogue and which field type; `getSqonFieldOperatorDetails()` alone only maps an operator to the ES types it _generically_ applies to; it has no notion of a specific field in a specific catalogue. Option A would mean removing that claim from Implementation guidance, not just leaving `catalogueId` out.
+
+**Standing exposure to flag alongside this:** `catalogueId` forwarded into a catalogue lookup is exactly the shape of the existing tech-debt item on `get_catalogue_fields` not validating `catalogueId` against the configured allowlist. `build_sqon` inherits the same exposure the moment it accepts a raw `catalogueId`; worth fixing both call sites together rather than separately.
+
 ### Operator reference
 
 | Operator      | v1 scope | sqon ready | Shape  | Field property | Value type                        | ES/OS translation                     |
-| ------------- | -------- | ---------- | ------ | --------------- | ---------------------------------- | -------------------------------------- |
-| `in`          | yes      | yes        | Scalar | `fieldName`     | `(string \| number \| boolean)[]`  | `terms` query                          |
-| `not-in`      | yes      | yes        | Scalar | `fieldName`     | `(string \| number \| boolean)[]`  | `bool.must_not.terms`                  |
-| `gt`          | yes      | yes        | Scalar | `fieldName`     | `number`                           | `range.gt`                             |
-| `gte`         | yes      | yes        | Scalar | `fieldName`     | `number`                           | `range.gte`                            |
-| `lt`          | yes      | yes        | Scalar | `fieldName`     | `number`                           | `range.lt`                             |
-| `lte`         | yes      | yes        | Scalar | `fieldName`     | `number`                           | `range.lte`                            |
-| `between`     | yes      | yes        | Scalar | `fieldName`     | `[number, number]`                 | `range.gte` + `range.lte`              |
-| `some-not-in` | no       | yes        | Scalar | `fieldName`     | `(string \| number \| boolean)[]`  | nested `bool.must_not` per value       |
-| `all`         | no       | yes        | Scalar | `fieldName`     | `(string \| number \| boolean)[]`  | `bool.must` per value (all required)   |
-| `wildcard`    | no       | yes        | Text   | `fieldNames`    | `string`                           | `multi_match` with wildcard            |
-| `fuzzy`       | no       | **no**     | Text   | `fieldNames`    | `string`                           | `multi_match` with `fuzziness:"AUTO"`  |
+| ------------- | -------- | ---------- | ------ | -------------- | --------------------------------- | ------------------------------------- |
+| `in`          | yes      | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `terms` query                         |
+| `not-in`      | yes      | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must_not.terms`                 |
+| `gt`          | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.gt`                            |
+| `gte`         | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.gte`                           |
+| `lt`          | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.lt`                            |
+| `lte`         | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.lte`                           |
+| `between`     | yes      | yes        | Scalar | `fieldName`    | `[number, number]`                | `range.gte` + `range.lte`             |
+| `some-not-in` | no       | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | nested `bool.must_not` per value      |
+| `all`         | no       | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must` per value (all required)  |
+| `wildcard`    | no       | yes        | Text   | `fieldNames`   | `string`                          | `multi_match` with wildcard           |
+| `fuzzy`       | no       | **no**     | Text   | `fieldNames`   | `string`                          | `multi_match` with `fuzziness:"AUTO"` |
 
 - `some-not-in` and `all` already work in `modules/sqon`, but are out of scope for v1. Add them alongside v2, or as a separate v1.x.
 - `wildcard` already works too. It waits for v2 only because v2 is what introduces the `fieldNames` shape.
@@ -201,7 +228,7 @@ The tool's operator descriptions are generated from `getSqonFieldOperatorDetails
 
 ```typescript
 {
-  sqon: SqonNode,    // the built SQON, ready to pass to execute-query
+  sqon: SqonNode,    // the built SQON, ready to pass to execute_query
   summary: string    // plain-English description of the whole SQON
 }
 ```
@@ -249,25 +276,25 @@ SQON already supports this structurally: a combination node's children can be le
 2. `build_sqon(clauses: [C, D], combination: "and")` → branch 2
 3. `combine_sqons(branches: [branch1, branch2], combination: "or")` → the nested result
 
-**Not yet verified:** `reduceSqon` (see below) only merges nodes with a matching combinator, so nesting an `and` branch under a new `or` should not get flattened away. This needs an actual test before it becomes committed design.
+**Verified 2026-08-10:** `reduceSqon` (see below) only flattens an inner group when `inner.op === output.op`, so nesting an `and` branch under a new `or` does not get flattened away. Measured with `SqonBuilder.or([and-branch, and-branch])`: both `and` branches survive. v3 nesting is safe on this point, and this is no longer an open question blocking the design.
 
 ### Things to know about `reduceSqon` before building v3
 
-`reduceSqon` runs automatically inside `SqonBuilder`, and therefore inside `build_sqon`/`combine_sqons`. It does not run on a raw SQON sent straight to `execute-query`.
+`reduceSqon` runs automatically inside `SqonBuilder`, and therefore inside `build_sqon`/`combine_sqons`. It does not run on a raw SQON sent straight to `execute_query`.
 
 - **`not` wraps one item in an array; it does not rewrite the operator.** A negated clause is `{"op":"not","content":[<leaf>]}`, never something like `{"op":"not-gt", ...}`.
 - **Two clauses on the same field and operator get merged, not kept separate.** The merge rule depends on the combinator:
-  - `in` merges under any combinator.
-  - `not-in`/`some-not-in`/`all` merge under `and`/`not`, but stay separate under `or` (merging would change the meaning).
-  - `gt`/`gte` keeps the larger value under `and`/`not`, the smaller under `or`.
-  - `lt`/`lte` is the mirror image.
-  - `between` never merges.
-  - Example: two clauses for "age > 50" and "age > 70" under `and` come back as one `gt: 70` clause, not two. Only the `summary` string shows this happened.
+    - `in` merges under any combinator.
+    - `not-in`/`some-not-in`/`all` merge under `and`/`not`, but stay separate under `or` (merging would change the meaning).
+    - `gt`/`gte` keeps the larger value under `and`/`not`, the smaller under `or`.
+    - `lt`/`lte` is the mirror image.
+    - `between` never merges.
+    - Example: two clauses for "age > 50" and "age > 70" under `and` come back as one `gt: 70` clause, not two. Only the `summary` string shows this happened.
 - **A group with one item gets unwrapped**, and an empty group gets dropped, unless it carries a `pivot`.
 - **`not` groups never get flattened into a parent group.**
 - **`pivot`**, an optional field on every node, blocks the two rules above. It already exists in the schema. No tool sets it yet; v3 needs to decide whether `build_sqon`/`combine_sqons` ever should.
 - **Only `and`/`or`/`not` exist as combinators.** There is no `xor`.
-- **Symbol aliases exist** (`=`, `>=`, and similar) and get normalized before validation. Training data may produce them; the input schema should decide whether to accept them or require the plain operator names only.
+- **Symbol aliases exist** (`=`, `>=`, and similar) and get normalized before validation, but **only by `SqonBuilder.from()`, not by `addFilterClause`** (corrected 2026-08-10, measured). `addFilterClause` dispatches on the literal operator string through a switch with no default, so `{operator: '>='}` returns `undefined`: an alias does not build an equivalent clause, it drops the clause entirely. **The choice for `build_sqon`'s input schema, resolved:** canonical operator names only (`in`, `not-in`, `gt`, ...); the `operator` enum does not list `=`, `>=`, or any other alias. **The alternative considered:** also listing aliases as valid enum values, on the theory that a model biased by training data toward symbol operators would otherwise get rejected and need a retry. **Why canonical-only was chosen instead:** offering two spellings for the same operator reintroduces the exact ambiguity this tool exists to remove. The correction above makes the case stronger than it originally read here: an alias reaching the fold would silently produce a SQON missing that condition, not an equivalent one, so the enum is load-bearing rather than merely tidy. `foldClauses` keeps an `undefined` guard behind it as a failsafe for v2. Aliases stay relevant only for the raw-SQON paths (`execute_query`'s `sqon` parameter, `SqonSchema.parse()` called directly), which are different consumers with different constraints; `existingSqon` is normalized on the way in for the same reason, since it arrives through `SqonBuilder.from()`.
 - **Extra properties on a node are silently kept, not rejected**, because every SQON schema uses Zod's `.passthrough()`. A typo in a required key (like `field` for `fieldName`) fails validation; a typo in an extra key does not.
 
 ---
@@ -286,57 +313,60 @@ import type { ScalarFilter, SqonNode, TextFilter } from '@overture-stack/sqon';
 **In the handler:**
 
 1. Parse the input with Zod (schema below). A Zod array schema already collects one error per invalid item in `clauses`, not just the first, so this step alone covers most of "report every problem."
-2. Loop over the parsed clauses for checks Zod cannot express: does the operator fit the field's actual type (via `getSqonFieldOperatorDetails()`), and is this a double negation (`negate: true` with `not-in` or `some-not-in`)? Collect an error per failing clause; do not stop at the first one.
+2. Fetch catalogue introspection for `catalogueId` (same call `get_catalogue_fields` already makes) to get each field's actual ES type. Loop over the parsed clauses for checks Zod cannot express: does the clause's field exist in this catalogue, does the operator fit that field's actual type (cross-referencing the field's type against `getSqonFieldOperatorDetails()`, which alone only knows what types an operator generically applies to, not what type any specific field is), and is this a double negation (`negate: true` with `not-in` or `some-not-in`)? Collect an error per failing clause; do not stop at the first one.
 3. If any errors were collected in steps 1 or 2, return them all in one structured error and apply nothing.
-4. Otherwise, fold every clause into the SQON with `addFilterClause`, one call per clause, starting from `existing_sqon` if given. This loop is internal to the handler; the LLM only ever sees the one `build_sqon` call. `reduceSqon` runs automatically inside each fold.
-5. Build the `summary` string from the final SQON, and return `{ sqon, summary }`.
+4. Otherwise, fold every clause into the SQON with `addFilterClause`, one call per clause, starting from `existingSqon` if given. This loop is internal to the handler; the LLM only ever sees the one `build_sqon` call. `reduceSqon` runs automatically inside each fold.
+5. Normalize the output root: wrap a root-level leaf in `{ op: 'and', content: [leaf] }`. `reduceSqon` unwraps single-item groups, so a one-clause build reduces to a bare leaf, which the hits path accepts and `buildAggregations` throws on. Apply this on the final output only, never between folds, since `SqonBuilder.from()` reduces the wrapper away again. Tracked as a workaround to delete in `.dev/tech-debt.md` under `buildAggregations` crashes when the SQON root is a leaf filter clause.
+6. Build the `summary` string from the final SQON, not from the submitted clauses: the two differ whenever `reduceSqon` merged equivalent clauses on the same field. Count leaf clauses on both sides and return `{ sqon, summary, clauseCount, filterCount }`, adding a `notes` entry explaining the difference when `filterCount` is lower than `clauseCount`. Without that, a merge silently returns fewer filters than the caller submitted.
 
 **Zod schema:**
 
+Two corrections to the sample this section originally carried, both applied in the shipped schema; see `apps/mcp-server/src/mcp/buildSqonTool.ts` for what was actually built.
+
+**`fuzzy` must not appear in the operator enum.** The original sample had `zod.enum(['wildcard', 'fuzzy'])`. `fuzzy` has no implementation in `modules/sqon`, and `addFilterClause` with `fuzzy` and `fieldNames` returns a **`wildcard`** clause with no error (measured), so listing it would offer the model an operator that silently builds a different query. It stays out of the enum until the fuzzy operator itself exists.
+
+**v1 needs no `fieldName`/`fieldNames` mutual exclusion at all.** The original sample carried a `.refine()` for it, plus a paragraph on why `discriminatedUnion` cannot express it. With no text operators in v1 there is no `fieldNames` key, so the whole problem belongs to v2. When it arrives, write the check with value comparisons (`clause.fieldName !== undefined`), **not** `'fieldName' in clause`: Zod 3 keeps an explicitly-present `undefined` key, so `in` returns true for `{ fieldName: undefined }` and the refinement gives the wrong answer.
+
+What shipped instead is a `discriminatedUnion` on `operator`, with one branch per value shape, which lets each branch type its own `value` (scalar or array for `in`-like, single scalar for the ranges, exactly two bounds for `between`) rather than accepting a permissive union in one branch and re-checking it in the handler:
+
 ```typescript
-import { SqonScalarSchema } from '@overture-stack/sqon';
+const clauseSchema = () =>
+	zod.discriminatedUnion('operator', [
+		zod.object({ ...clauseBase(), operator: zod.enum(IN_LIKE_OPERATORS), value: /* scalar or array */ }),
+		zod.object({ ...clauseBase(), operator: zod.enum(RANGE_OPERATORS), value: /* number, or string for a date */ }),
+		zod.object({ ...clauseBase(), operator: zod.literal('between'), value: /* exactly two bounds */ }),
+	]);
 
-const ScalarOperatorSchema = zod.enum(['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between']);
-const TextOperatorSchema = zod.enum(['wildcard', 'fuzzy']);
-
-const ClauseSchema = zod
-	.object({
-		fieldName: zod.string().optional(),
-		fieldNames: zod.array(zod.string()).min(1).optional(),
-		negate: zod.boolean().optional(),
-		operator: zod.union([ScalarOperatorSchema, TextOperatorSchema]),
-		value: zod.union([SqonScalarSchema, zod.array(SqonScalarSchema), zod.string()]),
-	})
-	.refine((clause) => ('fieldName' in clause) !== ('fieldNames' in clause), {
-		message: 'Provide exactly one of fieldName (scalar operators) or fieldNames (text operators), not both.',
-	});
-
-const BuildSqonInputSchema = zod.object({
+const inputSchema = {
+	catalogueId: zod.string().min(1),
 	combination: zod.enum(['and', 'or']),
-	existing_sqon: zod.unknown().optional(),
-	clauses: zod.array(ClauseSchema).min(1),
-});
+	clauses: zod.array(clauseSchema()).min(1),
+	existingSqon: zod.unknown().optional(),
+};
 ```
 
-`existing_sqon` is `zod.unknown()` on purpose. It is always the output of a prior `build_sqon` call, and `SqonBuilder.from()` already validates it (step 4 above), throwing a `ZodError` that the handler catches and turns into a structured MCP error. Exporting a separate `SqonNodeSchema` just to re-validate it here would be a spurious export for no extra safety.
+Note the schemas are factory functions rather than shared constants. Reusing one Zod instance across union branches makes the SDK's JSON Schema conversion emit internal `$ref`s (measured: 6 refs, and some clients handle them poorly); fresh instances per branch emit none and come out smaller.
 
-`fieldName` and `fieldNames` cannot be a Zod `discriminatedUnion`: that needs one shared key with different literal values, and these are two different keys. The `.refine()` above requires exactly one to be present. The handler still needs its own `'fieldName' in clause` check to know which one it got.
+`existingSqon` is `zod.unknown()` on purpose, but not for the reason originally given here: the shipped handler validates it with `SqonSchema.safeParse` and returns the failure as a normal error result, rather than relying on a thrown `ZodError` from `SqonBuilder.from()`. The parameter is also `existingSqon`, camelCase, matching every other argument in the tool surface, not `existing_sqon`.
 
 ---
 
 ## Progress to date
 
-v1 is buildable now. Everything below already exists in `modules/sqon`; only the `apps/mcp-server` handler is new work.
+**v1 shipped 2026-08-10 (#1080).** This document remains the design record: read it for why the tool has the shape it does. For what was built, and the step-by-step plan it was built from, see `.dev/docs/build-sqon-implementation.md`, which also carries the measured behaviour table this document's corrections came from. v2 (text operators) and v3 (mixed combinators) are still open, and § Phasing above is still the plan for them.
 
-| Component | Location |
-| --- | --- |
-| `SqonBuilder`, full scalar operator coverage | `modules/sqon/src/builder/index.ts` |
-| `reduceSqon` | `modules/sqon/src/builder/reduce.ts` |
-| `addFilterClause` | `modules/sqon/src/builder/filter.ts` |
-| `SqonScalarSchema` / `SqonScalarOrArraySchema` | `modules/sqon/src/index.ts` |
-| `getSqonFieldOperatorDetails()` | `modules/sqon/src/operators/index.ts` |
-| `fieldRef` on operator metadata | `modules/sqon/src/operators/types.ts` |
-| boolean support in `in`-like operators | `modules/sqon/src/operators/constants.ts` |
-| `fieldName`/`fieldNames` canonical definition | `docs/concepts.md` |
-| MCP tool registration pattern | `apps/mcp-server/src/mcp/tools.ts` |
-| `build_sqon` handler | **to do**, `apps/mcp-server/src/mcp/tools.ts` |
+| Component                                      | Location                                           |
+| ---------------------------------------------- | -------------------------------------------------- |
+| `SqonBuilder`, full scalar operator coverage   | `modules/sqon/src/builder/index.ts`                |
+| `reduceSqon`                                   | `modules/sqon/src/builder/reduce.ts`               |
+| `addFilterClause`                              | `modules/sqon/src/builder/filter.ts`               |
+| `SqonScalarSchema` / `SqonScalarOrArraySchema` | `modules/sqon/src/index.ts`                        |
+| `getSqonFieldOperatorDetails()`                | `modules/sqon/src/operators/index.ts`              |
+| `fieldRef` on operator metadata                | `modules/sqon/src/operators/types.ts`              |
+| boolean support in `in`-like operators         | `modules/sqon/src/operators/constants.ts`          |
+| `fieldName`/`fieldNames` canonical definition  | `docs/concepts.md`                                 |
+| MCP tool registration pattern                  | `apps/mcp-server/src/mcp/tools.ts`                 |
+| `build_sqon` tool, schemas, fold, and handler  | `apps/mcp-server/src/mcp/buildSqonTool.ts`         |
+| per-clause validation against a catalogue      | `apps/mcp-server/src/arranger/clauseValidation.ts` |
+| plain-English summary and leaf counter         | `apps/mcp-server/src/arranger/sqonSummary.ts`      |
+| user-facing documentation                      | `docs/mcp-server.md`, `apps/mcp-server/README.md`  |

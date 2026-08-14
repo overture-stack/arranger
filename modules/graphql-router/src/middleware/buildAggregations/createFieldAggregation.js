@@ -9,7 +9,7 @@ const HISTOGRAM_INTERVAL_DEFAULT = 1000;
 const CARDINALITY_DEFAULT_PRECISION_THRESHOLD = 40000; // max precision for ES6-7
 const RANGES_DEFAULT = [{ from: 0 }];
 
-const createNumericAggregation = ({ type, field, graphqlField }) => {
+const createNumericAggregation = ({ type, esFieldName, fieldName, graphqlField }) => {
 	const args = get(graphqlField, [type, '__arguments', 0]) || {};
 	const options =
 		type === HISTOGRAM
@@ -23,16 +23,16 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
 				: {};
 
 	return {
-		[`${field}:${type}`]: {
+		[`${fieldName}:${type}`]: {
 			[type]: {
-				field,
+				field: esFieldName,
 				...options,
 			},
 		},
 	};
 };
 
-const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) => {
+const createTermAggregation = ({ esFieldName, fieldName, isNested, graphqlField, termFilters }) => {
 	const maxAggregations = get(graphqlField, ['buckets', '__arguments', 0, 'max', 'value'], MAX_AGGREGATION_SIZE);
 	const termFilter = graphqlField?.buckets?.filter_by_term || null;
 	const topHits = graphqlField?.buckets?.top_hits || null;
@@ -46,7 +46,7 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
 	if (topHits) {
 		innerAggs = {
 			...innerAggs,
-			[`${field}.hits`]: {
+			[`${fieldName}.hits`]: {
 				top_hits: {
 					_source: source?.value || [],
 					size: size?.value,
@@ -82,19 +82,19 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
 	}
 
 	const aggs = {
-		[field]: {
+		[fieldName]: {
 			...(!isEmpty(innerAggs) ? { aggs: { ...innerAggs } } : {}),
-			terms: { field, size: maxAggregations },
+			terms: { field: esFieldName, size: maxAggregations },
 		},
-		[`${field}:missing`]: {
+		[`${fieldName}:missing`]: {
 			...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
-			missing: { field },
+			missing: { field: esFieldName },
 		},
 	};
 
 	return isNested && termFilters.length > 0
 		? {
-				[`${field}:nested_filtered`]: {
+				[`${fieldName}:nested_filtered`]: {
 					filter: {
 						bool: {
 							must: termFilters,
@@ -111,10 +111,10 @@ const getPrecisionThreshold = (graphqlField) => {
 	return args?.precision_threshold?.value || CARDINALITY_DEFAULT_PRECISION_THRESHOLD;
 };
 
-const computeCardinalityAggregation = ({ field, graphqlField }) => ({
-	[`${field}:${CARDINALITY}`]: {
+const computeCardinalityAggregation = ({ esFieldName, fieldName, graphqlField }) => ({
+	[`${fieldName}:${CARDINALITY}`]: {
 		cardinality: {
-			field,
+			field: esFieldName,
 			precision_threshold: getPrecisionThreshold(graphqlField),
 		},
 	},
@@ -122,18 +122,33 @@ const computeCardinalityAggregation = ({ field, graphqlField }) => ({
 
 /**
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
- * fieldName renamed to field, as that's the property name in ES
+ *
+ * `fieldName` is the clean, Phase-1-shaped name every response key (bucket name, `:missing`/
+ * `:nested_filtered` suffix, `.hits`) is built from, so the GraphQL layer always sees the same
+ * names its schema was built with. `esFieldName` (defaults to `fieldName`) is the real ES field
+ * path used inside the query clauses themselves; the two diverge only when the catalogue has a
+ * `nestingPrefix` configured (see `middleware/utils/nestingPrefix.ts`).
  */
-export default ({ fieldName: field, graphqlField = {}, isNested = false, termFilters = [] }) => {
+export default ({ esFieldName, fieldName, graphqlField = {}, isNested = false, termFilters = [] }) => {
+	const resolvedEsFieldName = esFieldName ?? fieldName;
 	const types = [BUCKETS, STATS, HISTOGRAM, RANGE, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
 
 	return types.reduce((acc, type) => {
 		if (type === BUCKETS || type === BUCKET_COUNT) {
-			return Object.assign(acc, createTermAggregation({ field, isNested, graphqlField, termFilters }));
+			return Object.assign(
+				acc,
+				createTermAggregation({ esFieldName: resolvedEsFieldName, fieldName, isNested, graphqlField, termFilters }),
+			);
 		} else if ([STATS, HISTOGRAM, RANGE].includes(type)) {
-			return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
+			return Object.assign(
+				acc,
+				createNumericAggregation({ type, esFieldName: resolvedEsFieldName, fieldName, graphqlField }),
+			);
 		} else if (type === CARDINALITY) {
-			return Object.assign(acc, computeCardinalityAggregation({ type, field, graphqlField }));
+			return Object.assign(
+				acc,
+				computeCardinalityAggregation({ esFieldName: resolvedEsFieldName, fieldName, graphqlField }),
+			);
 		} else {
 			return acc;
 		}

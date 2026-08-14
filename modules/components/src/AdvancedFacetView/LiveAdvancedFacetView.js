@@ -1,4 +1,5 @@
 import { esToAggTypesMap } from '@overture-stack/arranger-types/elastic/constants';
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import { isEqual } from 'lodash-es';
 import { Component } from 'react';
 
@@ -38,13 +39,17 @@ const fetchMappingData = async (fetchConfig) =>
 
 const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
 	const fetchConfig = { index, apiFetcher };
-	const serializeToGraphQl = (aggName) => aggName.split('.').join('__');
-	const serializeToPath = (aggName) => aggName.split('__').join('.');
-	const allAggsNames = extended.map((entry) => entry.fieldName).map(serializeToGraphQl);
+	// A reverse lookup built from `extended` itself, not a blind un-sanitize of the GraphQL name:
+	// sanitizing beyond dots (e.g. a hyphen becoming `_`) can't be undone by reversing the
+	// transform alone, since a single underscore in the sanitized name is ambiguous on its own.
+	const rawFieldNameByGraphqlName = Object.fromEntries(
+		extended.map((entry) => [sanitizeGraphqlFlatName(entry.fieldName), entry.fieldName]),
+	);
+	const allAggsNames = extended.map((entry) => entry.fieldName).map(sanitizeGraphqlFlatName);
 	const getAggregationQuery = () =>
 		allAggsNames
 			.map((aggName) => {
-				const aggType = extended.find((entry) => serializeToGraphQl(entry.fieldName) === aggName).type;
+				const aggType = extended.find((entry) => sanitizeGraphqlFlatName(entry.fieldName) === aggName).type;
 				return `
           ${aggName} {
             ${
@@ -72,7 +77,7 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
 		aggregations: Object.keys(data[index].aggregations || {}).reduce(
 			(agg, key) => ({
 				...agg,
-				[serializeToPath(key)]: data[index].aggregations[key],
+				[rawFieldNameByGraphqlName[key] ?? key]: data[index].aggregations[key],
 			}),
 			{},
 		),
@@ -134,7 +139,7 @@ export default class LiveAdvancedFacetView extends Component {
 		extended?.filter(
 			(e) =>
 				!this.denyListedAggTypes.includes(e.type) &&
-				facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)?.isActive,
+				facets?.aggregations?.find((s) => s.fieldName === sanitizeGraphqlFlatName(e.fieldName))?.isActive,
 		);
 
 	componentDidMount() {

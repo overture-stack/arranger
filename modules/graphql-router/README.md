@@ -113,30 +113,30 @@ A catalogue can federate aggregation queries across multiple remote Arranger nod
 ```ts
 const router = await arrangerRouter({
 	configs: {
+		documentType: 'file',
 		esHost: 'http://localhost:9200',
 		esIndex: 'file_centric',
-		documentType: 'File',
 		network: {
+			// Runs once per node per query. Use it to forward auth to remote nodes.
+			customizeRemoteRequest: ({ context, remoteNode }) => ({
+				headers: {
+					Authorization: context.request.headers.get('Authorization') ?? '',
+				},
+			}),
 			localNode: {
 				displayName: 'Local',
 				nodeId: 'local',
 			},
-			remoteRequests: {
-				headers: ['Authorization'], // forwarded to all remote nodes by default
-			},
 			remoteNodes: [
 				{
 					displayName: 'Node A',
-					documentType: 'FileAggs',
+					documentType: 'file', // the remote's root field; `Aggregations` is appended internally
 					graphqlUrl: 'http://node-a:5050/graphql',
 					nodeId: 'node-a',
-					requests: {
-						headers: ['Authorization'], // per-node override; merged with remoteRequests.headers
-					},
 				},
 				{
 					displayName: 'Node B',
-					documentType: 'FileAggs',
+					documentType: 'file',
 					graphqlUrl: 'http://node-b:5050/graphql',
 					nodeId: 'node-b',
 				},
@@ -146,24 +146,46 @@ const router = await arrangerRouter({
 });
 ```
 
-When using `apps/search-server`, this config lives in `network.json` inside the catalogue's config directory. A template is at [`apps/search-server/configTemplates/network.json`](../../apps/search-server/configTemplates/network.json).
-
 #### Network config fields
 
-| Field                            | Description                                                                                    |
-| -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `localNode.displayName`          | Human-readable label for this node's results in aggregation responses.                         |
-| `localNode.nodeId`               | Stable identifier for this node, used when filtering results by node.                          |
-| `remoteRequests.headers`         | Header names to forward from the incoming request to **all** remote nodes.                     |
-| `remoteNodes[].graphqlUrl`       | GraphQL endpoint URL of the remote Arranger instance.                                          |
-| `remoteNodes[].documentType`     | Aggregation type name on the remote node.                                                      |
-| `remoteNodes[].displayName`      | Human-readable label for this remote node's results.                                           |
-| `remoteNodes[].nodeId`           | Stable identifier for this node, used when filtering results by node.                          |
-| `remoteNodes[].requests.headers` | Header names to forward to this specific node. Takes precedence over `remoteRequests.headers`. |
+| Field                        | Description                                                                                                                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `customizeRemoteRequest`     | Callback invoked once per node per query, receiving `{ context, remoteNode }` and returning request properties (currently `headers`) to add to that node's outgoing request.                        |
+| `localNode.displayName`      | Human-readable label for this node's results in aggregation responses. Omit the whole `localNode` block to federate over remote nodes only.                                                        |
+| `localNode.nodeId`           | Stable identifier for this node, used by the `nodesFilter` query argument.                                                                                                                          |
+| `remoteNodes[].displayName`  | Human-readable label for this remote node's results. Also used to match responses back to nodes, so keep it unique across the network.                                                             |
+| `remoteNodes[].documentType` | The remote catalogue's `documentType`, meaning its root GraphQL field (e.g. `file`). `Aggregations` is appended to this value during field discovery, so give the bare document type, not `fileAggregations`. |
+| `remoteNodes[].graphqlUrl`   | GraphQL endpoint URL of the remote Arranger instance.                                                                                                                                              |
+| `remoteNodes[].nodeId`       | Stable identifier for this node, used by the `nodesFilter` query argument.                                                                                                                          |
 
-All nodes must serve overlapping index field names. Fields with the same name and GraphQL type are merged across nodes; fields unique to one node are excluded from federation.
+#### With `apps/search-server`
 
-**Introspection requirement:** At startup, each remote node's aggregation field types are discovered via a `__type` GraphQL introspection query. Remote nodes that have `disableGraphQLIntrospection: true` will fail schema discovery and be silently excluded from federation. Do not enable `disableGraphQLIntrospection` on any node that serves as a remote target in a network aggregation deployment. A fix that replaces this with a REST `/introspection/fields` call is tracked in tech-debt and planned for the yoga migration.
+When running `apps/search-server`, this config lives in `network.json` inside the catalogue's config directory. A template is at [`apps/search-server/configTemplates/network.json`](../../apps/search-server/configTemplates/network.json).
+
+A JSON file cannot express a callback, so `search-server` accepts two extra declarative properties **that this library does not**, and normalizes them into a `customizeRemoteRequest` function before calling `arrangerRouter`:
+
+| Field (`search-server` only)      | Description                                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `remoteRequests.headers`          | Header names to copy from the incoming request onto the outgoing request to **every** remote node.                |
+| `remoteNodes[].requests.headers`  | Header names to forward to this specific node. **Replaces** `remoteRequests.headers` for that node, rather than merging with it. |
+
+Passing either of these to `arrangerRouter` directly has no effect: at this layer, supply `customizeRemoteRequest` instead.
+
+#### Field merging
+
+Nodes do **not** need identical field sets. The federated schema is the **union** of the supported aggregation fields found across all nodes, deduplicated by field name and type. A field present on only one node still appears in the schema, and each node is only queried for the fields it actually has.
+
+When a node lacks a requested field, it contributes one sentinel bucket carrying its total hits for that query, so counts still add up:
+
+```json
+{ "key": "___aggregation_not_available___", "doc_count": 4210 }
+```
+
+Merging is keyed on field name and aggregation type, so nodes only combine on a field when both name it identically. Only the `Aggregations` type federates; `NumericAggregations` fields are excluded from the federated schema entirely.
+
+**Introspection requirement:** At startup, each remote node's aggregation field types are discovered via a `__type` GraphQL introspection query. A remote node with `disableGraphQLIntrospection: true` fails schema discovery and is reported as an errored node with zero hits for the lifetime of this server's process. Since the flag defaults to `true` when `NODE_ENV=production`, any node serving as a remote target must explicitly set it to `false`. A fix that replaces this with a REST `/introspection/fields` call is tracked in tech-debt and planned for the yoga migration.
+
+For the query shape, per-node status reporting, failure behaviour, and full limitations, see the [Federated search](https://github.com/overture-stack/arranger/blob/main/docs/federated-search.md) documentation.
 
 ---
 

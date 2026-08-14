@@ -4,22 +4,42 @@ This app is an MCP server that learns how to talk to Arranger by consuming Arran
 
 The current scaffold implements the Streamable HTTP MCP transport using **v1.x** of the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x).
 
+## Tools
+
+The server registers five tools that cover the full query lifecycle:
+
+| Tool                   | Purpose                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                                 |
+| `get_sqon_schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema.          |
+| `get_catalogue_fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.                |
+| `build_sqon`           | Builds a validated SQON from plain field, operator, and value clauses, with a plain-English summary. Builds only; it executes nothing. |
+| `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                             |
+
+The intended call order is `list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`, which is what `SERVER_INSTRUCTIONS` and the `query_arranger` prompt both describe. `build_sqon` covers the scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`) with one `and`/`or` per call; text operators and mixed combinators are not in version 1, so those still need a hand-written `sqon` passed to `execute_query`.
+
 ## Folder Structure
 
 ```text
 src/
 ├── arranger/
+│   ├── clauseValidation.ts     # validates build_sqon clauses against a catalogue
 │   ├── client.ts               # fetches Arranger introspection endpoints
 │   ├── queryBuilder.ts         # utilities for building GQL queries
 │   ├── queryResults.ts         # utilities for compressing GQL query results
 │   ├── queryValidation.ts      # Arranger query validation
+│   ├── sqonSummary.ts          # renders a SQON as plain English, and counts its clauses
 │   ├── types.ts                # response types for introspection payloads
 │   └── validation.ts           # validates the connection to Arranger
 ├── http/
 │   └── app.ts                  # MCP express app with Streamable HTTP transport
 ├── mcp/
+│   ├── buildSqonTool.ts        # build SQON tool
 │   ├── executeQueryTool.ts     # execute query tool
+│   ├── instructions.ts         # server instructions sent in the initialize response
+│   ├── prompts.ts              # registers MCP prompts
 │   ├── resources.ts            # registers MCP resources
+│   ├── sqonCheatSheet.ts       # compact SQON reference, returned by get_sqon_schema
 │   └── tools.ts                # registers MCP tools
 ├── utils/
 │   ├── config.ts               # env/config parsing

@@ -38,26 +38,25 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes }: Prom
 		assert.equal(typeof args[0]?.description, 'string');
 	});
 
-	test('2.returns three text messages: workflow, SQON grammar, then the goal', async () => {
+	test('2.returns two text messages: workflow, then the goal', async () => {
 		const result = await getClient().getPrompt({
 			name: 'query_arranger',
 			arguments: { goal: 'donors over 50' },
 		});
 
-		assert.equal(result.messages.length, 3, 'expected exactly three prompt messages');
+		// Two, not three: the SQON cheat sheet no longer rides along, because `build_sqon` writes
+		// the filter now and the model never has to author SQON from a grammar.
+		assert.equal(result.messages.length, 2, 'expected exactly two prompt messages');
 
 		// Every message must be a text block on the 'user' role: PromptMessage has no system role,
 		// so the workflow rides a user turn and the host is expected to hoist it into its own
 		// system channel. getMessageText asserts both for each message.
-		const [workflow, grammar, goal] = result.messages.map((message, index) =>
-			getMessageText(message, `message ${index}`),
-		);
+		const [workflow, goal] = result.messages.map((message, index) => getMessageText(message, `message ${index}`));
 
 		assert.ok(
 			workflow.includes('You are a query assistant for the Arranger data portal.'),
 			'expected message 0 to open with the query-assistant framing',
 		);
-		assert.ok(grammar.includes('SQON cheat sheet'), 'expected message 1 to be the SQON cheat sheet');
 		assert.equal(goal, "Researcher's goal: donors over 50");
 	});
 
@@ -102,38 +101,35 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes }: Prom
 		);
 	});
 
-	test('5.sends SQON generation guidance inline rather than as an embedded resource', async () => {
+	test('5.routes SQON construction through build_sqon instead of shipping a grammar', async () => {
 		const result = await getClient().getPrompt({
 			name: 'query_arranger',
 			arguments: { goal: 'anything' },
 		});
 
-		// Regression guard: message 1 previously carried `type: 'resource'` wrapping the raw SQON
-		// JSON Schema. The JSON Schema is the validation artifact; the cheat sheet is the generation
-		// guide, and it has to survive clients that ignore non-text content blocks.
+		// Regression guard: a message here once carried `type: 'resource'` wrapping the raw SQON
+		// JSON Schema, which is silently dropped by clients that handle only text blocks.
 		assert.ok(
 			result.messages.every((message) => message.content.type === 'text'),
 			'expected no non-text content blocks in the prompt',
 		);
 
-		const grammar = getMessageText(result.messages[1], 'message 1');
-		assert.ok(grammar.includes('fieldName'), 'expected the cheat sheet to name the fieldName key');
-		assert.ok(grammar.includes('THE MISTAKE TO AVOID'), 'expected the leaf-shape pitfall callout');
+		const workflow = getMessageText(result.messages[0], 'message 0');
+		assert.ok(workflow.includes('build_sqon'), 'expected the workflow to name build_sqon');
 		assert.ok(
-			grammar.includes('{"op": "<field op>", "content": {"fieldName": "<field>", "value": <value>}}'),
-			'expected a copyable leaf template',
-		);
-		assert.ok(
-			grammar.includes('get_sqon_schema'),
-			'expected the cheat sheet to point at get_sqon_schema for the machine-readable schema',
+			workflow.indexOf('build_sqon') < workflow.indexOf('execute_query'),
+			'expected build_sqon to be named before execute_query',
 		);
 
-		// The workflow message points at message 1 for the grammar; if that pointer and the
-		// message order ever drift apart, the model is told to read something that is not there.
-		const workflow = getMessageText(result.messages[0], 'message 0');
+		// The prompt must not reintroduce a hand-authored SQON path alongside the tool: a grammar
+		// in context is an invitation to write the filter by hand and skip the validation.
 		assert.ok(
-			workflow.includes('is provided in the next message'),
-			'expected the workflow to point at the following message for the grammar',
+			!workflow.includes('THE MISTAKE TO AVOID'),
+			'expected the SQON cheat sheet not to be inlined into the prompt',
+		);
+		assert.ok(
+			!workflow.includes('is provided in the next message'),
+			'expected no pointer to a grammar message that is no longer sent',
 		);
 	});
 
@@ -143,7 +139,7 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes }: Prom
 		const goal = 'female donors, age between 18 and 65, "primary_site" containing brain';
 		const result = await getClient().getPrompt({ name: 'query_arranger', arguments: { goal } });
 
-		assert.equal(getMessageText(result.messages[2], 'message 2'), `Researcher's goal: ${goal}`);
+		assert.equal(getMessageText(result.messages[1], 'message 1'), `Researcher's goal: ${goal}`);
 	});
 
 	// The assertions below match on the error text, not just on "it rejected". A bare rejection

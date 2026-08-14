@@ -22,6 +22,7 @@ const configsAggregator = (
 		filters,
 		pingMs,
 		pingPath,
+		readyPath,
 		serverPort,
 		setsIndex,
 		setsType,
@@ -53,6 +54,7 @@ const configsAggregator = (
 		health: {
 			pingMs,
 			pingPath,
+			readyPath,
 		},
 		serverPort,
 	});

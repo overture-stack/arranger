@@ -10,6 +10,7 @@ import {
 	ES_NESTED,
 	ES_QUERY,
 } from '#middleware/constants.js';
+import { applyNestingPrefix, applyNestingPrefixToFieldNames, applyNestingPrefixToSqon } from '#middleware/utils/nestingPrefix.js';
 
 import createFieldAggregation from './createFieldAggregation.js';
 import getNestedSqonFilters from './getNestedSqonFilters.js';
@@ -59,9 +60,9 @@ function getNestedPathsInField({ fieldName = '', nestedFieldNames = [] }) {
 		.filter((p) => nestedFieldNames.includes(p));
 }
 
-function wrapWithFilters({ fieldName, query, aggregationsFilterThemselves, aggregation }) {
+function wrapWithFilters({ esFieldName, fieldName, query, aggregationsFilterThemselves, aggregation }) {
 	if (!aggregationsFilterThemselves) {
-		const cleanedQuery = removeFieldFromQuery({ fieldName, query });
+		const cleanedQuery = removeFieldFromQuery({ fieldName: esFieldName, query });
 		// TODO: better way to figure out that the field wasn't found
 		if (!isEqual(cleanedQuery || {}, query || {})) {
 			return createGlobalAggregation({
@@ -79,20 +80,28 @@ function wrapWithFilters({ fieldName, query, aggregationsFilterThemselves, aggre
 
 /**
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
+ *
+ * `nestingPrefix` (see `middleware/utils/nestingPrefix.ts`) only ever affects the real ES field
+ * path (`esFieldName`) and `nestedFieldNames`/`sqon` used to build the query DSL; every response
+ * key (bucket names, `:missing`/`:nested_filtered` suffixes) stays built from the clean `fieldName`
+ * so `flattenAggregations` and the GraphQL layer above it need no awareness of the prefix at all.
  */
-export default function ({ aggregationsFilterThemselves, graphqlFields, nestedFieldNames, query, sqon }) {
-	const normalizedSqon = normalizeFilters(sqon);
+export default function ({ aggregationsFilterThemselves, graphqlFields, nestedFieldNames: rawNestedFieldNames, nestingPrefix, query, sqon }) {
+	const nestedFieldNames = applyNestingPrefixToFieldNames(rawNestedFieldNames, nestingPrefix) ?? rawNestedFieldNames ?? [];
+	const normalizedSqon = normalizeFilters(applyNestingPrefixToSqon(sqon, nestingPrefix));
 	const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
 		const fieldName = fieldKey.replace(/__/g, '.');
-		const nestedPaths = getNestedPathsInField({ fieldName, nestedFieldNames });
+		const esFieldName = applyNestingPrefix(fieldName, nestingPrefix);
+		const nestedPaths = getNestedPathsInField({ fieldName: esFieldName, nestedFieldNames });
 		const contentsFiltered = (normalizedSqon?.content || []).filter((c) =>
 			aggregationsFilterThemselves
 				? c.content?.fieldName?.startsWith(nestedPaths)
-				: c.content?.fieldName?.startsWith(nestedPaths) && c.content?.fieldName !== fieldName,
+				: c.content?.fieldName?.startsWith(nestedPaths) && c.content?.fieldName !== esFieldName,
 		);
 		const termFilters = contentsFiltered.map((filter) => opSwitch({ nestedFieldNames: [], filter }));
 
 		const fieldAggregation = createFieldAggregation({
+			esFieldName,
 			fieldName,
 			graphqlField,
 			isNested: nestedPaths.length,
@@ -111,6 +120,7 @@ export default function ({ aggregationsFilterThemselves, graphqlFields, nestedFi
 			wrapWithFilters({
 				aggregation,
 				aggregationsFilterThemselves,
+				esFieldName,
 				fieldName,
 				query,
 			}),
@@ -126,6 +136,7 @@ export default function ({ aggregationsFilterThemselves, graphqlFields, nestedFi
 		aggregationsFilterThemselves,
 		aggs,
 		nestedSqonFilters,
+		nestingPrefix,
 	});
 
 	return filteredAggregations;

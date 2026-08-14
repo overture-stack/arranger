@@ -74,7 +74,7 @@ const QuickSearch = ({
 	const [isNewSearch, setNewSearch] = useState(false);
 	const [value, setValue] = useState('');
 	const inputRef = useRef();
-	const { apiFetcher, documentType, sqon, setSQON } = useDataContext();
+	const { apiFetcher, apiUrl, documentType, sqon, setSQON } = useDataContext();
 	const {
 		components: {
 			QuickSearch: {
@@ -147,6 +147,7 @@ const QuickSearch = ({
 				{...{
 					queryCallback,
 					apiFetcher,
+					apiUrl,
 					displayField,
 					documentType,
 					isNewSearch,

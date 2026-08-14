@@ -1,4 +1,5 @@
 import { css } from '@emotion/react';
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import cx from 'classnames';
 import { sortBy } from 'lodash-es';
 
@@ -46,7 +47,7 @@ export const AggregationsListDisplay = ({
 			.map((agg) => ({
 				...agg,
 				...data?.[documentType]?.aggregations?.[agg?.fieldName],
-				...extendedMapping.find((extendedField) => extendedField.fieldName.replaceAll('.', '__') === agg.fieldName),
+				...extendedMapping.find((extendedField) => sanitizeGraphqlFlatName(extendedField.fieldName) === agg.fieldName),
 				onValueChange: ({ sqon, value }) => {
 					onValueChange(value);
 					setSQON(sqon);
@@ -92,6 +93,7 @@ export const AggregationsListDisplay = ({
 export const AggregationsList = ({
 	aggs = [],
 	apiFetcher,
+	apiUrl,
 	componentProps = {
 		getBooleanAggProps: emptyObjFn,
 		getDatesAggProps: emptyObjFn,
@@ -112,6 +114,7 @@ export const AggregationsList = ({
 	<AggsQuery
 		aggs={aggs}
 		apiFetcher={apiFetcher}
+		apiUrl={apiUrl}
 		debounceTime={debounceTime}
 		documentType={documentType}
 		render={({ data, loading, error }) => {
@@ -163,6 +166,7 @@ export const AggregationsList = ({
  */
 const Aggregations = ({
 	apiFetcher,
+	apiUrl,
 	className = '',
 	componentProps = {
 		getTermAggProps: emptyObjFn,
@@ -192,6 +196,7 @@ const Aggregations = ({
 					return AggregationsList({
 						aggs,
 						apiFetcher,
+						apiUrl,
 						componentProps,
 						containerRef,
 						customFacets,

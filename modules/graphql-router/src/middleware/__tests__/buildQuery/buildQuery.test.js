@@ -1068,6 +1068,83 @@ suite('middleware/buildQuery', () => {
 		assert.deepEqual(actualOutput, output);
 	});
 
+	test('11.buildQuery prepends a configured nestingPrefix to plain and nested field paths alike', () => {
+		const input = {
+			nestingPrefix: 'data',
+			nestedFieldNames: ['biomarker'],
+			filters: {
+				op: 'and',
+				content: [
+					{ op: '=', content: { fieldName: 'bmi', value: [24.5] } },
+					{ op: '=', content: { fieldName: 'biomarker.alc', value: [1] } },
+				],
+			},
+		};
+
+		const output = {
+			bool: {
+				must: [
+					{ terms: { 'data.bmi': [24.5], boost: 0 } },
+					{
+						nested: {
+							path: 'data.biomarker',
+							query: { bool: { must: [{ terms: { 'data.biomarker.alc': [1], boost: 0 } }] } },
+						},
+					},
+				],
+			},
+		};
+
+		assert.deepEqual(buildQuery(input), output);
+	});
+
+	test('11b.buildQuery correctly prefixes a real nested-within-nested field (e.g. treatment.chemotherapy), matching donor.yaml\'s actual structure', () => {
+		const input = {
+			nestingPrefix: 'data',
+			nestedFieldNames: ['treatment', 'treatment.chemotherapy'],
+			filters: {
+				op: '=',
+				content: { fieldName: 'treatment.chemotherapy.drug_name', value: ['Cisplatin'] },
+			},
+		};
+
+		const output = {
+			nested: {
+				path: 'data.treatment',
+				query: {
+					bool: {
+						must: [
+							{
+								nested: {
+									path: 'data.treatment.chemotherapy',
+									query: {
+										bool: {
+											must: [{ terms: { 'data.treatment.chemotherapy.drug_name': ['Cisplatin'], boost: 0 } }],
+										},
+									},
+								},
+							},
+						],
+					},
+				},
+			},
+		};
+
+		assert.deepEqual(buildQuery(input), output);
+	});
+
+	test('12.buildQuery leaves field paths unprefixed when no nestingPrefix is configured', () => {
+		const input = {
+			nestedFieldNames: ['biomarker'],
+			filters: {
+				op: '=',
+				content: { fieldName: 'bmi', value: [24.5] },
+			},
+		};
+
+		assert.deepEqual(buildQuery(input), { terms: { bmi: [24.5], boost: 0 } });
+	});
+
 	test('10.buildQuery must reject invalid pivot fields', () => {
 		const testFunction = () => {
 			const input = {

@@ -12,8 +12,11 @@
 		// "disableReferencedProjectLoad": true,             /* Reduce the number of projects loaded automatically by TypeScript. */
 
 		/* Language and Environment */
-		"target": "es5" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
-		// "target": "es5"                                   /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
+		// es2022 to match sqon/types' actual tsup build target: checking their aliased source
+		// under this package's old es5 target produced false-positive errors (e.g. Set iteration
+		// requiring --downlevelIteration below es2015) that don't reflect how they're really built.
+		// tsconfig.release.json resets this back to es5 for the real build.
+		"target": "es2022" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
 		"lib": [
 			"dom",
 			"esnext"
@@ -34,7 +37,13 @@
 		"paths": {
 			/* Specify a set of entries that re-map imports to additional lookup locations. */
 			"#public": ["./public"],
-			"#*": ["./src/*"]
+			"#*": ["./src/*"],
+			// IDE-only: lets VS Code's IntelliSense see live sqon/types source without a rebuild.
+			// tsconfig.release.json resets this back to the two entries above, so the real build
+			// (and components:watch, which runs against tsconfig.release.json) is unaffected.
+			"@overture-stack/arranger-types": ["../types/src/index.ts"],
+			"@overture-stack/arranger-types/*": ["../types/src/*"],
+			"@overture-stack/sqon": ["../sqon/src/index.ts"]
 		},
 		"plugins": [
 			{
@@ -45,7 +54,11 @@
 				"afterDeclarations": true
 			} // absolute paths for .d.ts files
 		],
-		"rootDir": "./src" /* Specify the root folder within your source files. */,
+		// rootDir is widened (not "./src") so the sqon/types source aliases above, which pull files
+		// in from outside src/, don't trip TS6059; leaving it fully unset instead breaks resolving
+		// this package's own "#*" subpath import map (TS2210: ambiguous project root). tsconfig.release.json
+		// resets this back to "./src", since its paths reset means that tighter constraint is safe there.
+		"rootDir": "../..",
 		// "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
 		// "typeRoots": [],                                  /* Specify multiple folders that act like `./node_modules/@types`. */
 		// "types": [],                                      /* Specify type package names to be included without being referenced in a source file. */

@@ -1,3 +1,4 @@
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import { JSONPath } from 'jsonpath-plus';
 import { capitalize, flatMap, isArray, isEmpty } from 'lodash-es';
 import { compose, withProps } from 'recompose';
@@ -19,7 +20,7 @@ export const decorateFieldWithColumnsState = ({ tableConfigs, fieldName }) => {
 
 		return {
 			...columnsStateField,
-			gqlField: splitFieldName.join('__'),
+			gqlField: sanitizeGraphqlFlatName(fieldName),
 			jsonPath: `$..${splitFieldName?.length === 1 ? fieldName : splitFieldName.slice(-1)}`,
 			query: columnsStateField.query || fieldName,
 		};
@@ -32,6 +33,47 @@ export const decorateFieldWithColumnsState = ({ tableConfigs, fieldName }) => {
 
 const isMatching = ({ value = '', searchText = '', exact = false, who }) => {
 	return exact ? value === searchText : value.toLowerCase().includes(searchText.toLowerCase());
+};
+
+// Builds the options `Query` (via `withQuery`) fetches with. `url: apiUrl` matters: without it,
+// this request falls back to the fetcher's own unscoped default, ignoring `catalogue` scoping
+// entirely, the same bug already found and fixed in `aggregations/AggsQuery.jsx`.
+export const getQuickSearchQueryOptions = ({
+	apiUrl,
+	displayField,
+	documentType,
+	queryCallback,
+	searchFields,
+	searchText,
+	size = 5,
+	sqon,
+}) => {
+	return {
+		callback: queryCallback,
+		debounceTime: 300,
+		endpointTag: 'Arranger-QuickSearch',
+		query: `query ${capitalize(documentType)}QuickSearchResults($sqon: JSON, $size: Int) {
+			${documentType} {
+				hits(filters: $sqon, first: $size) {
+				total
+				edges {
+					node {
+					${!isEmpty(displayField?.query) ? `primaryKey: ${displayField?.query}` : ''}
+					${searchFields
+				?.filter?.((field) => field.gqlField && field.query)
+				.map?.((field) => `${field.gqlField}: ${field.query}`)
+				.join?.('\n') || ''
+			}
+					}
+				}
+				}
+			}
+			}
+		`,
+		shouldFetch: isValidValue(searchText) && (searchFields || []).length,
+		url: apiUrl,
+		variables: { size, sqon },
+	};
 };
 
 const enhance = compose(
@@ -70,33 +112,7 @@ const enhance = compose(
 			};
 		},
 	),
-	withQuery(({ displayField, documentType, queryCallback, searchFields, searchText, size = 5, sqon }) => {
-		return {
-			callback: queryCallback,
-			debounceTime: 300,
-			endpointTag: 'Arranger-QuickSearch',
-			query: `query ${capitalize(documentType)}QuickSearchResults($sqon: JSON, $size: Int) {
-				${documentType} {
-					hits(filters: $sqon, first: $size) {
-					total
-					edges {
-						node {
-						${!isEmpty(displayField?.query) ? `primaryKey: ${displayField?.query}` : ''}
-						${searchFields
-					?.filter?.((field) => field.gqlField && field.query)
-					.map?.((field) => `${field.gqlField}: ${field.query}`)
-					.join?.('\n') || ''
-				}
-						}
-					}
-					}
-				}
-				}
-			`,
-			shouldFetch: isValidValue(searchText) && (searchFields || []).length,
-			variables: { size, sqon },
-		};
-	}),
+	withQuery(getQuickSearchQueryOptions),
 	withProps(
 		({
 			displayField,

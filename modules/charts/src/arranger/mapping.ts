@@ -1,12 +1,8 @@
 import { DisplayType, ExtendedMappingInterface } from '@overture-stack/arranger-components';
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 
 import { logger } from '#logger';
 import { aggregationsTypenames } from '.';
-
-// GQL field name to Arranger extended mapping JSON field name
-export const toJSONFieldName = (fieldName: string) => {
-	return fieldName.replaceAll('__', '.');
-};
 
 const esToAggTypeMap: Record<DisplayType | string, string> = {
 	boolean: 'Aggregations',
@@ -28,7 +24,9 @@ const esToAggTypeMap: Record<DisplayType | string, string> = {
 
 /**
  * Maps a GraphQL field name to its extended mapping configuration.
- * Resolves field name format and finds corresponding aggregation type information.
+ * Finds the matching `extendedMapping` entry by sanitizing each candidate's raw field name and
+ * comparing forward, rather than trying to reverse the GraphQL name back to a raw path: once
+ * sanitization handles more than dots (e.g. a hyphen becoming `_`), that reversal is ambiguous.
  *
  * @param { fieldName } - GraphQL field name to map
  * @param { extendedMapping } - Array of field mapping configurations from Arranger
@@ -41,9 +39,7 @@ export const getGQLTypename = ({
 	fieldName: string;
 	extendedMapping: ExtendedMappingInterface[];
 }) => {
-	// GQL field name to Arranger extended mapping JSON field name
-	const jsonFieldName = toJSONFieldName(fieldName);
-	const mapping = extendedMapping?.find((mapping) => mapping.fieldName === jsonFieldName);
+	const mapping = extendedMapping?.find((mapping) => sanitizeGraphqlFlatName(mapping.fieldName) === fieldName);
 
 	const aggType = mapping?.type && esToAggTypeMap[mapping?.type];
 	if (aggType) {

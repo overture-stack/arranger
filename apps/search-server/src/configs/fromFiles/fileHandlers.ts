@@ -46,62 +46,30 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 
 	enableDebug && console.debug('\n    DEBUG: resolved configs path:', configsPath);
 
-	try {
-		const aggregatedConfigs = await readDirectoryAsync(configsPath)
-			.then((filenames = []) =>
-				// TODO: shouldn't fail all files if one is broken
-				Promise.all(
-					(filenames as string[])
-						.filter(isDataFile)
-						.map((filename) => readFileAsync(configsPath, filename, 'utf8')),
-				),
-			)
-			.then((files = []) => {
-				if (files.length === 0) {
-					return {};
-				}
+	const filenames = await readDirectoryAsync(configsPath);
+	const files = (
+		await Promise.all(
+			(filenames as string[]).filter(isDataFile).map((filename) => readFileAsync(configsPath, filename, 'utf8')),
+		)
+	).filter((file): file is [string, string] => file !== undefined);
 
-				const configObj = (files as [string, string][]).reduce(
-					(configsAcc, [fileName, fileData]) => {
-						try {
-							const fileDataJSON = JSON.parse(fileData);
-
-							const normalizedJSON = normalize(fileDataJSON);
-
-							// if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
-							// 	return merge({}, configsAcc, fileDataJSON, {
-							// 		[configRootProperties.TABLE]: {
-							// 			...fileDataJSON[configRootProperties.TABLE],
-							// 			[tableProperties.DEFAULT_SORTING]: fileDataJSON[configRootProperties.TABLE][
-							// 				tableProperties.DEFAULT_SORTING
-							// 			].map((sorting: SortingConfigs) => ({
-							// 				...sorting,
-							// 				desc: sorting.desc || false,
-							// 			})),
-							// 		},
-							// 	});
-							// }
-
-							// return merge({}, configsAcc, fileDataJSON);
-
-							return merge({}, configsAcc, normalizedJSON);
-						} catch (err) {
-							enableDebug && console.debug(`\n  DEBUG: ${err}`);
-							throw new Error('Could not parse the provided configuration files');
-						}
-					},
-					{ ...baseConfig },
-				);
-
-				return configObj;
-			});
-
-		return [configsPath, aggregatedConfigs];
-	} catch (err) {
-		console.warn(`    Something wrong happened when attempting to load config files ${err}`);
-
+	if (files.length === 0) {
 		return [configsPath, { ...baseConfig }];
 	}
+
+	const aggregatedConfigs = files.reduce((configsAcc, [fileName, fileData]) => {
+		try {
+			const fileDataJSON = JSON.parse(fileData);
+			const normalizedJSON = normalize(fileDataJSON);
+
+			return merge({}, configsAcc, normalizedJSON);
+		} catch (err) {
+			enableDebug && console.debug(`\n  DEBUG: ${err}`);
+			throw new Error(`Could not parse configuration file "${fileName}.json" in "${configsPath}"`);
+		}
+	}, { ...baseConfig });
+
+	return [configsPath, aggregatedConfigs];
 };
 
 export default getConfigFromFiles;

@@ -266,6 +266,14 @@ const buildSearchClient = async (options: { client?: string; node?: string; pass
 
 export default buildSearchClient;
 
+export {
+	type CatalogueErrorCode,
+	catalogueErrorCodes,
+	type CatalogueErrorDetail,
+	classifyCatalogueFailureReason,
+	NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
+	SCHEMA_BUILD_ERROR_NAME,
+} from './classifyCatalogueFailureReason.js';
 export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';
 export type { SearchClient, SupportedClientTypes } from './types.js';
 export { detectClientTypeFromHeaders, getClientType, resolveClientTypeFromNodeInfo };

@@ -60,7 +60,8 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 		networkConfigs: remoteNodeConfigs,
 	});
 
-	// TODO: Nodes that fail to fetch on startup are removed from gql schema and are never queried or reported on in
+	// Failed nodes are excluded below from schema field discovery, but are threaded through to
+	// createResolvers further down and still reported in the network response with an ERROR status.
 	const [successfulRemoteNodeResults, failedRemoteNodeResults] = partitionArray<
 		FetchAggregationSuccess,
 		FetchAggregationNetworkError | FetchAggregationInvalidData

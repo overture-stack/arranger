@@ -22,30 +22,61 @@ import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
+import { buildGraphqlNameRegistry } from '#mapping/utils/graphqlNameRegistry.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
-import type { SearchClient } from '#searchClient/index.js';
+import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addContext } from '#utils/context.js';
+import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
+
+export { FALLBACK_LABEL, isFallbackLabel, logSeparator };
+
+/** Wraps a schema/endpoint-build failure with the marker `classifyCatalogueFailureReason` recognizes, preserving the original error as `cause`. */
+const schemaBuildError = (message: string, cause: unknown): Error =>
+	Object.assign(new Error(message, { cause }), { name: SCHEMA_BUILD_ERROR_NAME });
 
 // TODO: Fix types once SearchClient response types are merged
 const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
-	enableDebug,
-	mappingFromIndex,
 	configs,
+	enableDebug,
+	label,
+	mappingFromIndex,
 }: {
 	enableDebug: boolean;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	mappingFromIndex: any;
 	configs: ConfigsObject<Context>;
 }) => {
 	if (Object.keys(configs).length > 0) {
 		try {
-			console.log('  - Now creating a GraphQL mapping based on the ES index:');
+			console.log(
+				`  - Now creating a GraphQL mapping based on the index${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
+			);
 
 			const fieldsFromMapping = flattenMappingToFields(mappingFromIndex);
+
+			// Field names are sanitized into valid GraphQL identifiers below (see graphqlNameRegistry.ts);
+			// the one thing sanitization can't resolve on its own is two distinct raw fields colliding on
+			// the same sanitized name.
+			const graphqlNameRegistry = buildGraphqlNameRegistry({
+				documentType: configs?.[configRootProperties.DOCUMENT_TYPE],
+				fieldsFromMapping,
+			});
+
+			if (graphqlNameRegistry.collisions.length > 0) {
+				const details = graphqlNameRegistry.collisions
+					.map(({ graphqlName, rawPaths }) => `\`${graphqlName}\`: ${rawPaths.join(', ')}`)
+					.join('; ');
+				throw schemaBuildError(
+					`Two or more fields in this catalogue's mapping collide on the same GraphQL name: ${details}`,
+					undefined,
+				);
+			}
 
 			// Combines the mapping from ES with the "extended" custom configs
 			const extendedFields = await (async () => {
@@ -76,12 +107,12 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					return extendFacets(facetsConfigs, extendedFields);
 				} catch (err) {
 					console.log(
-						'    Something happened while extending the column mappings.\n' +
-							'    Defaulting to "table" config from files.\n',
+						'    Something happened while extending the facet mappings.\n' +
+							'    Defaulting to "facets" config from files.\n',
 					);
 					enableDebug && console.debug(`  DEBUG: ${err}`);
 
-					return configs?.[configRootProperties.TABLE] || [];
+					return configs?.[configRootProperties.FACETS] || [];
 				}
 			})();
 
@@ -121,6 +152,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 				},
 				mapping: mappingFromIndex,
+				registry: graphqlNameRegistry,
 			});
 
 			return {
@@ -128,8 +160,17 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 				typesWithMappings,
 			};
 		} catch (error) {
-			console.error(error instanceof Error ? error.message : error);
-			throw '  Something went wrong while creating the GraphQL mapping';
+			// A schema-build error thrown directly above (e.g. the invalid-name check) already carries
+			// its own specific, actionable message; only wrap an error that isn't one of ours yet.
+			if (error instanceof Error && error.name === SCHEMA_BUILD_ERROR_NAME) {
+				throw error;
+			}
+
+			enableDebug &&
+				console.error(
+					`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${error instanceof Error ? error.message : error}`,
+				);
+			throw schemaBuildError('Something went wrong while creating the GraphQL mapping', error);
 		}
 	}
 
@@ -210,6 +251,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	enableGraphQLBatching = false,
 	esClient,
 	graphqlOptions = {},
+	label,
 	maxAliases,
 	maxDepth,
 	mockSchema,
@@ -221,6 +263,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	enableGraphQLBatching?: boolean;
 	esClient: SearchClient;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	maxAliases?: number;
 	maxDepth?: number;
 	mockSchema: GraphQLSchema;
@@ -230,7 +274,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	const mockPath = '/mock/graphql';
 	const router = Router();
 
-	console.log('\n------\nStarting GraphQL server:');
+	console.log(`\n${logSeparator(label)}\nStarting GraphQL server${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
 
 	const apolloFeatureFlags = disablePlayground && { plugins: [ApolloServerPluginLandingPageDisabled()] };
 	const validationRules = [maxAliasesRule(maxAliases), maxDepthRule(maxDepth)];
@@ -281,6 +325,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			// TODO: invalid types between router and the app expected by apolloServer. Works as is but types are not valid.
 			apolloServer.applyMiddleware({
 				app: router,
+				// The app already enforces its own CORS policy (see apps/search-server/src/server.ts);
+				// Apollo's own default here would layer a second, permissive policy on top, disagreeing
+				// with (and undermining) whatever origin restriction the app configured.
+				cors: false,
 				path: mainPath,
 			});
 
@@ -305,6 +353,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 			apolloMockServer.applyMiddleware({
 				app: router,
+				// See the equivalent comment on apolloServer.applyMiddleware above.
+				cors: false,
 				path: '/mock/graphql',
 			});
 
@@ -313,9 +363,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			router.use(mockPath, noSchemaHandler(mockPath));
 		}
 	} catch (err) {
-		enableDebug && console.debug(`  DEBUG: ${err}`);
-		// FIXME: Throw better!
-		throw err;
+		enableDebug && console.debug(`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${err}`);
+		throw schemaBuildError('Something went wrong while starting the GraphQL endpoint', err);
 	}
 
 	router.use(
@@ -326,7 +375,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		}),
 	);
 
-	console.log('\n  Success!');
+	console.log(`\n  Success!${isFallbackLabel(label) ? '' : ` ("${label}")`}`);
 
 	return router;
 };
@@ -338,6 +387,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	label,
 	mappingFromIndex,
 	setsIndex,
 }: {
@@ -347,6 +397,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	mappingFromIndex: Record<string, unknown>;
 	setsIndex: string;
 }) => {
@@ -358,6 +410,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings<Context>({
 			configs,
 			enableDebug,
+			label,
 			mappingFromIndex,
 		});
 
@@ -428,14 +481,14 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 				schemasToMerge.push(networkSchemaResult.data);
 			} else {
 				console.error(
-					`Error creating network schema for catalogue ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
+					`Error creating network schema for catalogue ${configs.catalogId}: ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
 				);
 			}
 		}
 
 		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
 
-		console.log('\n  Success!');
+		console.log(`\n  Success!${isFallbackLabel(label) ? '' : ` ("${label}")`}`);
 
 		return {
 			fieldsFromMapping,
@@ -444,12 +497,16 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			schema: fullSchema,
 		};
 	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : error;
+		// A schema-build error thrown deeper down (e.g. getTypesWithMappings' invalid-name check)
+		// already carries its own specific message; only wrap an error that isn't one of ours yet.
+		// Not logged here: router.ts's own catch already prints the full error (message, cause
+		// chain, stack) behind enableDebug, and the curated code/message summary always logs once
+		// further up, in apps/search-server; repeating it at every intermediate layer was just noise.
+		if (error instanceof Error && error.name === SCHEMA_BUILD_ERROR_NAME) {
+			throw error;
+		}
 
-		console.info('\n------\nError thrown while creating the GraphQL schemas.');
-		console.error(message);
-
-		throw '  Something went wrong while creating the GraphQL schemas';
+		throw schemaBuildError('Something went wrong while creating the GraphQL schemas', error);
 	}
 };
 
@@ -460,8 +517,13 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
+	label?: string;
 	mappingFromIndex: Record<string, unknown>;
+	/** When true, a schema/endpoint build failure is rethrown instead of caught and turned into a 500-responding handler. Off by default so direct callers of this function keep today's contract (never rejects); `arrangerRouter` opts in, since it already classifies and reports a rejected catalogue as `failed` rather than crashing. */
+	rethrowOnError?: boolean;
 };
+
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
 	enableAdmin,
@@ -469,7 +531,9 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	label = configs[configRootProperties.DOCUMENT_TYPE] || FALLBACK_LABEL,
 	mappingFromIndex,
+	rethrowOnError = false,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
@@ -482,6 +546,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
+			label,
 			mappingFromIndex,
 			setsIndex,
 		});
@@ -493,6 +558,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			enableGraphQLBatching: configs[configOptionalProperties.ENABLE_GRAPHQL_BATCHING] ?? false,
 			esClient,
 			graphqlOptions,
+			label,
 			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
 			maxDepth: configs[configOptionalProperties.GRAPHQL_MAX_DEPTH],
 			mockSchema,
@@ -504,12 +570,13 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 				enableSets: configs[configFeatureFlagProperties.ENABLE_SETS] ?? false,
 				enableDebug,
 				esClient,
+				label,
 				setsIndex,
 			});
 		} catch (setsError) {
 			const message = setsError instanceof Error ? setsError.message : `${setsError}`;
 			console.error(
-				`\n------\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+				`\n${logSeparator(label)}\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
 			);
 		}
 
@@ -524,8 +591,20 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		];
 	} catch (error) {
 		const message = error instanceof Error ? error.message : `${error}`;
-		// if endpoint creation fails, let the next server step to respond with an error
-		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
+
+		if (rethrowOnError) {
+			// router.ts's own catch already prints the full error (message, cause chain, stack)
+			// behind enableDebug, and the curated code/message summary always logs once further up,
+			// in apps/search-server; nothing more to log here.
+			throw error;
+		}
+
+		// With rethrowOnError off (the default for a direct getGraphQLRoutes caller), nothing further
+		// up the chain ever sees this failure, the caller only gets the 500 response below, so this
+		// is the only place it's ever visible server-side.
+		console.info(
+			`\n${logSeparator(label)}\nError thrown while generating the GraphQL endpoints${isFallbackLabel(label) ? '' : ` for "${label}"`}.`,
+		);
 		console.error(message);
 
 		return (req, res) =>

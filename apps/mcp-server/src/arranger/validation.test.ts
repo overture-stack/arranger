@@ -21,30 +21,50 @@ const mockConfig = (catalogues: string[] = ['catalogue-a']): ArrangerMcpConfig =
 	},
 });
 
-const mockServerIntrospection = (catalogueIds: string[]): ArrangerServerIntrospection => ({
-	catalogCount: catalogueIds.length,
-	catalogs: Object.fromEntries(
-		catalogueIds.map((id) => [
-			id,
-			{
-				documentType: 'doc',
-				paths: {
-					graphql: `/${id}/graphql`,
-					introspection: `/introspection/${id}`,
+type MockCatalogue = { id: string; status?: 'available' | 'failed' };
+
+const mockServerIntrospection = (catalogues: (string | MockCatalogue)[]): ArrangerServerIntrospection => {
+	const entries = catalogues.map((catalogue) => (typeof catalogue === 'string' ? { id: catalogue } : catalogue));
+	const failed = entries.filter(({ status }) => status === 'failed');
+
+	return {
+		catalogCount: entries.length,
+		catalogs: Object.fromEntries(
+			entries.map(({ id, status = 'available' }) => [
+				id,
+				{
+					documentType: 'doc',
+					paths: {
+						graphql: `/${id}/graphql`,
+						introspection: `/introspection/${id}`,
+					},
+					status,
+					...(status === 'failed'
+						? { error: { code: 'index_not_found', message: `Index "${id}" does not exist.` } }
+						: {}),
 				},
-			},
-		]),
-	),
-	mode: catalogueIds.length > 1 ? 'multiple' : 'single',
-	sqonSchemaPath: '/introspection/sqon',
-});
+			]),
+		),
+		mode: entries.length > 1 ? 'multiple' : 'single',
+		sqonSchemaPath: '/introspection/sqon',
+		status: failed.length === 0 ? 'healthy' : failed.length === entries.length ? 'unhealthy' : 'degraded',
+	};
+};
 
 const mockSqonIntrospection = (): ArrangerSqonIntrospection => ({
 	$schema: 'https://json-schema.org/draft/2020-12/schema',
 	aliases: {},
 	description: '',
 	operators: { combination: [], field: [] },
-	schema: {},
+	schema: {
+		$schema: 'https://json-schema.org/draft/2020-12/schema',
+		$id: 'https://overture.bio/schemas/sqon.json',
+		$ref: '#/$defs/SqonNode',
+		$defs: {},
+		description: '',
+		title: 'SQON',
+		version: '0.0.0',
+	},
 	title: 'SQON',
 	version: '0.0.0',
 });
@@ -71,6 +91,19 @@ suite('validateArrangerConnection', () => {
 		const config = mockConfig(['catalogue-a', 'catalogue-b']);
 		const client = mockClient({
 			getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalogue-a', 'catalogue-b'])),
+		});
+
+		await assert.doesNotReject(validateArrangerConnection(config, client));
+	});
+
+	// Documents current behaviour, not desired behaviour: see tech-debt, "`validateArrangerConnection`
+	// reports a `failed` catalogue as validated". Update this test when that entry is resolved.
+	test('treats a catalogue Arranger reports as failed as validated', async () => {
+		const config = mockConfig(['catalogue-a', 'catalogue-b']);
+		const client = mockClient({
+			getServerIntrospection: mock.fn(async () =>
+				mockServerIntrospection(['catalogue-a', { id: 'catalogue-b', status: 'failed' }]),
+			),
 		});
 
 		await assert.doesNotReject(validateArrangerConnection(config, client));

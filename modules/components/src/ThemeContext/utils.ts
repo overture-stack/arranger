@@ -1,8 +1,16 @@
-import { merge } from 'lodash-es';
+import { isEqualWith, mergeWith } from 'lodash-es';
 
 import { emptyObj } from '#utils/noops.js';
 
-import type { CustomThemeType, ThemeMergerFn, ThemeOptions, ThemeProcessorFn } from './types/index.js';
+import type { CustomThemeType, ThemeContribution, ThemeMergerFn, ThemeOptions, ThemeProcessorFn } from './types/index.js';
+
+// lodash's default merge combines two arrays element-by-element by index, so a theme array
+// (e.g. Table.defaultSorting) can never be fully replaced, only ever grown or partially
+// overwritten: shrinking it, reordering it, or clearing it leaves stale trailing elements from
+// the previous value. Treating an incoming array as a full replacement (rather than something to
+// merge into) matches how every other theme value already behaves.
+const replaceArrays = (_targetValue: unknown, sourceValue: unknown) =>
+	Array.isArray(sourceValue) ? sourceValue : undefined;
 
 // To support theme composition
 const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(targetTheme: ThemeOptions, customTheme: Theme) => {
@@ -22,8 +30,34 @@ const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(targetTheme: ThemeOp
 		return targetTheme;
 	}
 
-	return merge({ ...targetTheme }, customTheme);
+	return mergeWith({ ...targetTheme }, customTheme, replaceArrays);
 };
+
+// Treats any two function values as equal, regardless of identity. An inline theme object (the
+// common case: a consumer passing `{ ... }` literal on every render) recreates any function-valued
+// property fresh each render, so comparing those by reference would make this "equal" check almost
+// never actually true, defeating its purpose of skipping updates when nothing meaningful changed.
+// The real cost: a change confined entirely to a function's body (not its presence/absence, not
+// anything else in the theme) won't register as a change. That's a narrow, dev-time-only gap
+// (e.g. editing a callback during Fast Refresh) rather than the common case, so it's an acceptable
+// trade for avoiding a re-render on every single render of a normal, inline-callback-carrying theme.
+const treatFunctionsAsEqual = (a: unknown, b: unknown) => (typeof a === 'function' && typeof b === 'function' ? true : undefined);
+
+export const isThemeEqual = (a: unknown, b: unknown): boolean => isEqualWith(a, b, treatFunctionsAsEqual);
+
+/**
+ * Replaces a caller's registry entry wholesale rather than merging into it, so that caller's next
+ * contribution correctly reflects removed keys, shrunk arrays, or any other way its value got
+ * smaller, not just bigger. Returns the exact same `contributions` reference when nothing changed
+ * for this caller, so a consumer using this as a React state updater gets a correct bail-out
+ * (React skips the re-render when a state updater returns the same reference it was given).
+ */
+export const updateThemeContribution = (
+	contributions: Record<string, ThemeContribution>,
+	callerKey: string,
+	partialTheme: ThemeContribution,
+): Record<string, ThemeContribution> =>
+	isThemeEqual(contributions[callerKey], partialTheme) ? contributions : { ...contributions, [callerKey]: partialTheme };
 
 // export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>
 export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>

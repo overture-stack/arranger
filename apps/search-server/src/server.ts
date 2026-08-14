@@ -5,6 +5,7 @@ import morgan from 'morgan';
 // TODO: add winston in module and import here
 
 import arrangerRoutes from '#arrangerRoutes.js';
+import { computeAggregateServerStatus, serverAggregateStatuses } from '#availability/index.js';
 import loadAllConfigs from '#configs/index.js';
 import type { ExternalConfigs } from '#configs/types/index.js';
 import createIntrospectionRoutes from '#introspection/index.js';
@@ -27,7 +28,7 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 
 		enableDebug &&
 			console.log(
-				`    Catalogue IDs: ${catalogueEntries.map(([catalogId]) => catalogId).join(', ') || '(none found)'}`,
+				`    Catalogue IDs: ${catalogueEntries.map(([catalogueId]) => catalogueId).join(', ') || '(none found)'}`,
 			);
 
 		enableLogs &&
@@ -38,6 +39,7 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 		console.log('\n  Success!');
 
 		const app = express();
+		// Also blocks Playground/Sandbox in-browser when restrictive; see docs/reference/07-feature-flags.md.
 		app.use(cors(allowedCorsOrigins?.length ? { origin: allowedCorsOrigins } : undefined));
 		app.use(json({ limit: '50mb' }));
 		app.use(urlencoded({ extended: false, limit: '50mb' }));
@@ -60,11 +62,39 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 			}),
 		);
 
+		// Liveness: process-alive only, deliberately blind to catalogue state. A slow or
+		// unreachable search engine must never cause Kubernetes to restart an otherwise-healthy
+		// Arranger process; that's a readiness concern, not a liveness one.
 		app.get(health.pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
 
-		const { router: arrangerRouter, catalogueRouters } = await arrangerRoutes({ catalogs, enableDebug, esClient });
+		const {
+			router: arrangerRouter,
+			catalogueRouters,
+			catalogueStatuses,
+		} = await arrangerRoutes({ catalogs, enableDebug, esClient });
 
-		app.use(createIntrospectionRoutes({ catalogs, catalogueRouters }));
+		const serverStatus = computeAggregateServerStatus(catalogueStatuses);
+		const failedCatalogueIds = Object.entries(catalogueStatuses)
+			.filter(([, detail]) => detail.status === 'failed')
+			.map(([catalogueId]) => catalogueId);
+
+		enableDebug ||
+			console.log(
+				`\n  Catalogue availability: ${serverStatus}` +
+					(failedCatalogueIds.length ? ` (${failedCatalogueIds.join(', ')} unavailable)` : ''),
+			);
+
+		// Readiness: reflects whether this replica can usefully serve traffic right now. Only
+		// `unhealthy` (zero enabled catalogues available) should pull the pod out of rotation;
+		// `degraded` still serves real traffic for its available catalogues. Recomputed per
+		// request rather than captured once, since a future reload can change catalogue statuses
+		// without a server restart.
+		app.get(health.readyPath, (_req, res) => {
+			const status = computeAggregateServerStatus(catalogueStatuses);
+			res.status(status === serverAggregateStatuses.UNHEALTHY ? 503 : 200).json({ status });
+		});
+
+		app.use(createIntrospectionRoutes({ catalogs, catalogueRouters, catalogueStatuses }));
 		app.use('/', arrangerRouter);
 
 		const server = app.listen(serverPort, () => {

@@ -1,4 +1,4 @@
-import { isEqual, omit } from 'lodash-es';
+import { omit } from 'lodash-es';
 import {
 	type ComponentType,
 	createContext,
@@ -7,65 +7,88 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from 'react';
 
 import getComponentDisplayName from '#utils/getComponentDisplayName.js';
 import missingProviderHandler from '#utils/missingProvider.js';
-import noopFn, { emptyObj } from '#utils/noops.js';
+import { emptyObj } from '#utils/noops.js';
 
 import arrangerBaseTheme from './baseTheme/index.js';
 import type {
 	BaseThemeInterface,
-	CustomThemeType,
 	ThemeAggregatorFn,
 	ThemeContextInterface,
+	ThemeContribution,
 	ThemeOptions,
 	ThemeProcessorFn,
 	ThemeProviderProps,
 	UseThemeContextProps,
 	WithThemeProps,
 } from './types/index.js';
-import { isProviderNested, mergeThemes } from './utils.js';
+import { isProviderNested, mergeThemes, updateThemeContribution } from './utils.js';
 
 export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>({
 	missingProvider: 'ThemeContext',
 	theme: {},
 } as ThemeContextInterface<ThemeOptions>);
 
+// Shared registry key for a contribution made without a callerKey (calling aggregateTheme directly
+// via context rather than through useThemeContext, which always supplies one). Kept simple: a later
+// anonymous call replaces an earlier one rather than merging onto it, consistent with every other
+// registry entry, rather than reintroducing the never-unsettable-accumulator problem this file
+// exists to fix.
+const ANONYMOUS_CALLER_KEY = 'anonymous-theme-caller';
+
+// Explicitly typed rather than reusing the generic `noopFn`: TypeScript can't reliably unify
+// `noopFn`'s own generic signature with `ThemeAggregatorFn`'s, since both have their own default
+// type parameters.
+const noopAggregateTheme: ThemeAggregatorFn = () => undefined;
+
 /** hook for theme access and aggregation
  * @param {Theme} [customTheme] takes customisation parameters for Arranger components.
  * @returns {Theme} theme object
  */
 export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): ThemeOptions => {
-	const { aggregateTheme = noopFn, missingProvider, theme } = useContext(ThemeContext);
+	const { aggregateTheme = noopAggregateTheme, missingProvider, theme } = useContext(ThemeContext);
+	// Falls back to a per-instance generated key when the caller doesn't supply callerName, so an
+	// anonymous contribution still replaces its own prior value across re-renders of this same
+	// component instance, rather than being merged onto indefinitely (see aggregateTheme below).
+	const fallbackKeyRef = useRef<string>();
+	fallbackKeyRef.current ??= `anonymous-theme-caller-${Math.random().toString(36).slice(2)}`;
+	const callerKey = customTheme.callerName || fallbackKeyRef.current;
 
 	useEffect(() => {
-		aggregateTheme(typeof customTheme === 'function' ? customTheme : omit(customTheme, 'callerName'));
-	}, [aggregateTheme, customTheme, theme]);
+		aggregateTheme<ThemeOptions>(typeof customTheme === 'function' ? customTheme : omit(customTheme, 'callerName'), callerKey);
+	}, [aggregateTheme, callerKey, customTheme, theme]);
 
 	missingProvider && missingProviderHandler(ThemeContext.displayName, customTheme.callerName);
 
 	return useMemo(() => theme, [theme]);
 };
 
-const useAggregableTheme = (initialTheme: any): readonly [ThemeOptions, ThemeAggregatorFn] => {
-	const [currentTheme, setCurrentTheme] = useState<ThemeOptions>(initialTheme);
+// Each caller's contribution is tracked separately, keyed by callerKey, and replaced wholesale
+// (never merged into) on every call from that same caller. The effective theme is then re-derived
+// by folding the base theme with every contribution, in the order each caller first appeared. This
+// is what lets a caller's later, smaller/different theme value actually take effect: a single
+// ever-growing merge accumulator (the previous design) can only add to or override keys present in
+// a new value, never remove a key, shrink an array, or otherwise reflect a caller's value getting
+// smaller, since there is nothing in the "smaller" value to overlay onto the stale remainder.
 
-	const aggregateTheme = useCallback<ThemeAggregatorFn>(
-		(partialTheme) => {
-			const theme = partialTheme ? mergeThemes(currentTheme, partialTheme) : currentTheme;
+const useAggregableTheme = (baseTheme: ThemeOptions): readonly [ThemeOptions, ThemeAggregatorFn] => {
+	const [contributions, setContributions] = useState<Record<string, ThemeContribution>>(emptyObj);
 
-			if (!isEqual(JSON.stringify(currentTheme), JSON.stringify(theme))) {
-				setCurrentTheme(theme);
-			}
+	const aggregateTheme = useCallback<ThemeAggregatorFn>((partialTheme, callerKey = ANONYMOUS_CALLER_KEY) => {
+		setContributions((previousContributions) => updateThemeContribution(previousContributions, callerKey, partialTheme));
+	}, []);
 
-			return theme;
-		},
-		[currentTheme],
+	const theme = useMemo(
+		() => mergeThemes(baseTheme, Object.values(contributions)),
+		[baseTheme, contributions],
 	);
 
-	return [currentTheme, aggregateTheme] as const; // make tuple type
+	return [theme, aggregateTheme] as const; // make tuple type
 };
 
 /** Context provider for Arranger's theme functionalities

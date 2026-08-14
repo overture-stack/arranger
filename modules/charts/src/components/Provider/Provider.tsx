@@ -76,7 +76,7 @@ export const ChartsProvider = ({
 
 	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
-	const { apiFetcher, documentType, networkNodesFilter, sqon } = useArrangerData({
+	const { apiFetcher, apiUrl, documentType, networkNodesFilter, sqon } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
@@ -90,6 +90,7 @@ export const ChartsProvider = ({
 	const networkResult = useNetworkQuery({
 		query: gqlQuery ?? '',
 		apiFetcher,
+		apiUrl,
 		sqon,
 		loadingDelay,
 		networkNodesFilter,

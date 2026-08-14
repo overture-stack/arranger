@@ -54,7 +54,7 @@ to keep `release-test` itself always in a "known good, already published" state 
 
 ## 3. Jenkins pipeline mechanics (grounds everything below)
 
-Pipeline file: `/Users/jrichardsson/Documents/sajter/jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`
+Pipeline file: `vars/pipelineOvertureArranger.groovy` in the `jenkins-pipeline-library` repo
 (helper `step*` files load automatically via CasC, not explicitly imported).
 
 **NPM publish stage** (`when { anyOf { branch 'release'; branch 'release-test' } }`):
@@ -370,7 +370,72 @@ list in the commit body.
 
 ---
 
-## 9. Open questions to resolve when abstracting this into an agentics convention
+## 9. Changesets branch-split prototype: does accumulate-on-`main`, consume-on-`release-test` actually work?
+
+Before committing to the Phase 3.1 Changesets migration (§7), there was an unresolved
+compatibility question against a hard requirement: `main` must stay completely free of
+versioning/publishing concerns. Changesets' own documentation and the standard `changesets/action`
+bot both assume changesets accumulate *and* get consumed (`changeset version`, which bumps real
+package.json versions and deletes the consumed changeset files) on the *same* branch. Nothing in
+the docs describes the split we need (accumulate on `main`, consume only on `release-test`), so
+this was prototyped directly rather than assumed either way, in a disposable throwaway monorepo
+(two npm workspace packages, `@changesets/cli@2.31.1`, real `git merge`/`changeset version` runs,
+not a simulation).
+
+**Setup:** `main` and `release-test` both start from the same commit. On `main`: a code change to
+`pkg-a` plus a hand-authored changeset file declaring a `minor` bump. Merge `main` into
+`release-test`. Run `npx changeset version` on `release-test` only, and commit the result.
+
+**Finding 1: `changeset version` behaves exactly as documented when run on `release-test` alone.**
+It bumped `pkg-a` from `1.0.0` to `1.1.0` (correctly reading the `minor` declaration), generated
+`packages/pkg-a/CHANGELOG.md` with the right entry, left the untouched `pkg-b` at `1.0.0` exactly
+as it should (no changeset targeted it), and deleted the consumed changeset file
+`.changeset/brave-lions-fly.md` from `release-test`'s working tree. `main`'s copy of that same
+file was completely unaffected: still present, byte-for-byte identical, confirmed with
+`git show main:.changeset/brave-lions-fly.md`.
+
+**Finding 2: the predicted reintroduction/conflict problem does *not* happen in the ordinary
+case.** A second round of development on `main` (a `pkg-b` change plus a *new*, different
+changeset file) was merged into `release-test` again. Result: clean merge, zero conflicts. Only
+the genuinely new changeset file (`quiet-otters-jump.md`) appeared; the already-consumed
+`brave-lions-fly.md` did **not** reappear. This is the same git 3-way-merge mechanism already
+relied on elsewhere in this document (§2): when a file is deleted on one side (`release-test`,
+via the `changeset version` commit) and left completely unmodified on the other side (`main`,
+since the merge base) relative to their common ancestor, git resolves the deletion automatically
+with no conflict. The theoretical risk assumed this would behave like a normal two-sided edit;
+empirically, it behaves like the version-field auto-merge already documented in §2, for the same
+underlying reason.
+
+**Finding 3: there is one narrow, real edge case that does conflict, and it has a cheap fix.** If
+someone edits an *already-consumed* changeset file on `main` after the fact (e.g. tweaking its
+wording, not realizing it was already released off `release-test`), the next merge produces a
+genuine `CONFLICT (modify/delete)`: git leaves main's modified copy in the tree and refuses to
+auto-resolve, exactly as it would for any other modify/delete conflict. Reproduced directly:
+
+```
+CONFLICT (modify/delete): .changeset/brave-lions-fly.md deleted in HEAD and modified in main.
+Version main of .changeset/brave-lions-fly.md left in tree.
+```
+
+**Resolution, demonstrated:** trivial, `git rm .changeset/<file>.md` (re-delete it, since it was
+already consumed and released; there is nothing left to reconcile) then commit the merge
+normally. No bot or script is strictly required to fix this after the fact. A cheaper preventative
+measure is better than a reactive one: a lint/CI check on `main` that fails a PR if it modifies a
+pre-existing `.changeset/*.md` file (rather than only adding new ones) would catch this class of
+mistake before it ever reaches `release-test`, since editing a changeset that already shipped is
+never the right move regardless of the branch-split question.
+
+**Conclusion:** the accumulate-on-`main`/consume-on-`release-test` split is not blocked by how
+Changesets actually behaves under git. The common case (changesets added and left alone until
+consumed) merges and re-merges cleanly indefinitely. The one real risk (editing an already-
+consumed changeset) is rare, easy to explain, trivial to resolve when it happens, and cheap to
+guard against with a lint rule. This clears the compatibility concern that was blocking commitment
+to the Phase 3.1 migration; adopting Changesets does not require abandoning the `main`-stays-
+version-free requirement.
+
+---
+
+## 10. Open questions to resolve when abstracting this into an agentics convention
 
 - Does every monorepo adopting this pattern need the `main` = `0.0.0-dev` placeholder
   convention, or is that specific to repos where Jenkins reads the version field directly rather

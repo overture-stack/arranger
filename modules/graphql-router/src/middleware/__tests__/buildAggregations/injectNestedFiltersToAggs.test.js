@@ -70,4 +70,59 @@ suite('middleware/injectNestedFiltersToAggs', () => {
 		assert.deepEqual(aggs, expectedOriginalAggs);
 	});
 
+	test('2.injectNestedFiltersToAggs applies a configured nestingPrefix before comparing the aggregation field against nested sqon filters', () => {
+		const aggs = {
+			'biomarker.alc:nested': {
+				nested: { path: 'data.biomarker' },
+				aggs: {
+					'biomarker.alc': {
+						terms: { field: 'data.biomarker.alc', size: 300000 },
+					},
+				},
+			},
+		};
+
+		const nestedSqonFilters = {
+			'data.biomarker': [
+				{
+					op: 'in',
+					content: { fieldName: 'data.biomarker.alc', value: ['SOME_VALUE'] },
+				},
+			],
+		};
+
+		const result = injectNestedFiltersToAggs({ aggs, nestedSqonFilters, nestingPrefix: 'data' });
+
+		// the filter is on the same field this aggregation is for, so it's excluded from `should`
+		// (self-filtering exclusion), the same behaviour as the unprefixed case, just correctly
+		// matched against the real, prefixed ES path instead of the clean response-facing name.
+		assert.deepEqual(result['biomarker.alc:nested'].aggs['data.biomarker:filtered'].filter.bool.should, []);
+	});
+
+	test("3.injectNestedFiltersToAggs still includes a nested filter on a different field, even with nestingPrefix configured", () => {
+		const aggs = {
+			'biomarker.alc:nested': {
+				nested: { path: 'data.biomarker' },
+				aggs: {
+					'biomarker.alc': {
+						terms: { field: 'data.biomarker.alc', size: 300000 },
+					},
+				},
+			},
+		};
+
+		const nestedSqonFilters = {
+			'data.biomarker': [
+				{
+					op: 'in',
+					content: { fieldName: 'data.biomarker.anc', value: ['SOME_VALUE'] },
+				},
+			],
+		};
+
+		const result = injectNestedFiltersToAggs({ aggs, nestedSqonFilters, nestingPrefix: 'data' });
+
+		assert.equal(result['biomarker.alc:nested'].aggs['data.biomarker:filtered'].filter.bool.should.length, 1);
+	});
+
 });

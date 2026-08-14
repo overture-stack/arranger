@@ -6,7 +6,7 @@ import { merge } from 'lodash-es';
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
-import getGraphQLRoutes from '#graphqlRoutes.js';
+import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
 import { getIndexMapping } from '#searchClient/index.js';
 import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
@@ -19,6 +19,15 @@ export const mergeConfigs = <Context extends ArrangerBaseContext>(
 	fallback: Partial<ConfigsObject<Context>>,
 	custom: Partial<ConfigsObject<Context>>,
 ): Partial<ConfigsObject<Context>> => merge({}, fallback, custom);
+
+/** Resolves the identifier used in log output for this catalogue: an explicit `catalogueId`, falling back to `documentType`, then to a generic placeholder when neither is available. */
+export const resolveLabel = ({
+	catalogueId,
+	documentType,
+}: {
+	catalogueId?: string;
+	documentType?: string;
+}): string => catalogueId || documentType || FALLBACK_LABEL;
 
 export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
 	configs,
@@ -38,24 +47,28 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
 // question: should global filters be allowed?
 
 const arrangerRouter = async <Context extends ArrangerBaseContext>({
+	catalogueId,
 	configs: customConfigs = {},
 	configsSource = '',
 	esClient: customEsClient = undefined,
 	getServerSideFilter = getDefaultServerSideFilter,
 	graphqlOptions = {},
 }: {
+	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. Falls back to `documentType` when not provided. */
+	catalogueId?: string;
 	configs: Partial<ConfigsObject<Context>>;
 	configsSource?: string; // TODO: remove by v3.2
 	esClient?: SearchClient;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 }): Promise<Router> => {
+	const aggregatedConfigs = mergeConfigs(fallbackConfigs, customConfigs);
+	const label = resolveLabel({ catalogueId, documentType: aggregatedConfigs[configRootProperties.DOCUMENT_TYPE] });
+
 	// TODO: set up a real logger... winston or pino?
-	console.log('\n------\nInitializing an Arranger instance:');
+	console.log(`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
 
 	try {
-		const aggregatedConfigs = mergeConfigs(fallbackConfigs, customConfigs);
-
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
 			aggregatedConfigs,
 			customEsClient,
@@ -77,6 +90,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		const mappingFromIndex = await getIndexMapping({
 			enableDebug,
+			nestingPrefix: configs[configOptionalProperties.NESTING_PREFIX],
 			searchClient: esClient,
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});
@@ -106,7 +120,9 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			esClient,
 			getServerSideFilter, // TODO: Extend for multicatalogue per-catalogue filters
 			graphqlOptions,
+			label,
 			mappingFromIndex,
+			rethrowOnError: true,
 		});
 
 		router.use('/', graphQLRoutes);
@@ -120,9 +136,15 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		return router;
 	} catch (err) {
-		console.error('\n------\nError initializing Arranger instance:', err);
-		// TODO: create a fallback route to indicate the server needs attention
-		throw new Error('Failed to initialize Arranger server'); // Rethrow for better error propagation
+		// The full error (stack trace, cause chain) is debug-only noise once a caller classifies
+		// and logs this failure itself (see classifyCatalogueFailureReason); this rethrow's cause
+		// still carries the original error for that classification to inspect.
+		aggregatedConfigs.enableDebug &&
+			console.error(
+				`\n${logSeparator(label)}\nError initializing Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
+				err,
+			);
+		throw new Error('Failed to initialize Arranger server', { cause: err });
 	}
 };
 

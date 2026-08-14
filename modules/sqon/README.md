@@ -91,6 +91,29 @@ SqonBuilder.in('status', ['active'])
 	.toValue();
 ```
 
+### Preserving a stable top-level shape
+
+Any `SqonBuilder` construction collapses a single-item `and`/`or` combination down to its sole
+child: `SqonBuilder.and([oneFilter]).toValue()` returns `oneFilter` itself, not
+`{ op: 'and', content: [oneFilter] }`. That's deliberate, it's why building one filter gives you
+back a clean leaf instead of a pointless wrapper, but it means the shape of a builder's output
+depends on how many items ended up in it, not just what you called.
+
+If something downstream needs the top level to always be a combination (for example, code that
+does `sqon.content.map(...)` assuming `content` is always an array), reach for `asCombination()`
+instead of a builder call for that specific construction: it wraps a lone node in a combination but
+never unwraps one that's already there, so the result's `content` is always an array, regardless of
+how many items it holds.
+
+```ts
+import { asCombination, SqonBuilder, type SqonNode } from '@overture-stack/sqon';
+
+function addFirstFilter(newFilter: SqonNode): SqonNode {
+	// Always { op: 'and', content: [newFilter] }, never collapsed to newFilter itself.
+	return asCombination(newFilter);
+}
+```
+
 ### Type reference
 
 | Type                | What it is                                                                          |
@@ -116,3 +139,4 @@ hand-rolling the same check against `node.op`.
 - Runtime-specific behavior (for example, warnings, normalization side-effects, ACL) belongs in consuming services.
 - The `wildcard` builder method emits `op: 'wildcard'`. The schema also accepts `op: 'filter'` as a legacy alias; `SqonBuilder.from()` normalizes it to `wildcard` (see "Parsing and validating an incoming SQON" above).
 - `pivot` (on any leaf or combination node) is an optional ES/OpenSearch nested-path scoping field. It has no meaning for a non-ES/OS consumer (e.g. a flat JSONB column): safe to ignore rather than an oversight if your SQL/query generation doesn't reference it.
+- `SqonBuilder` always collapses a single-item `and`/`or` down to its sole child; use `asCombination()` when a stable, always-a-combination shape matters more than the minimal form (see "Preserving a stable top-level shape" above).

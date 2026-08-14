@@ -3,6 +3,7 @@ export * from './Arranger/index.js';
 export {
 	DataContext as ArrangerDataContext,
 	DataProvider as ArrangerDataProvider,
+	useArrangerConfig,
 	useDataContext as useArrangerData,
 	withData as withArrangerData,
 } from './DataContext/index.js';
@@ -10,7 +11,18 @@ export { default as Query, withQuery } from './Query.js';
 export { default as QuickSearch } from './QuickSearch/index.js';
 // TODO: Deprecate "CurrentSQON" component name as unsemantical,
 // remove SQONView (duplicate of CurrentSQON to produce the same log warning)
-export { CurrentSQON, default as SQONViewer, SQONView } from './SQONViewer/index.js';
+export {
+	Bubble,
+	CurrentSQON,
+	FieldName,
+	Op,
+	SQONGroup,
+	SQONView,
+	default as SQONViewer,
+	SQONWrapper,
+	useDataBubbles,
+	Value,
+} from './SQONViewer/index.js';
 export {
 	ColumnsSelectButton,
 	CountDisplay,

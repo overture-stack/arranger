@@ -59,6 +59,21 @@ the larger value), unwraps single-item wrappers, and removes empty combinations.
 The ported version operates on `SqonNode` types from this package's Zod schema, not `sqon-builder`'s
 internal types.
 
+### The single-item unwrap is real, and can surprise a consumer expecting a stable shape
+
+`reduceSqon`'s single-item unwrap (ported from `sqon-builder`, not new here) means
+`SqonBuilder.and([oneFilter]).toValue()` returns `oneFilter` itself, not
+`{ op: 'and', content: [oneFilter] }`. A real incident: a consumer's SQON-rendering component
+assumed the top level was always a combination (`sqon.content.map(...)`, with no shape check) and
+crashed the moment a caller built its first filter through `SqonBuilder` instead of a hand-written
+object literal, since a lone filter collapses to a bare leaf and `content` stops being an array.
+
+This isn't a bug to route around case by case: `asCombination(node, op = 'and')` is exported for
+exactly this, wrap a node in a combination if it isn't already one, without ever unwrapping a
+single-item result the way builder methods do. Prefer it over a hand-rolled
+`{ op: 'and', content: [node] }` literal wherever a stable, always-a-combination shape is the actual
+requirement.
+
 ### What was not ported
 
 - `cloneDeepValues`: a workaround for the `& SQON` anti-pattern; has no purpose in the new design.

@@ -7,6 +7,7 @@ import {
 	serverIntrospectionSchema,
 	sqonIntrospectionSchema,
 } from '#arranger/types.js';
+import { registerBuildSqonTool } from '#mcp/buildSqonTool.js';
 import { registerExecuteQueryTool } from '#mcp/executeQueryTool.js';
 import { SQON_CHEAT_SHEET } from '#mcp/sqonCheatSheet.js';
 import { type McpServerDeps } from '#server.js';
@@ -72,6 +73,8 @@ export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
 			};
 		},
 	);
+
+	registerBuildSqonTool(server, deps);
 
 	registerExecuteQueryTool(server, deps);
 };

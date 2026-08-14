@@ -17,11 +17,12 @@ import {
 	type serverConfigProperties,
 } from './constants.js';
 
-export type CatalogsMap = Record<string, Partial<ArrangerConfigs<any>>>;
+export type CataloguesMap = Record<string, Partial<ArrangerConfigs<ArrangerBaseContext>>>;
 
 export type HealthConfigs = {
 	[serverConfigProperties.PING_MS]: number;
 	[serverConfigProperties.PING_PATH]: string;
+	[serverConfigProperties.READY_PATH]: string;
 };
 
 export type BaseServerConfigs = {
@@ -76,6 +77,6 @@ export type ExternalConfigs = Partial<
 >;
 
 export type AllServerConfigs = {
-	catalogs: CatalogsMap;
+	catalogs: CataloguesMap;
 	health: HealthConfigs;
 } & BaseServerConfigs;

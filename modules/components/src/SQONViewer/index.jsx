@@ -8,7 +8,7 @@ import noopFn, { emptyObj } from '#utils/noops.js';
 
 import EmptyMessage from './EmptyMessage.js';
 import { Op, SQONGroup, SQONValueGroup, SQONWrapper, useDataBubbles } from './helpers.js';
-import { isWildcardFilter, toggleSQON, replaceFilterSQON } from './utils.js';
+import { getValueSQONValues, isWildcardFilter, toggleSQON, replaceFilterSQON } from './utils.js';
 
 /**
  * @param {import('./types.js').SQONViewerProps} props
@@ -60,7 +60,7 @@ const SQONViewer = ({
 							content: { fieldName, fieldNames, entity },
 						} = valueSQON;
 
-						const value = valueSQON.content.value ? [valueSQON.content.value] : [];
+						const value = getValueSQONValues(valueSQON);
 						const hasMultipleValues = value.length > 1;
 						const valuesToDisplay = isExpanded(valueSQON) ? value : take(value, 2);
 

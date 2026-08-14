@@ -1,7 +1,9 @@
+import { configOptionalProperties } from '@overture-stack/arranger-types/configs/constants';
 import { get, isEmpty, uniq } from 'lodash-es';
 import { v4 as uuid } from 'uuid';
 
 import { buildQuery } from '#middleware/index.js';
+import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
 import compileFilter from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
@@ -12,6 +14,7 @@ const retrieveSetIds = async ({
 	query,
 	path,
 	sort,
+	nestingPrefix,
 	BULK_SIZE = 1000,
 	trackTotalHits = true,
 }) => {
@@ -25,13 +28,18 @@ const retrieveSetIds = async ({
 
 		const response = await esSearch(esClient)({
 			index,
-			sort: sort.map(({ fieldName, order }) => `${fieldName}:${order || 'asc'}`),
+			// `_id` is an ES meta field, never part of the document's own data, so it must never be
+			// prefixed even when the catalogue's real fields live under a nestingPrefix envelope.
+			sort: sort.map(
+				({ fieldName, order }) =>
+					`${fieldName === '_id' ? fieldName : applyNestingPrefix(fieldName, nestingPrefix)}:${order || 'asc'}`,
+			),
 			size: BULK_SIZE,
 			track_total_hits: trackTotalHits,
 			body,
 		});
 
-		const hits = response?.body?.hits;
+		const hits = unwrapHits(response?.body?.hits, nestingPrefix);
 		const ids = hits?.hits.map((x) => get(x, `_source.${path.split('__').join('.')}`, x._id || '')) || [];
 
 		const nextSearchAfter = sort
@@ -58,12 +66,14 @@ const retrieveSetIds = async ({
 export const saveSet =
 	({ getServerSideFilter, setsIndex, types }) =>
 	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
-		const { nested_fieldNames: nestedFieldNames, index } = types.find(([, x]) => x.name === type)[1];
+		const { nested_fieldNames: nestedFieldNames, index, config } = types.find(([, x]) => x.name === type)[1];
+		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
 		const { esClient } = context;
 
 		const query = buildQuery({
 			caller: 'resolveSets',
 			nestedFieldNames,
+			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: sqon,
 				serverSideFilter: getServerSideFilter(context),
@@ -75,6 +85,7 @@ export const saveSet =
 			index,
 			query,
 			path,
+			nestingPrefix,
 			sort:
 				sort && sort.length
 					? sort

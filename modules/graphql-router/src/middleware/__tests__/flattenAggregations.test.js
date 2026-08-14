@@ -300,4 +300,40 @@ suite('middleware/flattenAggregtions', () => {
 		});
 	});
 
+	test('2.flattenAggregations unwraps a configured nestingPrefix from a top_hits bucket\'s _source', () => {
+		const input = {
+			bmi: {
+				buckets: [
+					{
+						key: 'normal',
+						doc_count: 1,
+						'bmi.hits': { hits: { hits: [{ _source: { data: { bmi: 22.5 } } }] } },
+					},
+				],
+			},
+		};
+
+		const output = flattenAggregations({ aggregations: input, nestingPrefix: 'data' });
+
+		assert.deepEqual(output.bmi.buckets[0].top_hits, { data: { bmi: 22.5 }, bmi: 22.5 });
+	});
+
+	test('3.flattenAggregations leaves a top_hits bucket\'s _source unchanged when no nestingPrefix is configured', () => {
+		const input = {
+			bmi: {
+				buckets: [
+					{
+						key: 'normal',
+						doc_count: 1,
+						'bmi.hits': { hits: { hits: [{ _source: { bmi: 22.5 } }] } },
+					},
+				],
+			},
+		};
+
+		const output = flattenAggregations({ aggregations: input });
+
+		assert.deepEqual(output.bmi.buckets[0].top_hits, { bmi: 22.5 });
+	});
+
 });

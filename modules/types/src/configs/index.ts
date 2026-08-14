@@ -43,7 +43,7 @@ export type AggConfigs = {
 };
 
 export type ChartConfigs = {
-	[chartsProperties.QUERY]: string;
+	[chartsProperties.QUERY]?: string;
 };
 
 export type ColumnConfigs = {
@@ -85,7 +85,7 @@ export type ExtendedConfigs = {
 };
 
 export type FacetsConfigs = {
-	[facetsProperties.AGGS]: AggConfigs[];
+	[facetsProperties.AGGS]?: AggConfigs[];
 };
 
 export type MatchBoxConfigs = {
@@ -94,8 +94,8 @@ export type MatchBoxConfigs = {
 };
 
 export type SetsConfigs = {
-	[setsProperties.INDEX]: string;
-	[setsProperties.TYPE]: string;
+	[setsProperties.INDEX]?: string;
+	[setsProperties.TYPE]?: string;
 };
 
 export type SortingConfigs = {
@@ -105,7 +105,7 @@ export type SortingConfigs = {
 };
 
 export type TableConfigs = {
-	[tableProperties.COLUMNS]: ColumnConfigs[];
+	[tableProperties.COLUMNS]?: ColumnConfigs[];
 	[tableProperties.DEFAULT_SORTING]?: SortingConfigs[];
 	[tableProperties.MAX_RESULTS_WINDOW]?: number;
 	[tableProperties.ROW_ID_FIELD_NAME]?: string;
@@ -178,6 +178,7 @@ export type ConfigsObject<Context> = {
 		[configOptionalProperties.ES_HOST]: string;
 		[configOptionalProperties.GRAPHQL_MAX_ALIASES]: number;
 		[configOptionalProperties.GRAPHQL_MAX_DEPTH]: number;
+		[configOptionalProperties.NESTING_PREFIX]: string;
 		[configOptionalProperties.NETWORK_AGGREGATION]?: NetworkConfig<Context>;
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries

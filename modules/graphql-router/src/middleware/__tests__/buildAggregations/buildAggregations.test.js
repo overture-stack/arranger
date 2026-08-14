@@ -246,6 +246,126 @@ suite('middleware/buildAggregations', () => {
 		assert.deepEqual(actualOutput, expectedOutput);
 	});
 
+	test('2b.buildAggregations applies a configured nestingPrefix to ES field paths while keeping response keys clean', () => {
+		const nestedFieldNames = ['biomarker'];
+
+		const input = {
+			aggregationsFilterThemselves: false,
+			graphqlFields: {
+				biomarker__alc: { buckets: { key: {} } },
+			},
+			nestedFieldNames,
+			nestingPrefix: 'data',
+			query: {
+				bool: {
+					must: [
+						{
+							nested: {
+								path: 'data.biomarker',
+								query: {
+									bool: {
+										must: [
+											{
+												terms: {
+													'data.biomarker.alc': ['5'],
+													boost: 0,
+												},
+											},
+										],
+									},
+								},
+							},
+						},
+					],
+				},
+			},
+			sqon: {
+				content: [
+					{
+						content: {
+							fieldName: 'biomarker.alc',
+							value: ['5'],
+						},
+						op: 'in',
+					},
+				],
+				op: 'and',
+			},
+		};
+
+		const expectedOutput = {
+			'biomarker.alc:global': {
+				global: {},
+				aggs: {
+					'biomarker.alc:nested': {
+						nested: { path: 'data.biomarker' },
+						aggs: {
+							'data.biomarker:filtered': {
+								filter: {
+									bool: {
+										should: [],
+									},
+								},
+								aggs: {
+									'biomarker.alc:missing': {
+										aggs: { rn: { reverse_nested: {} } },
+										missing: { field: 'data.biomarker.alc' },
+									},
+									'biomarker.alc': {
+										aggs: { rn: { reverse_nested: {} } },
+										terms: { field: 'data.biomarker.alc', size: 300000 },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		};
+
+		const actualOutput = buildAggregations(input);
+
+		assert.deepEqual(actualOutput, expectedOutput);
+	});
+
+	test('2c.buildAggregations correctly wraps a real nested-within-nested field (e.g. treatment.chemotherapy), matching donor.yaml\'s actual structure', () => {
+		const input = {
+			aggregationsFilterThemselves: false,
+			graphqlFields: {
+				treatment__chemotherapy__drug_name: { buckets: { key: {} } },
+			},
+			nestedFieldNames: ['treatment', 'treatment.chemotherapy'],
+			nestingPrefix: 'data',
+			query: {},
+			sqon: { op: 'and', content: [] },
+		};
+
+		const expectedOutput = {
+			'treatment.chemotherapy.drug_name:nested': {
+				nested: { path: 'data.treatment' },
+				aggs: {
+					'treatment.chemotherapy.drug_name:nested': {
+						nested: { path: 'data.treatment.chemotherapy' },
+						aggs: {
+							'treatment.chemotherapy.drug_name': {
+								aggs: { rn: { reverse_nested: {} } },
+								terms: { field: 'data.treatment.chemotherapy.drug_name', size: 300000 },
+							},
+							'treatment.chemotherapy.drug_name:missing': {
+								aggs: { rn: { reverse_nested: {} } },
+								missing: { field: 'data.treatment.chemotherapy.drug_name' },
+							},
+						},
+					},
+				},
+			},
+		};
+
+		const actualOutput = buildAggregations(input);
+
+		assert.deepEqual(actualOutput, expectedOutput);
+	});
+
 	test('3.buildAggregations should handle `aggregations_filter_themselves` variable set to false', () => {
 		const sqon = {
 			content: [

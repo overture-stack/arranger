@@ -2,6 +2,14 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"noCheck": true, // TODO: remove this once we're fully TSd
-		"removeComments": true
+		"removeComments": true,
+		// Resets tsconfig.json's IDE-only sqon/types source aliases: the real build must resolve
+		// these as ordinary packages, not sibling source, so published/linked output is unaffected.
+		"paths": {
+			"#public": ["./public"],
+			"#*": ["./src/*"]
+		},
+		"rootDir": "./src",
+		"target": "es5"
 	}
 }

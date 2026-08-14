@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-import { resolveCatalogId } from './catalogId.js';
+import { resolveCatalogueId } from './catalogueId.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
-import type { AllServerConfigs, CatalogsMap } from './types/index.js';
+import type { AllServerConfigs, CataloguesMap } from './types/index.js';
 
 const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath,
@@ -14,7 +14,7 @@ const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath: string;
 	configsFromEnv: AllServerConfigs;
 	currentDirectory: string;
-}): Promise<CatalogsMap> => {
+}): Promise<CataloguesMap> => {
 	const usedIds = new Set<string>();
 	const resolvedBase = path.resolve(currentDirectory, catalogueConfigsPath);
 	const entries = await fs.promises.readdir(resolvedBase, { withFileTypes: true });
@@ -30,20 +30,20 @@ const buildCataloguesFromFolder = async ({
 			currentDirectory,
 		});
 
-		const catalogId = resolveCatalogId({
+		const catalogueId = resolveCatalogueId({
 			aggregatedConfigs,
 			configsPath,
 			usedIds,
 		});
-		console.log(`    Registered catalogue "${catalogId}"`);
+		console.log(`    Registered catalogue "${catalogueId}"`);
 
 		return {
-			[catalogId]: aggregatedConfigs,
+			[catalogueId]: aggregatedConfigs,
 		};
 	}
 
 	const subdirectories = getSubdirectories(entries);
-	const cataloguesMap: CatalogsMap = {};
+	const cataloguesMap: CataloguesMap = {};
 
 	if (subdirectories.length === 0) {
 		console.log('No JSON files or subdirectories found. Using env defaults.');
@@ -65,14 +65,14 @@ const buildCataloguesFromFolder = async ({
 				currentDirectory,
 			});
 
-			const catalogId = resolveCatalogId({
+			const catalogueId = resolveCatalogueId({
 				aggregatedConfigs,
 				configsPath,
 				usedIds,
 			});
 
-			cataloguesMap[catalogId] = aggregatedConfigs;
-			console.log(`    Registered catalogue "${catalogId}"`);
+			cataloguesMap[catalogueId] = aggregatedConfigs;
+			console.log(`    Registered catalogue "${catalogueId}"`);
 		} catch (err) {
 			console.log(`  Error loading catalogue from ${dir.name}:`, (err as Error).message);
 		}
@@ -80,14 +80,14 @@ const buildCataloguesFromFolder = async ({
 
 	if (Object.keys(cataloguesMap).length === 0) {
 		console.log('No catalogues loaded from subdirectories. Preserving env defaults.');
-		const catalogId = resolveCatalogId({
+		const catalogueId = resolveCatalogueId({
 			aggregatedConfigs: catalogs.fromEnv || {},
 			configsPath: resolvedBase,
 			usedIds,
 		});
 
 		return {
-			[catalogId]: catalogs.fromEnv || {},
+			[catalogueId]: catalogs.fromEnv || {},
 		};
 	}
 
@@ -119,15 +119,18 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 
 		return aggregatedConfigs;
 	} catch (err) {
-		configsFromEnv.enableDebug && err && console.log(`\n  DEBUG: ${err}\n`);
-		console.log('  - Defaulting to config values from the environment...');
-		return configsFromEnv;
+		const isMissingConfigsDirectory = (err as NodeJS.ErrnoException)?.code === 'ENOENT';
 
-		// return (
-		// 	validateProperties(configsFromEnv) ||
-		// 	// this is unreachable right now, but it's left here to cover edge cases from future implementation
-		// 	console.error(error || Error('Something went wrong while creating the configuration object.'))
-		// );
+		if (!isMissingConfigsDirectory) {
+			// A configs directory was found but couldn't be used (e.g. malformed JSON in
+			// single-catalogue mode, which has no sibling catalogue to isolate the failure from).
+			// Fail loudly rather than silently starting on env-only defaults.
+			throw err;
+		}
+
+		configsFromEnv.enableDebug && console.log(`\n  DEBUG: ${err}\n`);
+		console.log('  - No catalogue config directory found. Defaulting to config values from the environment...');
+		return configsFromEnv;
 	}
 };
 

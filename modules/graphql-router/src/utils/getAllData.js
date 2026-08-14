@@ -1,9 +1,10 @@
 import { PassThrough } from 'node:stream';
 
-import { configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configOptionalProperties, configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
 
 import fallbackConfigs from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
+import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
 
 import runQuery from './runQuery.js';
 
@@ -24,6 +25,7 @@ export default async ({
 	...rest
 }) => {
 	const { configs, enableDebug, esClient, mockSchema, schema } = ctx;
+	const nestingPrefix = configs.config?.[configOptionalProperties.NESTING_PREFIX];
 
 	// TODO: review what "configs" come in here, trim down to what's relevant in this context
 
@@ -38,7 +40,9 @@ export default async ({
 		stream.on('unpipe', () => console.log('STREAM UNPIPED'));
 	}
 
-	const esSort = sort.map(({ fieldName, order }) => ({ [fieldName]: order })).concat({ _id: 'asc' });
+	const esSort = sort
+		.map(({ fieldName, order }) => ({ [applyNestingPrefix(fieldName, nestingPrefix)]: order }))
+		.concat({ _id: 'asc' });
 
 	const nestedFieldNames = configs.extendedFields
 		.filter(({ type }) => type === 'nested')
@@ -48,6 +52,7 @@ export default async ({
 		caller: 'getAllData',
 		filters: sqon,
 		nestedFieldNames,
+		nestingPrefix,
 	});
 
 	runQuery({
@@ -68,10 +73,10 @@ export default async ({
 			enableDebug && console.debug('  DEBUG: runQuery completed, processing data...');
 
 			const allowCustomMaxRows =
-				configs.config[configRootProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
+				configs.config[configRootProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_ROWS];
 			const maxHits = allowCustomMaxRows
-				? maxRows || configs.config[downloadProperties.MAX_DOWNLOAD_ROWS]
-				: configs.config[downloadProperties.MAX_DOWNLOAD_ROWS];
+				? maxRows || configs.config[configRootProperties.DOWNLOADS][downloadProperties.MAX_ROWS]
+				: configs.config[configRootProperties.DOWNLOADS][downloadProperties.MAX_ROWS];
 
 			const hitsCount = data?.[configs.name]?.hits?.total || 0;
 			const total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount; // i.e. 'maxHits == 0' => hitCounts
@@ -115,13 +120,16 @@ export default async ({
 					console.log(`Stream writable: ${stream.writable}, destroyed: ${stream.destroyed}`);
 				}
 
-				const writeResult = stream.write({ hits: hits.map((hit) => hit?._source), total }, (err) => {
-					if (err) {
-						console.error(`Write callback error in step ${stepNumber + 1}:`, err);
-					} else {
-						enableDebug && console.debug(`  DEBUG: Write callback completed for step ${stepNumber + 1}`);
-					}
-				});
+				const writeResult = stream.write(
+					{ hits: hits.map((hit) => unwrapSource(hit?._source, nestingPrefix)), total },
+					(err) => {
+						if (err) {
+							console.error(`Write callback error in step ${stepNumber + 1}:`, err);
+						} else {
+							enableDebug && console.debug(`  DEBUG: Write callback completed for step ${stepNumber + 1}`);
+						}
+					},
+				);
 
 				enableDebug && console.debug(`  DEBUG: Write returned: ${writeResult} (false = backpressure)`);
 

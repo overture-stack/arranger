@@ -1,3 +1,4 @@
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import { Component } from '@reach/component-component';
 import { get } from 'lodash-es';
 import PropTypes from 'prop-types';
@@ -122,7 +123,7 @@ const BooleanFilter = (props) => {
 		ContainerComponent,
 	} = props;
 
-	const gqlField = fieldName.split('.').join('__');
+	const gqlField = sanitizeGraphqlFlatName(fieldName);
 	const query = `
 		query($sqon: JSON){
 			${arrangerIndex} {

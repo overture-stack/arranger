@@ -1,3 +1,4 @@
+import type { SearchEngineType } from '@overture-stack/arranger-types/configs';
 import {
 	configFeatureFlagProperties,
 	configOptionalProperties,
@@ -11,6 +12,19 @@ import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/too
 
 // TODO: make a more robust isProd helper (e.g. casing + alternatives like 'prod')
 const isProd = process.env.NODE_ENV === 'production';
+
+const isSearchEngineType = (value: string | undefined): value is SearchEngineType =>
+	value === 'elasticsearch' || value === 'opensearch';
+
+/** Validates SEARCH_ENGINE against the supported engines at the env-var boundary; an unrecognised value is warned about here rather than silently passed through or silently dropped. */
+const parseSearchEngine = (value: string | undefined): SearchEngineType | undefined => {
+	if (isSearchEngineType(value)) {
+		return value;
+	}
+
+	value && console.warn(`Unrecognised SEARCH_ENGINE value "${value}"; falling back to auto-detection.`);
+	return undefined;
+};
 
 const configsFromEnv = {
 	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')
@@ -42,7 +56,7 @@ const configsFromEnv = {
 			// ES Credentials (should come from env not files)
 			[configRootProperties.ES_PASS]: process.env.ES_PASS || '',
 			[configRootProperties.ES_USER]: process.env.ES_USER || '',
-			[configOptionalProperties.SEARCH_ENGINE]: process.env.SEARCH_ENGINE,
+			[configOptionalProperties.SEARCH_ENGINE]: parseSearchEngine(process.env.SEARCH_ENGINE),
 
 			// graphql security limits
 			[configOptionalProperties.GRAPHQL_MAX_ALIASES]: stringToNumber(process.env.GRAPHQL_MAX_ALIASES),
@@ -73,6 +87,7 @@ const configsFromEnv = {
 	health: {
 		pingMs: stringToNumber(process.env.PING_MS) || 2200,
 		pingPath: process.env.PING_PATH || '/ping',
+		readyPath: process.env.READY_PATH || '/ready',
 	},
 	serverPort: stringToNumber(process.env.SERVER_PORT) || 5050,
 };

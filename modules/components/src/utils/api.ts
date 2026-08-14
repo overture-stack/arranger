@@ -17,12 +17,13 @@ const defaultApiFetcher: APIFetcherFn = async (args) => {
 
 	if (cache.has(key)) return cache.get(key);
 
-	const { body, endpoint = '', endpointTag = '', headers = emptyObj, method = 'POST', url = ARRANGER_API } = args;
+	const { body, endpoint = '', endpointTag = '', headers = emptyObj, method = 'POST', signal, url = ARRANGER_API } = args;
 
 	const response = await axios(urlJoin(url, endpoint, endpointTag), {
-		data: JSON.stringify(body),
+		...(body !== undefined && { data: JSON.stringify(body) }),
 		headers: { ...alwaysSendHeaders, ...headers },
 		method,
+		signal,
 	});
 
 	cache.set(key, response);

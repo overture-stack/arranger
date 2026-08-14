@@ -33,8 +33,7 @@ const inputSchema = {
 	sqon: zod
 		.unknown()
 		.describe(
-			'SQON filter for the query (required). ' +
-				'Call get_sqon_schema before using execute_query for SQON grammar, operators, and worked examples. ' +
+			'SQON filter for the query (required). Call build_sqon to generate valid SQON for this input.' +
 				'For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null.',
 		),
 	queryType: zod
@@ -231,11 +230,11 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 			description:
 				'Execute a SQON-filtered query against one Arranger catalogue and return matching documents (hits), per-field aggregation summaries, or both. ' +
 				'Before calling this tool you MUST: ' +
-				'1. use list_catalogues to find the catalogue. ' +
+				'1. call list_catalogues to find the catalogue. ' +
 				'2. call get_catalogue_fields to discover valid field names and per-type SQON operators. ' +
-				'3. call get_sqon_schema to learn how to construct valid SQON and see worked examples. ' +
+				'3. use build_sqon to construct a valid SQON filter and pass the resulting SQON unchanged as input for this tool. ' +
 				'DO NOT guess field names, you MUST call get_catalogue_fields. ' +
-				'DO NOT construct "sqon" without calling get_sqon_schema. ' +
+				'DO NOT construct "sqon" without calling build_sqon. ' +
 				'The user is asked to review and confirm the generated GraphQL query before it runs (when the client supports elicitation).',
 			inputSchema,
 			outputSchema,
@@ -317,7 +316,7 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 				if (response.errors && response.errors.length > 0) {
 					const messages = response.errors.map(formatGraphQLError).join('\n- ');
 					return errorResult(
-						`Arranger rejected the query with GraphQL errors:\n- ${messages}\n\nReview the offending field(s) with get_catalogue_fields and the SQON structure with get_sqon_schema, then retry.`,
+						`Arranger rejected the query with GraphQL errors:\n- ${messages}\n\nReview the offending field(s) with get_catalogue_fields and rebuild the filter with build_sqon, then retry.`,
 					);
 				}
 

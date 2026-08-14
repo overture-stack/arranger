@@ -1,8 +1,8 @@
+import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
+
 /**
- * Makes a field name usable in a GraphQL Schema.
- *
- * This will replace all `.` characters with `__`, which is intended to be used to indicate
- * a nested relationship since GraphQL schemas cannot use `.` characters.
+ * Makes a field name usable in a GraphQL Schema: flattens `.` (nesting) to `__`, and any other
+ * character GraphQL disallows in a name to `_`. See `sanitizeGraphqlFlatName` for the full rule.
  */
-const convertNameForGraphql = (name: string): string => name.split('.').join('__');
+const convertNameForGraphql = (name: string): string => sanitizeGraphqlFlatName(name);
 export default convertNameForGraphql;

@@ -10,12 +10,19 @@ Arranger is a versatile, model-agnostic data discovery API for OpenSearch and El
 
 A **catalogue** is one searchable dataset in Arranger. It maps to a single Elasticsearch index and carries its own set of JSON configuration files:
 
-- `base.json` - the Elasticsearch index name and basic settings
-- `extended.json` - display names, types, and visibility for each field
-- `facets.json` - which fields to expose as filterable facet panels
-- `table.json` - which fields to show as columns in the data table
+- `base.json`: the Elasticsearch index name and basic settings
+- `extended.json`: display names, types, and visibility for each field
+- `facets.json`: which fields to expose as filterable facet panels
+- `table.json`: which fields to show as columns in the data table
 
 A running Arranger server can host one or more catalogues, each in its own subdirectory under the configuration root directory.
+
+A catalogue is identified two different ways, and they are not interchangeable:
+
+- **`catalogueId`**: the actual unique identifier. Defaults to the config subdirectory name, overridable via `catalogId` in `base.json`. This is what routes requests (`/{catalogueId}/graphql` in multicatalogue mode) and what catalogues are keyed by internally; a server enforces this uniqueness structurally, by using it as a lookup key.
+- **`documentType`**: the GraphQL root query field name for that catalogue's data. Since each catalogue gets its own independent GraphQL schema, nothing stops two different catalogues on the same server from configuring the same `documentType`. Do not treat `documentType` as a unique identifier, and do not build your own `documentType`-to-`catalogueId` lookup that assumes a single match: check for more than one, and fail rather than silently picking one, since nothing server-side prevents the collision.
+
+The server itself follows this same rule where it accepts either value in a path (`/{catalogueId}/graphql`, `/introspection/:catalogueId`): a real `catalogueId` always matches first, and a `documentType` is only accepted when it names exactly one catalogue. A `documentType` shared by several catalogues gets a `409` with every matching `catalogueId`, not a silent, arbitrary pick. See [Introspection API](reference/05-introspection.md) for the exact response shape.
 
 ## Facets, buckets, and aggregations
 
@@ -33,7 +40,7 @@ Behind each facet is an Elasticsearch **aggregation**: the query Arranger sends 
 
 ## Filters, filter clauses, and SQONs
 
-When a user selects one or more facet options, their selection is encoded as a **SQON** (Serializable Query Object Notation) - Arranger's query language. A SQON is a tree structure made up of boolean combinators (`and`, `or`, `not`) and **filter clauses**.
+When a user selects one or more facet options, their selection is encoded as a **SQON** (Serializable Query Object Notation), Arranger's query language. A SQON is a tree structure made up of boolean combinators (`and`, `or`, `not`) and **filter clauses**.
 
 A **filter clause** is a single field-level condition:
 
@@ -49,7 +56,7 @@ A **filter clause** is a single field-level condition:
 
 Within a filter clause, the `content` object identifies which field the condition applies to. For most operators this is a single `fieldName` property (a string): the name of one index field. Text-search operators (`wildcard`, `fuzzy`) instead use `fieldNames` (a string array), because they match a single value against multiple fields simultaneously.
 
-`fieldName` and `fieldNames` are property names within a filter clause's `content` object - not references to a field as a catalogue-configuration concept. Do not abbreviate either to `field` in code, comments, parameters, or documentation: `field` is ambiguous, while `fieldName` and `fieldNames` are unambiguous names for specific properties in the SQON schema.
+`fieldName` and `fieldNames` are property names within a filter clause's `content` object, not references to a field as a catalogue-configuration concept. Do not abbreviate either to `field` in code, comments, parameters, or documentation: `field` is ambiguous, while `fieldName` and `fieldNames` are unambiguous names for specific properties in the SQON schema.
 
 A SQON wraps one or more filter clauses under a combinator:
 
@@ -71,6 +78,8 @@ The word **filter** is used two ways: as a verb ("users filter the dataset") and
 |---|---|
 | **model-agnostic** | Arranger does not assume a specific data model or schema. Any correctly structured OpenSearch or Elasticsearch index can be used as a catalogue. |
 | **catalogue** | One searchable dataset in Arranger, backed by an Elasticsearch index with its own configuration directory. Canadian spelling. |
+| **`catalogueId`** | The unique identifier for a catalogue; defaults to its config subdirectory name. Routes requests in multicatalogue mode. Not the same as `documentType`; see "Catalogues and configuration" above. |
+| **`documentType`** | The GraphQL root query field name for a catalogue's data. Not guaranteed unique across catalogues on the same server; never use it as a unique identifier in place of `catalogueId`. |
 | **configuration** | The JSON files defining a catalogue (base, extended, facets, table). Use "configuration" in prose; `config` is acceptable in code identifiers. |
 | **directory** | A filesystem directory. Not "folder". |
 | **aggregation** | The Elasticsearch operation that computes buckets for a facet. |

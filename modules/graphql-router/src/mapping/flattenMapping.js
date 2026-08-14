@@ -10,12 +10,12 @@ const flattenMapping = (properties, parent = '') => {
 		Object.entries(properties).map(([field, data]) =>
 			!data.properties
 				? {
-					field: joinWith()(parent) + field,
+					fieldName: joinWith()(parent) + field,
 					type: data.type,
 				}
 				: [
 					{
-						field: joinWith()(parent) + field,
+						fieldName: joinWith()(parent) + field,
 						type: data.type || 'object',
 					},
 					...flattenMapping(data.properties, joinWith()(parent) + field),
