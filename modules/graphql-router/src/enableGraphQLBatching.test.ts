@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import type { AddressInfo } from 'node:net';
 import { suite, test } from 'node:test';
 
-import axios from 'axios';
 import express from 'express';
 import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import request from 'supertest';
 
 import { createEndpoint } from '#graphqlRoutes.js';
 
@@ -22,8 +21,7 @@ const schema = new GraphQLSchema({
 
 const HEALTH_QUERY = '{ health }';
 
-const startServer = async ({ enableGraphQLBatching }: { enableGraphQLBatching?: boolean } = {}) => {
-	const app = express();
+const buildApp = async ({ enableGraphQLBatching }: { enableGraphQLBatching?: boolean } = {}) => {
 	const arrangerRouter = await createEndpoint({
 		disablePlayground: true,
 		enableDebug: false,
@@ -31,82 +29,43 @@ const startServer = async ({ enableGraphQLBatching }: { enableGraphQLBatching?: 
 		schema,
 	});
 
-	app.use(arrangerRouter);
-
-	return new Promise<{ close: () => Promise<void>; url: string }>((resolve) => {
-		const server = app.listen(0, () => {
-			const { port } = server.address() as AddressInfo;
-
-			resolve({
-				close: () =>
-					new Promise<void>((closeResolve, closeReject) => {
-						server.close((err) => {
-							if (err) {
-								closeReject(err);
-								return;
-							}
-
-							closeResolve();
-						});
-					}),
-				url: `http://127.0.0.1:${port}/graphql`,
-			});
-		});
-	});
+	return express().use(arrangerRouter);
 };
 
 suite('enableGraphQLBatching', () => {
-	test('rejects an array of batched operations with a 400 when enableGraphQLBatching is left unset', async (t) => {
-		const server = await startServer();
-		t.after(server.close);
-
-		const response = await axios.post(
-			server.url,
-			[{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }],
-			{ validateStatus: () => true },
-		);
+	test('rejects an array of batched operations with a 400 when enableGraphQLBatching is left unset', async () => {
+		const response = await request(await buildApp())
+			.post('/graphql')
+			.send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]);
 
 		assert.equal(response.status, 400);
-		assert.ok(response.data?.errors?.some((e: { message: string }) => /batch/i.test(e.message)));
+		assert.ok(response.body?.errors?.some((e: { message: string }) => /batch/i.test(e.message)));
 	});
 
-	test('rejects an array of batched operations with a 400 when enableGraphQLBatching is false', async (t) => {
-		const server = await startServer({ enableGraphQLBatching: false });
-		t.after(server.close);
-
-		const response = await axios.post(
-			server.url,
-			[{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }],
-			{ validateStatus: () => true },
-		);
+	test('rejects an array of batched operations with a 400 when enableGraphQLBatching is false', async () => {
+		const response = await request(await buildApp({ enableGraphQLBatching: false }))
+			.post('/graphql')
+			.send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]);
 
 		assert.equal(response.status, 400);
-		assert.ok(response.data?.errors?.some((e: { message: string }) => /batch/i.test(e.message)));
+		assert.ok(response.body?.errors?.some((e: { message: string }) => /batch/i.test(e.message)));
 	});
 
-	test('processes an array of batched operations when enableGraphQLBatching is true', async (t) => {
-		const server = await startServer({ enableGraphQLBatching: true });
-		t.after(server.close);
-
-		const response = await axios.post(
-			server.url,
-			[{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }],
-			{ validateStatus: () => true },
-		);
+	test('processes an array of batched operations when enableGraphQLBatching is true', async () => {
+		const response = await request(await buildApp({ enableGraphQLBatching: true }))
+			.post('/graphql')
+			.send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]);
 
 		assert.equal(response.status, 200);
-		assert.ok(Array.isArray(response.data));
-		assert.equal(response.data.length, 2);
-		assert.ok(response.data.every((result: { data?: { health?: string } }) => result.data?.health === 'ok'));
+		assert.ok(Array.isArray(response.body));
+		assert.equal(response.body.length, 2);
+		assert.ok(response.body.every((result: { data?: { health?: string } }) => result.data?.health === 'ok'));
 	});
 
-	test('still processes a single (non-batched) operation when enableGraphQLBatching is left unset', async (t) => {
-		const server = await startServer();
-		t.after(server.close);
-
-		const response = await axios.post(server.url, { query: HEALTH_QUERY }, { validateStatus: () => true });
+	test('still processes a single (non-batched) operation when enableGraphQLBatching is left unset', async () => {
+		const response = await request(await buildApp()).post('/graphql').send({ query: HEALTH_QUERY });
 
 		assert.equal(response.status, 200);
-		assert.equal(response.data?.data?.health, 'ok');
+		assert.equal(response.body?.data?.health, 'ok');
 	});
 });

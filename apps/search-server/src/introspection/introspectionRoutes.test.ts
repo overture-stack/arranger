@@ -1,34 +1,10 @@
 import assert from 'node:assert/strict';
-import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { after, afterEach, suite, test } from 'node:test';
+import { suite, test } from 'node:test';
 
 import express, { Router } from 'express';
+import request from 'supertest';
 
 import createIntrospectionRoutes from './index.js';
-
-const openServers: Server[] = [];
-
-const runOn = (router: Router) => {
-	const app = express();
-	app.use(router);
-	const server = app.listen(0);
-	openServers.push(server);
-	const { port } = server.address() as AddressInfo;
-	return `http://127.0.0.1:${port}`;
-};
-
-afterEach(() => {
-	while (openServers.length) {
-		openServers.pop()?.close();
-	}
-});
-
-after(() => {
-	while (openServers.length) {
-		openServers.pop()?.close();
-	}
-});
 
 const fakeCatalogueRouter = (catalogueId: string) => {
 	const router = Router();
@@ -44,12 +20,10 @@ suite('createIntrospectionRoutes: /introspection/:catalogueId identifier resolut
 			catalogueStatuses: { mutation: { status: 'available' } },
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/introspection/mutation`);
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(express().use(router)).get('/introspection/mutation');
 
 		assert.equal(response.status, 200);
-		assert.equal(body.catalogueId, 'mutation');
+		assert.equal(response.body.catalogueId, 'mutation');
 	});
 
 	test('resolves a documentType naming exactly one catalogue to its real catalogueId', async () => {
@@ -68,12 +42,10 @@ suite('createIntrospectionRoutes: /introspection/:catalogueId identifier resolut
 			},
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/introspection/records`);
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(express().use(router)).get('/introspection/records');
 
 		assert.equal(response.status, 200);
-		assert.equal(body.catalogueId, 'mutation');
+		assert.equal(response.body.catalogueId, 'mutation');
 	});
 
 	test('returns 409 with every matching catalogueId when the documentType is shared by several catalogues', async () => {
@@ -92,14 +64,12 @@ suite('createIntrospectionRoutes: /introspection/:catalogueId identifier resolut
 			},
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/introspection/records`);
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(express().use(router)).get('/introspection/records');
 
 		assert.equal(response.status, 409);
-		assert.equal(body.documentType, 'records');
-		assert.equal((body.error as { code: string }).code, 'ambiguous_document_type');
-		assert.deepEqual((body.matchingCatalogueIds as string[]).sort(), ['correlation', 'mutation']);
+		assert.equal(response.body.documentType, 'records');
+		assert.equal(response.body.error.code, 'ambiguous_document_type');
+		assert.deepEqual((response.body.matchingCatalogueIds as string[]).sort(), ['correlation', 'mutation']);
 	});
 
 	test('an identifier matching no catalogue at all still 404s, unaffected by the resolution logic', async () => {
@@ -109,8 +79,7 @@ suite('createIntrospectionRoutes: /introspection/:catalogueId identifier resolut
 			catalogueStatuses: { donor: { status: 'available' } },
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/introspection/nonexistent`);
+		const response = await request(express().use(router)).get('/introspection/nonexistent');
 
 		assert.equal(response.status, 404);
 	});

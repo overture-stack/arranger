@@ -1,38 +1,13 @@
 import assert from 'node:assert/strict';
-import type { AddressInfo } from 'node:net';
-import { after, afterEach, suite, test } from 'node:test';
+import { suite, test } from 'node:test';
 
 import express, { Router } from 'express';
+import request from 'supertest';
 
 import arrangerRoutes, { buildCatalogueRouter } from './arrangerRoutes.js';
 
-const startServer = (router: Router) => {
-	const app = express();
-	app.use(router);
-	const server = app.listen(0);
-	const { port } = server.address() as AddressInfo;
-	return { baseUrl: `http://127.0.0.1:${port}`, server };
-};
-
-const openServers: ReturnType<typeof startServer>['server'][] = [];
-
-const runOn = (router: Router) => {
-	const { baseUrl, server } = startServer(router);
-	openServers.push(server);
-	return baseUrl;
-};
-
-afterEach(() => {
-	while (openServers.length) {
-		openServers.pop()?.close();
-	}
-});
-
-after(() => {
-	while (openServers.length) {
-		openServers.pop()?.close();
-	}
-});
+/** supertest requires a real Express app (or http.Server), not a bare Router: a Router's own internal fallthrough calls `next()`, which only resolves to a 404 when a real app supplies the default handler. */
+const asApp = (router: Router) => express().use(router);
 
 const fakeAvailableRouter = () => {
 	const router = Router();
@@ -42,10 +17,7 @@ const fakeAvailableRouter = () => {
 
 suite('arrangerRoutes', () => {
 	test('throws when no catalogues are configured', async () => {
-		await assert.rejects(
-			arrangerRoutes({ catalogs: {}, enableDebug: false }),
-			/No catalogues configured/,
-		);
+		await assert.rejects(arrangerRoutes({ catalogs: {}, enableDebug: false }), /No catalogues configured/);
 	});
 
 	test("forwards each catalogue's own key as catalogueId to buildCatalogueRouterFn", async () => {
@@ -103,18 +75,17 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(Router().use('/', (req, res, next) => {
+		const router = Router().use('/', (req, res, next) => {
 			req.url = '/introspection';
 			return catalogueRouters.broken?.(req, res, next);
-		}));
+		});
 
-		const response = await fetch(`${baseUrl}/anything`);
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).get('/anything');
 
 		assert.equal(response.status, 200);
-		assert.equal(body.catalogueId, 'broken');
-		assert.equal(body.status, 'failed');
-		assert.equal((body.error as { code: string })?.code, 'unknown_error');
+		assert.equal(response.body.catalogueId, 'broken');
+		assert.equal(response.body.status, 'failed');
+		assert.equal(response.body.error?.code, 'unknown_error');
 	});
 
 	test("a failed catalogue's status carries its documentType and description from config, same as the server-wide listing would show", async () => {
@@ -128,18 +99,15 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(
-			Router().use('/', (req, res, next) => {
-				req.url = '/introspection';
-				return catalogueRouters.broken?.(req, res, next);
-			}),
-		);
+		const router = Router().use('/', (req, res, next) => {
+			req.url = '/introspection';
+			return catalogueRouters.broken?.(req, res, next);
+		});
 
-		const response = await fetch(`${baseUrl}/anything`);
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).get('/anything');
 
-		assert.equal(body.documentType, 'widget');
-		assert.equal(body.description, 'A catalogue that never comes up.');
+		assert.equal(response.body.documentType, 'widget');
+		assert.equal(response.body.description, 'A catalogue that never comes up.');
 	});
 
 	test("a failed catalogue's description is omitted when not configured, same as an available catalogue", async () => {
@@ -151,17 +119,14 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(
-			Router().use('/', (req, res, next) => {
-				req.url = '/introspection';
-				return catalogueRouters.broken?.(req, res, next);
-			}),
-		);
+		const router = Router().use('/', (req, res, next) => {
+			req.url = '/introspection';
+			return catalogueRouters.broken?.(req, res, next);
+		});
 
-		const response = await fetch(`${baseUrl}/anything`);
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).get('/anything');
 
-		assert.equal('description' in body, false);
+		assert.equal('description' in response.body, false);
 	});
 
 	test("a failed catalogue's other paths (e.g. graphql) return 404 with a pointer to its introspection endpoint", async () => {
@@ -173,13 +138,11 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(catalogueRouters.broken as Router);
-		const response = await fetch(`${baseUrl}/graphql`, { method: 'POST' });
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(catalogueRouters.broken as Router)).post('/graphql');
 
 		assert.equal(response.status, 404);
-		assert.equal(body.status, 'failed');
-		assert.equal(body.details, '/introspection/broken');
+		assert.equal(response.body.status, 'failed');
+		assert.equal(response.body.details, '/introspection/broken');
 	});
 
 	test('the real buildCatalogueRouter is used by default when no override is provided', () => {
@@ -202,13 +165,11 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/records/graphql`, { method: 'POST' });
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).post('/records/graphql');
 
 		assert.equal(response.status, 200);
-		assert.equal(body.catalogueId, 'mutation');
-		assert.equal(body.path, '/graphql');
+		assert.equal(response.body.catalogueId, 'mutation');
+		assert.equal(response.body.path, '/graphql');
 	});
 
 	test('a literal catalogueId is left unrewritten even when the same string could also be read as a documentType', async () => {
@@ -221,11 +182,9 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/records/graphql`, { method: 'POST' });
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).post('/records/graphql');
 
-		assert.equal(body.catalogueId, 'records');
+		assert.equal(response.body.catalogueId, 'records');
 	});
 
 	test('a documentType shared by several catalogues returns 409 instead of silently picking one', async () => {
@@ -238,14 +197,12 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/records/graphql`, { method: 'POST' });
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).post('/records/graphql');
 
 		assert.equal(response.status, 409);
-		assert.equal(body.documentType, 'records');
-		assert.equal((body.error as { code: string }).code, 'ambiguous_document_type');
-		assert.deepEqual((body.matchingCatalogueIds as string[]).sort(), ['correlation', 'mutation']);
+		assert.equal(response.body.documentType, 'records');
+		assert.equal(response.body.error.code, 'ambiguous_document_type');
+		assert.deepEqual((response.body.matchingCatalogueIds as string[]).sort(), ['correlation', 'mutation']);
 	});
 
 	test('an identifier matching no catalogue at all still 404s, unaffected by the resolution logic', async () => {
@@ -258,8 +215,7 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/nonexistent/graphql`, { method: 'POST' });
+		const response = await request(asApp(router)).post('/nonexistent/graphql');
 
 		assert.equal(response.status, 404);
 	});
@@ -274,10 +230,8 @@ suite('arrangerRoutes', () => {
 			enableDebug: false,
 		});
 
-		const baseUrl = runOn(router);
-		const response = await fetch(`${baseUrl}/records/graphql?foo=bar`, { method: 'POST' });
-		const body = (await response.json()) as Record<string, unknown>;
+		const response = await request(asApp(router)).post('/records/graphql').query({ foo: 'bar' });
 
-		assert.deepEqual(body.query, { foo: 'bar' });
+		assert.deepEqual(response.body.query, { foo: 'bar' });
 	});
 });
