@@ -3,7 +3,9 @@
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.14",
 		"@modelcontextprotocol/sdk": "^1.29.0",
-		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router"
+		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
+		"@overture-stack/arranger-types": "file:../../modules/types",
+		"dotenv": "^16.6.1"
 	},
 	"devDependencies": {
 		"prettier": "^3.4.2",

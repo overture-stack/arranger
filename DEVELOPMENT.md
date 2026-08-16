@@ -49,6 +49,10 @@ make seed-es        # seeds test documents into file_centric_1.0
 
 `make start` brings up Elasticsearch, Kibana and a containerized Arranger server together; prefer `make start-es` when you are going to run the server yourself with `npm run dev:server`.
 
+**If `make start-es`/`make start` fails with a container name conflict** (`Container name ".../elasticsearch.local" is already in use`): a stopped container from a previous session already exists under that name, outside this run's compose project. Start it directly instead of letting compose recreate it: `docker start elasticsearch.local`. Confirm it's actually healthy, not just running, since Docker's own health-check label can lag behind the real state right after startup: `curl -u elastic:unsafePassword123 "http://localhost:9200/_cluster/health?pretty"`, looking for `"status": "green"`.
+
+**No OpenSearch equivalent exists yet.** `docker ps -a` may show a stopped `opensearch.local` container from earlier ad hoc testing, but there is no `docker-compose.yml` service or Makefile target for it: `make start-es`/`make start` are Elasticsearch-only today. Tracked under the OpenSearch-first migration in [`.dev/roadmap.md`](.dev/roadmap.md).
+
 The local cluster **does** run with authentication: `docker-compose.yml` sets `xpack.security.enabled: "true"`, and the Makefile passes the credentials it defines (`ES_USER=elastic`, `ES_PASS=unsafePassword123`) through to both the cluster and the containerized server. Use those same values in `apps/search-server/.env` when running the server on the host. For the minimum permissions each feature needs on a cluster you do not control, see the [search engine permissions reference](docs/setup.md#search-engine-permissions) in the setup documentation.
 
 Start the development server (watches `sqon`, `types`, `graphql-router`, and `search-server`):

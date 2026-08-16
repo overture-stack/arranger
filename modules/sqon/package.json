@@ -42,8 +42,9 @@
 	},
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.0",
-		"tsup": "^6.7.0",
 		"@types/node": "^22.19.13",
+		"ts-patch": "^3.3.0",
+		"tsup": "^6.7.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.8.2",
 		"typescript-transform-paths": "^3.5.6"

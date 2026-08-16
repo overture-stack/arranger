@@ -3,7 +3,9 @@
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.14",
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
+		"@overture-stack/arranger-types": "file:../../modules/types",
 		"axios": "^1.7.9",
+		"dotenv": "^16.0.3",
 		"graphql": "^16.6.0",
 		"graphql-tag": "^2.12.6",
 		"lodash-es": "^4.17.21"
@@ -13,7 +15,7 @@
 		"prettier": "^3.4.2",
 		"tsx": "^4.19.3"
 	},
-	"private": "true",
+	"private": true,
 	"scripts": {
 		"test": "tsx --test"
 	},

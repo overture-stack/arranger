@@ -966,6 +966,8 @@ _Depends on Phases 2.1 and 2.2 being complete. The Docker change can land indepe
 
 ### 3.1 Adopt Changesets for versioning and changelog automation
 
+**Sequencing: depends on §3.3 (pnpm) landing first, despite the numbering.** Changesets' internal-dependency cascade-bump detection is built around `workspace:` or real-semver references, not `file:`; adopting this before §3.3 would leave it nothing sensible to cascade against for any sibling dependency in the repo. See §3.3's own note and [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md).
+
 Replaces manual version bumping + Jenkins git tagging. Packages version **independently**.
 
 ```bash
@@ -1025,23 +1027,34 @@ _The CI pod already has dind; testcontainers would work today. Evaluate as part 
 
 ### 3.3 Migrate from npm to pnpm
 
+_Priority: next up as of 2026-08-14, ahead of the rest of Phase 3, unless something more urgent
+displaces it. See [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md) for the
+full reasoning behind everything below; this entry stays the actionable checklist._
+
 Catches phantom dependencies at install time, faster CI installs, removes `dangerouslyDisablePackageManagerCheck`.
 
-**Corepack Docker gotcha (learned from Lyric):** When adopting pnpm with corepack in a multi-stage Dockerfile, use `corepack prepare pnpm@x.y.z --activate` - not `corepack use pnpm@x.y.z`. `corepack use` only updates package.json; the binary is fetched lazily at runtime. If the pod has no egress to registry.npmjs.org (common in locked-down clusters), startup fails with a corepack download error. `corepack prepare --activate` downloads and caches the binary during image build, so the pod needs no network access to start.
+**Corepack Docker gotcha (learned from Lyric):** When adopting pnpm with corepack in a multi-stage Dockerfile, use `corepack prepare pnpm@x.y.z --activate`, not `corepack use pnpm@x.y.z`. `corepack use` only updates package.json; the binary is fetched lazily at runtime. If the pod has no egress to registry.npmjs.org (common in locked-down clusters), startup fails with a corepack download error. `corepack prepare --activate` downloads and caches the binary during image build, so the pod needs no network access to start. This also matters beyond egress: a read-only container filesystem at runtime can't fetch anything lazily either, so `corepack prepare --activate` at build time isn't just a workaround for locked-down clusters, it's required whenever the runtime filesystem is read-only.
 
 1. Install pnpm on Jenkins nodes (coordinate with infra)
-2. Create `pnpm-workspace.yaml` (replacing npm workspaces declaration)
+2. Create `pnpm-workspace.yaml` (replacing npm workspaces declaration; confirmed pnpm has no package.json-collocated option for this, unlike wireit)
 3. Run `pnpm import` to generate `pnpm-lock.yaml`
 4. Add `"packageManager": "pnpm@10.x.x"` to root `package.json`
 5. Migrate `overrides` to `pnpm.overrides` (note: `>` separator syntax)
 6. Remove `dangerouslyDisablePackageManagerCheck` from `turbo.json`
 7. Update Jenkins: `pnpm install --frozen-lockfile`
+8. Allowlist native dependency install scripts (new, see below) so CI doesn't hang on an interactive prompt
 
-**Risk:** Verify `ts-patch install -s` prepare hooks work under pnpm's stricter hoisting. May need `ts-patch` in root devDependencies.
+**Phantom-dependency audit: done and fixed (2026-08-15).** `npx depcheck` run against every workspace found genuine undeclared-but-imported dependencies in `apps/search-server` (`lodash-es`), `integration-tests/import` (`@jest/globals`), `integration-tests/mcp-server` and `integration-tests/server` (`@overture-stack/arranger-types`, `dotenv`, both), `modules/components` (`query-string`, `@emotion/is-prop-valid`, `prop-types` in source; `eslint-plugin-import`, `globals`, `babel-polyfill` in tooling config), `modules/graphql-router` (`@graphql-tools/mock`, `graphql-tools`), and `modules/sqon`/`modules/types` (`ts-patch`, per the prototype above). All now declared correctly, verified clean on a second `depcheck` pass plus the full test suite. One real version-compatibility catch along the way, `query-string`'s current major is ESM-only and broke `components`' CJS build outright; pinned to the last CJS-compatible major instead. Full detail in [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md).
 
-**Cleanup when this lands:** Replace all `file:` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, and `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already checks for `workspace:` refs as well as `file:` refs, so it remains valid as-is.
+**New risk, not previously documented:** pnpm v10+ blocks a dependency's install scripts (postinstall, etc.) by default, and fails the install outright rather than skipping silently. `tsup` (builds `sqon`/`types`) depends on `esbuild`, which has a native postinstall step; a first `pnpm install` will very likely fail until this is allowlisted via `pnpm approve-builds` or a committed `onlyBuiltDependencies` list.
+
+**Resolved via prototype (2026-08-15): `ts-patch` is fully compatible with pnpm.** The only real risk was already known: `sqon` and `types` invoke `ts-patch install -s` without declaring `ts-patch` as their own dependency (unlike `components`/`graphql-router`, which do this correctly), a real phantom dependency `depcheck` can't see since it's a shell-invoked binary, not a JS import. Confirmed by prototype that this breaks outright under pnpm and is fixed by adding the missing declaration. Add `ts-patch` to `sqon`'s and `types`' own `devDependencies` as part of this migration's checklist. `wireit`'s cross-package dependency graph under pnpm workspaces remains unverified by prototype; developer confidence accepted as sufficient for now. Full detail in the atlas doc.
+
+**Cleanup when this lands:** Replace all `file:` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, and `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already checks for `workspace:` refs as well as `file:` refs, so it remains valid as-is; pairing it with an actual `pnpm pack`/`pnpm publish --dry-run` check per package (verifying the real packed output, not just the source `package.json`) is worth adding at the same time.
 
 **nx consideration:** nx is an alternative monorepo build system to Turborepo, not a complement. Turbo + pnpm is the current plan. If Turbo proves insufficient (e.g. more complex task orchestration, code generation, or module federation needs arise), nx is worth evaluating. For now, proceed with Turbo.
+
+**Resolved, corrects §3.1's own "Cleanup when this lands" note:** `changeset version` does not rewrite `file:` (or `workspace:`) deps to real version ranges; `workspace:^` means "always use the local version," there's no version number in that string for Changesets to touch. That substitution happens exclusively via pnpm's own publish step, described above. Changesets' `updateInternalDependencies` does something adjacent but different: deciding whether a *dependent* package needs its own cascading version bump when a sibling changes, not rewriting how the dependency is referenced. See [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md) for the full resolution. **Consequence: this section needs to land before §3.1, not after, despite the numbering** (§3.1's cascade-bump detection needs a `workspace:` or real-semver reference to act on, not `file:`).
 
 ---
 

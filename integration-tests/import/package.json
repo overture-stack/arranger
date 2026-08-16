@@ -6,10 +6,11 @@
 		"@overture-stack/sqon": "file:../../modules/sqon"
 	},
 	"devDependencies": {
+		"@jest/globals": "^29.7.0",
 		"jest": "^29.7.0",
 		"ts-jest": "^29.0.5"
 	},
-	"private": "true",
+	"private": true,
 	"scripts": {
 		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config=jest.config.ts"
 	},

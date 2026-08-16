@@ -1,3 +1,4 @@
 # Atlas index
 
 - [Lyric pluralization bug: empty nested-entity aggregations](lyric-maestro-indexing-gap.md): confirmed root cause for donor-catalogue nested facets/aggregations returning empty buckets against the dev cluster; a Lyric pluralization bug (since fixed there), not an Arranger query-building bug; the ES mapping's own nesting depth is a separate, still-open item
+- [pnpm migration: scoping findings](pnpm-migration.md): supports roadmap §3.3; workspace-config location, publish-time sibling-version rewrite mechanics, the new default-blocked dependency install scripts risk, a completed and fixed phantom-dependency audit (including a real `query-string` ESM/CJS version-compatibility catch), `ts-patch` confirmed pnpm-compatible via prototype, `wireit` left unprototyped per developer confidence
