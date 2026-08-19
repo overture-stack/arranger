@@ -10,23 +10,11 @@ This document covers two categories of planned work: **product and architecture*
 
 ### Config plan/preview CLI
 
-_Priority: high. Sequenced at the top of the roadmap: validate before build, and no open design question blocks starting this independently of the rest of this document._
+_Priority: high. Sequenced at the top: no open design question blocks starting it._
 
-Arranger's catalogue configuration (`base.json`, `extended.json`, `facets.json`, `table.json`) is derived from, and must stay consistent with, a live ES/OS index mapping, but there is currently no way to see what a proposed config change would actually do before deploying it. An operator editing `facets.json` to add a field, or changing a display setting in `extended.json`, finds out whether it worked by deploying and inspecting the running server.
+A CLI that diffs a proposed catalogue configuration against a live ES/OS mapping and reports what would change (facets, columns, missing fields, validation errors) without starting the server or writing to the cluster. Absorbs the config-validation item rather than duplicating its Zod work.
 
-**Proposal:** a CLI (for example `npm run config:plan`, run from `apps/search-server`) that takes a configuration directory and a target ES/OS connection (local, staging, or production, read-only) and prints a diff of what would change: which facets would appear or disappear, which table columns would change, which fields referenced in configuration are missing from the live mapping (or vice versa), and any validation errors, all without starting the GraphQL server or writing anything to the target cluster. Modelled on a "plan before apply" workflow.
-
-**Why this is well-scoped to start now:**
-
-- Reinforces the [Admin UI replacement](#admin-ui-replacement) direction directly: the deprecated `admin-ui` mutated configuration as live state in an ES index, which is documented as a design mistake. A plan/preview CLI is the opposite pattern (configuration as data, reviewed before being applied) and gives the eventual admin UI replacement a validation primitive to build on rather than starting from nothing.
-- Naturally absorbs [Config validation with structured errors and tests](#config-validation-with-structured-errors-and-tests): the Zod-based validation that item already calls for is exactly what a `plan` command needs before it can produce a meaningful diff. Building them together avoids writing the validation logic twice.
-- Does not need to wait for [Arranger config separation](#arranger-config-separation) or [Arranger core module extraction](#arranger-core-module-extraction): it can validate configuration in its current, coupled shape today, the same way the config-validation item is already scoped to do. It becomes cleaner to implement once those land, but nothing blocks starting now.
-
-**Open questions for design:**
-
-- **Read-only credential:** the CLI must never write to the target index; needs a documented minimum-permission credential (read mapping, read aliases only), consistent with the least-privilege direction in [Decouple startup health check from application credential](#decouple-startup-health-check-from-application-credential).
-- **Output format:** a human-readable terminal diff is the minimum bar. A machine-readable (JSON) output mode would let this run as a CI check on configuration pull requests (fail the build if a change would silently drop a facet, for instance), a natural follow-on once the CLI itself exists.
-- **Scope of "diff":** start with facets, columns, and fields, all directly derived from configuration plus mapping. Whether to also diff the resolved GraphQL SDL is a heavier lift and a reasonable phase two, since Arranger's schema also includes code-authored parts (Root query shape, SQON input types) that a config-vs-mapping diff alone would not cover.
+[Detail: rationale, open design questions, read-only credential requirement](docs/atlas/roadmap/config-tooling.md#config-planpreview-cli)
 
 ### Mapping-drift detector (research)
 
@@ -40,25 +28,13 @@ The problem this is aimed at: a catalogue's facets, columns, and searchable fiel
 
 ---
 
-### Fix `initializeSets` startup race in multicatalog mode
-
-_Resolved._
-
----
-
 ### OpenSearch-first migration
 
-_Priority: high. Next concrete technical effort after documentation._
+_Priority: high._
 
-Arranger currently treats Elasticsearch as the de-facto standard and OpenSearch as an afterthought. This should be reversed: OpenSearch is the actively maintained open-source fork and the direction the community is moving, and it should be the primary supported engine with ES as a supported variant.
+Make OpenSearch the primary supported engine with ES as a supported variant, so a fresh clone gets OpenSearch by default. The `SearchClient` abstraction and the OpenSearch client dependency already exist; the gaps are `integration-tests/server`'s missing client, no `opensearch` service in `docker-compose.yml`, an ES-only CI pod, and an ES client two majors stale.
 
-The scope is wider than just swapping a client library. It includes the `SearchClient` abstraction in `graphql-router`, the Makefile, `docker-compose` setup for local development, and the integration test suite (which currently runs against ES). The goal is that a developer cloning the repo and running `make dev` gets OpenSearch by default.
-
-The `SearchClient` abstraction already exists as the right boundary; the migration should align the types and default configuration to OpenSearch while preserving compatibility for ES users.
-
-**What's already done:** The integration test suite (`integration-tests/server`) already supports both engines via a `SEARCH_ENGINE` env var (defaults to `'elasticsearch'`). `buildSearchClient` accepts a `client` type parameter mapped to `SupportedClientTypes`. The architecture is ready; the missing pieces are the OpenSearch client dependency and a running OpenSearch instance in CI.
-
-**CI pod spec:** The current pod runs `elasticsearch:7.17.27` for integration tests. The intent is to keep ES in the pod (to verify ES compatibility) and add an OpenSearch container alongside it, then run the integration suite twice, once per engine. See "Testcontainers for integration tests" below for an alternative approach that avoids hardcoding engine versions in the pod spec.
+[Detail: scope, corrected status, CI pod intent](docs/atlas/roadmap/opensearch-migration.md)
 
 ### GraphQL server migration (away from Apollo)
 
@@ -86,38 +62,17 @@ The search and aggregation logic currently living inside `graphql-router` is cou
 
 The practical benefit: integrators who want Arranger's search capabilities in a REST API, gRPC service, or any other context could use `arranger-core` directly without pulling in GraphQL dependencies.
 
-_Design work needed: define the interface between core and transport. The config system (currently server-level vs catalog-level) will also need to be revisited once the transport coupling is removed; see [tech-debt: config constants reorganization](tech-debt.md#config-constants-need-reorganization--blocked-on-architecture-work). Custom columns and custom facet groups (in the Features section) depend on this work._
+_Design work needed: define the interface between core and transport. The config system (currently server-level vs catalog-level) will also need to be revisited once the transport coupling is removed; see [tech-debt: config constants reorganization](tech-debt.md#config-constants-need-reorganization-blocked-on-architecture-work). Custom columns and custom facet groups (in the Features section) depend on this work._
 
 ### Auth and field/record-level access control
 
-_Priority: medium. Blocked on both the Overture ABAC design and the Arranger core module boundary._
+**Subsystem docs:** design, sequencing, and the scoped defect index now live in [`.dev/docs/arranger-auth/`](docs/arranger-auth/index.md). Key decision recorded there: enforcement belongs at the query-building boundary rather than the transport boundary, so the planned Beacon and REST adapters inherit it instead of reimplementing it, and the Usher plugin is a translator only. Three defects block building on the current seam, including a confirmed export-path bypass of `getServerSideFilter`.
 
-Arranger currently has no awareness of who is making a query or what they are allowed to see. The closest existing functionality is **server-side filters**: a callback where the caller can inject additional SQON filters per request. This is a useful IoC escape hatch but it is not auth. Arranger doesn't understand why the filters are there, has no semantic access model, and provides no standard way to plumb identity or claims into it.
+_Priority: medium. Blocked on the Overture ABAC design and the core module boundary._
 
-The Overture platform is building a cross-app ABAC system using Keycloak. The design question for Arranger is: **how much auth responsibility does Arranger itself need to own, versus delegating to a layer above it?**
+Arranger has no notion of who is querying or what they may see; server-side filters are an IoC escape hatch, not auth. Two safety defaults are not open questions and are built in from day one: fail closed on any enforcement failure, and every denial emits a structured log entry.
 
-Existence disclosure and admin listing/access separation are decided at the Usher level: see
-[`usher/.dev/design/permissions-model.md`](../../../usher/.dev/design/permissions-model.md)
-sections "Visibility of private records" and "No system-wide access to private data". Arranger
-implements whatever the PEP plugin communicates; these decisions are not Arranger's to own.
-
-Key design questions (not yet answered):
-
-- **Field-level access:** Can this user see this field at all? (e.g. suppress clinical fields for non-approved users.) This may need to be expressed inside the query builder, filtering out fields before they are fetched, rather than as a post-processing step. **Known concrete incompatibility to resolve, not just a hypothetical:** a catalogue with `nestingPrefix` configured (see [`nestingPrefix` feature](#nestingprefix-feature)) currently has `resolveHits.js` request the entire enveloped `_source` from ES per hit, regardless of which fields the GraphQL query actually selected, a deliberate correctness-over-bandwidth tradeoff made before any field-level access model existed. Any field-level implementation must account for this: fetching a field's raw value from ES and then filtering it out of the response is not equivalent to never having fetched it (it has already crossed into application memory and, depending on logging/tracing configuration, potentially into logs), so a naive post-fetch filter layered on top of this fetch-everything behaviour would not actually prevent an unauthorized field's value from reaching somewhere it shouldn't. Whatever field-level layer gets built needs to either narrow this `_source` request to the caller's actually-granted fields (still within the envelope) or explicitly document why fetching the full envelope and filtering after is an accepted risk for enveloped catalogues specifically.
-- **Record-level access:** Can this user see this record? This maps more naturally to a filter injected into every query, which server-side filters already approximate.
-- **Where does the auth layer live?** Options: (1) in Arranger core itself (tight coupling, but consistent); (2) as a separate `arranger-auth` module in this monorepo that mediates between Keycloak and Arranger (a cleaner separation); (3) as infrastructure-level enforcement upstream of Arranger (proxy, gateway) where Arranger trusts that the request is already authorized.
-- **Cross-Overture consistency:** Other Overture apps are not GraphQL, don't use ES/OS, and don't use SQONs. The ABAC solution should be consistent across apps, which suggests Arranger should consume a shared auth abstraction rather than invent its own.
-- **Server-side filters redesign:** If ABAC lands, server-side filters may need to evolve from a raw SQON callback into something that understands user identity and translates claims into query constraints.
-- **Multi-catalog filter composition:** In multi-catalog mode, there should be support for a global server-side filter that composes with catalog-local filters, with deterministic precedence and merge behaviour so access-control rules are consistent across single- and multi-catalog deployments. Needed for Controlled Access implementations in multicatalog setups.
-
-Two requirements are not open design questions; they are safety defaults to build in from day one regardless of how the rest of the design resolves:
-
-- **Fail-closed on auth enforcement failure.** If Keycloak is unreachable, token validation errors, or claims are missing, the only safe behaviour is to reject the request. Fail-open (treating an enforcement failure as an implicit allow) is an access-control failure (OWASP A01:2025), not graceful degradation; this must be a deliberate, tested code path, not an accidental default.
-- **Every access denial produces a structured log entry** with `{ userId, resource, reason }` from the first implementation, not as optional plumbing added later. This is what makes denial events observable and auditable once ABAC ships; see [Structured request logging as a prerequisite for ABAC](#structured-request-logging-as-a-prerequisite-for-abac).
-
-This design intersects with Sets (ABAC for saved queries), the Admin/user access model, and the Arranger core module extraction (the core/transport boundary affects where auth checks are applied).
-
-_Needs design at the Overture platform level before Arranger-specific work can be scoped. Do not extend server-side filters in the interim without awareness of this direction._
+[Detail: the open design questions, the Usher-owned decisions, and the `nestingPrefix` field-level incompatibility](docs/atlas/roadmap/auth-and-access-control.md#auth-and-fieldrecord-level-access-control)
 
 ### Transport layer abstraction
 
@@ -175,38 +130,13 @@ _Standalone: yes. Small PR, no upstream dependencies._
 
 ### Multicatalog catalogue lifecycle and metadata
 
-_Priority: medium-high. Core mechanism implemented 2026-07-24; see "What's not yet done" below for what remains._
+_Priority: medium-high. Core mechanism implemented 2026-07-24._
 
-A catalogue with a missing or unreachable search index used to crash the entire server before startup completed: `arrangerRoutes.ts` built all catalogues with `Promise.all`, so one rejection discarded every already-built healthy catalogue and the process exited. Confirmed against a real deployment: overture-dev runs 5 configured catalogues with only 1 index actually created, the other 4 awaiting data from Lyric/Maestro, exactly this scenario.
+A catalogue with a missing or unreachable index no longer crashes the server: `Promise.allSettled` per catalogue, a stub router for failures, a machine-readable `error.code`, and a server-wide aggregate status behind `GET /ready`. Confirmed against a real deployment where 4 of 5 catalogues were down.
 
-**Catalogue-level status** (`availability/types.ts`): `available`, `failed`, `disabled`, `loading`. `disabled` is an intentional operator-off state. `loading` covers both a catalogue's initial build and, once "Per-catalogue config reload without full server restart" below exists, a triggered reload, one term for both rather than a separate `reloading`. Neither is produced yet: no operator-disable feature exists, and the server doesn't listen until every catalogue has settled at startup, so `loading` has no window to be observed in until either the reload item lands or startup becomes incremental.
+Still open: nothing produces the `disabled` or `loading` statuses yet (and only `available`/`failed` exist in the type today); admin-gating the server-wide listing once Usher lands; a Prometheus endpoint for per-catalogue history (see Ideation).
 
-A `failed` catalogue carries an `error` object: `code` (a machine-readable string, currently `index_not_found`, `permission_denied`, `connection_error`, `mapping_fetch_error`, `schema_build_error`, or `unknown_error`, extend as new failure modes are found) and `message` (a curated, human-readable description that never echoes the raw underlying error text, which can carry internal hostnames or ports). `error` is omitted entirely, not set to `null`, when the catalogue is `available`, matching how `description` already behaves, and standard REST practice (Stripe, JSON:API) of only including an error object on the failure case. There's deliberately no separate `pending` status for "index doesn't exist yet": `failed` with `error.code: index_not_found` covers it without growing the state machine; revisit only if alerting needs to distinguish urgency at the status level rather than the code level.
-
-**Server-level status:** a small aggregate over enabled (non-`disabled`) catalogues, used by the readiness endpoint below. `healthy`: no enabled catalogue is `failed` (true whether every catalogue is `available`, every one is `disabled`, or a mix). `degraded`: at least one `available` and at least one `failed`, the overture-dev case. `unhealthy`: every enabled catalogue is `failed`, likely something systemic rather than "data isn't indexed yet", and the one state that should actually affect a readiness probe. Carries no failure explanation of its own, that's a catalogue-level concern. Open follow-up: how `loading` catalogues factor into this aggregate, deferred until `loading` is observable.
-
-**Endpoints:**
-
-- `GET /introspection/:catalogId` (the existing per-catalogue introspection route) returns `200` whenever the server itself is healthy, with `status`, `error` (only when `failed`), `documentType`, and (when configured) `description`, the same values the server-wide listing shows for that catalogue. With `enableDebug`, optionally richer diagnostics.
-- `GET /introspection` (server-wide listing) includes every configured catalogue by default, including ones that failed to load, each with its `status`/`error`, plus a top-level `status` for the aggregate. Catalogue IDs are operator-defined identifiers, not sensitive data; revisit whether this listing should be admin-gated once Usher/ABAC lands (see "Auth and field/record-level access control" below), not before.
-- A `failed` catalogue's GraphQL endpoint returns `404` with the same `status`/`error` body plus a `details` pointer back to the metadata endpoint, instead of crashing the process.
-- `GET /ready`, a new readiness endpoint (`READY_PATH` env var, default `/ready`, mirrors `PING_PATH`), reflects the aggregate: `503` only when `unhealthy`, `200` otherwise, recomputed per request. `GET /ping` (liveness) stays process-alive only, no catalogue awareness: restarting doesn't recreate a missing index or bring a search cluster back, so tying liveness to catalogue state would only add a restart-storm on top of an outage already in progress.
-
-**Implementation:** `arrangerRoutes.ts` uses `Promise.allSettled` per catalogue. A failed catalogue gets a stub router instead of taking the process down.
-
-`classifyCatalogueFailureReason` (classifying the underlying ES/OS error into `code`/`message`) lives in `modules/graphql-router/src/searchClient/`, alongside the ES/OS clients whose error shapes it interprets, and is exported publicly. `apps/search-server/src/availability/` holds only `computeAggregateServerStatus` and the status types, which are genuinely server-scoped. `fetchMapping.ts` and `router.ts` preserve the original error via `{ cause: err }` on rethrow, so `classifyCatalogueFailureReason` has something real to inspect.
-
-Tests: `searchClient/classifyCatalogueFailureReason.test.ts`, `availability/computeAggregateServerStatus.test.ts`, `arrangerRoutes.test.ts`, and an updated `introspection.test.ts`. Plus a real end-to-end test against live Elasticsearch (`integration-tests/server/test/partialAvailability.test.ts`, fixture at `multiconfigs-partial/`), worth keeping specifically because it exercises the real package boundary a unit test can't: it's what caught the `dist/`-staleness gap logged in `tech-debt.md`.
-
-Two unrelated bugs found and fixed during this work are tracked there rather than duplicated here: `getConfigFromFiles` silently swallowing a malformed catalogue config, and `apps/search-server`'s `test` script glob silently skipping test files at certain depths (the identical bug in `apps/mcp-server` is logged separately, not fixed here).
-
-**What's not yet done:**
-
-- `disabled` and `loading` don't have anything producing them yet (see above).
-- Admin-gating the server-wide listing once Usher/ABAC lands.
-- A Prometheus metrics endpoint for per-catalogue historical/alertable detail (see Ideation section).
-
-_Coordinate with the API version exposure entry; catalogue metadata and server introspection are related surfaces._
+Full detail, including the status vocabulary, endpoint semantics, and why liveness stays catalogue-blind: [atlas: multicatalogue lifecycle](docs/atlas/roadmap/multicatalogue-lifecycle.md).
 
 ### Per-catalogue config reload without full server restart
 
@@ -230,23 +160,17 @@ _To be reviewed before committing to a design. Related: Multicatalog catalogue l
 
 _Priority: medium. Config plumbing gap, not a design question._
 
-Confirmed: file-based config (a catalogue's `base.json`) already supports per-catalogue `esHost`/`esUser`/`esPass`/`searchEngine`, since `arrangerRouter()` (`modules/graphql-router/src/router.ts`) builds a fresh search client per catalogue from that catalogue's own config whenever no client is injected. Env-var configuration, the primary documented deployment path, does not: `apps/search-server/src/configs/fromEnv/localEnvs.ts` reads one global `ES_HOST`/`ES_USER`/`ES_PASS` for the whole server instance, explicitly commented as "global" Arranger config, with an existing TODO in that file to extend it to `${catalogId}_ES_HOST`-style per-catalogue env vars.
+File-based config already supports per-catalogue search-engine credentials; env-var config reads one global set. Close the asymmetry, and `NESTING_PREFIX` along with it.
 
-Until this is closed, a multicatalog deployment configured purely by env vars (rather than per-catalogue `base.json` files) is limited to one shared search engine credential across all catalogues, even though the underlying client-construction code already supports per-catalogue separation.
-
-**A second, independently-confirmed instance of the same file-vs-env asymmetry:** `nestingPrefix` (see [`nestingPrefix` feature](#nestingprefix-feature)) is readable from a catalogue's `base.json` today with zero extra wiring (file-based config merges the whole JSON object through with no per-key allowlist), but `fromEnv/localEnvs.ts` has no `NESTING_PREFIX`-reading line at all, so an env-var-only deployment cannot set it, not even in single-catalogue mode. Worth closing both gaps together if `fromEnv/localEnvs.ts` is being touched for this reason anyway, though they're independent fixes (this one isn't specific to multicatalogue).
-
-_Related: Multicatalog catalogue lifecycle and metadata; Arranger config separation._
+[Detail: where each path resolves today, and the second confirmed instance](docs/atlas/roadmap/config-tooling.md#per-catalogue-search-engine-credentials-via-env-vars)
 
 ### Arranger config separation
 
 _Priority: medium-high. Blocked on core module extraction._
 
-The current config model conflates several distinct concerns: server-level config (port, CORS), transport-level config (GraphQL-specific options), Arranger core config (search engine, index settings), and UI config (component behaviour, display options). These are currently mixed because the modules are currently coupled; separating them before the architecture supports it would be premature.
+Split the currently-conflated config model into server, transport, and core layers, with UI config separated out, each property documented and validated at its boundary.
 
-Once the core module boundary is defined, configs should be reorganized into at least three layers (server, transport, and core) and UI config should be clearly separated so front-end consumers don't need to reason about server-level settings. Each config property should be documented (purpose, type, default, which layer it belongs to) and validated at the boundary using Zod or a similar schema library.
-
-_Blocked on core module extraction. See also [tech-debt: config constants reorganization](tech-debt.md#config-constants-need-reorganization--blocked-on-architecture-work). Custom columns and custom facet groups (in the Features section) depend on this work._
+[Detail: why the layers are currently coupled and what unblocks this](docs/atlas/roadmap/config-tooling.md#arranger-config-separation)
 
 ### Config validation with structured errors and tests
 
@@ -285,9 +209,26 @@ Two related but distinct problems:
 
 **Arranger version exposure:** The server's health/introspection endpoint should report which version of Arranger it is running. The catalog (ES index) does not know about Arranger versions and should not; this belongs at the server layer. Useful for MCP servers querying multiple Arranger nodes that may run different versions, for federated setups where capability negotiation depends on version, and for operators debugging mismatches. The introspection endpoint already exists; Arranger version should be a first-class field on it.
 
+Prefer exposing this as discrete **capability flags** (e.g. `capabilities: { wildcardOperator: true, catalogueScopedRouting: true }`) alongside, or instead of, a raw semver string. A version string pushes every consumer to hardcode its own `if (serverVersion >= '3.1.0')` threshold for each feature it cares about, scattered per component; a capability flag states the fact directly and needs no version-range knowledge in consumer code, the same reasoning browsers moved from user-agent sniffing to feature detection. See [`DataContext` consuming this in `modules/components`](#capability-aware-consumer-components-via-datacontext) for the concrete first consumer.
+
 **Schema versioning:** The hits/edges/nodes redesign is a breaking API change. GraphQL has no built-in versioning mechanism. Options: run both schema versions simultaneously on separate endpoints, use field-level deprecation with a grace period, or cut a major version and provide a migration guide. The right choice depends on how many external consumers exist and how tightly they are coupled. This must be decided before the redesign work starts.
 
 _Schema versioning decision gates the hits/edges/nodes redesign._
+
+### Capability-aware consumer components via `DataContext`
+
+_Priority: medium. Depends on the "Arranger version exposure" work above landing as capability flags, not just a version string. Motivated by a real, confirmed break, not a hypothetical._
+
+`DataContext`/`DataProvider` should expose what the connected server actually supports, so consumer components can branch their own behaviour on real capabilities instead of assuming the newest wire format the client library happens to know about. Concrete motivating case: [tech-debt: `QuickSearch` sends `op: 'wildcard'` unconditionally, breaking against any server older than the 3.1 cycle](tech-debt.md#quicksearch-sends-op-wildcard-unconditionally-breaking-against-any-server-older-than-the-31-cycle). `QuickSearch` has no way today to know its server predates `wildcard` op support, so it can't fall back to `filter`, it just breaks. A capability-aware `DataContext` fixes this class of problem generally, not just this one operator.
+
+**Real design tension to resolve, not just plumbing:** `DataProvider` deliberately skips calling the introspection endpoint at all when `documentType` is passed explicitly (the common case, avoiding an extra request before real queries can start; see the "`documentType` on `DataProvider` is now optional" changelog entry). Capability detection needs that same endpoint's response. Two options, not obviously compatible with each other:
+
+1. **Eager:** always fetch capabilities on `DataProvider` mount. Simple, but reintroduces the extra request every existing single-catalogue consumer currently avoids, for information most consumers won't need most of the time.
+2. **Lazy:** fetch capabilities once, on first request from a consumer that actually needs a capability check (e.g. `QuickSearch` asking "does this server support `wildcard`?"), cache the result on context so later consumers and re-renders don't refetch. No cost for consumers that never ask, but means the first capability-gated interaction pays a request round-trip its own render can't wait on synchronously, needs a defined "unknown yet" state and a sane fallback while it resolves (almost certainly: assume the most conservative/oldest behaviour until proven otherwise, matching how an absent capabilities field, or a 404 from introspection entirely on a pre-3.1 server, should already be read as "no capabilities, assume legacy").
+
+**Absent-capabilities case matters as much as the present case:** a server old enough to lack the introspection endpoint entirely (pre-3.1) won't have this field at all, a 404 or a response missing `capabilities` is itself a valid, expected signal, not an error state, and should resolve to "assume the oldest/most conservative behaviour for every flag," not to `undefined`-and-crash.
+
+_Design-first: decide eager-vs-lazy and the loading/fallback state before touching `QuickSearch` or any other consumer. `QuickSearch`'s `wildcard`/`filter` fallback is the natural first real consumer once the plumbing exists._
 
 ### Typed client SDK via GraphQL Codegen (research)
 
@@ -303,80 +244,11 @@ Consumers that build on Arranger (portal frontends, and internally `modules/char
 
 ### MCP integration readiness
 
-Six targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation; the fifth is a follow-up question from a documentation fix logged during a downstream PR review; the sixth is the accumulated `/docs` gap the other five (and everything already shipped) have left behind. The fourth is now done; the other five remain open.
+_Priority: mixed per sub-item. One of six shipped (`build_sqon`, 2026-08-10); five open._
 
-#### SQON generation via `build_sqon` tool [done]
+Six improvements making Arranger a well-behaved upstream for an MCP server layer. Open: schema cache invalidation signal (ETag/schema hash, `high`), SQON documentation in schema descriptions, field descriptions in the generated schema, making invisible query defaults SDL-visible (research), and the accumulated `/docs` gap for the MCP surface.
 
-_Shipped 2026-08-10 (#1080), version 1: the scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`) with one `and`/`or` combination per call. Text operators and mixed AND/OR nesting are deliberately deferred; see § Phasing in `.dev/docs/build-sqon-tool.md` for the v2/v3 shape. The design and implementation records are `.dev/docs/build-sqon-tool.md` and `.dev/docs/build-sqon-implementation.md`._
-
-_Priority when open: high. Somewhat urgent: MCP SQON generation was hit-or-miss in practice._
-
-LLMs asked to generate SQONs by inference produce inconsistent results. The root cause is training-data staleness: operator names, value schemas, combination nesting rules, and field-type constraints in model training data are incomplete or incorrect relative to the current spec. Prompting alone cannot reliably compensate for this.
-
-The fix is to remove the LLM from the SQON synthesis loop. Add a `build_sqon` MCP tool in `apps/mcp-server` that accepts structured parameters (field, operator, value, and an optional combination operator for nesting) and calls `SqonBuilder` internally, returning a validated SQON. The LLM's responsibility becomes selecting the right field, operator, and value from the available catalogue schema, not synthesizing raw JSON. The tool is the generator; the LLM is the selector.
-
-This is also more token-efficient than the alternatives: embedding SQON documentation in a system prompt and relying on the `/introspection` endpoint as a runtime SQON guide both consume context window on every request. A tool call is cheaper and fully deterministic.
-
-**Scope, as built:**
-
-1. **`build_sqon` tool** in `apps/mcp-server/src/mcp/buildSqonTool.ts`, registered from `mcp/tools.ts`: accepts a `catalogueId`, one `combination` (`and`/`or`), a list of `clauses` (`fieldName`, `operator`, `value`, optional `negate`), and an optional `existingSqon`; validates every clause against that catalogue's introspection; folds them with `addFilterClause`; returns the SQON with a plain-English `summary`, a submitted-versus-final clause count, and a note when the two differ. One call carries the whole batch: the originally-scoped one-clause-per-call shape was rejected during design, because a per-clause call turns an N-condition query into N round trips and makes a rejected clause N/2 calls of wasted work on average (see § Why one call builds a whole batch in `.dev/docs/build-sqon-tool.md`).
-2. **Agent-optimized tool description** [done]: the operator descriptions are generated at module load from `getSqonFieldOperatorDetails()`, so they cannot drift from `modules/sqon`, and are attached per schema branch rather than once for all operators, which keeps the emitted JSON Schema roughly a third smaller than repeating the full list on every branch. The batch-level guidance sits on the `clauses` array, once.
-3. **Versioned changelog** [not done]: the tool interface is not versioned and carries no machine-readable changelog. Version 1's operator coverage is described in the tool's own input schema, which is authoritative but not versioned. Revisit if and when a v2 changes the input shape rather than only extending it.
-
-**Prerequisite (resolved):** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. This was previously blocked on absorbing full operator coverage into `modules/sqon`; that absorption is now complete (see [Deprecate `sqon-builder`](#deprecate-sqon-builder)) and `modules/sqon`'s `SqonBuilder` already covers `all`, `between`, `gte`, `in`, `lte`, `not-in`, `some-not-in`, and `wildcard`. `build_sqon` can ship with full operator coverage from the start; no partial-coverage phasing is needed.
-
-**Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once the `execute_query` MCP implementation is available and real token budgets can be measured empirically.
-
-#### Schema cache invalidation signal (ETag / schema hash)
-
-_Priority: high._
-
-An MCP server wrapping Arranger will cache the introspected schema to avoid re-fetching on every query. Arranger's schema is generated from ES/OS index mappings, which can change when indices are updated or reindexed. Without a cache invalidation signal, an MCP server has no way to know when its cached schema is stale; it will generate queries against a schema that no longer matches the live index, producing errors that are hard to diagnose.
-
-Arranger should expose a schema hash or ETag on introspection responses (a response header is sufficient; no new endpoint needed) so MCP consumers can cheaply detect schema changes and re-fetch only when necessary. Extends naturally from the "API version exposure" work above, which already adds a version field to the introspection endpoint.
-
-_Small Arranger change, high operational value for any MCP implementation. Coordinate with whoever is building the MCP server._
-
-#### SQON documentation in schema descriptions
-
-_Priority: medium._
-
-Arranger's filter arguments accept SQON, but the generated schema types them as opaque input objects with no documentation of the expected structure. An LLM generating queries against the schema has no way to know what a valid SQON looks like from schema introspection alone; every MCP implementation has to embed SQON-specific system prompts as a workaround.
-
-Adding a description to the filter argument input types explaining the SQON structure (content/combination operators, value types, nesting rules) would let the LLM infer the filter format directly from the schema. This reduces coupling between the MCP prompt layer and Arranger internals, and benefits GraphQL Playground users at the same time.
-
-_See `docs/concepts.md` for the canonical SQON definition to base descriptions on._
-
-#### Field descriptions in the generated schema
-
-_Priority: medium._
-
-The GraphQL schema Arranger generates from ES/OS index mappings currently carries no field descriptions, only raw field names. An LLM building queries against this schema must select fields by name alone, with no semantic context. The Arize reference implementation strips all schema descriptions to save tokens precisely because they tend to be noisy; Arranger's schema instead has none at all.
-
-Arranger should surface field descriptions from ES mapping metadata (the `meta` object on a field mapping, which can carry arbitrary key-value pairs including a `description`) as GraphQL field descriptions. Where no metadata description exists, the field name is still the fallback. This gives LLM consumers (and Playground users) meaningful context at the point where it costs nothing to add it.
-
-_Requires a mapping-to-schema pass change. Operators who want richer descriptions can add `meta.description` to their index mappings without any Arranger code change._
-
-#### Make invisible query defaults visible via SDL (research)
-
-_Priority: low. The documentation gap is closed (see `docs/reference/06-defaults-and-limits.md`); this is the follow-up question of whether the underlying defaults should also become schema-visible._
-
-Several arguments that materially change query results (`hits(first)`, `aggregations.buckets(max)`, `histogram(interval)`, `range(ranges)`, `cardinality(precision_threshold)`, `top_hits(size)`, `include_missing`) default in resolver code rather than as GraphQL SDL argument defaults, unlike `hits(trackTotalHits: Boolean = true)`, which does have a real SDL default. A human reading the defaults-and-limits doc now has the answer, but an LLM or codegen tool working from the schema alone still doesn't. Worth revisiting once the SDL surface is being touched for other reasons anyway, for example alongside [SQON documentation in schema descriptions](#sqon-documentation-in-schema-descriptions) above: would adding real `= value` defaults to these arguments change resolver behaviour in any edge case (for instance, distinguishing "explicitly passed 10" from "omitted"), or is it a safe, additive schema change?
-
-#### Update `/docs` for the MCP server surface
-
-_Priority: medium. Recurring gap logged as a session open thread many times over; never yet promoted to a tracked item._
-
-**Partly closed 2026-08-10.** `docs/usage/06-ai-and-automation.md` was promoted to a top-level `docs/mcp-server.md` (#1089), which now names all five tools with their input shapes, the call order, and `build_sqon`'s output contract. What is still missing is depth: each tool's full output shape, worked request/response examples, and the elicitation-confirmation flow in `execute_query`, which remains documented nowhere a reader of `/docs` will find it.
-
-**Scope:**
-
-- A dedicated `docs/reference/` page (or an extension of `mcp-server.md`) covering the full MCP tool surface: what each tool does, its input/output shape, and the elicitation-confirmation flow in `execute_query`.
-- ~~To check once `build_sqon` ships: `docs/concepts.md`'s `fieldName`/`fieldNames` definition~~ done 2026-08-10: the definition now covers both positions, the `content` object and a flat clause-building argument, and the vocabulary table entry matches.
-
-_Coordinate with whichever MCP work lands next; `execute_query` shipped in #1077 and `build_sqon` in #1080, both now named in `docs/mcp-server.md`._
-
----
+Full detail, including `build_sqon`'s as-built scope and the deferred TOON evaluation: [atlas: MCP integration readiness](docs/atlas/roadmap/mcp-integration-readiness.md).
 
 ### GraphQL large integer type
 
@@ -404,11 +276,11 @@ High-traffic public portals re-run the same default facet aggregation queries co
 
 ### Persisted queries and point-in-time export pagination (research)
 
-_Priority: low but worth tracking. Two independent, smaller-scoped research items grouped together; neither is currently implemented._
+_Priority: low but worth tracking. Two independent research items; neither implemented._
 
-**Automatic Persisted Queries (APQ).** Reduces request payload size and, combined with a server-side allow-list, acts as a second DoS-hardening layer alongside the existing alias and depth limits (see [GraphQL query complexity analysis](#graphql-query-complexity-analysis)): only known query shapes execute, and arbitrary ad-hoc queries can be rejected in hardened deployments. The protocol itself ([originally specified by Apollo](https://www.apollographql.com/docs/apollo-server/performance/apq), but server-agnostic) has the client send a SHA-256 hash first; the server looks it up and only asks for the full query text on a cache miss. If any current Arranger consumers already use Apollo Client's APQ link, that matters for sequencing this against the Apollo-to-Yoga migration. If [query result caching](#query-result-caching-research) above is also pursued, a persisted-query hash is a naturally stable cache key and may simplify that design.
+Automatic Persisted Queries as a payload-size and DoS-hardening layer, and Point-in-Time contexts for export pagination, where `search_after` alone can skip or duplicate records if the index changes mid-export.
 
-**Point-in-time (PIT) pagination for exports.** Confirmed: `getAllData` (`modules/graphql-router/src/utils/getAllData.js`) paginates via `search_after` with a deterministic `_id: 'asc'` tie-breaker, but never opens a Point-in-Time context. This is a correctness question, not a performance one: `search_after` alone is only guaranteed consistent across pages if the index doesn't change during the export; a long-running download that races a concurrent write or delete on the underlying index can skip or duplicate records. See the [ES Point-in-Time API](https://www.elastic.co/guide/en/elasticsearch/reference/current/point-in-time-api.html) (7.10+) and [OpenSearch's PIT API](https://opensearch.org/docs/latest/search-plugins/point-in-time-api/) (2.4+); check both against the actual minimum versions this repo targets (see [OpenSearch-first migration](#opensearch-first-migration)) before assuming PIT is universally available. Scope is narrow: this only matters for exports/downloads and any other "fetch everything matching this SQON" path, not normal paginated UI browsing, where minor staleness between pages is an accepted and unremarkable tradeoff.
+[Detail: prior art, version constraints, sequencing against the Apollo migration](docs/atlas/roadmap/query-economics.md#persisted-queries-and-point-in-time-export-pagination-research)
 
 ### Observability: metrics, tracing, and usage analytics (research)
 
@@ -418,11 +290,9 @@ Logging, metrics, and tracing are three distinct observability disciplines. Stru
 
 #### Metrics and tracing
 
-A `/metrics` endpoint (Prometheus format: query latency histograms, error rates, per-catalogue query volume) and distributed tracing spans across the request path (GraphQL resolution, query building, search client call, ES/OS response) would answer operational questions that structured logs alone answer poorly in aggregate: why a given aggregation is slow, or which catalogue is driving load on a shared deployment.
+A Prometheus `/metrics` endpoint and distributed tracing spans across the request path. Confirmed absent: no OpenTelemetry or `prom-client` anywhere today.
 
-Prior art: [`@opentelemetry/instrumentation-graphql`](https://www.npmjs.com/package/@opentelemetry/instrumentation-graphql) and [`@opentelemetry/instrumentation-express`](https://www.npmjs.com/package/@opentelemetry/instrumentation-express) give auto-instrumentation for most of the request path with minimal manual span creation. [`prom-client`](https://www.npmjs.com/package/prom-client) is the standard Node Prometheus client if metrics are pursued on their own, independent of full tracing.
-
-_Sequencing note: this is easiest to wire in cleanly once [Arranger core module extraction](#arranger-core-module-extraction) and the [GraphQL server migration](#graphql-server-migration-away-from-apollo) land, since both introduce clear seams (the core call boundary, the transport boundary) that are natural instrumentation points. Not blocked on them; doing this afterward just avoids instrumenting code that is about to be restructured anyway._
+[Detail: prior art and why this is cheaper after core extraction](docs/atlas/roadmap/observability.md#metrics-and-tracing)
 
 #### Facet and field usage analytics
 
@@ -448,101 +318,17 @@ This is a genuine prerequisite, not just adjacent work: access denial events (se
 
 _Priority: medium. Distinct from the `wildcard` operator already implemented._
 
-Add a `fuzzy` SQON operator that performs approximate string matching using Levenshtein edit distance, translated to an ES/OS `multi_match` query with `fuzziness: "AUTO"`. This tolerates typos and near-matches (`"jhn"` matches `"john"`) in a way that the current `wildcard`/substring operator does not.
+A `fuzzy` op doing Levenshtein matching via ES/OS `multi_match` with `fuzziness: "AUTO"`, same `fieldNames` shape as `wildcard`. Note `docs/concepts.md` already advertises this operator, so the published contract is fixed rather than free (see tech-debt).
 
-The SQON schema: same shape as `wildcard` (`fieldNames` array + `value` string), different `op`:
-
-```json
-{
-	"op": "fuzzy",
-	"content": { "fieldNames": ["donor.name"], "value": "john smit" }
-}
-```
-
-**Implementation notes:**
-
-- `multi_match` with `fuzziness: "AUTO"` is the natural ES/OS translation; the current `getWildcardFilter` in `graphql-router` is the reference implementation to branch from
-- Nested field grouping logic from `getWildcardFilter` carries over: nested fields must be wrapped per path
-- A new `SqonBuilder.fuzzy()` builder method and a new `FuzzyFilterSchema` in `modules/sqon` are needed; the schema change is additive
-- The `fuzzy` op name is free: it was never released under the `wildcard`-era codebase, so there are no aliases or compatibility shims to remove; just add it as a new canonical op
-- Expose `fuzziness` as an optional `content` param defaulting to `"AUTO"` for callers who need tighter or looser matching
-
-**Design question to resolve before implementing:** should `fuzzy` tolerate leading-term fuzziness only (`operator: "AND"`) or allow any-term matching (`operator: "OR"`)? AND is less surprising for search boxes; OR is more permissive. Decide at API design time.
+[Detail: implementation notes, schema shape, and the AND-versus-OR design question](docs/atlas/roadmap/sqon-operators.md#fuzzy-edit-distance-sqon-operator)
 
 ### GA4GH Beacon v2 module
 
 _Priority: low. Design-first; no implementation until arranger-core extraction is further along._
 
-**Prior art:** an early Beacon **v1** spike (query-existence endpoint against `referenceName`/`start`/`end`/`referenceBases`, not the v2 entry-type/filtering-terms model below) was prototyped once and never landed; found while surveying old stashed work. It was placeholder-heavy (hardcoded index name, no integration with Arranger's actual catalogue config or SQON) and targets the wrong (v1) spec, so there's nothing to port forward, but it's worth knowing the ES-query-translation problem has been poked at before.
+A new `modules/beacon-router` package implementing the GA4GH Beacon v2 REST API as an optional Express router, mounted alongside `graphql-router` so operators opt in. The hard problem is the filtering term registry: Beacon queries use ontology CURIEs with no universal mapping to Arranger fields, so each deployment needs a configurable term registry before filter queries can work at all. Phased: discovery endpoints and count/boolean granularity first, record-level granularity gated on Usher.
 
-A new `modules/beacon-router` package (`@overture-stack/arranger-beacon-router`) that implements the
-[GA4GH Beacon v2](https://github.com/ga4gh-beacon/beacon-v2) REST API as an optional Express
-router, mounted by `apps/search-server` alongside `graphql-router`. Operators who want Beacon
-endpoints enable the module in their server config; those who do not are unaffected.
-
-**Why a module, not a separate app:** Beacon needs direct access to the same ES/OS index data
-that `graphql-router` queries. Sharing the search client and catalogue configs inside the same
-process is cleaner than routing Beacon queries through Arranger's HTTP API. This also matches the
-direction of the Transport layer abstraction item; once `arranger-core` exists, `modules/beacon-router`
-becomes another thin adapter over it, parallel to `modules/graphql-router`.
-
-**What the module provides:**
-
-The package is a beacon router: it owns both the REST endpoint surface and the filter translation
-logic in one place, exported as a router factory alongside named utility functions. The filtering
-term registry and the REST endpoints share the same configuration surface and initialization
-context; there is no plausible consumer of the translation logic that is not also serving Beacon
-endpoints, so splitting them into separate packages would add a dependency without adding value.
-If a future consumer (such as the MCP server) needs the filter translation standalone, it imports
-the named export (`beaconFiltersToSqon`) from this package directly.
-
-Concretely:
-
-- Beacon v2 REST endpoints (`/beacon/info`, `/beacon/filtering_terms`, and per-entry-type query
-  endpoints such as `/beacon/individuals`, `/beacon/biosamples`) mounted on the Express app
-- Translation of Beacon v2 filter syntax (ontology CURIEs, alphanumeric filters) to SQON,
-  exported as `beaconFiltersToSqon` for potential reuse by other packages
-- Mapping of Arranger catalogues to Beacon entry types via per-catalogue config
-- Beacon v2 response envelopes (`meta`, `responseSummary`, `response`)
-- Support for the `count` and `boolean` response granularities (record-level granularity is
-  Phase 2, gated on Usher integration for controlled-access enforcement)
-
-**The hard design problem: filtering term registry.** Beacon queries use ontology term
-identifiers (e.g. `HP:0001250`, `EFO:0009655`) rather than raw field names. There is no universal
-mapping from a CURIE to an Arranger field; the mapping is schema-specific to each deployment. The
-module will need a configurable filtering term registry (a declaration in each catalogue's config
-that maps ontology terms to field names and values) before Beacon filter queries can work. Without
-a registry entry for a given term, the module can return a valid Beacon "not found" response but
-cannot translate the filter. This is a per-operator configuration burden that should be
-clearly documented.
-
-**Entry type: catalogue mapping.** Beacon v2 defines specific entry types (`individuals`,
-`biosamples`, `g_variants`, etc.). An Arranger catalogue holds one ES index; operators declare
-which Beacon entry type that catalogue represents in config. A deployment with three catalogues
-might map one to `individuals`, one to `biosamples`, and one not to any Beacon entry type.
-
-**Phased scope:**
-
-1. `/beacon/info` and `/beacon/filtering_terms` endpoints; `boolean` and `count` granularity;
-   no auth required. Useful as a Beacon discovery surface without exposing record-level data.
-2. Record-level granularity (`record` response); gated on Usher integration for controlled-access
-   enforcement. A researcher with an appropriate Usher constraint token (or GA4GH Passport via
-   Keycloak/Usher) gets record-level results; unauthenticated requests get count/boolean only.
-3. Full GA4GH Passport compatibility via Usher acting as the Beacon Clearinghouse. See Usher
-   roadmap and design documents for the Passport integration path.
-
-**Relationship to other roadmap items:**
-
-- _Arranger core module extraction_: Phase 2 and 3 are cleaner once `arranger-core` defines a
-  stable query API. Phase 1 can proceed without it by calling the search client directly.
-- _Usher_: Phase 2 and 3 depend on Usher for access control enforcement. Phase 1 is independent.
-- _Transport layer abstraction_: `modules/beacon-router` is the concrete example of a non-GraphQL
-  transport adapter; designing it will inform the core/transport interface.
-- _search-server route organization_: Beacon routes should live in `routes/beacon.ts` under
-  the `routes/` directory that item proposes.
-
-_Design-first. Define the filtering term registry schema and the entry type config surface before
-writing any query translation code._
+Full detail, including the v1 prior-art spike, entry-type mapping, and relationships to core extraction and Usher: [atlas: GA4GH Beacon v2](docs/atlas/roadmap/ga4gh-beacon-v2.md).
 
 ### Domain-specific search capabilities (research)
 
@@ -550,13 +336,9 @@ _Priority: low but important. Research-first; no implementation until each sub-q
 
 #### Genomic interval and overlap operator
 
-The current SQON operator set (`all`, `between`, `gt`, `gte`, `in`, `lt`, `lte`, `not-in`, `some-not-in`, `wildcard`, and the planned `fuzzy`) has no way to express "does this record's genomic region overlap chr1:1000-2000", a foundational query pattern for variant, gene, and read-alignment data. `between` is a single-field numeric range; an overlap query compares a query range against two fields (start and end, or a single range-typed field), which is a different shape.
+No current operator expresses "does this record's region overlap chr1:1000-2000", a foundational query for variant and gene data, and a named prerequisite of Beacon's `g_variants` entry type.
 
-Prior art: ES and OS both support this today via a `bool` query composing `lte`/`gte` pairs across two fields (`start <= queryEnd AND end >= queryStart`), or via the native [ES `range` field type](https://www.elastic.co/guide/en/elasticsearch/reference/current/range.html) queried with the `intersects`, `contains`, or `within` relation. OpenSearch supports the same field type and relations.
-
-This is directly relevant to the already-planned [GA4GH Beacon v2 module](#ga4gh-beacon-v2-module): region/variant search is core to the [Beacon v2 query spec](https://github.com/ga4gh-beacon/beacon-v2) for its `g_variants` entry type. Building this as a general SQON operator now means Beacon's later phases can consume it rather than reinventing region-overlap translation logic when that work starts.
-
-Open design questions: does the SQON schema need a new two-field content shape (for example `{ startField, endField, queryStart, queryEnd }`), or can it be expressed as a composition of existing `gte`/`lte` operators under `and`? Should this require catalogues to index positions using an ES/OS `range` field type, or should it also support the two-plain-numeric-fields case for catalogues that do not use range fields? The answer determines whether this is purely a `modules/sqon` and query-builder change, or also an indexing/mapping requirement that needs to be communicated to operators.
+[Detail: prior art, and whether this needs a new SQON shape or an indexing requirement](docs/atlas/roadmap/sqon-operators.md#genomic-interval-and-overlap-operator)
 
 #### Relevance-ranked search mode
 
@@ -570,26 +352,17 @@ This is lower-risk than it looks: the response-side plumbing (`track_scores`, ge
 
 #### Hybrid keyword and vector (semantic) search
 
-Longer horizon; flagged clearly as a bigger bet, not a near-term build. Confirmed: neither ES nor OS vector or k-NN fields are used anywhere in the codebase today. `docs/concepts.md` already positions Arranger as "a working search API and MCP server for AI agent access"; semantic search over free-text fields (clinical notes, descriptions, publication abstracts) is a natural extension of that positioning, and is distinct from both operators above: `wildcard` and relevance-ranked search match on literal or weighted term overlap, while semantic search matches on meaning (for example, "kidney cancer" matching a record that says "renal carcinoma").
+Longer horizon, flagged as a bigger bet. Semantic search over free-text fields, matching on meaning rather than term overlap. Confirmed absent: no vector or k-NN fields used anywhere today.
 
-Prior art: OpenSearch's [k-NN plugin](https://opensearch.org/docs/latest/search-plugins/knn/index/) (`knn_vector` field type; HNSW or IVF algorithms) and its [hybrid query feature](https://opensearch.org/docs/latest/search-plugins/hybrid-search/) (combines BM25 and k-NN scores with score normalization) are the most directly relevant references, since this already aligns with the OpenSearch-first direction. ES has an equivalent (`dense_vector` field plus `knn` query since 8.x), though Arranger's documented minimum ES support (7.0+) predates ES's native k-NN support; this would likely be an OpenSearch-only capability at first unless the ES version floor is revisited.
-
-Open design question: who generates the embeddings? Almost certainly not Arranger itself, since it doesn't own embedding-model infrastructure; an operator's indexing pipeline (for example Maestro) would populate a vector field at index time. Arranger's role would be the query side only: accepting a query vector, or text to embed at query time via a configured embedding endpoint, and fusing keyword and vector result rankings. This needs a design decision on where the embedding call happens before any implementation begins.
+[Detail: OpenSearch k-NN prior art, ES version floor, and the unresolved embeddings question](docs/atlas/roadmap/sqon-operators.md#hybrid-keyword-and-vector-semantic-search)
 
 ### Sets: full feature implementation
 
 _Priority: active. Backend exists but the feature is incomplete._
 
-Sets are saved groupings of documents from a catalog; think "save this search result for later" or "share this selection with a colleague." Confirmed backend inventory: exactly **one** operation exists end-to-end. `saveSet` (type def `modules/graphql-router/src/schema/Root.ts:68`, resolver `mapping/resolveSets.js:58-108`) runs a SQON as an ES query, walks every matching document via `search_after` pagination, and indexes a static snapshot (`{setId, createdAt, ids, type, path, sqon, userId, size}`, mapping in `schema/index.ts:11-20`) into a dedicated sets index. There is no `listSets`, `deleteSet`, `updateSet`, or `renameSet` anywhere in the codebase, and no query to fetch a set back: a user can create a set and never see, rename, or delete it again through the API. UI-side, the only artifact is `modules/components/src/utils/saveSet.js`, a thin mutation wrapper consumed inside `Arranger/MatchBox.jsx:265-289`; there is no create/view/manage/share panel of any kind.
+Exactly one operation exists end to end: `saveSet`. `listSets`, `deleteSet`, and `updateSet` are entirely absent, there is no UI beyond the MatchBox save affordance, and nothing reads the `userId` the sets index already stores. The ABAC model needs deciding before the backend is finished, since it shapes the data model.
 
-The full scope includes:
-
-- **Backend:** `saveSet` (create) exists; `listSets`, `deleteSet`, and `updateSet` are entirely missing, not partially built. Error handling on the existing path is unverified, since it has no test coverage (see [tech-debt: no unit tests for `resolveSetsInSqon`](tech-debt.md#no-unit-tests-for-resolvesetsinsqon-set-expansion)).
-- **UI:** Components for creating, viewing, managing, and sharing sets, integrated with the existing filter/search UI. Zero UI exists beyond the MatchBox save affordance.
-- **Access control:** Sets should support Attribute-Based Access Control (ABAC). A set has an owner; it can be private, shared with specific users, or public. This design needs to be done before the backend is completed, as it affects the data model. Confirmed: the sets ES mapping stores `userId` per set today, but nothing anywhere reads or enforces it, and the query-time resolution path (`set_id:` filter expansion) is not even gated by `ENABLE_SETS`, only index creation is (see [tech-debt: `ENABLE_SETS` flag does not fully gate the Sets query path](tech-debt.md#enable_sets-flag-does-not-fully-gate-the-sets-query-path)). This is a live gap, not only a forward-looking design question.
-- **Virtual cohorts:** Rather than storing a static list of document IDs, a set can be defined as a saved filter/query that resolves dynamically at query time. Confirmed: today's `ids` field is a frozen snapshot taken at creation time; the `sqon` is stored alongside it but never re-run. Virtual cohorts would be a genuinely new resolution mode, not an extension of the existing one.
-
-This is a substantial multi-sprint effort. Backend and UI work can be parallelized once the ABAC model is defined. The `ENABLE_SETS` feature flag exists precisely because this is a work in progress; it should remain until the feature is complete and stable.
+[Detail: confirmed backend inventory, the four separable tracks, virtual cohorts](docs/atlas/roadmap/sets-feature.md)
 
 ### Admin UI replacement
 
@@ -603,15 +376,11 @@ _Do not extend or fix the existing admin-ui. Start fresh when the time comes._
 
 ### Admin and user access model
 
-_Priority: medium. Blocked on design decision._
+_Priority: medium. Blocked on a design decision, though possibly a narrower one than it looks._
 
-The `enableAdmin` flag is inherited from the original codebase. In its current form, "admin mode" exposes additional API surface (primarily mapping introspection) but its intent was never clearly defined. Before this is extended or built upon, the access model needs to be designed from first principles:
+`enableAdmin`'s intent was never defined and it should not be extended until the access model is. Its only reachable effect today is one conditional field resolver, and the code's own FIXME suggests fixing an `aggregation`/`numericAggregation` resolution bug might let the flag be deleted outright.
 
-- What actions should require elevated access that a regular user cannot perform?
-- Is "admin" the right conceptual boundary, or should this be a more granular role system?
-- Should the flag be renamed to better reflect what it actually gates?
-
-Until these questions are answered, the `enableAdmin` flag and its associated code should not be extended. The decision has downstream implications for the Sets ABAC model as well; the two features should be designed together or at least in awareness of each other.
+[Detail: the three in-code signals and the narrowing correction](docs/atlas/roadmap/auth-and-access-control.md#admin-and-user-access-model)
 
 ### Quicksearch integration into facets
 
@@ -674,24 +443,28 @@ Arranger configs should allow operators to define additional table columns and a
 
 _Blocked on config separation; where these definitions live (server vs. UI config layer) is a design question that must be settled first. See "Arranger config separation" in the Architecture section._
 
-### `nestingPrefix` feature
+### `DownloadButton` `onExport` callback
 
-_Resolved. Both phases implemented and verified._
+_Priority: high. Small, single-package, client-side only._
 
-A catalogue's real ES/OS documents can wrap all their content under one top-level envelope property (confirmed real-world case: Lyric-sourced catalogues nest everything under a `data` property, a Lyric design choice Arranger works around rather than requiring upstream to change). Setting a catalogue's `nestingPrefix` config (e.g. `"data"`, or a dotted path for deeper envelopes) makes it behave, end to end, exactly like an unwrapped catalogue:
+Add a public `onExport` callback prop to `DownloadButton`'s theme, firing for any export path, whether the exporter is the built-in `'saveTSV'` or a fully custom function, with the same `ExporterFunctionProps` payload (`sqon`, `selectedRows`, `url`, `files`) the exporter itself receives. Named to match `Aggregations`'s existing `onValueChange` callback precedent, rather than something export-specific like `onDownload`.
 
-- **Mapping ingestion** (`searchClient/fetchMapping.ts`'s `unwrapMapping`): `getIndexMapping` unwraps the mapping once at startup, so schema generation, field discovery, and `extended.json`/`facets.json`/`table.json` all operate on clean, unprefixed names. Verified against a real, enveloped catalogue's mapping (all 246 configured fields resolve, including hyphenated names and the primary key).
-- **Per-request query/response translation** (`middleware/utils/nestingPrefix.ts`): a shared utility (`applyNestingPrefix`, `applyNestingPrefixToFieldNames`, `applyNestingPrefixToSqon`, `unwrapSource`, `unwrapHits`) applied at each pipeline's entry point, rather than threading `nestingPrefix` awareness into every filter-op builder or `_source` reader individually:
-    - `buildQuery`/`buildAggregations` prefix their incoming SQON and `nestedFieldNames` once at entry; the 7 filter-op builders, `esFilter.js`'s nested-path wrapper, `getNestedSqonFilters.js`, and the SQON-side of `injectNestedFiltersToAggs.js` needed zero changes, since they were already fully parametrized by their inputs.
-    - `buildAggregations`/`createFieldAggregation.js` needed one real untangling: the pre-existing `field` variable conflated the ES query path with the response/bucket key name. Split into `fieldName` (clean, drives every response key) and `esFieldName` (prefixed, drives every ES query clause) throughout both files, plus the one comparison in `injectNestedFiltersToAggs.js` that needed the same prefix applied to compare correctly.
-    - `resolveHits.js`/`resolveSets.js`/`getAllData.js` prefix their own sort-building (a query-building concern outside `buildQuery`) and unwrap returned `_source` via `unwrapHits`/`unwrapSource` immediately after the ES call, so every downstream reader sees already-clean data with no changes needed. `resolveHits.js`'s per-field `_source` request-filter is replaced with the envelope key alone when a prefix is configured (a strict superset of any narrower list, avoiding a subtly-wrong per-field pattern match against a possibly GraphQL-sanitized name). **Flagged as a concrete future incompatibility, not just a current-state note:** see [Auth and field/record-level access control](#auth-and-field-record-level-access-control)'s "Field-level access" bullet, this fetch-everything shape needs to be revisited once field-level grants exist.
-    - `flattenAggregations.js`'s one `top_hits` `_source` read is unwrapped the same way.
-    - A configured `nestingPrefix` that doesn't match the real index mapping fails the catalogue outright (`nesting_prefix_not_found`, via the existing partial-availability mechanism) rather than silently falling back to the still-wrapped mapping. The original fallback-plus-`console.warn` design would have reproduced the exact "everything is null" symptom this feature exists to fix, self-inflicted by a config typo with only a log line as the clue.
-  - Unwrapping the mapping before schema generation is also a security-relevant side effect, not just a correctness one: see `.dev/docs/nesting-prefix.md` for why, and the confirmed depth numbers.
+This is deliberately a thin, generic hook, not an export-format change: it lets a consumer add a side effect (analytics tracking is the confirmed real case) around any export without needing to know or reimplement how the export itself works. `saveTSV`'s internals stay unexported and free to change later; `onExport` firing alongside whichever exporter ran is what keeps that transparent to the consumer.
 
-Verified with unit tests at every layer, not just the shared utility: `nestingPrefix.test.ts` for the pure helpers; targeted cases added to `buildQuery.test.js`, `buildAggregations.test.js`, `injectNestedFiltersToAggs.test.js`, and `flattenAggregations.test.js` for the query/aggregation pipelines; `fetchMapping.test.ts` and `classifyCatalogueFailureReason.test.ts` for the mapping-ingestion and catalogue-failure behaviour; and full GraphQL-execution tests (`resolveHits.integration.test.js`, `resolveAggregations.test.ts`, `resolveSets.test.js`) for the resolver-level integration (sort-building, `_source` requests, `unwrapHits`/`unwrapSource`), the layer most likely to hide a real bug since it's where several independently-correct pieces are wired together. That integration-level testing pass caught one: `resolveSets.js`'s default sort (`_id`, an ES meta field, not part of the document's own data) was being incorrectly prefixed too, fixed to special-case it. The duplicated "is this field nested" prefix-matching logic each pipeline already had did not need consolidating to implement this: every one of those call sites was already correctly parametrized by whatever `nestedFieldNames` it was given, so feeding each a prefixed list was sufficient without touching the duplicated logic itself.
+Originates from [tech-debt: `DownloadButton`'s exporter customization reads as `'saveTSV'`-only, but accepts any function](tech-debt.md#downloadbuttons-exporter-customization-reads-as-savetsv-only-but-accepts-any-function), fix option (2); confirmed against a real integration need (iMicroSeq portal UI, Google Analytics download-tracking), not speculative.
 
----
+### `saveCSV` export format
+
+_Priority: medium. Cross-package: `modules/components` (client wrapper) and `modules/graphql-router` (new server-side format support). Not a same-day pairing with `onExport` despite the shared origin: this is real new work, not a separator swap._
+
+Add a `saveCSV` export option alongside the existing `saveTSV`. Initially assumed to be "a wrapper around the existing logic, passing a different separator"; verified against the actual server-side code and that assumption doesn't hold. `modules/graphql-router/src/download/index.js`'s `dataToStream` and `src/utils/dataToExportFormat.js` only implement `fileType: 'json'`/`'tsv'`; any other value throws `'Unsupported file type specified for export.'`. The tab separator is hardcoded in `rowToTSV` (`.join('\t')`) and in `columnsToHeader`'s `'tsv'` case, not parameterized.
+
+Real scope:
+
+- **Server (`modules/graphql-router`):** a new `'csv'` case in `dataToStream`'s format switch and in `columnsToHeader`; a new `rowToCSV` (not a parameterized `rowToTSV`, since CSV needs actual value-escaping that TSV never required: commas, double quotes, and embedded newlines in field values all need quoting/escaping per [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180), whereas TSV's separator rarely collides with real data).
+- **Client (`modules/components`):** a `saveCSV` counterpart to `saveTSV` in `Table/DownloadButton/helpers.ts`, reusing the same column-customizer resolution logic (`useCustomisers`) `saveTSV` already has, requesting the new `'csv'` format from the server.
+
+Originates from [tech-debt: `DownloadButton`'s exporter customization reads as `'saveTSV'`-only, but accepts any function](tech-debt.md#downloadbuttons-exporter-customization-reads-as-savetsv-only-but-accepts-any-function); raised alongside `onExport` but scoped and prioritized separately since it touches the server and needs genuinely new CSV-escaping logic, not just a client-side change.
 
 ## Components
 
@@ -699,49 +472,27 @@ The `modules/components` package carries significant legacy weight and has accum
 
 ### Components module modernization
 
-_Priority: medium-high for the `recompose` removal specifically; medium for the rest. Confirmed compatibility risk, not just a style concern._
+_Priority: medium-high for the `recompose` removal specifically; medium for the rest._
 
-The components package still uses patterns that predate React hooks: `recompose` (an HOC composition library), `component-component` (a render-prop state machine), and class-based components throughout. These are no longer idiomatic React and make the codebase harder to read, test, and extend.
+`recompose` is abandoned and calls `React.createFactory()`, removed in React 19, while the package's peer range already advertises React 19 support. Confirmed scope: `recompose` in 4 files, `component-component` in 10 (7 of them in `AdvancedSqonBuilder/`), 16 class components.
 
-**`recompose` is a confirmed, not just theoretical, compatibility risk.** It's abandoned (`0.30.0`, last published 2023-03-03, no updates since) and calls `React.createFactory()` internally. That function was deprecated in React 16.9 and is **removed entirely** in React 19 (confirmed against React's own official upgrade guide: "React.createFactory is no longer exported"), not merely warned about. `package.json`'s `peerDependencies` already advertises `"react": "^17.0.0 || ^18.0.0 || ^19.0.0"`; any consumer that actually upgrades to React 19 today would hit a hard crash in every one of the 4 files below, despite the peer range claiming support. Removing `recompose` specifically (not the other two patterns) is what closes this gap.
-
-**Confirmed scope, by grep:**
-
-- `recompose`: 4 files (`Tabs.jsx`, `Query.jsx`, `QuickSearch/QuickSearchQuery.js`, `Arranger/MatchBox.jsx`).
-- `component-component`: 10 files, concentrated in one directory; 7 of the 10 are in `AdvancedSqonBuilder/` (`index.jsx`, `SqonEntry.js`, `sqonPieces/FieldOp.jsx`, `sqonPieces/BooleanOp.jsx`, `filterComponents/BooleanFilter.jsx`, `filterComponents/RangeFilter.js`, `filterComponents/TermFilter.jsx`); the rest are `AdvancedFacetView/index.jsx`, `State.js`, and `utils/ExtendedMappingProvider.jsx`. Migrating `AdvancedSqonBuilder` alone closes most of this.
-- Class components: 21 files. Not confined to obviously-legacy code: alongside `Query.jsx`, `State.js`, and `AdvancedFacetView/*`, the pattern also cuts through the theme engine (`ThemeContext/index.tsx`, `Table/helpers/context.tsx`, `DataContext/index.tsx`) and the Aggs family (`aggregations/RangeAgg.jsx`, `aggregations/DatesAgg.jsx`, `aggregations/AggsState.ts`); code that's otherwise already modernized in other respects.
-
-Scope:
-
-- Remove `recompose` and `component-component`; replace HOC and render-prop patterns with hooks
-- Convert remaining class components to function components
-- Simplify the aggregations components, which have accumulated redundant abstractions over time (multiple layers of HOC wrapping that add indirection without adding value)
-
-Can be done incrementally, component by component, without breaking the public API. `AdvancedSqonBuilder` is the natural first target for `component-component` removal, given how concentrated that dependency is there.
+[Detail: the confirmed compatibility risk and per-pattern file inventory](docs/atlas/roadmap/components-modernization.md#components-module-modernization)
 
 ### Extend the theming engine to all components
 
-_Priority: medium. Consistency issue that affects integrators._
+_Priority: medium. Consistency issue affecting integrators._
 
-The table component introduced a theming system (`modules/components/src/ThemeContext/`: `ThemeProvider`, `useThemeContext`, `withTheme`, and a `Components` type holding a per-component theme shape) that lets operators customize appearance through a theme prop. Most aggregation components already participate: `TermAggs`, `BooleanAggs`, `AggsGroup`, `BucketCount`, `RangeAgg`, and `DatesAgg` are wired in. The remaining gaps are narrower than "facets and aggregation components" suggests: `Aggregations.jsx`, `AggsQuery.jsx`, `aggComponentsMap.jsx`, `AggsPanel.jsx`, `TermAggs/SelectAllButton.jsx`, and `Tooltip/`.
+Most aggregation components already participate in the theme system; the gaps are `Aggregations.jsx`, `AggsQuery.jsx`, `aggComponentsMap.jsx`, `AggsPanel.jsx`, `SelectAllButton.jsx`, and `Tooltip/`. Tooltip is the next concrete target and does not depend on the Emotion decision.
 
-**Next concrete target: Tooltip.** `modules/components/src/Tooltip/` already carries its own local theme prop (`TooltipThemeProperties`: `tooltipAlign`, `tooltipFontColor`, `tooltipText`, `tooltipVisibility`), but it is a self-contained shape disconnected from the central `Components` type. Folding it in (add a `Tooltip: TooltipThemeProps` slot to `Components`, switch the component to `useThemeContext`/`withTheme`) follows the exact pattern Table and Aggregations already use. It does not require the Emotion replacement decision below: it reuses the existing mechanism rather than deepening investment in it, so it is a reasonable next step to take now.
-
-**Known unaddressed split:** `modules/charts` has its own separate `ChartsThemeProvider` (colour array, a `components` override slot including `TooltipComp`/`Loader`) with no connection to `modules/components`' `ThemeContext`. Whether these should ever merge is an open question, not yet scoped. Note `TooltipComp` specifically is declared but not actually wired up yet, see [tech-debt: `TooltipComp` theme override is declared but never wired up](tech-debt.md#tooltipcomp-theme-override-is-declared-but-never-wired-up).
-
-_Coordinate with the Emotion replacement (decided: ShadCN/Base UI + `cva`, see below) before investing heavily beyond the Tooltip step; the styling mechanism affects how theming is implemented for anything larger._
+[Detail: the charts theming split and the Tooltip approach](docs/atlas/roadmap/components-modernization.md#extend-the-theming-engine-to-all-components)
 
 ### Replace Emotion with a less constrained styling solution
 
-_Priority: medium-high. Decided 2026-08-04: ShadCN, on Base UI, with `cva` for variant styling. Blocks or complicates several other component improvements until implemented._
+_Priority: medium-high. Decided 2026-08-04: ShadCN on Base UI with `cva`._
 
-Emotion is the current CSS-in-JS library. It ties the build to Babel and has known caching issues in some environments. Confirmed footprint: 46 files in the module import from `@emotion/*`, essentially the entire styled-component surface and not a contained corner of it, with 39 files using the `css` template-literal prop and 6 using `styled(...)`. This is a module-wide migration, not a localized swap.
+Module-wide migration, not a localized swap: 46 files import from `@emotion/*`. A proof-of-concept on one or two components should precede the full migration.
 
-**Decision:** ShadCN with Tailwind CSS, using [`cva`](https://cva.style) (class-variance-authority) to author variant-driven component APIs. Adopted from research already done in another Overture project. As of shadcn's July 2026 changelog, Base UI (not Radix) is shadcn's default primitive layer: built by the same team behind Radix, at `@base-ui/react@1.6.0`, with new projects created via `shadcn/create` picking it over Radix roughly 2 to 1, and it ships primitives Radix never had (Combobox, Autocomplete, Number Field, Checkbox Group, object-valued Select). Radix itself is not deprecated (shadcn ships every update for both libraries), so this is a "faster-moving option from the same lineage" choice, not an abandoned-library workaround.
-
-A proof-of-concept with one or two components is still recommended before the full migration, to validate the component API and theming model shift in practice.
-
-_This decision gates the theming extension work below, which is now unblocked to proceed against ShadCN/Base UI's theming model once the proof-of-concept lands._
+[Detail: the decision rationale and why Base UI over Radix](docs/atlas/roadmap/components-modernization.md#replace-emotion-with-a-less-constrained-styling-solution)
 
 ### Accessibility (a11y) audit and remediation
 
@@ -757,29 +508,21 @@ _Coordinate with the Emotion replacement (decided: ShadCN/Base UI + `cva`); doin
 
 ### Storybook (or similar) for `modules/components`/`modules/charts`, carrying their own integration tests
 
-_Priority: medium. Confirmed real gap: no test today exercises "server builds a schema this way" through to "the UI queries and renders it correctly."_
+_Priority: medium. Confirmed real gap: nothing tests server schema generation through to UI rendering._
 
-There is currently no integration testing between the UI packages and a real running `search-server`. `integration-tests/import` is a pure module-resolution smoke test (checks exports are `defined`, nothing functional). `integration-tests/server` is real ES + real `search-server`, but entirely server-side, no UI/component involvement. `modules/components`' own Jest suite is unit-level and thin (per the Components modernization section above and existing tech-debt entries), mostly pure-function tests, not full rendering against real data.
+Not greenfield. `modules/charts` already has a complete, empty Storybook 9 harness (stories needed, not infrastructure); `modules/components` has a dead 2018 Storybook 3 install that is separately the source of 42 of the repo's 45 `npm audit` criticals. Split the work accordingly.
 
-This gap let a real cross-package mismatch ship unnoticed during this session's GraphQL name sanitization work: the UI packages had their own independent, duplicated copies of the raw-to-GraphQL-name transform (`LiveAdvancedFacetView.js`, `Aggregations.jsx`, `Stats.jsx`, `charts/arranger/mapping.ts`, and others), each only handling dots, none aware of the server's fuller sanitization. Only caught by reasoning through it by hand, not by any test.
-
-Storybook (or an equivalent tool) would give `modules/components`/`modules/charts` a place to run against realistic, representative data shapes (including edge cases like unusual field names) with visual/interaction assertions, closing the gap between "package imports without crashing" and "actually renders correct results for real server responses." Scope not yet detailed: candidate approach is stories per component family (Aggregations, facets, charts) backed by fixture data mirroring real catalogue mappings, potentially with visual regression testing.
-
----
+[Detail: the gap this let ship, and the per-package state](docs/atlas/roadmap/components-modernization.md#storybook-or-similar-for-modulescomponentsmodulescharts-carrying-their-own-integration-tests)
 
 ## Security
 
 ### GraphQL query complexity analysis
 
-_Priority: low. Basic protections are already in place._
+_Priority: low. Basic protections already in place._
 
-Alias count and depth limits are implemented (`maxAliasesRule`, `maxDepthRule` in `graphql-router`, configurable via `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` environment variables). These address the specific DoS vectors that were identified.
+Alias and depth limits are implemented and configurable. Per-resolver cost weighting against a total budget is the remaining hardening step.
 
-A more thorough approach would assign cost weights to individual field resolvers and reject queries that exceed a total complexity budget, so a query with 10 expensive aggregation fields costs more than 10 cheap scalar fields. The `graphql-query-complexity` library handles this well. This is a hardening step worth doing eventually, but not urgent given the current protections.
-
-**Real-world interaction confirmed with the `nestingPrefix` feature:** the default limit is already tight against genuinely nested clinical schemas, confirmed directly against a real, enveloped catalogue's mapping (single-level nesting alone reaches depth 9, already two over the default). See `.dev/docs/nesting-prefix.md` for the full rationale and confirmed numbers; raising `GRAPHQL_MAX_DEPTH` for any specific deployment whose real nesting exceeds the default is a deployment-config decision tracked in that deployment's own devctx, not here.
-
-**Related, now closed:** array-based HTTP batching (multiple GraphQL operations in a single POST body, each executed in parallel via `Promise.all`) was a separate vector from alias/depth abuse: it bypasses request-level rate limiting and multiplies cost per request, and neither `maxAliasesRule` nor `maxDepthRule` caps the number of operations in a batch, only the cost of each one. Flagged by an external HCMI pentest report (2026-07-20). Fixed by gating on a new `enableGraphQLBatching` feature flag (`apollo-server-express`'s `allowBatchedHttpRequests` option, previously left at its permissive library default). Unlike the other `disable*` flags it's wired inverted, `enable*` and disabled by default, since Arranger has no legitimate internal use for HTTP-level batching: default `false` (batching rejected unless explicitly enabled), opt in only if a consumer genuinely relies on it. See `modules/graphql-router/README.md` feature-flags table.
+[Detail: the confirmed interaction with genuinely nested clinical schemas, and the now-closed batching vector](docs/atlas/roadmap/query-economics.md#graphql-query-complexity-analysis)
 
 ### Request rate limiting
 
@@ -823,24 +566,11 @@ _Needs design before implementation. Treat as a blocking design question for any
 
 ### Decouple startup health check from application credential
 
-`scripts/ping-elasticsearch.sh` calls `GET /_cluster/health` using the application user's credentials (`ES_USER`/`ES_PASS`). This forces `cluster:monitor/health` to be granted to the application role even though no application code path ever calls `/_cluster/health`. The permission exists solely so a shell script can display a status block on startup.
+_Priority: medium. Standalone once the approach is agreed._
 
-This violates the principle of least privilege: the application user's role carries a permission it never exercises. Any operator following the documented minimum permissions will grant `cluster:monitor/health` to their search engine user indefinitely, with no indication that it is a startup-script concern rather than an application requirement.
+`ping-elasticsearch.sh` calls `/_cluster/health` with the application credential, forcing `cluster:monitor/health` onto a role that never uses it. Move the readiness gate into a Kubernetes init container with its own elevated credential, leaving the app with `cluster:monitor/main` only.
 
-**Correct fix:**
-
-Move the readiness gate into a Kubernetes init container that runs with its own, more privileged credential, separate from the application's runtime credential:
-
-- **Init container:** runs `ping-elasticsearch.sh` (or its successor) with an elevated credential granted `cluster:monitor/main` + `cluster:monitor/health`. It retries `GET /_cluster/health?wait_for_status=yellow&...` until the cluster is ready or the container times out, gating the pod's main container start via the normal init-container mechanism. The cluster status block (cluster name, status, node count, shards) stays as this container's log output, visible via `kubectl logs <pod> -c <init-name>`, and never needs to be a concern for the app container.
-- **Main container:** the application runs with a leaner credential, `cluster:monitor/main` only, which is all it needs for `GET /` engine auto-detection. It never holds `cluster:monitor/health`.
-
-This preserves the `wait_for_status=yellow` readiness gate (true cluster-ready signal, not just HTTP connectivity) while still removing the unused permission from the long-running application process: the actual least-privilege violation the rest of this item is about.
-
-A simpler alternative (drop the readiness gate, probe `GET /` only, no init container) was considered and rejected: it trades a real readiness check for a permissions fix, and `GET /` only confirms the process is responding, not that shards are allocated.
-
-**Related:** the script filename (`ping-elasticsearch.sh`) and env var names (`ES_HOST`, `ES_USER`, `ES_PASS`) are also Elasticsearch-first and should be renamed in the same effort. See tech-debt: "Elasticsearch-first naming in startup script and env vars".
-
-_Standalone: yes, once the approach is agreed. Needs a new Vault role/policy for the init container's elevated credential, a second VSO-injected secret, and an `initContainers` stanza added to the Helm chart, in addition to script changes. If the Helm chart lives in a separate repo from this one, that work belongs there. No application logic changes._
+[Detail: the full fix, the rejected simpler alternative, and the Vault/Helm work required](docs/atlas/roadmap/health-check-credential.md)
 
 ### Helm chart update
 
@@ -858,13 +588,11 @@ Ideas and possible directions surfaced during design discussions, not yet commit
 
 ### Prometheus metrics endpoint for catalogue availability
 
-_Surfaced 2026-07-24, during the multicatalogue partial-availability design (see "Multicatalog catalogue lifecycle and metadata" above)._
+_Surfaced 2026-07-24 during the multicatalogue partial-availability design._
 
-A `/metrics` endpoint exposing a per-catalogue availability gauge (for example `arranger_catalogue_available{catalogue_id="X"} 1|0`, with the `error.code` as a label when `0`) so the granular "which catalogues are up, which are down, why, and for how long" detail is queryable and alertable via Prometheus/Alertmanager, separate from the boolean liveness/readiness probes. Keeps the health-check surface simple (a k8s probe should stay a boolean) while still making per-catalogue state observable over time, not just at the moment someone happens to hit the introspection endpoint.
+A per-catalogue availability gauge, so "which catalogues are down, why, and for how long" is alertable without overloading the boolean health probes.
 
-_Relationship to existing items: a specific instance of the already-logged "Observability: metrics, tracing, and usage analytics" item (see Architecture section above); recorded here separately because it's tied to a concrete need (multicatalogue status) rather than the general observability gap that item describes. Fold into that item, or keep separate, whichever is clearer once implementation actually starts._
-
----
+[Detail: relationship to the general observability item](docs/atlas/roadmap/observability.md#prometheus-metrics-endpoint-for-catalogue-availability)
 
 ## CI/CD & Release Process
 
@@ -889,10 +617,6 @@ The goal is a phased improvement: first get Turbo doing change detection in CI (
 ## Phase 1: Immediate (1-3 days, single PR, no Jenkins changes)
 
 Fix correctness issues in the repo that block Turbo from working reliably.
-
-### 1.1 Add `test` script to `charts`
-
-`modules/charts` has `vitest` in devDependencies but no `"test"` script. Decided to skip; the goal for `charts` is build and publish integration, not test coverage at this stage. Turbo will silently skip packages with no matching script, which is acceptable here.
 
 ### 1.2 Add `lint` and `typecheck` scripts to all publishable modules
 
@@ -966,43 +690,11 @@ _Depends on Phases 2.1 and 2.2 being complete. The Docker change can land indepe
 
 ### 3.1 Adopt Changesets for versioning and changelog automation
 
-**Sequencing: depends on §3.3 (pnpm) landing first, despite the numbering.** Changesets' internal-dependency cascade-bump detection is built around `workspace:` or real-semver references, not `file:`; adopting this before §3.3 would leave it nothing sensible to cascade against for any sibling dependency in the repo. See §3.3's own note and [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md).
+**Sequencing: depends on §3.3 (pnpm) landing first, despite the numbering.** Changesets' cascade-bump detection needs `workspace:` or real-semver references, not `file:`.
 
-Replaces manual version bumping + Jenkins git tagging. Packages version **independently**.
+Replaces manual version bumping and Jenkins git tagging; packages version independently. PR authors declare severity via `npx changeset`; the release branch runs `changeset publish`.
 
-```bash
-npm install --save-dev @changesets/cli
-npx changeset init
-```
-
-Configure `.changeset/config.json`:
-
-```json
-{
-	"changelog": "@changesets/cli/changelog",
-	"commit": false,
-	"linked": [],
-	"access": "public",
-	"baseBranch": "main",
-	"updateInternalDependencies": "patch",
-	"ignore": [
-		"@overture-stack/arranger-search-server",
-		"@overture-stack/arranger-mcp-server",
-		"integration-tests-import",
-		"integration-tests-server"
-	]
-}
-```
-
-New workflow: PR authors run `npx changeset` to declare which packages changed and at what semver level. On `release` branch, replace Jenkins Stage 4 + Stage 6 with:
-
-```groovy
-sh "npx changeset publish"
-```
-
-**Enhancement worth layering on top:** a CI check that diffs each package's exported API surface (e.g. against its `index.ts`/`.d.ts`, or via a tool like `api-extractor`) relative to the last published version, and posts a suggested severity (patch/minor/major) as a PR comment or pre-fills the `changeset` prompt. This doesn't replace the author's judgement (breaking-vs-additive calls are too fuzzy to fully automate reliably; manually reconstructing this for 7 packages during an rc round confirmed that), but it gives them a concrete starting point instead of deriving severity from scratch.
-
-**Cleanup when this lands:** `changeset version` rewrites `file:` deps to real version ranges before publishing, making the interim fix-and-restore approach redundant. Remove `scripts/fix-workspace-deps.mjs`, remove the `node scripts/fix-workspace-deps.mjs` and `git checkout` lines from the Jenkins publish loop, and delete the interim tech-debt entry for `file:` local dependencies. `scripts/verify-pack.mjs` (`npm run release:check`) stays as a belt-and-suspenders gate.
+Full detail, including the worked config, the API-surface-diff enhancement, and what Changesets does versus what pnpm's publish step does: [atlas: Changesets adoption](docs/atlas/roadmap/changesets-adoption.md).
 
 ### 3.2 Testcontainers for integration test infrastructure
 
@@ -1050,7 +742,11 @@ Catches phantom dependencies at install time, faster CI installs, removes `dange
 
 **Resolved via prototype (2026-08-15): `ts-patch` is fully compatible with pnpm.** The only real risk was already known: `sqon` and `types` invoke `ts-patch install -s` without declaring `ts-patch` as their own dependency (unlike `components`/`graphql-router`, which do this correctly), a real phantom dependency `depcheck` can't see since it's a shell-invoked binary, not a JS import. Confirmed by prototype that this breaks outright under pnpm and is fixed by adding the missing declaration. Add `ts-patch` to `sqon`'s and `types`' own `devDependencies` as part of this migration's checklist. `wireit`'s cross-package dependency graph under pnpm workspaces remains unverified by prototype; developer confidence accepted as sufficient for now. Full detail in the atlas doc.
 
-**Cleanup when this lands:** Replace all `file:` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, and `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already checks for `workspace:` refs as well as `file:` refs, so it remains valid as-is; pairing it with an actual `pnpm pack`/`pnpm publish --dry-run` check per package (verifying the real packed output, not just the source `package.json`) is worth adding at the same time.
+**Cleanup when this lands:** Replace all `file:` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, and `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. Also remove `scripts/fix-workspace-deps.mjs` and its `node scripts/fix-workspace-deps.mjs` / `git checkout` lines from the Jenkins publish loop here (moved from §3.1, which had this attributed to Changesets incorrectly). `scripts/verify-pack.mjs` already checks for `workspace:` refs as well as `file:` refs, so it remains valid as-is; pairing it with an actual `pnpm pack`/`pnpm publish --dry-run` check per package (verifying the real packed output, not just the source `package.json`) is worth adding at the same time.
+
+**Blocker found 2026-08-17, not in the checklist above:** `modules/charts` declares `@overture-stack/arranger-components` in `peerDependencies` only, with no `dependencies` or `devDependencies` counterpart, while seven of its source files import it. It resolves today purely via npm's workspace-root symlink; under pnpm's strict isolation it will not be linked and the build fails on first install. Add the missing `devDependency` before starting. More importantly, this is the **second** confirmed `depcheck` blind spot (it counts a `peerDependencies` entry as declared) after `ts-patch` (a shell-invoked binary), which means the phantom-dependency audit's "clean" verdict for `apps/mcp-server` and `modules/sqon` is weaker evidence than it reads as. Re-audit by a method that does not share depcheck's assumptions before the migration, rather than trusting the earlier pass. See [tech-debt: `arranger-components` is declared peer-only](tech-debt.md#arranger-components-is-declared-peer-only-which-will-break-the-first-pnpm-install-the-phantom-dependency-audit-could-not-see-it).
+
+**Also resolve before migrating:** the root `overrides.esbuild: "0.17.19"` pin is currently inert (the committed lockfile's nested resolutions predate it), but a from-scratch resolution honours it and collapses `tsx`, `vite`, and `storybook` onto a 2023 esbuild. `pnpm import` regenerates from the lockfile and would carry the current four-esbuild shape across, so decide whether to scope the override to the `tsup` edge that needs it or drop it, before the migration rather than after. Separately, the `overrides` blocks in `modules/components/package.json` and `modules/graphql-router/package.json` are silently ignored by npm (overrides are root-only) and would be equally ignored by `pnpm.overrides`; delete them rather than translating them across.
 
 **nx consideration:** nx is an alternative monorepo build system to Turborepo, not a complement. Turbo + pnpm is the current plan. If Turbo proves insufficient (e.g. more complex task orchestration, code generation, or module federation needs arise), nx is worth evaluating. For now, proceed with Turbo.
 
@@ -1098,16 +794,28 @@ Replace ad-hoc Dependabot with Renovate Bot; groups minor/patch updates into wee
 
 ## Dependency Graph Reference
 
+Redrawn 2026-08-17 from the actual manifests; the previous version was wrong in four ways that all understated what a `sqon` change rebuilds.
+
 ```
 sqon
- └─ types
-     └─ graphql-router
-         ├─ search-server
-         └─ integration-tests/server   ← cache: false (ES-dependent)
+ ├─ types
+ │   ├─ graphql-router
+ │   │   ├─ search-server
+ │   │   ├─ integration-tests/server        ← ES-dependent
+ │   │   └─ integration-tests/mcp-server    ← ES-dependent
+ │   ├─ components         (declares BOTH types and sqon)
+ │   └─ charts             (devDependency, and bundles it into dist/)
+ ├─ components
+ ├─ graphql-router
+ └─ mcp-server
 
-components                             ← independent of server chain
- └─ charts
+components
+ ├─ charts                 ← peerDependencies ONLY, see §3.3 blocker
  └─ integration-tests/import
 ```
 
-When `sqon` changes, `--filter=[HEAD^1]` automatically includes `types`, `graphql-router`, `search-server`, and `integration-tests/server` via the `^build` dependency chain.
+When `sqon` changes, `--filter=[HEAD^1]` includes `types`, `graphql-router`, `search-server`, `integration-tests/server`, `integration-tests/mcp-server`, `apps/mcp-server`, and `components` (and therefore `charts` and `integration-tests/import`) via the `^build` chain. In practice that is nearly the whole repo, which is worth knowing before assuming change detection will narrow much on a `sqon` edit.
+
+What the previous diagram got wrong: (1) `components` was marked "independent of server chain" but declares both `arranger-types` and `sqon`, so it is downstream of both; (2) `apps/mcp-server` was absent entirely despite declaring `sqon`; (3) `integration-tests/mcp-server` was absent despite depending on `graphql-router` and `types`; (4) the `components → charts` edge is not backed by a resolvable declaration at all, only a `peerDependencies` entry, which is the §3.3 blocker noted above.
+
+Two consequences for Phase 2: the `integration-tests/server` node was annotated `cache: false` here but `turbo.json` does not actually set it, and §2.2's `--filter=!integration-tests/server` excludes only one of the two ES-dependent suites (and uses a directory path where the package name is `integration-tests-search-server`). Both suites also default `SERVER_PORT` to 5678, which is safe under today's sequential `npm run test --ws` and will race the moment Turbo parallelizes them.
