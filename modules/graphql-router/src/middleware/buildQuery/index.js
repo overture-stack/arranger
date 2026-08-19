@@ -65,7 +65,7 @@ function getRegexFilter({ nestedFieldNames, filter }) {
 	const esFilter = wrapFilter({
 		filter,
 		nestedFieldNames,
-		esFilter: { regexp: { [fieldName]: value.replace('*', '.*') } },
+		esFilter: { regexp: { [fieldName]: value.replace(/\*/g, '.*') } },
 		isNot: NOT_IN_OP === op,
 	});
 

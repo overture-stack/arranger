@@ -9,7 +9,7 @@
 		// "noErrorTruncation": true
 	},
 	"exclude": ["node_modules", "**/dist/*"],
-	"extend": "@tsconfig/node22/tsconfig.json",
+	"extends": "@tsconfig/node22/tsconfig.json",
 	"include": [
 		"apps/**/*",
 		"integration-tests/**/*test.*",

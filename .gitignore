@@ -19,3 +19,6 @@ modules/sqon/src/version/generated.ts
 !**/.env.schema
 
 /configs
+# Claude Code local state (previously excluded only by a machine-local ignore rule)
+.claude/settings.local.json
+.claude/worktrees/

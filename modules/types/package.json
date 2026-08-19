@@ -49,6 +49,9 @@
 	"files": [
 		"dist"
 	],
+	"imports": {
+		"#*": "./src/*"
+	},
 	"scripts": {
 		"build": "wireit",
 		"clear:dist": "rm -rf dist",
