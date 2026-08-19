@@ -152,10 +152,11 @@ const router = await arrangerRouter({
 This project has first-class support for AI coding assistants. Agent instruction files at the root tell each tool about project conventions, working documents, and session discipline:
 
 - [`CLAUDE.md`](CLAUDE.md): Claude (Claude Code CLI and desktop)
-- [`AGENTS.md`](AGENTS.md): Codex and other general-purpose agents
-- [`.github/copilot-instructions.md`](.github/copilot-instructions.md): GitHub Copilot
+- [`AGENTS.md`](AGENTS.md): Codex, GitHub Copilot, and other general-purpose agents
 
-All three cover the same ground with minor variations for tool-specific features. If you update project conventions, update all three.
+Both cover the same ground with minor variations for tool-specific features. If you update project conventions, update both.
+
+Copilot previously had its own `.github/copilot-instructions.md`; it was retired 2026-08-17 because Copilot's coding agent, CLI, and VS Code Chat all read `AGENTS.md` directly now, so a second copy only created drift. See agentics' `CHANGELOG.md` § `copilot-instructions-retire-not-sync`.
 
 **Start of session:** read `roadmap.md`, `tech-debt.md`, and the most recent file(s) in `.dev/sessions/` before starting work. The agent instruction files embed a checklist for this.
 
