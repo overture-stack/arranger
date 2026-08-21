@@ -3,6 +3,8 @@ import type { Client as OpenSearchClient } from '@opensearch-project/opensearch'
 
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
+export type SupportedExternalClientTypes = SearchClient | OpenSearchClient | ElasticClient;
+
 export type SearchConfig = {
 	node: string;
 	clientType?: string;

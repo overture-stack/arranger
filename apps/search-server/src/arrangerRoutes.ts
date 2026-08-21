@@ -1,13 +1,13 @@
 import arrangerRouter, {
-	type ArrangerBaseContext,
 	classifyCatalogueFailureReason,
 	logSeparator,
-	type SearchClient,
+	type ArrangerBaseContext,
+	type SupportedExternalClientTypes,
 } from '@overture-stack/arranger-graphql-router';
 import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 import { Router, type Router as ExpressRouter } from 'express';
 
-import { type CatalogueStatusDetail, catalogueStatuses as CATALOGUE_STATUS } from '#availability/index.js';
+import { catalogueStatuses as CATALOGUE_STATUS, type CatalogueStatusDetail } from '#availability/index.js';
 import findCatalogueByIdentifier from '#catalogues/findCatalogueByIdentifier.js';
 import type { CataloguesMap } from '#configs/types/index.js';
 
@@ -20,7 +20,7 @@ export const buildCatalogueRouter = async ({
 	catalogueConfigs: CataloguesMap[string];
 	catalogueId: string;
 	enableDebug: boolean;
-	esClient?: SearchClient;
+	esClient?: SupportedExternalClientTypes;
 }): Promise<ExpressRouter> => {
 	const { getServerSideFilter, ...configs } = catalogueConfigs;
 	return arrangerRouter({
@@ -66,7 +66,7 @@ export default async ({
 	buildCatalogueRouterFn?: typeof buildCatalogueRouter;
 	catalogs: CataloguesMap;
 	enableDebug: boolean;
-	esClient?: SearchClient;
+	esClient?: SupportedExternalClientTypes;
 }): Promise<{
 	catalogueRouters: Record<string, ExpressRouter>;
 	catalogueStatuses: Record<string, CatalogueStatusDetail>;

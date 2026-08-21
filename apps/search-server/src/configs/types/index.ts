@@ -1,8 +1,8 @@
-import { type ArrangerBaseContext, type SearchClient } from '@overture-stack/arranger-graphql-router';
+import type { ArrangerBaseContext, SupportedExternalClientTypes } from '@overture-stack/arranger-graphql-router';
 import {
-	type configArrangerNetworkProperties,
 	type AllFeatureFlagConfigs,
 	type ConfigsObject as ArrangerConfigs,
+	type configArrangerNetworkProperties,
 	type configRootProperties,
 	type GetServerSideFilterFn,
 	type NetworkConfig,
@@ -12,9 +12,9 @@ import {
 } from '@overture-stack/arranger-types/configs';
 
 import {
+	type serverConfigProperties,
 	type serverNetworkConfigExtendedProperties,
 	type serverNetworkRemoteRequestCustomizationConfigProperties,
-	type serverConfigProperties,
 } from './constants.js';
 
 export type CataloguesMap = Record<string, Partial<ArrangerConfigs<ArrangerBaseContext>>>;
@@ -65,7 +65,7 @@ export type ExternalConfigs = Partial<
 	{
 		[serverConfigProperties.CONFIGS_PATH]: string;
 		currentDirectory: string;
-		esClient: SearchClient;
+		esClient: SupportedExternalClientTypes;
 		filters: GetServerSideFilterFn<any>;
 		searchEngine: SearchEngineType;
 		setsIndex: string;

@@ -4,10 +4,10 @@ import type { SqonNode } from '@overture-stack/sqon';
 import type { ValuesOf } from '#tools/typeFns.js';
 
 import type {
-	configArrangerNetworkProperties,
 	baseNodeProperties,
 	chartsProperties,
 	configArrangerFeatureFlagProperties,
+	configArrangerNetworkProperties,
 	configFeatureFlagProperties,
 	configOptionalProperties,
 	configRequiredProperties,

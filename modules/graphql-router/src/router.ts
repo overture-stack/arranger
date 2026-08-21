@@ -7,10 +7,10 @@ import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
-import { getIndexMapping } from '#searchClient/index.js';
 import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
-import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
+import buildSearchClient, { getIndexMapping } from '#searchClient/index.js';
+import type { SupportedExternalClientTypes } from '#searchClient/types.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
@@ -21,13 +21,8 @@ export const mergeConfigs = <Context extends ArrangerBaseContext>(
 ): Partial<ConfigsObject<Context>> => merge({}, fallback, custom);
 
 /** Resolves the identifier used in log output for this catalogue: an explicit `catalogueId`, falling back to `documentType`, then to a generic placeholder when neither is available. */
-export const resolveLabel = ({
-	catalogueId,
-	documentType,
-}: {
-	catalogueId?: string;
-	documentType?: string;
-}): string => catalogueId || documentType || FALLBACK_LABEL;
+export const resolveLabel = ({ catalogueId, documentType }: { catalogueId?: string; documentType?: string }): string =>
+	catalogueId || documentType || FALLBACK_LABEL;
 
 export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
 	configs,
@@ -58,7 +53,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	catalogueId?: string;
 	configs: Partial<ConfigsObject<Context>>;
 	configsSource?: string; // TODO: remove by v3.2
-	esClient?: SearchClient;
+	esClient?: SupportedExternalClientTypes;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 }): Promise<Router> => {
@@ -66,7 +61,9 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	const label = resolveLabel({ catalogueId, documentType: aggregatedConfigs[configRootProperties.DOCUMENT_TYPE] });
 
 	// TODO: set up a real logger... winston or pino?
-	console.log(`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
+	console.log(
+		`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
+	);
 
 	try {
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
@@ -87,7 +84,9 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 				password: esPass,
 				username: esUser,
 			}));
-
+		// TODO: Add Type Guard for esClient
+		// getIndexMapping will throw Error if esClient is undefined
+		// Downstream functions depend on esClient
 		const mappingFromIndex = await getIndexMapping({
 			enableDebug,
 			nestingPrefix: configs[configOptionalProperties.NESTING_PREFIX],

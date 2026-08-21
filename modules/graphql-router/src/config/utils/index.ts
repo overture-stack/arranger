@@ -1,6 +1,6 @@
 import { setsMapping } from '#schema/index.js';
+import type { SupportedExternalClientTypes } from '#searchClient/types.js';
 import { logSeparator } from '#utils/label.js';
-import { type SearchClient } from '#searchClient/types.js';
 
 export const initializeSets = async ({
 	enableSets = false,
@@ -11,7 +11,7 @@ export const initializeSets = async ({
 }: {
 	enableSets?: boolean;
 	enableDebug?: boolean;
-	esClient: SearchClient;
+	esClient: SupportedExternalClientTypes;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
 	setsIndex: string;

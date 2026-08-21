@@ -1,12 +1,15 @@
-import { type ConfigsObject } from '@overture-stack/arranger-types/configs';
-import { configArrangerBaseProperties, configRequiredProperties } from '@overture-stack/arranger-types/configs';
+import {
+	configArrangerBaseProperties,
+	configRequiredProperties,
+	type ConfigsObject,
+} from '@overture-stack/arranger-types/configs';
 
-import { type SearchClient } from '#searchClient/index.js';
+import { type SupportedExternalClientTypes } from '#searchClient/types.js';
 import type { ArrangerBaseContext } from '#types.js';
 
 export const validateConfigs = <Context extends ArrangerBaseContext>(
 	configs: Partial<ConfigsObject<Context>>,
-	esClient?: SearchClient,
+	esClient?: SupportedExternalClientTypes,
 ): Partial<ConfigsObject<Context>> => {
 	console.log('  - Validating catalogue configurations provided');
 

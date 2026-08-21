@@ -27,7 +27,8 @@ import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
-import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
+import { SCHEMA_BUILD_ERROR_NAME } from '#searchClient/index.js';
+import type { SupportedExternalClientTypes } from '#searchClient/types.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
@@ -261,7 +262,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	disablePlayground: boolean;
 	enableDebug?: boolean;
 	enableGraphQLBatching?: boolean;
-	esClient: SearchClient;
+	esClient: SupportedExternalClientTypes;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
@@ -384,7 +385,6 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	configs,
 	enableDebug = false,
 	enableAdmin = false,
-	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
 	label,
@@ -394,7 +394,6 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	configs: ConfigsObject<Context>;
 	enableDebug?: boolean;
 	enableAdmin?: boolean;
-	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
@@ -514,7 +513,7 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	configs: ConfigsObject<Context>;
 	enableAdmin?: boolean;
 	enableDebug?: boolean;
-	esClient: SearchClient;
+	esClient: SupportedExternalClientTypes;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
@@ -543,7 +542,6 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			configs,
 			enableDebug,
 			enableAdmin,
-			esClient,
 			getServerSideFilter,
 			graphqlOptions,
 			label,

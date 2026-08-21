@@ -1,7 +1,7 @@
 import type { CatAliasesAliasesRecord } from '@elastic/elasticsearch/api/types';
 
 import { NESTING_PREFIX_NOT_FOUND_ERROR_NAME } from './classifyCatalogueFailureReason.js';
-import type { SearchClient } from './types.js';
+import type { SupportedExternalClientTypes } from './types.js';
 
 const REQUEST_TIMEOUT = 10000;
 
@@ -31,7 +31,7 @@ const withSlowLog = async <T>(promise: Promise<T>, label: string, thresholdMs = 
 	}
 };
 
-export const getESAliases = async (esClient: SearchClient, requestTimeout?: number) => {
+export const getESAliases = async (esClient: SupportedExternalClientTypes, requestTimeout?: number) => {
 	const { body } = await withSlowLog(
 		esClient.cat.aliases({ error_trace: false, format: 'json' }, { requestTimeout }),
 		'ES aliases',
@@ -57,7 +57,7 @@ export const fetchMapping = async ({
 	searchClient,
 	esIndex,
 }: {
-	searchClient: SearchClient;
+	searchClient: SupportedExternalClientTypes;
 	esIndex: string;
 }) => {
 	if (searchClient) {
@@ -142,9 +142,12 @@ export const unwrapMapping = (mapping: any, nestingPrefix?: string) => {
 		.reduce((node: any, segment) => node?.[segment]?.properties, mapping);
 
 	if (!unwrapped) {
-		throw Object.assign(new Error(`Configured nestingPrefix "${nestingPrefix}" was not found in the index mapping.`), {
-			name: NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
-		});
+		throw Object.assign(
+			new Error(`Configured nestingPrefix "${nestingPrefix}" was not found in the index mapping.`),
+			{
+				name: NESTING_PREFIX_NOT_FOUND_ERROR_NAME,
+			},
+		);
 	}
 
 	return unwrapped;
@@ -165,7 +168,7 @@ export const getIndexMapping = async ({
 }: {
 	enableDebug?: boolean;
 	nestingPrefix?: string;
-	searchClient: SearchClient;
+	searchClient: SupportedExternalClientTypes | undefined;
 	esIndex: string;
 }) => {
 	if (searchClient && esIndex) {
