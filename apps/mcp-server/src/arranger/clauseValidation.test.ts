@@ -10,14 +10,18 @@ const context: CatalogueQueryContext = {
 		'donor.sex': { type: 'keyword' },
 		'donor.age_at_diagnosis': { type: 'long' },
 		'donor.enrolled_on': { type: 'date' },
-		'donor.notes': { type: 'text' },
+		'donor.notes': { type: 'geo_point' },
+		'file.name': { type: 'text' },
 	},
 	// `keyword` mirrors the live introspection response, which still advertises the legacy `filter`
-	// alias; `long` uses the `>=` alias to prove the introspected list is normalized too.
+	// alias; `long` uses the `>=` alias to prove the introspected list is normalized too. `text`
+	// mirrors the fallback bucket, which gets the text operator but not the set-membership ones, and
+	// `geo_point` is deliberately absent so one field exercises the no-rules-for-this-type path.
 	operators: {
 		keyword: ['in', 'not-in', 'some-not-in', 'all', 'filter'],
 		long: ['in', 'not-in', '>=', 'gt', 'lt', 'lte', 'between'],
 		date: ['gt', 'gte', 'lt', 'lte', 'between'],
+		text: ['in', 'not-in', 'filter'],
 	},
 };
 
@@ -186,6 +190,106 @@ suite('validateClauses', () => {
 
 		test('returns no errors for an empty batch', () => {
 			assert.deepEqual(validateClauses([], context), []);
+		});
+	});
+
+	suite('text-search clauses', () => {
+		test('accepts a wildcard across fields whose types advertise it', () => {
+			assert.deepEqual(validate({ fieldNames: ['study', 'file.name'], operator: 'wildcard', value: '*A*' }), []);
+		});
+
+		test('accepts a wildcard the catalogue advertises only under its legacy "filter" name', () => {
+			assert.deepEqual(validate({ fieldNames: ['study'], operator: 'wildcard', value: '*A*' }), []);
+		});
+
+		test('rejects a wildcard on a field type the catalogue withholds it from', () => {
+			const errors = validate({ fieldNames: ['donor.age_at_diagnosis'], operator: 'wildcard', value: '*4*' });
+			assert.equal(errors.length, 1);
+			assert.ok(errors[0].includes('operator "wildcard" is not valid for field "donor.age_at_diagnosis"'));
+			assert.ok(errors[0].includes('(type "long")'));
+		});
+
+		test('names an unknown field within fieldNames', () => {
+			const errors = validate({ fieldNames: ['study', 'not.a.field'], operator: 'wildcard', value: '*A*' });
+			assert.equal(errors.length, 1);
+			assert.ok(errors[0].includes('unknown field "not.a.field"'));
+			assert.ok(!errors[0].includes('"study"'), 'a valid field should not be named as a problem');
+		});
+
+		// One clause is one condition, however many fields it spans, so every bad field is reported
+		// in that clause's single message rather than as several broken clauses.
+		test('reports every invalid field in one clause as one message', () => {
+			const errors = validate({
+				fieldNames: ['not.a.field', 'donor.age_at_diagnosis', 'study'],
+				operator: 'wildcard',
+				value: '*A*',
+			});
+			assert.equal(errors.length, 1);
+			assert.ok(errors[0].startsWith('clauses[0]: '));
+			assert.ok(errors[0].includes('unknown field "not.a.field"'));
+			assert.ok(errors[0].includes('operator "wildcard" is not valid for field "donor.age_at_diagnosis"'));
+		});
+
+		test('accepts negate on a wildcard, the only way to express "does not contain"', () => {
+			assert.deepEqual(validate({ fieldNames: ['study'], operator: 'wildcard', value: '*A*', negate: true }), []);
+		});
+	});
+
+	suite('asterisks in term-matched values', () => {
+		test('rejects an asterisk in an in-like value, pointing at the wildcard operator', () => {
+			const errors = validate({ fieldName: 'study', operator: 'in', value: ['*TP53*'] });
+			assert.equal(errors.length, 1);
+			assert.ok(errors[0].includes('value "*TP53*" contains "*"'));
+			assert.ok(errors[0].includes('regular expression'));
+			assert.ok(errors[0].includes('"wildcard"'));
+		});
+
+		test('rejects an asterisk in a bare scalar value, not only in an array', () => {
+			assert.equal(validate({ fieldName: 'study', operator: 'in', value: '*A*' }).length, 1);
+		});
+
+		test('inspects every value rather than only the first', () => {
+			const errors = validate({ fieldName: 'study', operator: 'in', value: ['A', 'B*'] });
+			assert.equal(errors.length, 1);
+			assert.ok(errors[0].includes('value "B*"'));
+		});
+
+		test('covers every term-matched operator', () => {
+			for (const operator of ['in', 'not-in', 'some-not-in', 'all']) {
+				assert.equal(
+					validate({ fieldName: 'study', operator, value: ['*A*'] }).length,
+					1,
+					`${operator} should reject an asterisked value`,
+				);
+			}
+		});
+
+		test('leaves a set reference and the missing-field sentinel alone', () => {
+			assert.deepEqual(validate({ fieldName: 'study', operator: 'in', value: ['set_id:abc'] }), []);
+			assert.deepEqual(validate({ fieldName: 'study', operator: 'in', value: ['__missing__'] }), []);
+		});
+
+		test('leaves an asterisk in a wildcard value alone, which is where it belongs', () => {
+			assert.deepEqual(validate({ fieldNames: ['study'], operator: 'wildcard', value: '*A*' }), []);
+		});
+
+		test('leaves a non-string value alone', () => {
+			assert.deepEqual(validate({ fieldName: 'donor.age_at_diagnosis', operator: 'in', value: [40] }), []);
+		});
+	});
+
+	suite('set-membership operators', () => {
+		test('accepts "all" and "some-not-in" on a keyword field', () => {
+			assert.deepEqual(validate({ fieldName: 'study', operator: 'all', value: ['A', 'B'] }), []);
+			assert.deepEqual(validate({ fieldName: 'study', operator: 'some-not-in', value: ['A'] }), []);
+		});
+
+		test('rejects them on a text field, which the catalogue withholds them from', () => {
+			for (const operator of ['all', 'some-not-in']) {
+				const errors = validate({ fieldName: 'file.name', operator, value: ['A'] });
+				assert.equal(errors.length, 1, `${operator} should be rejected on a text field`);
+				assert.ok(errors[0].includes(`operator "${operator}" is not valid for field "file.name"`));
+			}
 		});
 	});
 });

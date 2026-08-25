@@ -4,6 +4,7 @@ import { suite, test } from 'node:test';
 import { SqonSchema } from '@overture-stack/sqon';
 
 import {
+	checkFieldOperator,
 	validateAggregationFields,
 	validateHitsFields,
 	validateSortFields,
@@ -30,6 +31,43 @@ const context: CatalogueQueryContext = {
 		nested: ['in', 'not-in', 'filter'],
 	},
 };
+
+// The shared half of the field-and-operator rules, used by both `validateSqonFields` (for
+// `execute_query`'s SQON walk and `build_sqon`'s `existingSqon`) and `validateClauses` (for
+// `build_sqon`'s clauses). It reports why a pairing is invalid and leaves the wording to the
+// caller, because the two phrase the same finding differently on purpose.
+suite('checkFieldOperator', () => {
+	test('returns undefined for a field and operator the catalogue accepts', () => {
+		assert.equal(checkFieldOperator('donor.sex', 'in', context), undefined);
+	});
+
+	test('reports a field the catalogue does not have', () => {
+		assert.deepEqual(checkFieldOperator('not.a.field', 'in', context), { kind: 'unknown-field' });
+	});
+
+	test("reports an operator the field's type does not accept, with the type and the alternatives", () => {
+		assert.deepEqual(checkFieldOperator('donor.sex', 'gt', context), {
+			fieldType: 'keyword',
+			kind: 'invalid-operator',
+			validOperators: ['in', 'not-in', 'some-not-in', 'all', 'wildcard'],
+		});
+	});
+
+	test('normalizes the catalogue\'s legacy "filter" name before comparing', () => {
+		assert.equal(checkFieldOperator('donor.sex', 'wildcard', context), undefined);
+	});
+
+	test('deduplicates the operators it offers as alternatives', () => {
+		const problem = checkFieldOperator('donor.sex', 'gt', context);
+		assert.ok(problem?.kind === 'invalid-operator');
+		assert.equal(new Set(problem.validOperators).size, problem.validOperators.length);
+	});
+
+	test('accepts any operator when the catalogue lists none for the field type', () => {
+		const noRules: CatalogueQueryContext = { fields: { a: { type: 'geo_point' } }, operators: {} };
+		assert.equal(checkFieldOperator('a', 'gt', noRules), undefined);
+	});
+});
 
 suite('validateSqon', () => {
 	test('accepts an empty root SQON', () => {

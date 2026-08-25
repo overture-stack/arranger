@@ -7,6 +7,7 @@ import {
 	type ScalarFilter,
 	type SqonNode,
 	SqonSchema,
+	type TextFilter,
 } from '@overture-stack/sqon';
 import { z as zod } from 'zod';
 
@@ -19,36 +20,66 @@ import { type McpServerDeps } from '#server.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
 
 /**
- * v1 operators, grouped by the shape of their input values, to match the branching of the
+ * Operators grouped by the shape of their input values, to match the branching of the
  * discriminated union of the clause schema:
  *   - in-like operators take a scalar or an array
  *   - range operators take one bound
  *   - between takes exactly two
+ *   - all takes an array, never a bare scalar
+ *   - wildcard takes one search string, and names its fields with `fieldNames` (plural)
+ *
+ * Canonical names only, no aliases (`=`, `>=`, `filter`): `addFilterClause` dispatches scalar
+ * operators on the literal operator string and returns `undefined` for an alias, so accepting one
+ * would silently drop the clause rather than build an equivalent SQON.
+ *
+ * `fuzzy` is deliberately absent. It has no implementation in `modules/sqon`, and the text branch
+ * of `addFilterClause` ignores `operator` entirely, so a `fuzzy` clause there builds a `wildcard`
+ * clause with no error: listing it would offer an operator that silently runs a different query.
  */
-const IN_LIKE_OPERATORS = ['in', 'not-in'] as const;
+const IN_LIKE_OPERATORS = ['in', 'not-in', 'some-not-in'] as const;
 const RANGE_OPERATORS = ['gt', 'gte', 'lt', 'lte'] as const;
 const BETWEEN_OPERATOR = 'between' as const;
+const ALL_OPERATOR = 'all' as const;
+const WILDCARD_OPERATOR = 'wildcard' as const;
 
 /**
- * Accepted operators for v1 of `build_sqon` (single-field scalar operators only).
- * Canonical names only, no aliases. Used by tests to assert each accepted operator is described
- * exactly once, and no rejected one is described at all.
+ * Every operator `build_sqon` accepts, derived from the per-shape groups rather than restated, so
+ * the aggregate cannot drift from what the schema actually takes. Used by tests to assert each
+ * accepted operator is described exactly once, and no rejected one is described at all.
  */
-export const BUILD_SQON_OPERATORS = [...IN_LIKE_OPERATORS, ...RANGE_OPERATORS, BETWEEN_OPERATOR] as const;
+export const BUILD_SQON_OPERATORS = [
+	...IN_LIKE_OPERATORS,
+	...RANGE_OPERATORS,
+	BETWEEN_OPERATOR,
+	ALL_OPERATOR,
+	WILDCARD_OPERATOR,
+] as const;
 
 /**
  * Generates a description for the `operator` input of the `build_sqon` tool. Generated per-branch,
  * rather than hard-coded once to include all operator, in order to reduce context bloat.
+ *
+ * An `applicableTo` of `all` is rendered by saying nothing about field types, rather than by
+ * claiming "any field type", which would be wrong. `modules/sqon` reports the field types an
+ * operator generically applies to, while a catalogue advertises its own per-type operator lists,
+ * and the two disagree: `wildcard`, `all`, and `some-not-in` are all `all` here but are withheld
+ * from range-typed fields (and, for the latter two, from text fields) by catalogue introspection,
+ * which is what `validateClauses` enforces. Staying silent keeps this text honest without copying
+ * that classification into this package (tracked tech-debt), and the `clauses` array description
+ * already names the catalogue as the authority on which operators a field accepts, once, rather
+ * than repeating it on every unrestricted operator here.
+ *
  * @param operators - The operators this union branch accepts.
- * @returns A lead sentence followed by one line per operator, naming its field types and value type.
+ * @returns A lead sentence followed by one line per operator, naming its value type and, where
+ * `modules/sqon` restricts it, its field types.
  */
 export const describeOperators = (operators: readonly string[]): string => {
 	const operatorsSet = new Set<string>(operators);
 	const operatorDescriptions = getSqonFieldOperatorDetails()
 		.filter(({ op }) => operatorsSet.has(op))
 		.map(({ applicableTo, op, valueType }) => {
-			const fieldTypes = applicableTo === 'all' ? 'any field type' : applicableTo.join(', ');
-			return `- "${op}": applies to ${fieldTypes}; value is ${valueType}`;
+			const fieldTypes = applicableTo === 'all' ? '' : `applies to ${applicableTo.join(', ')}; `;
+			return `- "${op}": ${fieldTypes}value is ${valueType}`;
 		});
 
 	return [
@@ -79,6 +110,19 @@ const clauseBase = () => ({
 		),
 });
 
+const textClauseBase = () => ({
+	fieldNames: zod
+		.array(zod.string().min(1))
+		.min(1)
+		.describe(
+			'Dot-notation field names from get_catalogue_fields, searched together: a document matches when any one of them matches. Use fieldNames (plural) only for text search; every other operator takes fieldName (singular).',
+		),
+	negate: zod
+		.boolean()
+		.optional()
+		.describe('Wrap this one clause in a "not". This is how to express "does not contain".'),
+});
+
 const clauseSchema = () =>
 	zod.discriminatedUnion('operator', [
 		zod.object({
@@ -98,6 +142,24 @@ const clauseSchema = () =>
 				.array(rangeValue())
 				.length(2)
 				.describe('Exactly two bounds, [min, max], ascending and inclusive at both ends.'),
+		}),
+		zod.object({
+			...clauseBase(),
+			operator: zod.literal(ALL_OPERATOR).describe(describeOperators([ALL_OPERATOR])),
+			value: zod
+				.array(scalarValue())
+				.min(1)
+				.describe('Every value the field must contain. An array even for one value, never a bare scalar.'),
+		}),
+		zod.object({
+			...textClauseBase(),
+			operator: zod.literal(WILDCARD_OPERATOR).describe(describeOperators([WILDCARD_OPERATOR])),
+			value: zod
+				.string()
+				.min(1)
+				.describe(
+					'The search string, matched case-insensitively against the whole field value. Include "*" for substring search: "*TP53*" finds a value containing TP53, while "TP53" matches only a value that is exactly TP53. "?" matches one character.',
+				),
 		}),
 	]);
 
@@ -334,20 +396,36 @@ const foldClauses = ({
 	let sqon = existingSqon;
 
 	for (const [index, clause] of clauses.entries()) {
-		const params: ScalarFilter = {
-			combination,
-			existing: sqon,
-			fieldName: clause.fieldName,
-			negate: clause.negate ?? false,
-			operator: clause.operator,
-			value: clause.value,
-		};
+		const shared = { combination, existing: sqon, negate: clause.negate ?? false };
 
-		// `addFilterClause` dispatches scalar operators through a switch with no default, and
-		// returns undefined for anything outside it: a text operator, an operator alias, or an
-		// operator added to modules/sqon but not to buildScalarClause.
-		const next = addFilterClause(params);
-		// for v1 of build_sqon, this is unreachable. This guard exists as a failsafe for v2
+		// Two calls rather than one call on a union-typed object: `addFilterClause` is overloaded,
+		// and an overloaded signature will not accept `ScalarFilter | TextFilter`. Each argument is
+		// still checked against its own overload, so a signature change in modules/sqon breaks this
+		// at compile time.
+		//
+		// Dispatched on `operator`, the input union's own discriminator, rather than on whether a
+		// `fieldNames` key is present: an explicitly-present `undefined` key makes a key-presence
+		// test answer wrongly, and the operator is what actually decides the shape.
+		//
+		// `addFilterClause` dispatches scalar operators through a switch with no default and returns
+		// undefined for anything outside it: an operator alias, or an operator added to modules/sqon
+		// but not to buildScalarClause. It cannot catch a bad text operator, because its text branch
+		// ignores `operator` and builds a wildcard clause regardless, which is one of the reasons
+		// `fuzzy` stays out of the enum above.
+		const next =
+			clause.operator === WILDCARD_OPERATOR
+				? addFilterClause({
+						...shared,
+						fieldNames: clause.fieldNames,
+						operator: clause.operator,
+						value: clause.value,
+					} satisfies TextFilter)
+				: addFilterClause({
+						...shared,
+						fieldName: clause.fieldName,
+						operator: clause.operator,
+						value: clause.value,
+					} satisfies ScalarFilter);
 		if (next === undefined) {
 			throw new Error(`clauses[${index}]: operator "${clause.operator}" produced no filter clause.`);
 		}
@@ -397,6 +475,7 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 				'Before calling this tool you MUST call get_catalogue_fields for the catalogue, to get valid field names and the operators each field type accepts. ' +
 				'State your understanding of the query in plain English and confirm it with the user before calling: this tool does not ask them to confirm. ' +
 				'Submit every condition as one call with multiple clauses, not one call per condition. ' +
+				'For substring or text search across one or more fields, use the "wildcard" operator with fieldNames (plural) rather than putting "*" in a value. ' +
 				'This tool only builds a filter. Pass the returned "sqon" to execute_query, unchanged, to run it.' +
 				'For an unfiltered query (i.e. "show me all data"), skip this tool and pass {"op":"and","content":[]} to execute_query.',
 			inputSchema,
@@ -443,19 +522,34 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 
 				const submittedCount = clauses.length + (existing.sqon ? countFilterClauses(existing.sqon) : 0);
 				const filterCount = countFilterClauses(sqon);
-				const notes =
-					filterCount < submittedCount
-						? [
-								`${submittedCount} filter clauses reduced to ${filterCount}: clauses on the same field and operator were merged into one. The summary describes the merged query.`,
-							]
-						: undefined;
+				const notes: string[] = [];
+
+				if (filterCount < submittedCount) {
+					notes.push(
+						`${submittedCount} filter clauses reduced to ${filterCount}: clauses on the same field and operator were merged into one. The summary describes the merged query.`,
+					);
+				}
+
+				// A wildcard value carrying no wildcard character is matched against the whole field
+				// value, so it finds an exact term rather than a substring. That is a legitimate query,
+				// which is why this is a note rather than a rejection, but it is rarely what a text
+				// search was reaching for and the difference is invisible in the result.
+				const exactTermSearches = clauses.filter(
+					(clause) => clause.operator === WILDCARD_OPERATOR && !/[*?]/.test(clause.value),
+				);
+				if (exactTermSearches.length > 0) {
+					const values = exactTermSearches.map((clause) => `"${clause.value}"`).join(', ');
+					notes.push(
+						`Wildcard ${exactTermSearches.length === 1 ? 'value' : 'values'} ${values} contain no "*", so ${exactTermSearches.length === 1 ? 'it matches' : 'they match'} only a field equal to the whole string, not one containing it. Rebuild with "*" around the term if a substring search was meant.`,
+					);
+				}
 
 				return successResult({
 					sqon,
 					summary: summarizeSqon(sqon, fields),
 					clauseCount: submittedCount,
 					filterCount,
-					...(notes ? { notes } : {}),
+					...(notes.length > 0 ? { notes } : {}),
 				});
 			} catch (error) {
 				return errorResult(
