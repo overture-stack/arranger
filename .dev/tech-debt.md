@@ -62,15 +62,6 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Add an explicit max-depth check before or during parsing (a `zod.lazy` guard that tracks recursion depth and fails cleanly past a configurable limit, or a cheap pre-check walking the raw object once), so oversized nesting becomes a normal `{success:false}` validation failure instead of an engine-level exception.
 **Standalone:** yes.
 
-### Merging range filters (`gt`/`gte`/`lt`/`lte`) with date-string values silently produces `null` instead of a comparison
-
-**File:** `modules/sqon/src/builder/reduce.ts:66-75` (`mergeIntoExisting`)
-**Severity:** high
-**Kind:** bug (correctness)
-**Issue:** When two range filters on the same field are merged under `and`/`or`, the code does `Math.max(a, b)`/`Math.min(a, b)` after an `as number` cast, with no runtime check that the values are actually numeric. `gt`/`gte`/`lt`/`lte` explicitly support `'date'` fields (`operators/constants.ts:93`, `RANGE_APPLICABLE_TYPES`) and `SqonScalarValueSchema` permits string values for these ops, the ordinary shape for an ISO date filter. `Math.max`/`Math.min` on a date string coerces via `Number(...)`, which is `NaN` for a non-numeric string, and `NaN` serializes to `null`. Confirmed directly: merging `gt('donor.date_of_diagnosis','2020-01-01')` with `gt('donor.date_of_diagnosis','2021-06-15')` under `.and()` produces `{"op":"gt","content":{"fieldName":"donor.date_of_diagnosis","value":null}}`, silently corrupting an ordinary date-range-narrowing operation into a `null`-valued filter. `builder/index.test.ts`'s `reduceSqon` suite (lines 368-398) only exercises numeric values for these four ops; no test uses a date-typed (string) value.
-**Fix:** In `mergeIntoExisting`, detect non-numeric scalar values and compare via string ordering (correct for ISO 8601 dates) or `Date.parse`, falling back to numeric comparison only when both values are genuinely numbers. Add a date-value test case to the existing `reduceSqon` suite.
-**Standalone:** yes.
-
 ### `removeFilter` can leave a schema-invalid or semantically-empty filter instead of removing it, contradicting its own documented contract
 
 **File:** `modules/sqon/src/builder/index.ts:210-217` (`stripValues`), consumed at lines 225-226 and 244-250

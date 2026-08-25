@@ -425,6 +425,74 @@ suite('SQON builder', () => {
 			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'age', value: 65 } });
 		});
 
+		// Date bounds are the ordinary shape of a range filter on a `date` field, and used to be
+		// coerced through Math.max/Math.min, which yields NaN and serializes to null: an ordinary
+		// date narrowing silently became a bound-less filter that fails schema validation.
+		test('keeps the later gt date under and', () => {
+			const result = SqonBuilder.gt('diagnosed', '2020-01-01')
+				.and(SqonBuilder.gt('diagnosed', '2021-06-15').toValue())
+				.toValue();
+			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'diagnosed', value: '2021-06-15' } });
+		});
+
+		test('keeps the earlier gt date under or', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.gt('diagnosed', '2021-06-15').toValue(),
+				SqonBuilder.gt('diagnosed', '2020-01-01').toValue(),
+			]).toValue();
+			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'diagnosed', value: '2020-01-01' } });
+		});
+
+		test('keeps the earlier lte date under and', () => {
+			const result = SqonBuilder.lte('diagnosed', '2021-01-01')
+				.and(SqonBuilder.lte('diagnosed', '2020-01-01').toValue())
+				.toValue();
+			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'diagnosed', value: '2020-01-01' } });
+		});
+
+		test('keeps the later lte date under or', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.lte('diagnosed', '2020-01-01').toValue(),
+				SqonBuilder.lte('diagnosed', '2021-01-01').toValue(),
+			]).toValue();
+			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'diagnosed', value: '2021-01-01' } });
+		});
+
+		test('merges date bounds a client supplied directly, not only builder-composed ones', () => {
+			const result = SqonBuilder.from({
+				op: 'and',
+				content: [
+					{ op: 'lte', content: { fieldName: 'diagnosed', value: '2021-01-01' } },
+					{ op: 'lte', content: { fieldName: 'diagnosed', value: '2020-01-01' } },
+				],
+			}).toValue();
+			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'diagnosed', value: '2020-01-01' } });
+		});
+
+		test('orders non-ISO date strings by parsed timestamp, not lexicographically', () => {
+			// Lexicographically '01/02/2021' sorts before '12/31/2020'; by date it is later.
+			const result = SqonBuilder.gt('diagnosed', '12/31/2020')
+				.and(SqonBuilder.gt('diagnosed', '01/02/2021').toValue())
+				.toValue();
+			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'diagnosed', value: '01/02/2021' } });
+		});
+
+		test('orders unparseable strings lexicographically rather than declining to merge', () => {
+			const result = SqonBuilder.gt('label', 'alpha').and(SqonBuilder.gt('label', 'beta').toValue()).toValue();
+			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'label', value: 'beta' } });
+		});
+
+		test('keeps both range filters when the two bounds cannot be ordered against each other', () => {
+			const result = SqonBuilder.gt('age', 30).and(SqonBuilder.gt('age', '2020-01-01').toValue()).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'gt', content: { fieldName: 'age', value: 30 } },
+					{ op: 'gt', content: { fieldName: 'age', value: '2020-01-01' } },
+				],
+			});
+		});
+
 		test('unwraps a single-item and-combination to the item itself', () => {
 			const inner = SqonBuilder.in('status', ['active']).toValue();
 			const result = SqonBuilder.and([inner]).toValue();
