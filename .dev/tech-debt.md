@@ -570,14 +570,23 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Standalone:** no; needs a decision on the supported and intended Node versions before any file changes
 **Correction (2026-08-17):** `DEVELOPMENT.md:11` states the identical "v22 or higher" claim as `README.md:21` but isn't in this entry's file list; fix it in the same pass or it'll still disagree once the other three are resolved.
 
-### `docs/concepts.md` documents a `fuzzy` SQON operator that does not exist
+### `modules/sqon` reports operator field-type applicability that no catalogue agrees with
 
-**File:** `docs/concepts.md:57,92`
-**Severity:** high (a reader following this doc constructs an invalid SQON that fails schema validation)
-**Kind:** stale documentation
-**Issue:** Both lines present `fuzzy` as an existing, implemented operator on equal footing with `wildcard` ("Text-search operators (`wildcard`, `fuzzy`)..."). It isn't: `modules/sqon`'s leaf-node schema union has no `fuzzy` branch (`InLikeFilterSchema`/`AllFilterSchema`/`RangeLikeFilterSchema`/`BetweenFilterSchema`/`WildcardFilterSchema` only), and a filter with `op: "fuzzy"` fails validation outright. `CHANGELOG.md` (the entry that renamed `filter` to `wildcard`) explicitly says fuzzy/edit-distance matching "does not exist yet." `docs/reference/04-sqon-in-detail.md:224` gets this right (uses "fuzzy" only to name the not-yet-built concept being contrasted against); `concepts.md` is the only page with the incorrect claim. See also the roadmap's "Fuzzy (edit-distance) SQON operator" Features item, this is the real, planned-but-unbuilt op the doc is prematurely describing as shipped.
-**Fix:** Remove `fuzzy` from both `concepts.md` lines, or rephrase as "wildcard (and a planned future `fuzzy` operator, not yet implemented)."
-**Standalone:** yes; two-line docs fix.
+**File:** `modules/sqon/src/operators/index.ts` (`getSqonFieldOperatorDetails`), against `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts:11-21` (`getValidFieldOperators`)
+**Severity:** medium (a consumer trusting the module-level metadata advertises operators the catalogue rejects)
+**Kind:** bug (correctness), duplicated source of truth
+**Issue:** `getSqonFieldOperatorDetails()` reports `applicableTo: 'all'` for `in`, `not-in`, `some-not-in`, `all`, and `wildcard`, meaning every field type. `getValidFieldOperators` disagrees for three of the five: range-typed fields get `['in','not-in','gt','gte','lt','lte','between']`, enum-like fields get `['in','not-in','some-not-in','all','filter']`, and every other type gets `['in','not-in','filter']`. So `wildcard` is withheld from numeric and date fields, and `all` and `some-not-in` from those plus text fields. The catalogue is what actually gets enforced, since `apps/mcp-server`'s clause and SQON validation both check the introspected per-type lists. `build_sqon` hit this while building v2 and worked around it by having `describeOperators` say nothing about field types for an `applicableTo: 'all'` operator, rather than rendering it as "any field type" and advertising a clause the tool then rejects. `buildCatalogueIntrospection.ts` carries a comment acknowledging its own type sets were copied verbatim from `apps/search-server`, and names consolidation with `modules/sqon` as separate debt: this is that item, now with a concrete consumer.
+**Fix:** Give `modules/sqon` the authoritative per-type mapping and have `getValidFieldOperators` derive from it rather than restating it. Note this changes the published `get_sqon_schema`/`arranger://introspection/sqon` payload, since `applicableTo` is part of it, so it is not a silent internal fix. Once done, `describeOperators` in `apps/mcp-server/src/mcp/buildSqonTool.ts` can name field types again and its workaround comment should be removed.
+**Standalone:** no; changes a published introspection contract and touches two packages. Read the roadmap's SQON operator items first.
+
+### `integration-tests/mcp-server`'s tsconfig has never typechecked `apps/mcp-server` sources cleanly
+
+**File:** `integration-tests/mcp-server/tsconfig.json`, against `apps/mcp-server/src/mcp/buildSqonTool.ts` and `apps/mcp-server/src/mcp/executeQueryTool.ts`
+**Severity:** low (no runtime effect; the tests pass and the app's own typecheck is clean)
+**Kind:** build configuration
+**Issue:** `npx tsc --noEmit -p integration-tests/mcp-server` reports errors in `apps/mcp-server` sources that `npx tsc --noEmit -p apps/mcp-server` does not, because the two projects resolve different compiler options over the same files. Confirmed 2026-08-25: it reports a `catalogIntrospectionSchema` optional-property mismatch and a `clauses` argument mismatch in `buildSqonTool.ts`, plus four in `executeQueryTool.ts` (`SqonValidationResult.errors`, a `fields` record, and two `ArrangerSort` arrays). All of them are the same shape of complaint, an inferred-from-Zod type with optional properties assigned to a type requiring them, so the likely cause is a single differing option rather than seven separate defects. Nobody typechecks that project directly today (its `test` script runs `tsx`), so the errors are invisible in normal use and were only noticed while verifying that a change had introduced none of its own.
+**Fix:** Diff the two tsconfigs, align the option that differs, and either fix the resulting handful of genuine type errors or stop including app sources in that project's program. Worth doing before anything starts running `tsc` over it in CI, because the noise makes a real regression unfindable.
+**Standalone:** yes.
 
 ### `hits`'s `score` field is declared in the schema and documented as always populated, but the resolver never assigns it
 

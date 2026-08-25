@@ -4,7 +4,7 @@ Step-by-step build order for the `build_sqon` MCP tool, with worked code and a c
 
 **Companion to [`build-sqon-tool.md`](build-sqon-tool.md).** That document is the design: why the tool exists, what it does, which drafts were rejected, and the rationale for each resolved choice. This one is the build: file layout, code, checks, tests, and the text surfaces that change when it ships. Where the two disagree, the disagreement is called out inline and the reason given.
 
-**Scope:** v1 only, as phased in the design document. Scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`), one combinator per call, no text search.
+**Scope:** v1, as phased in the design document. Scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`), one combinator per call, no text search. **v2 shipped 2026-08-25** and is recorded in § v2 near the end of this document rather than by rewriting the steps above, so the v1 build order stays readable as what it was.
 
 Every behavioural claim below was verified against the built `@overture-stack/sqon`, the installed MCP SDK, and current `modules/graphql-router`, `apps/search-server`, and `apps/mcp-server` source, as of `12053878`. See [§ Verified behaviour this plan depends on](#verified-behaviour-this-plan-depends-on).
 
@@ -861,15 +861,19 @@ The tool-name and `catalogueId` corrections from the previous revision are appli
 
 1. **The alias-normalization claim is wrong.** § Things to know about `reduceSqon` says normalization "runs inside `SqonBuilder.from()`/`addFilterClause` regardless of which spelling comes in, so the built SQON is identical either way." `addFilterClause` does not normalize: it dispatches on the literal operator string through a switch with no default, so `{operator: '>='}` returns `undefined`. Only `SqonBuilder.from()` normalizes, via `normalizeSqonNode`. The canonical-only decision is right, and stronger than the document argues: an alias would not produce an equivalent SQON, it would drop the clause.
 2. **The v3 `reduceSqon` question is answered.** § Phasing marks "nesting an `and` branch under a new `or` should not get flattened away" as needing a test. It does not get flattened: `reduceSqon` only flattens an inner group when `inner.op === output.op`, verified.
-3. **v1 needs no `fieldName`/`fieldNames` mutual exclusion.** The Zod sample carries a `.refine()` for it, and a paragraph on why `discriminatedUnion` cannot express it. With no text operators in v1 there is no `fieldNames` yet, so the whole problem is v2's. When it arrives, use value checks (`clause.fieldName !== undefined`), not `'fieldName' in clause`: Zod 3 keeps an explicitly-present `undefined` key, so `in` gives the wrong answer.
-4. **`TextOperatorSchema` must not ship.** The sample input schema includes `zod.enum(['wildcard', 'fuzzy'])`. `fuzzy` has no implementation, and a `fuzzy` clause with `fieldNames` silently becomes a `wildcard` clause.
+3. **No `fieldName`/`fieldNames` mutual exclusion is needed at all** (updated 2026-08-25, once v2 arrived). The Zod sample carries a `.refine()` for it, and a paragraph on why `discriminatedUnion` cannot express it. This revision predicted the problem would land in v2 and that value checks (`clause.fieldName !== undefined`) would be needed rather than `'fieldName' in clause`. Neither turned out to be true: because the shipped schema discriminates on `operator`, the `wildcard` branch simply has no `fieldName` key and every other branch has no `fieldNames` key, so the split is structural and no refinement exists. The Zod 3 caveat still holds for any key-presence test written elsewhere, which is why `foldClauses` dispatches on `clause.operator` rather than on `'fieldNames' in clause`.
+4. **`TextOperatorSchema` must not ship.** The sample input schema includes `zod.enum(['wildcard', 'fuzzy'])`. `wildcard` shipped alone in v2; `fuzzy` stays out until it exists, because `addFilterClause`'s text branch ignores `operator` and builds a `wildcard` clause from a `fuzzy` request with no error.
 5. **Step 5 of Implementation guidance is now incomplete.** It ends at "build the `summary` string from the final SQON, and return `{ sqon, summary }`." The output also needs the root normalization of step 7 above, and the reduction note when `filterCount` is lower than what was submitted.
 
 ---
 
-## Open question
+## Open question, resolved 2026-08-25
 
-graphql-router's `opSwitch` gives `in`-like values magic meanings: a value containing `*` becomes a regex query, a `set_id:` prefix becomes a set lookup, and `__missing__` becomes a missing-field filter. `build_sqon` passes all three straight through. Since v1 has no `wildcard`, a model reaching for substring search will put `*TP53*` in an `in` value and it will quietly work as a regex. Decide whether that is a documented feature of the tool, something to reject in `validateClause`, or something to leave undocumented and working.
+graphql-router's `opSwitch` gives `in`-like values magic meanings: a value containing `*` becomes a regex query, a `set_id:` prefix becomes a set lookup, and `__missing__` becomes a missing-field filter. v1 passed all three straight through, so a model reaching for substring search would put `*TP53*` in an `in` value and it would quietly work as a regex.
+
+**Resolved: `validateClause` rejects it and points at `wildcard`.** With v2 shipping a real text operator there is a correct way to express the intent, and offering two spellings for substring search reintroduces the ambiguity this tool exists to remove. More importantly the regex behaviour is invisible: the model asked for an exact match, got a pattern match, and nothing in the result says so.
+
+The check covers `in`, `not-in`, `some-not-in`, and `all`, and inspects every value rather than only the first, unlike `opSwitch`, which tests `value[0]`. `set_id:` and `__missing__` are untouched, since neither contains an asterisk. `execute_query`'s raw `sqon` parameter is also untouched, so the regex path stays reachable for a client that wants it. That asymmetry is deliberate and documented in `docs/mcp-server.md`: a keyword value that genuinely contains an asterisk is reachable through `execute_query` but not through `build_sqon`.
 
 ---
 
@@ -932,4 +936,52 @@ graphql-router's `opSwitch` gives `in`-like values magic meanings: a value conta
 
 **Still open**
 
-- [ ] `*`, `set_id:`, and `__missing__` in `in` values: documented, rejected, or left alone
+- [x] `*`, `set_id:`, and `__missing__` in `in` values: rejected for `*`, untouched for the other two (see § Open question, resolved)
+
+---
+
+## v2, shipped 2026-08-25
+
+`wildcard` text search plus `some-not-in` and `all`. No `modules/sqon` change was needed, which is what splitting `fuzzy` out into v2.1 bought. See the design document's § Phasing for why the split happened and what blocks v2.1.
+
+**What changed, by file**
+
+| File                           | Change                                                                                                                                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mcp/buildSqonTool.ts`         | `some-not-in` into the in-like group; new `all` and `wildcard` union branches; `describeOperators` no longer names field types for an unrestricted operator; shape-dispatched fold; missing-asterisk note |
+| `arranger/clauseValidation.ts` | clause input becomes a union; per-entry `fieldNames` validation reported as one message per clause; asterisk rejection for term-matched operators                                                         |
+| `arranger/queryValidation.ts`  | `checkFieldOperator` extracted as the shared lookup-and-verdict, returning a typed reason so each caller keeps its own wording                                                                            |
+| `arranger/sqonSummary.ts`      | `fieldNames` rendered as display names joined with "or", matching the any-field-matches semantics                                                                                                         |
+
+**Four things worth knowing before touching this again**
+
+- **The `all` branch is load-bearing, not defensive.** Measured: `addFilterClause({fieldName:'t', operator:'all', value:'x'})` builds `{"op":"all","content":{"fieldName":"t","value":"x"}}` without complaint, and `SqonSchema.safeParse` then rejects it. Without an array-only branch the tool would build an invalid SQON and only discover it at the post-fold failsafe.
+- **A text clause reports one message, however many of its fields are bad.** One clause is one condition, so `validateFieldNames` joins every failing field into a single `clauses[i]: ` message. Splitting them would read as several broken clauses.
+- **The extracted check stops at the verdict, deliberately.** `validateFilterClause` emits whole sentences led by a subject (`existingSqon references unknown field ...`), while `validateClause` returns lowercase fragments completing a `clauses[i]: ` prefix. Pushing the wording into `checkFieldOperator` would have changed `execute_query`'s existing error text and broken the default-subject assertions in `queryValidation.test.ts`.
+- **The fold dispatches on `operator`, not on key presence.** `addFilterClause` is overloaded, so a union-typed argument does not compile; each branch passes its own object literal, still checked against its own overload. Dispatching on `'fieldNames' in clause` would be wrong for the Zod 3 reason in correction 3 above.
+
+**Numbers**
+
+| Measurement                          | before v2 | after v2 |
+| ------------------------------------ | --------- | -------- |
+| Input schema characters              | 3805      | 5799     |
+| Internal `$ref`s                     | 0         | 0        |
+| `apps/mcp-server` unit tests         | 199       | 249      |
+| `integration-tests/mcp-server` tests | 69        | 80       |
+
+The unit-test baseline is 199 rather than the 189 recorded for v1 above, because `#1091`'s `existingSqon` batching work added tests between the two.
+
+The schema grew by two union branches plus the wildcard value description, which has to explain that `*` is required for a substring search. Tightening `describeOperators` to stop repeating a field-type pointer on every unrestricted operator recovered 310 of those characters.
+
+**Checklist**
+
+- [x] `wildcard` branch with `fieldNames`, `all` branch with an array-only value, `some-not-in` on the in-like branch
+- [x] `fuzzy` withheld, with all three blockers recorded in the design document
+- [x] `describeOperators` claims no field types for an operator `modules/sqon` does not restrict
+- [x] `checkFieldOperator` extracted; `execute_query`'s error text unchanged
+- [x] Asterisk rejected in term-matched values; `set_id:`/`__missing__` and the raw-`sqon` path untouched
+- [x] Summary joins `fieldNames` display names with "or"
+- [x] Missing-asterisk `notes` entry
+- [x] `npm run test -w apps/mcp-server` (249), `npm run test:dev` (868 across five workspaces), `tsc --noEmit`, `prettier --check`
+- [x] `integration-tests/mcp-server` run against real Arranger and Elasticsearch (80), including substring matching, any-field-matches, negation, and the aggregations path
+- [x] `docs/mcp-server.md`, `apps/mcp-server/README.md`, `CHANGELOG.md`, `docs/concepts.md`, both `.dev` design documents, roadmap, tech-debt, session file
