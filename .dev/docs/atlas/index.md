@@ -27,6 +27,10 @@ Applied per the convention's per-entry content test (does this entry carry reaso
 
 Two files predate this convention and are the same pattern under different names: `pnpm-migration.md` (roadmap §3.3) and `nesting-prefix.md`, which now also carries the resolved feature's implementation record.
 
+## Consumer integrations
+
+- [Sets consumer: portal-ui and Singularity](../sets-consumer-singularity.md): a real dependency on Arranger's sets feature that this repository had no record of. Reported and verified with file references by the portal-ui owner. Scoped to the **clinical** download path: portal-ui's environmental path builds its download in the browser from a plain Arranger query and touches neither sets nor Singularity. Carries the structural finding that **Arranger is not the only reader of the `clinical_centric` data index**, since Singularity reads that one directly with its own credentials, and one deliberately open question about whether a set's materialized `ids` or its stored `sqon` is what gets used.
+
 ## Subsystem docs
 
 - [Arranger auth](../arranger-auth/index.md): access control. The enforcement-seam design (query-building boundary, not transport boundary), auth-work sequencing, a scoped index of access-control-path defects, and the Usher PEP plugin. Absorbed the former `.dev/docs/usher-plugin.md`.
