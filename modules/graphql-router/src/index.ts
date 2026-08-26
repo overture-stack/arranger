@@ -1,5 +1,6 @@
 export type { ArrangerBaseContext } from './types.js';
 
+export { default as getDefaultServerSideFilter } from './accessControl/getDefaultServerSideFilter.js';
 export { createSchemasFromConfigs, default as getGraphQLRoutes, logSeparator } from './graphqlRoutes.js';
 export { default } from './router.js';
 export {

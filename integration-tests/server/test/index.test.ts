@@ -16,6 +16,7 @@ import data_1 from './assets/model_centric_1.data.json' with { type: 'json' };
 import mappings_1 from './assets/model_centric_1.mappings.json' with { type: 'json' };
 import data_2 from './assets/model_centric_2.data.json' with { type: 'json' };
 import mappings_2 from './assets/model_centric_2.mappings.json' with { type: 'json' };
+import awkwardFieldNames from './awkwardFieldNames.js';
 import manageSets from './manageSets.js';
 import readAggregation from './readAggregation.js';
 import readMetadata from './readMetadata.js';
@@ -125,6 +126,8 @@ const runTestSuites = (env, { smokeTestConfig } = {}) => {
 	suite('sets management', () => {
 		manageSets(env);
 	});
+
+	awkwardFieldNames(env);
 };
 
 suite('integration-tests/server', { concurrency: false }, () => {

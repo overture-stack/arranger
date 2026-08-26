@@ -346,6 +346,20 @@ export const SqonBuilder = {
 	/** Start a builder from an empty and-combination. */
 	empty: (): SqonBuilderHandle => createBuilder(emptySqon()),
 
+	/**
+	 * Start a builder with a match-none filter: an `in` filter on `fieldName` with an empty value
+	 * list. This is a leaf, and `reduceSqon` only ever prunes empty combinations, never a leaf, so
+	 * this value is stable under composition and reduction.
+	 *
+	 * `fieldName` has no effect on the result: an empty `in` matches nothing regardless of which
+	 * field it names, including one absent from the mapping. A field name is still required, since
+	 * every leaf operator needs one; pick any field already in the mapping.
+	 *
+	 * Use this to express "match nothing" rather than constructing it by hand as a negated empty
+	 * combination.
+	 */
+	matchNothing: (fieldName: string): SqonBuilderHandle => createBuilder(emptySqon()).in(fieldName, []),
+
 	/** Start a builder from an `and` combination wrapping the given content. */
 	and: (content: SqonNode | SqonNode[], pivot?: string): SqonBuilderHandle =>
 		createBuilder(emptySqon()).and(content, pivot),

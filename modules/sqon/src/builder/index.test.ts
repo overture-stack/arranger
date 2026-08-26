@@ -3,12 +3,40 @@ import { suite, test } from 'node:test';
 
 import { SqonBuilder } from '#builder/index.js';
 import type { SqonBuilderHandle } from '#builder/index.js';
+import { SqonSchema } from '#schema/index.js';
 
 suite('SQON builder', () => {
 	suite('SqonBuilder.empty()', () => {
 		test('produces an empty and-combination', () => {
 			const result = SqonBuilder.empty().toValue();
 			assert.deepEqual(result, { op: 'and', content: [] });
+		});
+	});
+
+	suite('SqonBuilder.matchNothing()', () => {
+		test('produces an in filter with an empty value list', () => {
+			const result = SqonBuilder.matchNothing('study').toValue();
+			assert.deepEqual(result, { op: 'in', content: { fieldName: 'study', value: [] } });
+		});
+
+		test('validates against SqonSchema', () => {
+			const result = SqonBuilder.matchNothing('study').toValue();
+			assert.equal(SqonSchema.safeParse(result).success, true);
+		});
+
+		test('survives a round-trip through SqonBuilder.from().toValue() unchanged', () => {
+			const original = SqonBuilder.matchNothing('study').toValue();
+			const roundTripped = SqonBuilder.from(original).toValue();
+			assert.deepEqual(roundTripped, original);
+		});
+
+		test('survives composition with another filter via .and()', () => {
+			const other = { op: 'in', content: { fieldName: 'gender', value: ['male'] } };
+			const result = SqonBuilder.matchNothing('study').and(other).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [{ op: 'in', content: { fieldName: 'study', value: [] } }, other],
+			});
 		});
 	});
 

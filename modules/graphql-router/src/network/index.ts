@@ -6,6 +6,8 @@ import {
 } from '@overture-stack/arranger-types/configs';
 import type { GraphQLSchema } from 'graphql';
 
+import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+
 import type { ArrangerBaseContext } from '#types.js';
 import partitionArray from '#utils/partitionArray.js';
 
@@ -42,12 +44,14 @@ export const ALL_NETWORK_AGGREGATION_TYPES_MAP = new Map<string, keyof typeof SU
 export const createSchemaFromNetworkConfig = async <Context extends ArrangerBaseContext>({
 	customizeRemoteRequest,
 	enableDebug,
+	getServerSideFilter,
 	remoteNodeConfigs,
 	localNodeConfigs,
 	localCatalogues,
 }: {
 	customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 	enableDebug: boolean;
+	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	remoteNodeConfigs: RemoteNodeConfig[];
 	localNodeConfigs: LocalNodeConfig[];
 	localCatalogues: LocalCatalogueSchemaData<Context>[];
@@ -139,6 +143,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 	 */
 	const typeDefs = createTypeDefs(allAvailableAggregationTypes);
 	const resolvers = createResolvers({
+		getServerSideFilter,
 		remoteNodes: {
 			connected: connectedRemoteNodes,
 			failed: failedRemoteNodes,

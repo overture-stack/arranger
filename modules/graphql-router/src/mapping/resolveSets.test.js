@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
+import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
+
 import { saveSet } from './resolveSets.js';
 
 const buildTypes = (config) => [['donor', { name: 'donor', index: 'donor', nested_fieldNames: [], config }]];
@@ -16,7 +18,7 @@ suite('saveSet', () => {
 			index: async () => undefined,
 		};
 
-		await saveSet({ getServerSideFilter: () => null, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
+		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
 			null,
 			{
 				type: 'donor',
@@ -41,7 +43,7 @@ suite('saveSet', () => {
 			index: async () => undefined,
 		};
 
-		await saveSet({ getServerSideFilter: () => null, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
+		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
 			null,
 			{ type: 'donor', userId: 'user-1', sqon: { op: 'and', content: [] }, path: 'submitter_donor_id' },
 			{ esClient },
@@ -66,7 +68,7 @@ suite('saveSet', () => {
 			},
 		};
 
-		await saveSet({ getServerSideFilter: () => null, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
+		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
 			null,
 			{ type: 'donor', userId: 'user-1', sqon: { op: 'and', content: [] }, path: 'submitter_donor_id' },
 			{ esClient },
@@ -85,7 +87,7 @@ suite('saveSet', () => {
 			index: async () => undefined,
 		};
 
-		await saveSet({ getServerSideFilter: () => null, setsIndex: 'arranger-sets', types: buildTypes(undefined) })(
+		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes(undefined) })(
 			null,
 			{
 				type: 'donor',

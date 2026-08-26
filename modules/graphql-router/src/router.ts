@@ -130,6 +130,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			`/download`,
 			downloadRoutes({
 				enableDebug,
+				getServerSideFilter,
 			}),
 		); // consumes
 		router.get('/favicon.ico', (req, res) => res.status(204));

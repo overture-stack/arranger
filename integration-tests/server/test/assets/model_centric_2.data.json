@@ -5,6 +5,11 @@
     "_id": "sagsdhertdfdgsdfgsdfg",
     "_score": 1,
     "_source": {
+      "2020_baseline": "yes",
+      "ca19-9": "positive",
+      "qc-metrics": {
+        "batch-id": "B-17"
+      },
       "name": "HCM-SOMEONE-2222-A00",
       "type": "3-D: Other (e.g. neurosphere, air-liquid interface, etc.)",
       "growth_rate": 12,
@@ -40,6 +45,11 @@
     "_id": "sagsdhertdfdgsdfgsdfg",
     "_score": 1,
     "_source": {
+      "2020_baseline": "yes",
+      "ca19-9": "positive",
+      "qc-metrics": {
+        "batch-id": "B-17"
+      },
       "name": "HCM-SOMEONE-2222-A01",
       "type": "3-D: Other (e.g. neurosphere, air-liquid interface, etc.)",
       "growth_rate": 12,
@@ -75,6 +85,11 @@
     "_id": "5da62fbad545d210fe1c63a9",
     "_score": 1,
     "_source": {
+      "2020_baseline": "yes",
+      "ca19-9": "positive",
+      "qc-metrics": {
+        "batch-id": "B-18"
+      },
       "name": "HCM-SOMEONE-2222-A02",
       "type": "3-D: Other (e.g. neurosphere, air-liquid interface, etc.)",
       "growth_rate": 12,
@@ -110,6 +125,11 @@
     "_id": "5dc9b6c3d614630f9809f7d0",
     "_score": 1,
     "_source": {
+      "2020_baseline": "yes",
+      "ca19-9": "negative",
+      "qc-metrics": {
+        "batch-id": "B-18"
+      },
       "name": "HCM-TOHI-1111-A03",
       "type": "2-D: Adherent",
       "growth_rate": 44,

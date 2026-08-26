@@ -3,6 +3,7 @@ import { suite, test } from 'node:test';
 
 import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 
+import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
 import { catalogueErrorCodes, classifyCatalogueFailureReason } from '#searchClient/index.js';
 
 import arrangerRoutes, { createSchemasFromConfigs, FALLBACK_LABEL, isFallbackLabel } from './graphqlRoutes.js';
@@ -42,7 +43,7 @@ const buildFailingArrangerRoutesArgs = (overrides: Record<string, unknown> = {})
 	configs: {} as ConfigsObject<never>,
 	enableDebug: false,
 	esClient: {} as never,
-	getServerSideFilter: (() => undefined) as never,
+	getServerSideFilter: getDefaultServerSideFilter,
 	mappingFromIndex: {},
 	...overrides,
 });
@@ -94,7 +95,7 @@ suite('field name sanitization', () => {
 			configs: { documentType: 'donor' } as ConfigsObject<never>,
 			enableDebug: false,
 			esClient: {} as never,
-			getServerSideFilter: (() => undefined) as never,
+			getServerSideFilter: getDefaultServerSideFilter,
 			mappingFromIndex: {
 				biomarker: {
 					type: 'nested',

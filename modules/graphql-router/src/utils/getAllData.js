@@ -4,6 +4,7 @@ import { configOptionalProperties, configRootProperties, downloadProperties } fr
 
 import fallbackConfigs from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
+import compileFilter from '#mapping/utils/compileFilter.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
 
 import runQuery from './runQuery.js';
@@ -18,6 +19,7 @@ export default async ({
 	chunkSize = fallbackConfigs.downloads.chunkSize,
 	columns = [],
 	ctx = {},
+	getServerSideFilter,
 	maxRows = null,
 	mock,
 	sort = [],
@@ -48,9 +50,15 @@ export default async ({
 		.filter(({ type }) => type === 'nested')
 		.map(({ fieldName }) => fieldName);
 
+	// Export is a read path like any other, so the access-control filter has to be composed here
+	// too. Without this the caller's SQON reaches Elasticsearch alone and the export returns every
+	// document the query matches, whatever the deployment's filter says.
 	const query = buildQuery({
 		caller: 'getAllData',
-		filters: sqon,
+		filters: compileFilter({
+			clientSideFilter: sqon,
+			serverSideFilter: getServerSideFilter?.(ctx),
+		}),
 		nestedFieldNames,
 		nestingPrefix,
 	});

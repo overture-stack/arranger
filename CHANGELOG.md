@@ -13,6 +13,8 @@ This file covers high-level release notes for the Arranger project as a whole. W
 - **Environment variable `PORT` renamed to `SERVER_PORT`**: Update `.env` files, container configs, and Helm values.
 - **Environment variable `SEARCH_CLIENT_TYPE` renamed to `SEARCH_ENGINE`**: Accepts `opensearch` or `elasticsearch`. Leave unset to auto-detect from the cluster.
 - **Docker image `arranger-server` renamed to `arranger-search-server`**: Update `docker-compose.yml`, Helm values, and any deployment manifests.
+- **`getServerSideFilter` must return a filter; `null` and `undefined` are no longer accepted**: the callback's contract is now total. A callback returning nothing, or returning a filter with no leaf clause at any depth (a negated empty combination, for example), is rejected with an error instead of being treated as "no restriction". Deployments that do not configure `getServerSideFilter` at all are unaffected and need no change. To state "no additional restriction" explicitly, return the newly exported `getDefaultServerSideFilter()`. To state "deny", return a leaf that matches nothing, such as `SqonBuilder.matchNothing(fieldName)`.
+
 - **`MAX_RESULTS_WINDOW` is now enforced**: Previously present in the env schema but not applied; now caps query results at `10000` by default. Deployments that return more than 10,000 documents must set this explicitly (via env var or per-catalogue `table.json`).
 
 See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) for upgrade instructions.
@@ -47,6 +49,14 @@ See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) f
 - **`ROW_ID_FIELD_NAME` configurable**: The ES field used as the row identifier (default `id`). Previously hardcoded.
 - **`DOWNLOAD_STREAM_BUFFER_SIZE` default corrected**: Fixed incorrect default of `100`; now `2000` as documented.
 - **Fixed: `downloads.maxRows`/`downloads.allowCustomMaxRows` were never enforced**: `getAllData` referenced config property names that didn't exist, so every download ran completely uncapped regardless of configuration. Downloads are now correctly capped at the configured `maxRows` (default `100`), or a caller-supplied value when `allowCustomMaxRows` is set.
+
+### Access control
+
+- **The server-side filter is now applied on every read path**: record queries, aggregations, the export route, and federated queries. It was previously composed per call site, which meant a read path could be added without it. `buildAggregations` re-applies the filter after the field-removal step that facets require, the export route composes it through the same `compileFilter` as GraphQL reads, and federated queries forward it to remote nodes in the outgoing query variables.
+
+- **Federation forwards the filter rather than enforcing it.** A remote node applies the SQON it receives; a node that ignores it applies nothing, and the querying node cannot detect that. Treat federated results as trusted only to the extent the remote nodes are.
+
+- **New `getDefaultServerSideFilter` export** from `@overture-stack/arranger-graphql-router`, the value used when no callback is configured. Return it from a custom callback to mean "no additional restriction", rather than returning nothing.
 
 ### MCP server
 
@@ -103,6 +113,8 @@ The charts module was introduced in this release cycle as a new package.
 - **All operator aliases now normalize on parse, not just `filter`/`wildcard`**: `SqonBuilder.from()` rewrites every leaf's `op` to its canonical form (`=` -> `in`, `>=` -> `gte`, `filter` -> `wildcard`, etc.) before returning, recursively through nested combinations. Previously the schema validated aliases but never normalized them, so code that switched on `.op` after parsing (rather than going through the builder's own methods) could accept a query using an alias and then fail to match any canonical branch. Calling `SqonSchema.parse()` directly still returns the alias unchanged; use the newly-exported `normalizeSqonNode()` if you have a reason to validate without the builder. Also newly exported: `isGroupNode`/`isFieldFilter` type guards for discriminating a `SqonNode` by shape.
 
 - **New `asCombination()` export, for consumers that need a stable, always-a-combination shape**: `SqonBuilder` always collapses a single-item `and`/`or` down to its sole child (`SqonBuilder.and([oneFilter]).toValue()` returns `oneFilter`, not `{ op: 'and', content: [oneFilter] }`), the same behavior `sqon-builder` had. That's the right default for the common case, but it surprised a consumer whose SQON-rendering code assumed the top level was always a combination with `content` as an array, and crashed the moment a lone filter collapsed to a bare leaf. `asCombination(node, op = 'and')` wraps a node in a combination if it isn't already one, and never unwraps a single-item result the way builder methods do, use it instead of a hand-written `{ op: 'and', content: [node] }` literal wherever that stability matters more than the minimal form.
+
+- **New `SqonBuilder.matchNothing(fieldName)` export, for a filter guaranteed to match nothing**: an `in` filter with an empty value list. It's a leaf, not a combination, so it stays stable under `reduceSqon`'s pruning and under later composition, unlike a hand-constructed negated empty combination. `fieldName` has no effect on the result, an empty `in` matches nothing regardless of which field it names; a field name is still required since every leaf operator needs one. Use this to express "match nothing" (for example, a denied principal in an access-control filter) rather than constructing it by hand.
 
 ### Infrastructure
 

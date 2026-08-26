@@ -6,6 +6,8 @@ import { graphql } from 'graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 import Parallel from 'paralleljs';
 
+import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
+
 import resolveHits from './resolveHits.js';
 
 const buildSchema = (resolver) =>
@@ -51,7 +53,7 @@ suite('resolveHits (default export)', () => {
 			},
 		};
 
-		const resolver = resolveHits({ type: buildType({ nestingPrefix: 'data' }), Parallel, getServerSideFilter: () => null });
+		const resolver = resolveHits({ type: buildType({ nestingPrefix: 'data' }), Parallel, getServerSideFilter: getDefaultServerSideFilter });
 		const schema = buildSchema(resolver);
 
 		const result = await graphql({
@@ -84,7 +86,7 @@ suite('resolveHits (default export)', () => {
 			},
 		};
 
-		const resolver = resolveHits({ type: buildType(undefined), Parallel, getServerSideFilter: () => null });
+		const resolver = resolveHits({ type: buildType(undefined), Parallel, getServerSideFilter: getDefaultServerSideFilter });
 		const schema = buildSchema(resolver);
 
 		const result = await graphql({

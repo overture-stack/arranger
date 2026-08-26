@@ -36,6 +36,9 @@
   },
   "mappings": {
     "properties": {
+      "2020_baseline": {
+        "type": "keyword"
+      },
       "age_at_diagnosis": {
         "type": "long"
       },
@@ -60,6 +63,9 @@
             "search_analyzer": "lowercase_keyword"
           }
         }
+      },
+      "ca19-9": {
+        "type": "keyword"
       },
       "chemotherapeutic_drugs": {
         "type": "boolean"
@@ -142,6 +148,13 @@
       },
       "primary_site": {
         "type": "keyword"
+      },
+      "qc-metrics": {
+        "properties": {
+          "batch-id": {
+            "type": "keyword"
+          }
+        }
       },
       "race": {
         "type": "keyword"

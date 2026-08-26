@@ -5,6 +5,8 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { graphql } from 'graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 
+import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
+
 import getAggregationsResolver from './resolveAggregations.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +50,7 @@ suite('getAggregationsResolver', () => {
 			},
 		};
 
-		const resolver = getAggregationsResolver({ type: buildType({ nestingPrefix: 'data' }) });
+		const resolver = getAggregationsResolver({ type: buildType({ nestingPrefix: 'data' }), getServerSideFilter: getDefaultServerSideFilter });
 		const schema = buildSchema(resolver);
 
 		const result = await graphql({
@@ -58,7 +60,11 @@ suite('getAggregationsResolver', () => {
 		});
 
 		assert.equal(result.errors, undefined);
-		const builtAggs = searchCalls[0].body.aggs['bmi:global'].aggs;
+		// The `bmi:global` wrapper only appears when the aggregated field is itself filtered; with no
+		// such clause the aggregation sits at the top level. Read either shape so this test stays
+		// about nestingPrefix path handling rather than about wrapper structure.
+		const emitted = searchCalls[0].body.aggs;
+		const builtAggs = emitted['bmi:global']?.aggs ?? emitted;
 		assert.equal(builtAggs.bmi.terms.field, 'data.bmi');
 		assert.equal(builtAggs['bmi:missing'].missing.field, 'data.bmi');
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +85,7 @@ suite('getAggregationsResolver', () => {
 			},
 		};
 
-		const resolver = getAggregationsResolver({ type: buildType(undefined) });
+		const resolver = getAggregationsResolver({ type: buildType(undefined), getServerSideFilter: getDefaultServerSideFilter });
 		const schema = buildSchema(resolver);
 
 		const result = await graphql({
@@ -89,6 +95,7 @@ suite('getAggregationsResolver', () => {
 		});
 
 		assert.equal(result.errors, undefined);
-		assert.equal(searchCalls[0].body.aggs['bmi:global'].aggs.bmi.terms.field, 'bmi');
+		const emitted = searchCalls[0].body.aggs;
+		assert.equal((emitted['bmi:global']?.aggs ?? emitted).bmi.terms.field, 'bmi');
 	});
 });
