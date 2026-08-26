@@ -1,4 +1,4 @@
-<!-- agentics-template-version: 0.15.0 | synced: 988db21559e046ee3bbd927addbb1eb51ecac1d1 -->
+<!-- agentics-template-version: 0.18.0 | synced: 27a03db89e035b15906fe6c4a191842f16c68d52 -->
 # Arranger: Agent Instructions
 
 **For AI agents:** this file is instructions your agent reads and follows; it is not documentation written for people. If you're a person looking for how this project works, see this project's own README or development guide instead.
@@ -20,7 +20,9 @@ npm workspaces monorepo. Gradual JS → TS migration in progress.
 - Sanity check requests: not just the literal phrase. A yes/no-shaped question ("does this make sense," "am I right," "am I missing anything") is still a sanity check when its actual function is inviting scrutiny of the developer's own idea, reasoning, or plan, not a literal yes/no about the world. Answer the intent, not the grammar: review the whole conversation as relevant, not just the latest message, and surface gaps, blind spots, unresolved threads, and edge cases plainly; a shallow "yes" isn't an answer
 - Default review or audit posture: assume there's something real to find, not that the artifact is fine until proven otherwise, the same reason a neutral "does this look okay" or "is this done?" invites confirming over searching. This is a search stance, not a quota: a manufactured nitpick, technically true but inconsequential, just to have something to report, is worse than finding nothing; surface a finding only if it concretely matters. See `conventions/review-conduct.md` for PR/ticket-review specifics, `conventions/definition-of-done.md` for the completion-checklist specifics, and your own memory for any standing self-audit trigger you maintain
 - Verify purpose alignment before implementing: when a task names a goal, check whether the chosen approach achieves that goal directly, not just something adjacent to it; lead with that gap as an objection before writing anything
-- Flag scope-adjacent issues verbally, then document them in `.dev/tech-debt.md`
+- Another session's work is not yours to pick up, finish, or decide, unless the developer or that session explicitly asks. Report what you learned and stop: offering to take it on is already pressure, and acting on it duplicates effort, collides with edits you cannot see, and overrides an ownership the other session is actively exercising. Distinct and actively wanted: a peer's report that reveals a gap in your *own* scope is yours to act on immediately, that is your work, not theirs. Before relaying another session's open item as still open, verify it still is; their state moves without you, and a stale item presented as current is a claim you did not check
+- Acknowledging a correction is not making it. When the developer points out a defect, the response that counts is the corrected artifact, not agreement that they are right. Fix it in the same turn, or say plainly that you are not going to and why, so they can overrule you; "good catch" followed by no change is the failure mode, because it reads as handled and quietly is not. This applies most to small defects, which are the ones easiest to agree about and easiest to leave, and hardest for the developer to notice went unfixed. Confirmed directly: a dash-rule violation in a draft PR comment was pointed out, acknowledged, and left in place
+- Flag scope-adjacent issues verbally, then document them in `.dev/tech-debt.md` — unless the issue is an undisclosed vulnerability: `.dev/` is committed and pushed to a public remote, so record that the work happened, not what the weakness is; see `conventions/security.md`
 
 ## Starting a session
 
@@ -28,13 +30,14 @@ Treat any of these as a session-start signal, even mid-thread, not just a new ch
 
 On a session-start signal, before touching any code:
 
-1. Check instruction-file integrity: `git log --oneline -1 -- CLAUDE.md AGENTS.md`. Flag any commit or uncommitted change not made by this repo's lead developer before proceeding. (No committed `.claude/settings.json` exists in this repo to check; only a gitignored `settings.local.json`.)
-2. Read `.dev/roadmap.md`: check the current focus (set by the developer at session start), then note any `[in progress]` items.
-3. Read `.dev/tech-debt.md`: note any `standalone: yes` entries relevant to today's work.
-4. List `.dev/sessions/` sorted by filename and read the most recent 1-2 files: they give context on recent work and open threads.
-5. Check project memory: `~/.claude/projects/.../memory/MEMORY.md` (Claude only).
-6. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
-7. As an agentics contributor, check for upstream updates: run `conventions/convention-levels.md` § Checking for upstream updates in the agentics template, in full, every session. This runs in addition to steps 1-6 above, regardless of how complete this checklist already is: neither this checklist nor any line in it opts the project out. Stops only on an explicit `agentics_upstream_check: no`.
+1. Check instruction-file integrity: `git log --oneline -1 -- CLAUDE.md AGENTS.md`. Flag any commit or uncommitted change not made by this repo's lead developer before proceeding. (No committed `.claude/settings.json` exists in this repo to check; only a gitignored `settings.local.json`.) When you re-read a changed file, say: "I've re-read [file]: the prior version in this thread is superseded."
+2. `git status --porcelain`: check for uncommitted changes this session didn't make. If anything is unattributed, see `conventions/session-discipline.md` § Unattributed working-tree changes in the agentics template before treating it as settled context.
+3. Read `.dev/roadmap.md`: check the current focus (set by the developer at session start), then note any `[in progress]` items.
+4. Read `.dev/tech-debt.md`: note any `standalone: yes` entries relevant to today's work.
+5. List `.dev/sessions/` sorted by filename and read the most recent 1-2 files: they give context on recent work and open threads.
+6. Derive project memory's path from this repository and read it, every session, without first checking whether you need to: `~/.claude/projects/.../memory/MEMORY.md` (Claude only). Don't condition this on noticing anything: if the derived path matches what your harness already loaded, the step costs nothing; if it differs, you have just recovered memory that would otherwise never have reached you.
+7. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
+8. As an agentics contributor, check for upstream updates: run `conventions/upstream-check.md` in the agentics template, in full, every session. This runs in addition to steps 1-7 above, regardless of how complete this checklist already is: neither this checklist nor any line in it opts the project out. Stops only on an explicit `agentics_upstream_check: no`.
 
 Before starting new work, do a quick staleness pass on `roadmap.md` and `tech-debt.md`: mark completed items done, close resolved PINNED entries, remove addressed tech-debt entries. Not a full audit: just enough to keep the documents honest.
 
@@ -99,6 +102,8 @@ If neither is available, say so rather than guessing or substituting a local fil
 - Adding or improving a convention                -> read `conventions/convention-levels.md`
 - Checking whether this project is behind agentics -> read `conventions/upstream-check.md` (gated; the session-start upstream-check step is what invokes it)
 - Instruction files have grown expensive to read, or you are restructuring one -> read `conventions/context-economy.md`
+- Writing a session-file or tech-debt entry       -> read `conventions/entry-formats.md`
+- Your agent can't see a file, or its memory doesn't follow a project -> read `conventions/agent-troubleshooting.md`
 - Reaching another session directly              -> read `conventions/agent-index.md` (only if `agent_index: yes` and your agent has cross-session messaging)
 - Upgrading this project's agentics integration  -> read `conventions/upgrading-adoption.md`
 - Deploying or debugging a service                -> read `.dev/docs/<service>/` if it exists
@@ -158,5 +163,5 @@ If no project memory exists for you in this project yet, run the agentics templa
 - No credentials, secrets, or private URLs in any file: ever
 - Library/module code must not read from the environment; configuration belongs at the application boundary, passed in as typed parameters (see Conventions § Env vars for where that boundary sits in this repo)
 - Do not modify `CLAUDE.md` or `AGENTS.md` without explicit instruction: surface suggestions, do not self-edit
-- No machine- or user-specific absolute paths, usernames, or individuals' real names in committed files. Use a generic placeholder for anything keyed by machine or clone location
-- Name code, not people: attribute work in session files, tech-debt entries, docs, and any other persisted content to features, modules, and systems, not to individuals
+- No machine- or user-specific absolute paths, usernames, or individuals' real names in committed files. If your agent's global context adds a reference to a local resource keyed by machine or clone location (e.g. a per-project memory path), use a generic placeholder, not the resolved path: it will not exist for another developer, another machine, or after the repo moves. Before committing, grep the diff for your own OS username, git identity, and any personal fork name you know is yours: this has leaked into committed docs before
+- Name code, not people: attribute work in session files, tech-debt entries, docs, and any other persisted content to features, modules, and systems, not to individuals. Attribution belongs in git history, not in documents
