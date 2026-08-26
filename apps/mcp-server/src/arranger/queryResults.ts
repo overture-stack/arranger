@@ -52,7 +52,10 @@ const compactNode = (
  * Strips the GraphQL `edges`/`node` nesting from an Arranger hits response, including the
  * connection wrappers that `nested` fields carry inside each hit node.
  * @param edges - The `hits.edges` array from an Arranger GraphQL response.
- * @param fieldTypes - Map of dot-notation field name to its introspected field type.
+ * @param fieldTypes - Map of dot-notation field name to its introspected field type, keyed by the
+ * names the generated schema exposes rather than the raw ES paths introspection reports (see
+ * `toGraphqlFieldPath`). Response keys are the sanitized names, so a map keyed on raw paths would
+ * miss any field whose name GraphQL disallows.
  * @returns One flat document object per hit.
  * @remarks This makes the response easier to work with for LLMs.
  * @example

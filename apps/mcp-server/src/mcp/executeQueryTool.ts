@@ -1,7 +1,12 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { z as zod } from 'zod';
 
-import { buildArrangerGraphQLQuery, type ArrangerQueryType, type ArrangerSort } from '#arranger/queryBuilder.js';
+import {
+	buildArrangerGraphQLQuery,
+	toGraphqlFieldPath,
+	type ArrangerQueryType,
+	type ArrangerSort,
+} from '#arranger/queryBuilder.js';
 import { compactHitNodes, type ArrangerHitsEdge } from '#arranger/queryResults.js';
 import {
 	validateAggregationFields,
@@ -273,6 +278,12 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 				const fieldTypes = Object.fromEntries(
 					Object.entries(catalogueFields).map(([fieldName, field]) => [fieldName, field.type]),
 				);
+				// The same map re-keyed by the names the generated schema exposes. Hits come back keyed
+				// by those, not by the raw introspection paths, so compaction needs this copy to still
+				// recognize a `nested` container whose raw name GraphQL disallows.
+				const responseFieldTypes = Object.fromEntries(
+					Object.entries(fieldTypes).map(([fieldName, type]) => [toGraphqlFieldPath(fieldName), type]),
+				);
 
 				const validation = validateRequest({ context, sqon, queryType, fields, sort, aggregationFields });
 				if (validation.errors.length > 0 || validation.sqon === undefined) {
@@ -320,7 +331,9 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 					);
 				}
 
-				const data = (response.data?.[documentType] ?? {}) as ArrangerQueryData;
+				// Keyed by the root field the query selected, which is the sanitized document type;
+				// `documentType` itself is the raw name and stays the one reported back to the caller.
+				const data = (response.data?.[request.rootFieldName] ?? {}) as ArrangerQueryData;
 				const structuredContent: ExecuteQueryOutput = {
 					catalogueId,
 					documentType,
@@ -331,7 +344,12 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 						? {
 								total: data.hits.total ?? 0,
 								...(fields.length > 0
-									? { hits: compactHitNodes({ edges: data.hits.edges ?? [], fieldTypes }) }
+									? {
+											hits: compactHitNodes({
+												edges: data.hits.edges ?? [],
+												fieldTypes: responseFieldTypes,
+											}),
+										}
 									: {}),
 							}
 						: {}),
