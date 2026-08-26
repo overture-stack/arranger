@@ -85,7 +85,9 @@ correct     (fieldName:)  -> {"bool":{"must":[{"terms":{"acl":["user-1"],"boost"
 
 An operator who copied the documented example has an access-control filter that restricts nothing. Independent of federation and of Usher.
 
-One thing to settle before rating this finally: what a live cluster does with `{"bool":{"must":[null]}}`. If ES/OS rejects the body the query fails closed and the operator notices; if it ignores the null the filter is silently absent. That is a one-query check against the integration-test cluster and it decides between "high" and "critical".
+**Settled 2026-08-24 against a live cluster, and it rates as high rather than critical.** Elasticsearch 7.17.28 rejects `{"bool":{"must":[null]}}` outright with `[_na] query malformed, must start with start_object`. So the mistake fails closed: an operator who copied the documented example got a deployment that errored on every query, not one that silently served everything. The finding stands as a documentation defect that broke deployments; it was never a silent bypass.
+
+**A second question settled in the same pass, and this one resolved to the unsafe side.** `{"bool":{"should":[]}}` returns every document, so `{op:'or', content:[]}` joins the other empty combinations as fail-open. An earlier note here left `or` unverified while stating the case for `and`; that gap is now closed and `in` with an empty value list remains the only fail-closed encoding of "entitled to nothing".
 
 
 ### Lens: aggregation disclosure

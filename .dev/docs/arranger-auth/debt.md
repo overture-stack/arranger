@@ -8,38 +8,12 @@ A scoped view of `.dev/tech-debt.md` entries that sit on an access-control path,
 
 ## Blocking: fix before building enforcement on this seam
 
-### The download/export path bypasses server-side filters entirely
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router, "The download/export path never composes the server-side filter"
-**Why it blocks Usher:** the plugin's whole guarantee is that a grant-derived filter is applied. If the natural seam (`getServerSideFilter`) does not reach export, a grant-restricted user can export the unrestricted dataset. Building the plugin on this hook without fixing it ships an access-control bypass on day one.
-**Compounding:** `disableFilters` also does not cover `/download` (separate canonical entry), so the export route bypasses *both* mechanisms Arranger has. And `/download` has zero test coverage at any layer, with its only formatter tests silently skipped, so nothing would have caught either.
+**Four entries that stood here are resolved as of 2026-08-24 and have been removed**, along with the canonical entries they indexed: the export path bypassing server-side filters, aggregations escaping via the ES `global` wrapper, federation never composing the filter, and the documented `getServerSideFilter` example that compiled to a null clause. What replaced them is recorded in [`usher-plugin.md`](usher-plugin.md) § Audit consequences. One qualification survives their closure: federation now *forwards* the filter, which is not the same as enforcing it, since a remote that ignores the SQON applies nothing and this node cannot tell.
 
 ### Two overlapping nested-filter mechanisms disagree on boolean semantics
 
 **Canonical entry:** `.dev/tech-debt.md` § graphql-router, "`buildAggregations`'s `startsWith(nestedPaths)` is dead code at depth 2+..."
 **Why it blocks Usher:** aggregate counts are half the enforcement surface, and this is the code that filters them. `injectNestedFiltersToAggs` builds `bool.should` (OR) while `createFieldAggregation`'s `:nested_filtered` builds `bool.must` (AND), and the latter is dead at the nesting depth real clinical schemas use. An access filter that resolves to OR where AND was intended is an over-disclosure. Confirmed empirically that the obvious one-line fix changes query semantics rather than repairing a typo, so this needs a design decision (which mechanism owns depth-2, which semantics are intended) plus a two-sibling-filter fixture, which no existing test provides.
-
-### An empty grant set compiles to match-all
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router, "An empty grant set compiles to match-all..."
-**Why it blocks Usher:** three of four natural encodings of "restrict to nothing" grant full-index access, and the plugin cannot work around it, because the failure is in how the seam compiles an empty group. Needs a typed deny-all value before any plugin code exists.
-
-Corrected 2026-08-18: an earlier version of this line called an empty grant set the plugin's most common input, listing the unauthenticated, grants-unloaded, and entitled-to-nothing cases. The Usher session confirmed all three are instead *absence from the grants map*, handled with a 404 above filter composition. The blocking relationship holds but its shape is different: the danger is a deny path reaching filter composition at all, since the result there is full disclosure rather than an error, which is what forces that separation to be structural rather than conventional. See [`usher-plugin.md`](usher-plugin.md) § Audit consequences.
-
-### Aggregations escape the server-side filter via an ES `global` wrapper
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router, "Aggregations on a server-side-filtered field escape the filter via an ES `global` wrapper..."
-**Why it blocks Usher:** this is the aggregate half of the enforcement surface failing outright, and it returns documents too (via `top_hits`), not just counts. A grant-derived filter would be escaped by exactly the same mechanism. Root cause is `compileFilter` merging client and server filters so they become indistinguishable, which means the plugin cannot work around it: the fix has to be in the seam. Stopgap available today: force `aggregations_filter_themselves: true`.
-
-### Federated queries never compose the server-side filter
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router, "Federated queries never compose the server-side filter..."
-**Why it blocks Usher:** `getServerSideFilter` is in lexical scope where the network schema is built and simply is not passed, with no type error and no test. A grant-derived filter supplied to `arrangerRouter` would silently not cover federation. This is the concrete proof of the enforcement-boundary argument in `design.md`.
-
-### The documented `getServerSideFilter` example does not filter
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router, "The documented `getServerSideFilter` example uses `field` instead of `fieldName`..."
-**Why it blocks Usher:** the plugin will be configured by operators reading this documentation. A worked example that compiles to `{"bool":{"must":[null]}}` teaches the exact mistake the plugin must not make, and the failure is silent.
 
 ### No structured request logging exists
 
@@ -78,4 +52,11 @@ Lower-severity but on the same seam, all canonical in `.dev/tech-debt.md` and de
 
 ## Resolved, recorded so it is not re-litigated
 
-Nothing yet.
+### An empty grant set compiles to match-all
+
+**Resolved 2026-08-24, retained because the reasoning is still load-bearing for the plugin.** Three of four natural encodings of "restrict to nothing" granted full-index access, and the plugin could not work around it, because the failure was in how the seam compiled an empty group. The seam now rejects a server-side filter with no leaf clause at any depth, and the allow-all sentinel carries a leaf so its shape is unreachable by pruning. The plugin's obligation is unchanged: emit a deny as a leaf, never as a negated empty group.
+
+The root cause was not where it was first looked for, which is worth keeping. Arranger's own allow-all sentinel was `{op:'not', content:[]}`, byte-identical to what a deny becomes after reduction, so "allow everything" and "deny everything, corrupted" were the same value and no downstream guard could distinguish them.
+
+Corrected 2026-08-18: an earlier version of this line called an empty grant set the plugin's most common input, listing the unauthenticated, grants-unloaded, and entitled-to-nothing cases. The Usher session confirmed all three are instead *absence from the grants map*, handled with a 404 above filter composition. The danger is a deny path reaching filter composition at all, which is what forces that separation to be structural rather than conventional.
+

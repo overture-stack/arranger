@@ -28,14 +28,17 @@ Arranger did not, and the plugin cannot be built as specified until Phase 0 item
 The [Phase 0 audit](phase-0-audit.md) tested the seam this plugin was designed to plug into. Four
 results change the plugin's design rather than merely its schedule.
 
-**1. "AND into every query" is not what happens today, on three of four paths.** The translation
-algorithm's step 7 below is the plugin's whole contract with Arranger, and it is currently untrue:
-the export path never composes the filter (`getAllData.js:51-53`), aggregations escape it through
-an ES `global` wrapper whenever `aggregations_filter_themselves` is left at its default `false`,
-and federation never sends it to remote nodes at all (zero `getServerSideFilter` references under
-`network/`, against 38 elsewhere). A plugin correctly translating grants into SQON would still
-disclose restricted data through all three. This is Arranger's defect, not the plugin's, and it is
-P0-b.
+**1. "AND into every query" now holds, as of 2026-08-24.** This item recorded that it did not, on
+three of four paths, and that a plugin correctly translating grants would still disclose restricted
+data. All three are closed and verified against a live cluster: the export path composes the filter,
+aggregations no longer escape it via the ES `global` wrapper, and federation forwards it to remote
+nodes. Step 7 of the translation algorithm is therefore a description of current behaviour rather
+than of an intended contract.
+
+One qualification carries forward rather than closing. Federation *forwards* the filter, which is
+not the same as enforcing it: a remote receives it as an ordinary client SQON and a remote that
+ignores it applies nothing, indistinguishably. Treat the federated portion of a result as
+best-effort rather than guaranteed.
 
 **2. An empty SQON group compiles to match-all, which makes the absent-resource path
 security-critical rather than merely tidy.** Three of the four natural encodings of "restrict to
@@ -51,6 +54,34 @@ in with empty list -> {"bool":{"must":[{"terms":{"study":[],...}}]}}   the only 
 A clause-less `bool` is match-all in Elasticsearch, and `groupingOptimizer` flattens the `and` case
 out of the tree entirely, so the emitted body is byte-identical to one with no server-side filter
 at all.
+
+**The deny encoding is decided, 2026-08-23, and only the leaf form is safe.** With deny required to be expressible as a filter (the callback is total and must return a SQON node), two encodings were compared through the full path:
+
+| Encoding | Raw | After `SqonBuilder.from(x).toValue()` |
+|---|---|---|
+| `{op:'in', content:{fieldName, value:[]}}` | `{"terms":{"study":[],"boost":0}}`, match-none | **unchanged**, still match-none |
+| `{op:'not', content:[{op:'and', content:[]}]}` | `{"bool":{"must_not":[{"bool":{"must":[]}}]}}`, match-none | `{"bool":{"must_not":[]}}`, **match-all** |
+
+`reduceSqon` strips the empty inner combination, leaving `not` with nothing to negate, so deny inverts to allow-everything. Composed, that is worse than it sounds: `AND(client, match-all)` reduces to the client's own unrestricted query. Crucially, `reduceSqon` does **not** run anywhere in `graphql-router`'s compile path, so the negation form is correct until the value passes through the builder once, which is an ordinary normalization step someone adds later.
+
+**No field-free encoding exists, and that is structural.** Every leaf operator requires a `fieldName`, so a field-free form must be a combination, and combinations are precisely what reduce collapses. Both `not[...]` variants collapse identically; `and []` survives but is match-all; `or []` survives as `{"bool":{"should":[]}}`, and that is now **verified against a live cluster: it matches every document**, so it is fail-open like the rest. Not worth building on regardless, since it is a combination and therefore prunable.
+
+So the leaf form is not a compromise but the only encoding whose safety does not depend on a pruning pass leaving it alone. It should be emitted through a named constructor rather than an inline literal, because `{value: []}` reads as an oversight and the obvious tidy-up is the catastrophic form. `matchNothing()` landed in `modules/sqon` on 2026-08-24 and is the constructor to use. Its pinning test asserts the node shape, `SqonSchema` acceptance, round-trip survival through the builder, and the fluent-chain case. An earlier version of this line also asked it to assert the emitted Elasticsearch; **that request was withdrawn as unfulfillable**, since `modules/sqon` has no dependency on `graphql-router` and correctly should not, so satisfying it would mean a hardcoded ES string in a package with no dependency edge to make it fail when the compiler changes. The emitted-ES assertion belongs on the `graphql-router` side.
+
+**Confirmed to diverge from another Overture implementation on this exact input, 2026-08-20.** Lyric
+was checked independently against the same case and does **not** reproduce it: a zero-content
+`and`/`or` reaches drizzle's `and()`/`or()` with no arguments, which returns `undefined`, and
+Lyric's `andOperator`/`orOperator` detect that explicitly and throw `BadRequest` rather than
+falling through. So on identical input one implementation fails open and the other fails closed by
+deliberate check. Reported by the iMicroSeq submission service from a direct read of Lyric's
+translator, not verified here.
+
+That is the concrete justification for the shared conformance corpus, since it is a named input
+class where two systems already disagree rather than a hypothetical. It also shows the corpus must
+encode a **decision** rather than merely compare the two, because neither behaviour is obviously
+correct: "this principal is entitled to nothing" is a legitimate state, not a malformed request, so
+a `400` is safe without being right. A boolean visibility expectation would ratify the `400`
+instead of catching it, which is why the outcome needs a third state.
 
 **Corrected 2026-08-18 by the Usher session, whose model is authoritative here.** An earlier draft
 said an empty grant set was the plugin's most common no-access input. It is not, and the
@@ -159,8 +190,8 @@ For each Arranger catalogue in a query:
       server-side filter was applied at all, so the common legitimate case and a total enforcement
       failure become indistinguishable to a log line, a metric, or a test assertion.
 7. AND that filter into every query this catalogue receives, before the query reaches OpenSearch.
-    - **Arranger does not currently do this on three of four paths.** Step 7 is a statement of the
-      contract the plugin depends on, not of current behaviour. Blocked on P0-b.
+    - **This now holds on all four paths, as of 2026-08-24**, with the caveat that federation
+      forwards rather than enforces. Formerly blocked on P0-b, now closed.
 
 Example: catalogue config declares sensitive categories `indigenous_data` and `controlled_access`.
 Token has `categories: ["indigenous_data"]`. Excluded: `["controlled_access"]`. Resulting
@@ -377,7 +408,7 @@ Ordered by what blocks the most plugin design if left unanswered.
 | 2 | What a service does with an EGO token to decide access | **Answered.** |
 | 3 | What is in the EGO token | **Answered.** `context.user.email`, `context.user.status`, `context.scope`; organization encoded by scope-string prefix/suffix, admin by exact scope match. |
 | 4 | Does the iMS deployment set `getServerSideFilter`, reading EGO claims | **Open.** Not submission-service's to answer; they do not deploy Arranger. Belongs to the portal UI session. |
-| 5 | Keycloak claim shape reaching the host application | **Open, and nothing received.** |
+| 5 | Keycloak claim shape reaching the host application | **Still open, but reframed: it may not be answerable from iMS's current deployment at all.** Reported 2026-08-20 via a peer session, originating from the portal UI and **not verified here**: iMS dev runs Keycloak 17.0.1 on the legacy WildFly `codecentric/keycloak` chart, while `overture/infra` dev runs 26.3.3 on keycloakx. If accurate, a nine-major upgrade sits between the current deployment and the target, so the claim shape a host application will actually receive depends on what iMS upgrades to rather than on what it runs now. That makes the Keycloak migration a **prerequisite** of the auth work rather than a follow-up. Verify before relying on it, and prefer the Usher-side write-up once it exists. |
 | 6 | How open-access data is represented today | **Open.** |
 | 7 | Revocation timing | **Answered.** Equals token lifetime, since status is baked in at issue. |
 
@@ -616,8 +647,9 @@ not are more likely to be undocumented than unconsidered.
 **A. What are *all* the paths by which data leaves the service, and does each one pass the check?**
 The highest-value question, and the one carrying the most transferable evidence. Arranger has
 exactly one access-control mechanism, and a deliberate sweep found **three separate paths that
-bypass it** plus a fourth already known: export never composes the filter, aggregations escape it
-via an ES `global` wrapper, and federation never sends it to remote nodes. A service with more
+bypassed it** plus a fourth already known: export composed no filter, aggregations escaped it via
+an ES `global` wrapper, and federation sent it to no remote node. All four are now closed here, but
+the point stands as a question to ask of any service: A service with more
 mechanisms plausibly has more seams, not fewer. Worth enumerating the exits (REST routes, bulk
 endpoints, exports, admin tooling, webhooks, message publication, error payloads, logs) and
 checking each rather than reasoning from the intended path.
