@@ -362,19 +362,21 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 	// exposes them under sanitized names, so these tests pin the MCP server to the same rules the
 	// schema was built with. Before that, execute_query rejected all three outright.
 	//
-	// These assert on the names, never the values. Arranger currently resolves all three to `null`
-	// (and their aggregations to an empty bucket), because `resolveHits` sends the sanitized names
-	// to Elasticsearch as the `_source` include list and `buildAggregations` keys its ES aggs the
-	// same way; neither can invert sanitization back to the raw ES path. That is an upstream
-	// defect in `modules/graphql-router`, reproducible with a handwritten GraphQL query that never
-	// touches the MCP server, and it is logged separately in `.dev/tech-debt.md`. Asserting only
-	// the names keeps these tests measuring what this server is responsible for, and they will
-	// keep passing once the resolvers are fixed.
+	// Both halves of the round trip are asserted: the sanitized names the response is keyed by,
+	// and the values behind them. The values matter as much as the keys, because the two are
+	// resolved by different code with different needs. This server sanitizes names on the way into
+	// the query document, while Arranger has to send Elasticsearch the *raw* names to read the
+	// values back. A regression in either direction is quiet, showing up as a `null` value or an
+	// empty aggregation under a key that still looks correct.
+	//
+	// Dataset reference (test/assets/catalogue_b.data.json):
+	//   b-001 ca19-9 12.5 low  age 47 | b-002 ca19-9 37.5 high age 61
 	test('18.hits query addresses fields whose raw names GraphQL disallows', async () => {
 		const result = await callExecuteQuery(getClient(), {
 			catalogueId: 'catalogue-b',
 			sqon: EMPTY_ROOT_SQON,
 			fields: ['sample_id', 'ca19-9_level', '2020_baseline'],
+			sort: [{ fieldName: 'sample_id', order: 'asc' }],
 		});
 		const structured = getStructured(result);
 
@@ -382,12 +384,10 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		// Hits come back under the schema's names, not the raw introspection names: a hyphen
 		// becomes `_`, and a leading digit gets an `_` prefix. A name the server had not sanitized
 		// the same way would not appear in the response at all.
-		for (const hit of structured.hits ?? []) {
-			assert.deepEqual(Object.keys(hit).sort(), ['_2020_baseline', 'ca19_9_level', 'sample_id']);
-		}
-
-		const ids = (structured.hits ?? []).map((hit) => hit.sample_id).sort();
-		assert.deepEqual(ids, ['b-001', 'b-002']);
+		assert.deepEqual(structured.hits, [
+			{ sample_id: 'b-001', ca19_9_level: 12.5, _2020_baseline: 'low' },
+			{ sample_id: 'b-002', ca19_9_level: 37.5, _2020_baseline: 'high' },
+		]);
 	});
 
 	test('19.hits query traverses an object container whose name GraphQL disallows', async () => {
@@ -401,14 +401,12 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 
 		assert.equal(structured.total, 2);
 		// The container segment is sanitized too, not just the leaf: the selection set has to nest
-		// `age_at_diagnosis` under `donor_info` for the schema to accept the query at all.
-		assert.deepEqual(
-			(structured.hits ?? []).map((hit) => Object.keys(hit).sort()),
-			[
-				['donor_info', 'sample_id'],
-				['donor_info', 'sample_id'],
-			],
-		);
+		// `age_at_diagnosis` under `donor_info` for the schema to accept the query at all, and the
+		// object nesting has to survive into the compacted hit.
+		assert.deepEqual(structured.hits, [
+			{ sample_id: 'b-001', donor_info: { age_at_diagnosis: 47 } },
+			{ sample_id: 'b-002', donor_info: { age_at_diagnosis: 61 } },
+		]);
 	});
 
 	test('20.aggregations key off the sanitized flat name, not just dot-to-underscore', async () => {
@@ -428,32 +426,45 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 			'donor_info__age_at_diagnosis',
 		]);
 
-		// The right aggregation shape per field type: `stats` for the two numerics, `buckets` for
-		// the keyword. Picking the wrong one is a schema type error, so this could not have
-		// resolved if the field type lookup had gone through the sanitized name.
-		assert.ok(structured.aggregations?.ca19_9_level?.stats, 'expected stats for ca19-9_level');
-		assert.ok(
-			structured.aggregations?.donor_info__age_at_diagnosis?.stats,
-			'expected stats for donor-info.age-at-diagnosis',
-		);
-		assert.ok(structured.aggregations?._2020_baseline?.buckets, 'expected buckets for 2020_baseline');
+		// `stats` for the two numerics, `buckets` for the keyword. A non-zero `count` is the part
+		// that proves the agg ran against the real ES field: aggregating on a name Elasticsearch
+		// does not have still returns a well-formed, empty result.
+		assert.deepEqual(structured.aggregations?.ca19_9_level?.stats, {
+			min: 12.5,
+			max: 37.5,
+			avg: 25,
+			sum: 50,
+			count: 2,
+		});
+		assert.deepEqual(structured.aggregations?.donor_info__age_at_diagnosis?.stats, {
+			min: 47,
+			max: 61,
+			avg: 54,
+			sum: 108,
+			count: 2,
+		});
+
+		const baseline = structured.aggregations?._2020_baseline;
+		assert.ok(baseline?.buckets, 'expected buckets for 2020_baseline');
+		assert.deepEqual(Object.fromEntries(baseline.buckets.map((bucket) => [bucket.key, bucket.doc_count])), {
+			high: 1,
+			low: 1,
+		});
 	});
 
 	// A SQON travels as a GraphQL variable, never inside the query document, so its field names are
 	// never parsed as GraphQL identifiers and stay raw. This is the asymmetry with the sanitized
-	// `fields`/`aggregationFields` above, and the reason build_sqon needed no change. Unlike the
-	// selections, this path reaches Elasticsearch with the raw name intact, so the filter really
-	// does match: the assertion on `total` is a value assertion, not just a naming one.
+	// `fields`/`aggregationFields` above, and the reason build_sqon needed no change.
 	test('21.SQON filter clauses keep the raw field name a sanitized selection cannot use', async () => {
 		const result = await callExecuteQuery(getClient(), {
 			catalogueId: 'catalogue-b',
 			sqon: { op: 'gt', content: { fieldName: 'ca19-9_level', value: 20 } },
-			fields: ['sample_id'],
+			fields: ['sample_id', 'ca19-9_level'],
 		});
 		const structured = getStructured(result);
 
 		// b-001 is 12.5 and b-002 is 37.5, so filtering on the raw hyphenated name selects b-002.
 		assert.equal(structured.total, 1);
-		assert.deepEqual(structured.hits, [{ sample_id: 'b-002' }]);
+		assert.deepEqual(structured.hits, [{ sample_id: 'b-002', ca19_9_level: 37.5 }]);
 	});
 };
