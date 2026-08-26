@@ -22,19 +22,14 @@ export type GraphqlNameRegistry = {
 	 */
 	leafNamesByPath: Record<string, string>;
 	/**
-	 * Inverse of the flat aggregation name: sanitized whole-path name to raw dotted ES path (e.g.
-	 * `qc_metrics__batch_id` to `qc-metrics.batch-id`). Aggregations key their whole path into one
-	 * GraphQL name, so recovering the ES path needs the whole path back, not a leaf.
-	 *
-	 * Collision detection covers sanitized *leaves* within a shared parent, which is a different
-	 * space from this one: a literal `a.b__c` and a nested `a.b.c` both flatten to `a__b__c` without
-	 * being siblings, so nothing rejects them at build time. Rare, and tracked separately.
+	 * Sanitized whole-path aggregation name to raw dotted ES path (`qc_metrics__batch_id` to
+	 * `qc-metrics.batch-id`). Two paths can claim one name here without being siblings, so the
+	 * per-parent collision check below does not see it; tracked in `.dev/tech-debt.md`.
 	 */
 	rawPathsByGraphqlFlatName: Record<string, string>;
 	/**
-	 * Inverse of the top-level GraphQL name: sanitized name to raw ES name, for root fields only
-	 * (e.g. `qc_metrics` to `qc-metrics`). That is the whole space `_source` needs, since including
-	 * a raw object path pulls its children with it.
+	 * Sanitized top-level GraphQL name to raw ES name (`qc_metrics` to `qc-metrics`). Root fields
+	 * only: `_source` needs no more, since including an object path pulls its children.
 	 */
 	rawTopLevelNamesByGraphqlName: Record<string, string>;
 	/** The GraphQL leaf name for a field, given its full dotted raw path (e.g. `biomarker.ca19-9_level`). */

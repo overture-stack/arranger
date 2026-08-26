@@ -12,6 +12,8 @@ export {
 	getIndexMapping,
 	type SearchClient,
 	type SupportedClientTypes,
+	wrapElasticSearchClient,
+	wrapOpenSearchClient,
 } from './searchClient/index.js';
 export { default as resolveCatalogueFields } from './mapping/resolveCatalogueFields.js';
 export * as utils from './utils/index.js';
