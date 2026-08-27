@@ -1,4 +1,4 @@
-import { sanitizeGraphqlNameSegment } from '@overture-stack/arranger-types/tools';
+import { sanitizeGraphqlFlatName, sanitizeGraphqlNameSegment } from '@overture-stack/arranger-types/tools';
 
 /** Two or more distinct raw field paths under the same parent that sanitize to the same GraphQL name; sanitization alone can't resolve this. */
 export type GraphqlNameCollision = {
@@ -21,6 +21,17 @@ export type GraphqlNameRegistry = {
 	 * own `toGraphqlLeafName` function, which can't cross a worker-thread boundary.
 	 */
 	leafNamesByPath: Record<string, string>;
+	/**
+	 * Sanitized whole-path aggregation name to raw dotted ES path (`qc_metrics__batch_id` to
+	 * `qc-metrics.batch-id`). Two paths can claim one name here without being siblings, so the
+	 * per-parent collision check below does not see it; tracked in `.dev/tech-debt.md`.
+	 */
+	rawPathsByGraphqlFlatName: Record<string, string>;
+	/**
+	 * Sanitized top-level GraphQL name to raw ES name (`qc_metrics` to `qc-metrics`). Root fields
+	 * only: `_source` needs no more, since including an object path pulls its children.
+	 */
+	rawTopLevelNamesByGraphqlName: Record<string, string>;
 	/** The GraphQL leaf name for a field, given its full dotted raw path (e.g. `biomarker.ca19-9_level`). */
 	toGraphqlLeafName: (rawPath: string) => string;
 };
@@ -36,6 +47,8 @@ export const identityGraphqlNameRegistry: GraphqlNameRegistry = {
 	collisions: [],
 	documentType: '',
 	leafNamesByPath: {},
+	rawPathsByGraphqlFlatName: {},
+	rawTopLevelNamesByGraphqlName: {},
 	toGraphqlLeafName: (rawPath: string) => sanitizeGraphqlNameSegment(rawPath.split('.').pop() ?? rawPath),
 };
 
@@ -54,6 +67,8 @@ export const buildGraphqlNameRegistry = ({
 	fieldsFromMapping: { fieldName: string }[];
 }): GraphqlNameRegistry => {
 	const leafByPath = new Map<string, string>();
+	const rawPathByFlatName = new Map<string, string>();
+	const rawTopLevelByName = new Map<string, string>();
 	const siblingsByParent = new Map<string, { rawPath: string; sanitizedLeaf: string }[]>();
 
 	fieldsFromMapping.forEach(({ fieldName: rawPath }) => {
@@ -63,6 +78,10 @@ export const buildGraphqlNameRegistry = ({
 		const sanitizedLeaf = sanitizeGraphqlNameSegment(rawLeaf);
 
 		leafByPath.set(rawPath, sanitizedLeaf);
+		rawPathByFlatName.set(sanitizeGraphqlFlatName(rawPath), rawPath);
+		if (!parentPath) {
+			rawTopLevelByName.set(sanitizedLeaf, rawPath);
+		}
 		siblingsByParent.set(parentPath, [...(siblingsByParent.get(parentPath) ?? []), { rawPath, sanitizedLeaf }]);
 	});
 
@@ -81,6 +100,8 @@ export const buildGraphqlNameRegistry = ({
 		collisions,
 		documentType: sanitizeGraphqlNameSegment(documentType),
 		leafNamesByPath: Object.fromEntries(leafByPath),
+		rawPathsByGraphqlFlatName: Object.fromEntries(rawPathByFlatName),
+		rawTopLevelNamesByGraphqlName: Object.fromEntries(rawTopLevelByName),
 		toGraphqlLeafName: (rawPath: string) =>
 			leafByPath.get(rawPath) ?? sanitizeGraphqlNameSegment(rawPath.split('.').pop() ?? rawPath),
 	};

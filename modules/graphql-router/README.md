@@ -191,26 +191,43 @@ For the query shape, per-node status reporting, failure behaviour, and full limi
 
 ## Server-side filters
 
-`getServerSideFilter` injects a SQON filter on every query: typically used for access control. The callback receives the request context and returns a `SqonNode` (or `null` for no filter):
+`getServerSideFilter` injects a SQON filter on every query: typically used for access control. Configuring it is optional; a router without one applies no access control and serves every document.
+
+**The callback must return a `SqonNode` for every request it receives, including unauthenticated ones.** There is no "no filter" return value: an absent filter, or one with no clauses, would match every document, so it is rejected rather than applied. Both outcomes a caller might mean by "nothing to apply here" have their own explicit value:
+
+| Intent | Return |
+| --- | --- |
+| This request may see everything | `getDefaultServerSideFilter()` |
+| This request may see nothing | an `in` clause with an empty `value` list |
 
 ```ts
-import arrangerRouter from '@overture-stack/arranger-graphql-router';
+import arrangerRouter, { getDefaultServerSideFilter } from '@overture-stack/arranger-graphql-router';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 
 const getServerSideFilter: GetServerSideFilterFn = (context) => {
 	const userId = context.req.headers['x-user-id'];
-	if (!userId) return null;
+
+	// Decide deliberately what an unidentified caller may see. Returning the default below grants
+	// them everything; the commented alternative grants them nothing.
+	if (!userId) {
+		return getDefaultServerSideFilter();
+		// return { op: 'in', content: { fieldName: 'acl', value: [] } };
+	}
 
 	return {
 		op: 'and',
-		content: [{ op: 'in', content: { field: 'acl', value: [String(userId)] } }],
+		content: [{ op: 'in', content: { fieldName: 'acl', value: [String(userId)] } }],
 	};
 };
 
 const router = await arrangerRouter({ configs, getServerSideFilter });
 ```
 
-The returned filter is merged with any SQON the client provides before the query reaches ES/OS. The client cannot remove or bypass it.
+Note `fieldName`, not `field`. A content clause using any other key does not describe a field, and the resulting filter restricts nothing.
+
+The returned filter is composed with any SQON the client provides, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, and set queries.
+
+Aggregations are worth one note, because they are the case where "the filter is applied" is easy to assume and hard to see. A facet does not apply the caller's own filter on the field it is aggregating, so that selecting a value does not collapse that facet to the single value chosen. That exemption is for the caller's filter only; the server-side filter is re-applied to every aggregation, including one on the same field it restricts. So a facet on an access-controlled field shows only the values that caller may see.
 
 In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
 

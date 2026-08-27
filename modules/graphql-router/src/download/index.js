@@ -8,11 +8,12 @@ import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData from '#utils/getAllData.js';
 
 const convertDataToExportFormat =
-	({ ctx, fileType }) =>
+	({ ctx, fileType, getServerSideFilter }) =>
 	async (args) =>
 		(
 			await getAllData({
 				ctx,
+				getServerSideFilter,
 				...args,
 			})
 		)
@@ -21,16 +22,16 @@ const convertDataToExportFormat =
 			})
 			.pipe(dataToExportFormat({ ...args, ctx, fileType }));
 
-const getFileStream = async ({ chunkSize, ctx, file, fileType, mock }) => {
+const getFileStream = async ({ chunkSize, ctx, file, fileType, getServerSideFilter, mock }) => {
 	const exportArgs = defaults(file, { chunkSize, fileType, mock });
 
-	return convertDataToExportFormat({ ctx, fileType })({
+	return convertDataToExportFormat({ ctx, fileType, getServerSideFilter })({
 		...exportArgs,
 		mock,
 	});
 };
 
-const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
+const multipleFiles = async ({ chunkSize, ctx, files, getServerSideFilter, mock }) => {
 	const pack = tarPack();
 
 	Promise.all(
@@ -66,7 +67,7 @@ const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
 	return pack.pipe(zlib.createGzip());
 };
 
-export const dataStream = async ({ ctx, params }) => {
+export const dataStream = async ({ ctx, getServerSideFilter, params }) => {
 	const { chunkSize, files, fileName = 'file.tar.gz', fileType = 'tsv', mock } = params;
 
 	if (files?.length > 0) {
@@ -93,7 +94,7 @@ export const dataStream = async ({ ctx, params }) => {
 	throw new Error('files array was missing or empty');
 };
 
-const download = ({ enableAdmin = false, enableDebug = false }) => {
+const download = ({ enableAdmin = false, enableDebug = false, getServerSideFilter }) => {
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));
@@ -107,6 +108,7 @@ const download = ({ enableAdmin = false, enableDebug = false }) => {
 
 			const { output, responseFileName, contentType } = await dataStream({
 				ctx,
+				getServerSideFilter,
 				params: JSON.parse(params),
 			});
 

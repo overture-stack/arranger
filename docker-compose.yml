@@ -49,7 +49,7 @@ services:
     build:
       context: ./
       dockerfile: ./docker/Dockerfile.local
-      target: server
+      target: search-server
     container_name: arranger-server.local
     environment:
       ENABLE_LOGS: "${ENABLE_LOGS:-false}"
@@ -61,7 +61,7 @@ services:
     ports:
       - 5050:5050
     volumes:
-      - "${CONFIG_PATH:-./docker/server}:/app/modules/server/configs"
+      - "${CONFIGS_PATH:-./docker/server}:/app/configs"
 
   ui:
     image: ghcr.io/overture-stack/stage:edge

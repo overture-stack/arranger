@@ -21,6 +21,9 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "wireit",
 		"clear:dist": "rm -rf dist",
@@ -39,8 +42,10 @@
 	},
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.0",
-		"tsup": "^6.7.0",
 		"@types/node": "^22.19.13",
+		"fast-check": "^4.9.0",
+		"ts-patch": "^3.3.0",
+		"tsup": "^6.7.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.8.2",
 		"typescript-transform-paths": "^3.5.6"

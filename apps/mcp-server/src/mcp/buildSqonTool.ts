@@ -2,10 +2,13 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import {
 	addFilterClause,
 	getSqonFieldOperatorDetails,
+	isFieldFilter,
 	isGroupNode,
 	normalizeSqonNode,
 	type ScalarFilter,
+	type SqonFieldFilter,
 	type SqonNode,
+	type SqonScalarOrArray,
 	SqonSchema,
 } from '@overture-stack/sqon';
 import { z as zod } from 'zod';
@@ -223,10 +226,67 @@ const resolveCatalogue = async (
 
 type BuildSqonClause = zod.infer<ReturnType<typeof clauseSchema>>;
 
+/** Wraps a single value in an array; passes through arrays unchanged. Not exported by `@overture-stack/sqon`. */
+const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
+
 /**
- * Folds every clause into one SQON, making one `addFilterClause` call per clause. Internal to the
- * handler: the model only ever sees the single `build_sqon` call. `reduceSqon` runs inside each
- * fold, so equivalent clauses on the same field merge as they are added.
+ * If `sqon` already carries a plain (non-negated) "in" leaf on `fieldName`, with no `pivot`,
+ * returns a new sqon with that leaf's value unioned with `value`. Returns `undefined` when there
+ * is no such leaf, so the caller folds the clause normally instead.
+ *
+ * Exists because `reduceSqon` deliberately does not merge "in" clauses under "and": doing so
+ * changes what the SQON matches (intersecting two "any of" sets is not the same as widening the
+ * set), so it was correctly removed as a bug, not a feature. "Same field, and, means either" is a
+ * judgement about caller intent, not a structural SQON simplification, so it belongs here, in the
+ * tool that interprets that intent, not in generic reduction.
+ *
+ * Scoped to v1's flat shape: `sqon` is a bare leaf or a single-level and/or group, never deeper,
+ * so a top-level-only search is complete rather than a heuristic. Never negated: a `not`-wrapped
+ * "in" leaf is a group node at the top, `isFieldFilter` correctly excludes it, and folds normally.
+ * Never pivoted: v1's clause schema has no `pivot` input, so only an unpivoted existing leaf is
+ * ever a legitimate merge target, matching a plain new clause's implicit `pivot: undefined`.
+ */
+const mergeIntoExistingInClause = (
+	sqon: SqonNode,
+	fieldName: string,
+	value: BuildSqonClause['value'],
+): SqonNode | undefined => {
+	const isMergeTarget = (node: SqonNode): node is SqonFieldFilter =>
+		isFieldFilter(node) &&
+		node.op === 'in' &&
+		node.content.fieldName === fieldName &&
+		(node.pivot === undefined || node.pivot === null);
+
+	const union = (existingValue: SqonScalarOrArray) => [...new Set([...asArray(existingValue), ...asArray(value)])];
+
+	// `SqonNode` is a discriminated union keyed on `op`; spreading a narrowed branch and overriding
+	// `content` produces a shape TS can no longer verify against every other branch. The runtime
+	// shape is correct, `isMergeTarget` already confirmed it; the same `as unknown as SqonNode`
+	// pattern is already used in `modules/sqon` itself for equivalent cases.
+	if (isMergeTarget(sqon)) {
+		return { ...sqon, content: { ...sqon.content, value: union(sqon.content.value) } } as unknown as SqonNode;
+	}
+
+	if (isGroupNode(sqon) && sqon.op !== 'not') {
+		const matched = sqon.content.find(isMergeTarget);
+		if (matched !== undefined) {
+			const updated = {
+				...matched,
+				content: { ...matched.content, value: union(matched.content.value) },
+			} as unknown as SqonNode;
+			return { ...sqon, content: sqon.content.map((node) => (node === matched ? updated : node)) };
+		}
+	}
+
+	return undefined;
+};
+
+/**
+ * Folds every clause into one SQON, making one `addFilterClause` call per clause, except a plain
+ * "in" clause that matches a field already present, which is merged into the existing leaf's
+ * value instead (see `mergeIntoExistingInClause`). Internal to the handler: the model only ever
+ * sees the single `build_sqon` call. `reduceSqon` still runs inside each `addFilterClause` fold,
+ * so every other equivalent-clause merge (`not-in`, `all`, range bounds) still happens as before.
  *
  * @param input.clauses - The list of clauses provided to the `build_sqon` tool
  * @param input.combination - The combination operator provided to the `build_sqon` tool
@@ -247,6 +307,14 @@ const foldClauses = ({
 	let sqon = existingSqon;
 
 	for (const [index, clause] of clauses.entries()) {
+		if (clause.operator === 'in' && !clause.negate && sqon !== undefined) {
+			const merged = mergeIntoExistingInClause(sqon, clause.fieldName, clause.value);
+			if (merged !== undefined) {
+				sqon = merged;
+				continue;
+			}
+		}
+
 		const params: ScalarFilter = {
 			combination,
 			existing: sqon,

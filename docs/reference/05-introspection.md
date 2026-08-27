@@ -73,23 +73,36 @@ Returns field-level details for one catalogue: all fields, their Elasticsearch t
 	"fields": {
 		"participant_id": {
 			"displayName": "Participant ID",
-			"type": "keyword"
+			"isArray": false,
+			"type": "keyword",
+			"unit": null
 		},
 		"age_at_diagnosis": {
 			"displayName": "Age at Diagnosis",
+			"isArray": false,
 			"type": "long",
 			"unit": "year"
 		},
+		"primary_diagnosis": {
+			"displayName": "Primary Diagnosis",
+			"isArray": true,
+			"type": "keyword",
+			"unit": null
+		},
 		"diagnosis_date": {
 			"displayName": "Diagnosis Date",
-			"type": "date"
+			"isArray": null,
+			"type": "date",
+			"unit": null
 		}
 	}
 }
 ```
 
 - **`operators`** groups valid SQON operators by field type. To find which operators apply to a given field, look up `operators[field.type]`. Only types actually present in the catalogue's index appear here.
-- **`fields`** lists every indexed field with its `displayName`, `type`, and optional `unit`. The `description` key is omitted when not configured in the extended mapping.
+- **`fields`** lists every indexed field, each with `displayName`, `isArray`, `type`, and `unit`. `isArray` and `unit` are always present: they are `null` when nothing declared them, so an absent key means the server predates the field rather than the value being unset.
+- **`fields[].isArray`** declares whether one document can hold more than one value for that field. `true` means it can, `false` means a configuration declared it single-valued, and `null` means nothing declared it either way. This cannot be inferred from `type`, because Elasticsearch never enforces cardinality against its mapping: any field can hold an array unless something says otherwise. Treat `null` as undeclared rather than as `false`, and note that which reading is the cautious one depends on the operator. An `all` clause needs `true` to be satisfiable at all, whereas combining two `in` clauses on one field is only safe when it is `false`.
+- **`description`**, at the top level, is the catalogue's own description. It is omitted when not configured; field entries carry no `description` of their own.
 - **`meta.authFiltered`** indicates whether a server-side filter was active when the response was generated (i.e. the field list may be narrowed by access control).
 
 Note: In single-catalogue mode, `/introspection/fields` is an alias for this endpoint, and this disappears when a second catalogue is added. Code that hardcodes `/introspection/fields` should be updated to use the explicit catalogue ID path before adding a second catalogue.

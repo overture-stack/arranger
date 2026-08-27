@@ -21,10 +21,10 @@ const dateHandler = (value, { dateFormat: formatInput }) => {
 		case !isNaN(parseInt(value, 10)):
 			return format(parseInt(value, 10), dateFormat);
 
-		default: {
-			debug && console.error('unhandled "date" in dataToExportFormat/dateHandler', value, dateFormat);
+		default:
+			// An unparseable value (a placeholder like "N/A", or free text in a date-typed column)
+			// passes through unchanged rather than failing the export.
 			return value;
-		}
 	}
 };
 

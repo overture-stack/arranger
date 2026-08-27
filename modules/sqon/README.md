@@ -79,6 +79,20 @@ SqonBuilder.between('score', [50, 100]);
 SqonBuilder.wildcard(['donor.name', 'donor.alias'], 'jo*');
 ```
 
+| Builder method                    | Op produced                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `in(fieldName, value)`             | `in`                                                                                  |
+| `notIn(fieldName, value)`          | `not-in`                                                                              |
+| `someNotIn(fieldName, value)`      | `some-not-in`                                                                        |
+| `all(fieldName, value)`            | `all`                                                                                 |
+| `gt(fieldName, value)`             | `gt`                                                                                  |
+| `gte(fieldName, value)`            | `gte`                                                                                 |
+| `lt(fieldName, value)`             | `lt`                                                                                  |
+| `lte(fieldName, value)`            | `lte`                                                                                 |
+| `between(fieldName, [min, max])`   | `between`                                                                             |
+| `wildcard(fieldNames, value)`      | `wildcard`                                                                            |
+| `matchNothing(fieldName)`          | `in`, with an empty value list; see [Match-none filters](#match-none-filters) below   |
+
 ### Combining filters
 
 ```ts
@@ -90,6 +104,34 @@ SqonBuilder.in('status', ['active'])
 	.not(SqonBuilder.in('type', ['internal']).toValue())
 	.toValue();
 ```
+
+### Match-none filters
+
+`SqonBuilder.matchNothing(fieldName)` produces a filter that matches nothing and stays that way
+whatever it is later combined with. It's an `in` filter with an empty value list under the hood.
+
+Three properties hold that guarantee together, and being a leaf is only the first of them:
+
+- It's a leaf rather than a combination, and `reduceSqon` only ever prunes empty combinations, so
+  reduction never removes it.
+- Nothing is merged under `not`, and `in` filters are never merged under `and`, so a permission on
+  the same field cannot absorb it into a wider filter during composition.
+- An empty `in` compiles to an empty `terms` clause, which the search engine matches no document
+  against. The guarantee rests there in the end, rather than on any reduction rule.
+
+`fieldName` has no effect on the result: an empty `in` matches nothing regardless of which field it
+names, including one absent from the mapping. A field name is still required, since every leaf
+operator needs one; pick any field already in the mapping.
+
+```ts
+SqonBuilder.matchNothing('study').toValue();
+// { op: 'in', content: { fieldName: 'study', value: [] } }
+```
+
+Use this to express "match nothing" (for example, a denied principal in an access-control filter)
+rather than constructing it by hand as a negated empty combination: `reduceSqon` removes empty
+combinations, so a filter meant to match nothing must carry at least one leaf clause to survive
+reduction.
 
 ### Preserving a stable top-level shape
 

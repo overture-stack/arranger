@@ -90,14 +90,30 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		// we are placing this here until the issue is resolved by Elasticsearch in version 6.3
 		const resolvedFilter = await resolveSetsInSqon({ sqon: filters, esClient });
 
+		const serverSideFilter = getServerSideFilter && getServerSideFilter(context);
+
 		const query = buildQuery({
 			caller: 'resolveAggregations',
 			nestedFieldNames,
 			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
-				serverSideFilter: getServerSideFilter && getServerSideFilter(context),
+				serverSideFilter,
 			}),
+		});
+
+		/**
+		 * Compiled on its own, and kept apart from `query`, because aggregations wrapped in an ES
+		 * `global` aggregation ignore the search query entirely and have their constraints rebuilt
+		 * from the query minus the aggregated field's clauses. That rebuild cannot tell the caller's
+		 * filter from the access-control filter once `compileFilter` has merged them, so it drops
+		 * both. Passing the server-side half separately is what lets `buildAggregations` put it back.
+		 */
+		const serverSideQuery = buildQuery({
+			caller: 'resolveAggregations',
+			nestedFieldNames,
+			nestingPrefix,
+			filters: serverSideFilter,
 		});
 
 		/**
@@ -108,10 +124,14 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		const graphqlFields = getFields(graphqlResolveInfo, {}, { processArguments: true });
 		const aggs = buildAggregations({
 			query,
+			serverSideQuery,
 			sqon: resolvedFilter,
 			graphqlFields,
 			nestedFieldNames,
 			nestingPrefix,
+			// Recovering the ES path from a flattened aggregation name takes the registry, not a
+			// string transform.
+			rawPathsByGraphqlFlatName: type.graphqlNameRegistry?.rawPathsByGraphqlFlatName,
 			aggregationsFilterThemselves: aggregations_filter_themselves,
 		});
 

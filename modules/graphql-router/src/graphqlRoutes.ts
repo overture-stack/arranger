@@ -473,6 +473,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			const networkSchemaResult = await createSchemaFromNetworkConfig<Context>({
 				customizeRemoteRequest: configs?.network?.customizeRemoteRequest,
 				enableDebug,
+				getServerSideFilter,
 				remoteNodeConfigs: networkConfigsObj[configArrangerNetworkProperties.REMOTE_NODES] ?? [],
 				localNodeConfigs,
 				localCatalogues,

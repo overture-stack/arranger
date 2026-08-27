@@ -312,9 +312,18 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 		// A per-field _source pattern list can't be prefixed field-by-field without risking a
 		// mismatch against a GraphQL-sanitized name; requesting the whole envelope is a strict
 		// superset of any narrower list, so it's the simple, always-correct choice here.
+		//
+		// The unprefixed branch selects by name, so each is translated back to its raw form before
+		// `_source` matches it against the index. Unknown names pass through, covering synthetic
+		// fields like `id` that never came from the mapping.
+		const rawTopLevelNames = type.graphqlNameRegistry?.rawTopLevelNamesByGraphqlName || {};
 		const sourceFields = nestingPrefix
 			? [nestingPrefix]
-			: [...((fields.edges && Object.keys(fields.edges.node || {})) || []), ...Object.values(copyToSourceFields)];
+			: [
+					...((fields.edges && Object.keys(fields.edges.node || {}).map((name) => rawTopLevelNames[name] ?? name)) ||
+						[]),
+					...Object.values(copyToSourceFields),
+				];
 
 		const searchResult = await esSearch(esClient)({
 			index: type.index,

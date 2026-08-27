@@ -1,7 +1,7 @@
 import { Client } from '@opensearch-project/opensearch';
 import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-import type { SearchClient, SearchConfig } from './types.js';
+import type { SearchClient, SearchClientSearchBody, SearchConfig } from './types.js';
 
 export type OSClientOptions = Prettify<
 	SearchConfig & {
@@ -9,9 +9,11 @@ export type OSClientOptions = Prettify<
 	}
 >;
 
-export function createOpenSearchClient(options: OSClientOptions): SearchClient {
-	const openSearchClient = new Client(options);
-
+/**
+ * Adapts an already-constructed client to the normalized `SearchClient` surface, so a caller
+ * whose auth scheme this module cannot build (AWS SigV4, say) can still inject one.
+ */
+export function wrapOpenSearchClient(openSearchClient: Client): SearchClient {
 	const searchClient: SearchClient = {
 		indices: {
 			close: async (input, options) => {
@@ -78,8 +80,14 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 			return output;
 		},
 		search: async (input, options) => {
-			const output = await openSearchClient.search(input, options);
-			return output;
+			// OpenSearch omits `_id`/`_index` from its hit type; every real response carries them, and
+			// `resolveHits`, `resolveSets` and `loadExtendedFields` each read one. Widening
+			// `SearchClientSearchBody` instead would surface downstream as `id: undefined`.
+			const { body, ...rest } = await openSearchClient.search(input, options);
+			return {
+				...rest,
+				body: { ...body, hits: body.hits as unknown as SearchClientSearchBody['hits'] },
+			};
 		},
 		update: async (input, options) => {
 			const output = await openSearchClient.update(input, options);
@@ -88,4 +96,8 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 	};
 
 	return searchClient;
+}
+
+export function createOpenSearchClient(options: OSClientOptions): SearchClient {
+	return wrapOpenSearchClient(new Client(options));
 }

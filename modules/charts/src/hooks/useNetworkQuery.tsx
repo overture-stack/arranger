@@ -1,5 +1,5 @@
 import { logger } from '#logger';
-import type { SQONType } from '@overture-stack/arranger-components';
+import type { APIFetcherFn, SQONType } from '@overture-stack/arranger-components';
 import { useEffect, useState } from 'react';
 import type { ChartsGQLResult } from '../components/Provider/chartsContextTypes';
 
@@ -46,7 +46,7 @@ export const useNetworkQuery = ({
 	loadingDelay,
 	networkNodesFilter,
 }: {
-	apiFetcher: any;
+	apiFetcher: APIFetcherFn;
 	apiUrl?: string;
 	query: string;
 	loadingDelay: number;

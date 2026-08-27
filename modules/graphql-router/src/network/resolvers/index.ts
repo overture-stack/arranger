@@ -5,6 +5,7 @@ import type {
 } from '@overture-stack/arranger-types/configs';
 
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
+import compileFilter from '#mapping/utils/compileFilter.js';
 import {
 	aggregationPipeline,
 	CONNECTION_STATUS,
@@ -14,6 +15,8 @@ import { createResponse } from '#network/resolvers/response.js';
 import { resolveInfoToMap } from '#network/utils/gql.js';
 import { filterNodesByNodeId } from '#network/utils/nodeFilter.js';
 import { convertToSqon } from '#network/utils/sqon.js';
+import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+
 import type { ArrangerBaseContext, Resolver } from '#types.js';
 
 import type { NetworkLocalNode, NetworkRemoteNode } from '../types/setup.js';
@@ -33,6 +36,7 @@ export type NetworkQueryVariables = AggregationsQueryVariables & { nodesFilter?:
  * @returns
  */
 export const createResolvers = <Context extends ArrangerBaseContext>(params: {
+	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	remoteNodes: {
 		customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 		connected: NetworkRemoteNode[];
@@ -40,7 +44,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 	};
 	localNodes: { available: NetworkLocalNode<Context>[]; missing: { config: LocalNodeConfig; error: string }[] };
 }) => {
-	const { localNodes, remoteNodes } = params;
+	const { getServerSideFilter, localNodes, remoteNodes } = params;
 	const failedRemoteNodeInfo: NetworkNodeResponseData[] = remoteNodes.failed.map(({ config, error }) => ({
 		nodeId: config.nodeId,
 		name: config.displayName,
@@ -97,7 +101,19 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 			}
 		}
 		const { nodesFilter, ...remainingArgs } = args;
-		const queryVariables = { ...remainingArgs };
+
+		// Remote nodes receive this as an ordinary client SQON, so a cooperating Arranger ANDs it with
+		// its own access-control filter and the result is the intersection both sides intended. That
+		// makes it defence in depth rather than enforcement: a remote that ignores the SQON, or is
+		// misconfigured, applies nothing and this node cannot tell. See `.dev/tech-debt.md` for what
+		// remains, particularly that merged aggregation buckets carry no per-node provenance.
+		const queryVariables = {
+			...remainingArgs,
+			filters: compileFilter({
+				clientSideFilter: remainingArgs.filters,
+				serverSideFilter: getServerSideFilter?.(context),
+			}),
+		};
 
 		const filteredRemoteNodes = filterNodesByNodeId(remoteNodes.connected, nodesFilter);
 		const filteredLocalNodes = filterNodesByNodeId(localNodes.available, nodesFilter);

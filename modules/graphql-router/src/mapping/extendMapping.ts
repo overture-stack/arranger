@@ -134,7 +134,9 @@ export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: Extend
 	const aggs = hasAggsConfig
 		? aggsFromConfig
 				.map((agg) => {
-					const extendedObj = extendedFields?.find((obj) => matchesExtendedField(agg.fieldName, obj.fieldName));
+					const extendedObj = extendedFields?.find((obj) =>
+						matchesExtendedField(agg.fieldName, obj.fieldName),
+					);
 
 					return agg.fieldName
 						? {
@@ -160,7 +162,9 @@ export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: Extend
 						['nested', 'object'].includes(agg[dataFieldProperties.DISPLAY_TYPE])
 						? null
 						: {
-								[dataFieldProperties.FIELD_NAME]: sanitizeGraphqlFlatName(agg[dataFieldProperties.FIELD_NAME]),
+								[dataFieldProperties.FIELD_NAME]: sanitizeGraphqlFlatName(
+									agg[dataFieldProperties.FIELD_NAME],
+								),
 								// defines aggregation type (component used in facets)
 								[dataFieldProperties.DISPLAY_TYPE]: agg[dataFieldProperties.DISPLAY_TYPE],
 								// TODO: determine what "isActive" does, vs "show"
@@ -189,7 +193,7 @@ export const extendFields = (
 			displayType = type,
 			displayValues = {},
 			isActive = false, // TODO: what does "active" do in general?
-			isArray = false,
+			isArray = null, // null rather than false: undeclared is not a confirmed single-value
 			primaryKey = false,
 			quickSearchEnabled = false,
 			rangeStep = 0,

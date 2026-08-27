@@ -46,28 +46,44 @@ suite('sqon/operators', () => {
 		const wildcardOp = details.find((detail) => detail.op === 'wildcard');
 
 		assert.deepEqual(inOp, {
-			op: 'in',
-			fieldRef: 'fieldName',
 			applicableTo: 'all',
+			description: 'Field matches any of these values.',
+			fieldRef: 'fieldName',
+			op: 'in',
 			valueType: 'string | number | boolean | Array<string | number | boolean>',
 		});
 		assert.deepEqual(allOp, {
-			op: 'all',
-			fieldRef: 'fieldName',
 			applicableTo: 'all',
+			description: 'Field contains all of these values (multi-valued field only).',
+			fieldRef: 'fieldName',
+			op: 'all',
 			valueType: 'Array<string | number | boolean>',
 		});
 		assert.deepEqual(betweenOp, {
-			op: 'between',
-			fieldRef: 'fieldName',
 			applicableTo: ['long', 'integer', 'float', 'double', 'date'],
+			description: 'Field is between these two values, both inclusive.',
+			fieldRef: 'fieldName',
+			op: 'between',
 			valueType: 'Array<number | date>',
 		});
 		assert.deepEqual(wildcardOp, {
-			op: 'wildcard',
-			fieldRef: 'fieldNames',
 			applicableTo: 'all',
+			description: 'One or more fields contain this substring pattern.',
+			fieldRef: 'fieldNames',
+			op: 'wildcard',
 			valueType: 'string',
 		});
+	});
+
+	test('gives every operator its own description, distinguishing operators that share a valueType', () => {
+		const details = getSqonFieldOperatorDetails();
+		const descriptionByOp = Object.fromEntries(details.map((detail) => [detail.op, detail.description]));
+
+		for (const detail of details) {
+			assert.ok(detail.description.length > 0, `${detail.op} has no description`);
+		}
+
+		assert.notEqual(descriptionByOp.in, descriptionByOp.all);
+		assert.notEqual(descriptionByOp['not-in'], descriptionByOp['some-not-in']);
 	});
 });

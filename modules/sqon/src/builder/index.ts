@@ -99,7 +99,8 @@ export type SqonBuilderHandle = {
 
 	/**
 	 * Remove filters matching `fieldName` (and optionally `op` and specific `value` entries) from
-	 * the top level of the current SQON.
+	 * the top level of the current SQON, regardless of `pivot`: a bulk, field-scoped removal, not a
+	 * scoped exact match. Use `removeExactFilter` to target one pivot specifically.
 	 *
 	 * - `removeFilter('field')`: removes all filters on `field`
 	 * - `removeFilter('field', 'in')`: removes all `in` filters on `field`
@@ -109,14 +110,16 @@ export type SqonBuilderHandle = {
 	removeFilter: (fieldName: string, op?: SqonFieldFilterKey, value?: SqonScalarOrArray) => SqonBuilderHandle;
 
 	/**
-	 * Remove a field filter that exactly matches the given node's `op`, `fieldName`, and value set
-	 * (value order is ignored). Only searches the top level of the current SQON.
+	 * Remove a field filter that exactly matches the given node's `op`, `fieldName`, `pivot`, and
+	 * value set (value order is ignored). Only searches the top level of the current SQON.
 	 */
 	removeExactFilter: (filter: SqonFieldFilter) => SqonBuilderHandle;
 
 	/**
-	 * Add or replace a field filter. If a filter with the same `fieldName` and `op` already exists
-	 * at the top level of the current SQON, it is replaced; otherwise the new filter is appended.
+	 * Add or replace an unpivoted field filter. If an unpivoted filter with the same `fieldName` and
+	 * `op` already exists at the top level of the current SQON, it is replaced; otherwise the new
+	 * filter is appended. Never touches a pivoted filter on the same field and op: this always
+	 * constructs an unpivoted leaf, so replacing a pivoted one would silently drop its nested scope.
 	 */
 	setFilter: <K extends SqonFieldFilterKey>(
 		fieldName: string,
@@ -260,7 +263,8 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 		const normalizedValue = ARRAY_VALUE_OPS.has(op) ? asArray(value as SqonScalar[]) : value;
 		const newLeaf = makeFieldLeaf(op, fieldName, normalizedValue);
 
-		if (isFieldFilter(_sqon) && _sqon.op === op && _sqon.content.fieldName === fieldName) {
+		// newLeaf is always unpivoted, so only an equally-unpivoted existing filter is the same target.
+		if (isFieldFilter(_sqon) && _sqon.op === op && _sqon.content.fieldName === fieldName && _sqon.pivot === undefined) {
 			// Current node is the target filter: replace it
 			return createBuilder(newLeaf);
 		}
@@ -272,7 +276,7 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 
 		if (isGroupNode(_sqon)) {
 			const matchesTarget = (child: SqonNode): boolean =>
-				isFieldFilter(child) && child.op === op && child.content.fieldName === fieldName;
+				isFieldFilter(child) && child.op === op && child.content.fieldName === fieldName && child.pivot === undefined;
 
 			const content = _sqon.content.some(matchesTarget)
 				? _sqon.content.map((child) => (matchesTarget(child) ? newLeaf : child))
@@ -345,6 +349,20 @@ export const SqonBuilder = {
 
 	/** Start a builder from an empty and-combination. */
 	empty: (): SqonBuilderHandle => createBuilder(emptySqon()),
+
+	/**
+	 * Start a builder with a match-none filter: an `in` filter on `fieldName` with an empty value
+	 * list. This is a leaf, and `reduceSqon` only ever prunes empty combinations, never a leaf, so
+	 * this value is stable under composition and reduction.
+	 *
+	 * `fieldName` has no effect on the result: an empty `in` matches nothing regardless of which
+	 * field it names, including one absent from the mapping. A field name is still required, since
+	 * every leaf operator needs one; pick any field already in the mapping.
+	 *
+	 * Use this to express "match nothing" rather than constructing it by hand as a negated empty
+	 * combination.
+	 */
+	matchNothing: (fieldName: string): SqonBuilderHandle => createBuilder(emptySqon()).in(fieldName, []),
 
 	/** Start a builder from an `and` combination wrapping the given content. */
 	and: (content: SqonNode | SqonNode[], pivot?: string): SqonBuilderHandle =>

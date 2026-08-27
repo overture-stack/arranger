@@ -49,6 +49,10 @@ make seed-es        # seeds test documents into file_centric_1.0
 
 `make start` brings up Elasticsearch, Kibana and a containerized Arranger server together; prefer `make start-es` when you are going to run the server yourself with `npm run dev:server`.
 
+**If `make start-es`/`make start` fails with a container name conflict** (`Container name ".../elasticsearch.local" is already in use`): a stopped container from a previous session already exists under that name, outside this run's compose project. Start it directly instead of letting compose recreate it: `docker start elasticsearch.local`. Confirm it's actually healthy, not just running, since Docker's own health-check label can lag behind the real state right after startup: `curl -u elastic:unsafePassword123 "http://localhost:9200/_cluster/health?pretty"`, looking for `"status": "green"`.
+
+**No OpenSearch equivalent exists yet.** `docker ps -a` may show a stopped `opensearch.local` container from earlier ad hoc testing, but there is no `docker-compose.yml` service or Makefile target for it: `make start-es`/`make start` are Elasticsearch-only today. Tracked under the OpenSearch-first migration in [`.dev/roadmap.md`](.dev/roadmap.md).
+
 The local cluster **does** run with authentication: `docker-compose.yml` sets `xpack.security.enabled: "true"`, and the Makefile passes the credentials it defines (`ES_USER=elastic`, `ES_PASS=unsafePassword123`) through to both the cluster and the containerized server. Use those same values in `apps/search-server/.env` when running the server on the host. For the minimum permissions each feature needs on a cluster you do not control, see the [search engine permissions reference](docs/setup.md#search-engine-permissions) in the setup documentation.
 
 Start the development server (watches `sqon`, `types`, `graphql-router`, and `search-server`):
@@ -148,10 +152,11 @@ const router = await arrangerRouter({
 This project has first-class support for AI coding assistants. Agent instruction files at the root tell each tool about project conventions, working documents, and session discipline:
 
 - [`CLAUDE.md`](CLAUDE.md): Claude (Claude Code CLI and desktop)
-- [`AGENTS.md`](AGENTS.md): Codex and other general-purpose agents
-- [`.github/copilot-instructions.md`](.github/copilot-instructions.md): GitHub Copilot
+- [`AGENTS.md`](AGENTS.md): Codex, GitHub Copilot, and other general-purpose agents
 
-All three cover the same ground with minor variations for tool-specific features. If you update project conventions, update all three.
+Both cover the same ground with minor variations for tool-specific features. If you update project conventions, update both.
+
+Copilot previously had its own `.github/copilot-instructions.md`; it was retired 2026-08-17 because Copilot's coding agent, CLI, and VS Code Chat all read `AGENTS.md` directly now, so a second copy only created drift. See agentics' `CHANGELOG.md` § `copilot-instructions-retire-not-sync`.
 
 **Start of session:** read `roadmap.md`, `tech-debt.md`, and the most recent file(s) in `.dev/sessions/` before starting work. The agent instruction files embed a checklist for this.
 

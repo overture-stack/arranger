@@ -278,9 +278,9 @@ The function discriminates between `ScalarFilter` (one field, any non-text opera
 
 - **Unwrapping single-item combinations.** A single filter clause under `and` becomes the clause itself, with no wrapper.
 - **Flattening same-op combinations.** Adding an `and` clause to an existing `and` SQON extends the same `and`, rather than nesting a new `and` inside it.
-- **Merging duplicate field filters.** If two filters target the same field with the same operator under the same combination, they are reduced to one:
-  - `in`: always merged: two `in` filters on the same field under any combination union their value arrays, since `in: ['A']` OR `in: ['B']` is identical to `in: ['A', 'B']`
-  - `not-in`, `some-not-in`, `all`: merged only under `and` or `not`: under `or`, these operators have independent semantics and are kept as separate nodes
+- **Merging duplicate field filters.** If two filters target the same field with the same operator under the same combination, they may be reduced to one. Whether they are depends on the combination, because the same merge is correct under one operator and wrong under another. **Nothing is ever merged under `not`**, for any operator.
+  - `in`: merged under `or` only: `in: ['A']` OR `in: ['B']` is identical to `in: ['A', 'B']`. Under `and` the two filters are kept separate, because the search engine evaluates them as an intersection (a document must satisfy both) and unioning their values would widen the result instead of narrowing it
+  - `not-in`, `some-not-in`, `all`: merged under `and` only: under `or`, these operators have independent semantics and are kept as separate nodes
   - `gt`, `gte`, `lt`, `lte`: the tighter bound wins under `and`; the looser bound wins under `or`
   - `between`: always kept as separate nodes
 

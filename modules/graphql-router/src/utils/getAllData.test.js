@@ -5,6 +5,8 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { configOptionalProperties, configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
 import { GraphQLJSON } from 'graphql-type-json';
 
+import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
+
 import getAllData from './getAllData.js';
 
 const DOCUMENT_TYPE = 'donor';
@@ -65,6 +67,8 @@ suite('getAllData', () => {
 		};
 
 		const stream = await getAllData({
+
+			getServerSideFilter: getDefaultServerSideFilter,
 			chunkSize: 10,
 			ctx: { configs: buildConfigs(), esClient, schema: buildSchema(2) },
 			sqon: null,
@@ -104,6 +108,8 @@ suite('getAllData', () => {
 		};
 
 		const stream = await getAllData({
+
+			getServerSideFilter: getDefaultServerSideFilter,
 			chunkSize: 2,
 			ctx: { configs: buildConfigs(), esClient, schema: buildSchema(3) },
 			sqon: null,
@@ -124,6 +130,8 @@ suite('getAllData', () => {
 		const esClient = { search: async () => assert.fail('esClient.search should not be called when total is 0') };
 
 		const stream = await getAllData({
+
+			getServerSideFilter: getDefaultServerSideFilter,
 			ctx: { configs: buildConfigs(), esClient, schema: buildSchema(0) },
 			sqon: null,
 		});
@@ -138,6 +146,8 @@ suite('getAllData', () => {
 			const esClient = { search: async () => ({ body: { hits: { hits: [] } } }) };
 
 			const stream = await getAllData({
+
+				getServerSideFilter: getDefaultServerSideFilter,
 				ctx: { configs: buildConfigs({ allowCustomMaxRows: false, maxRows: 10 }), esClient, schema: buildSchema(250) },
 				maxRows: 5,
 				sqon: null,
@@ -152,6 +162,8 @@ suite('getAllData', () => {
 			const esClient = { search: async () => ({ body: { hits: { hits: [] } } }) };
 
 			const stream = await getAllData({
+
+				getServerSideFilter: getDefaultServerSideFilter,
 				ctx: { configs: buildConfigs({ allowCustomMaxRows: true, maxRows: 100 }), esClient, schema: buildSchema(250) },
 				maxRows: 5,
 				sqon: null,
@@ -166,6 +178,8 @@ suite('getAllData', () => {
 			const esClient = { search: async () => ({ body: { hits: { hits: [] } } }) };
 
 			const stream = await getAllData({
+
+				getServerSideFilter: getDefaultServerSideFilter,
 				ctx: { configs: buildConfigs({ allowCustomMaxRows: true, maxRows: 100 }), esClient, schema: buildSchema(250) },
 				sqon: null,
 			});
@@ -193,6 +207,8 @@ suite('getAllData', () => {
 			};
 
 			const stream = await getAllData({
+
+				getServerSideFilter: getDefaultServerSideFilter,
 				ctx: {
 					configs: buildConfigs({ nestingPrefix: 'data' }),
 					esClient,
@@ -223,6 +239,8 @@ suite('getAllData', () => {
 			};
 
 			const stream = await getAllData({
+
+				getServerSideFilter: getDefaultServerSideFilter,
 				ctx: { configs: buildConfigs(), esClient, schema: buildSchema(1) },
 				sort: [{ fieldName: 'bmi', order: 'asc' }],
 				sqon: null,
