@@ -3,6 +3,7 @@ import { suite, test } from 'node:test';
 
 import { SqonBuilder } from '#builder/index.js';
 import type { SqonBuilderHandle } from '#builder/index.js';
+import { reduceSqon } from '#builder/reduce.js';
 import { SqonSchema } from '#schema/index.js';
 
 suite('SQON builder', () => {
@@ -36,6 +37,24 @@ suite('SQON builder', () => {
 			assert.deepEqual(result, {
 				op: 'and',
 				content: [{ op: 'in', content: { fieldName: 'study', value: [] } }, other],
+			});
+		});
+
+		test('is not erased by an and-composed filter on the same field', () => {
+			const other = { op: 'in', content: { fieldName: 'study', value: ['x'] } };
+			const result = SqonBuilder.matchNothing('study').and(other).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [{ op: 'in', content: { fieldName: 'study', value: [] } }, other],
+			});
+		});
+
+		test('is not erased regardless of which side of the composition it is on', () => {
+			const other = { op: 'in', content: { fieldName: 'study', value: ['x'] } };
+			const result = SqonBuilder.in('study', ['x']).and(SqonBuilder.matchNothing('study').toValue()).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [other, { op: 'in', content: { fieldName: 'study', value: [] } }],
 			});
 		});
 	});
@@ -339,12 +358,53 @@ suite('SQON builder', () => {
 	});
 
 	suite('reduceSqon (deduplication)', () => {
-		test('merges duplicate in filters on the same field under and', () => {
+		test('does not merge same-field filters carrying different pivots', () => {
+			const scoped = { op: 'not-in', content: { fieldName: 'donors.age', value: [10] }, pivot: 'donors' };
+			const unscoped = { op: 'not-in', content: { fieldName: 'donors.age', value: [20] } };
+			const result = SqonBuilder.from({ op: 'and', content: [scoped, unscoped] }).toValue();
+			assert.deepEqual(result, { op: 'and', content: [scoped, unscoped] });
+		});
+
+		test('still merges same-field filters that share the same pivot', () => {
+			const a = { op: 'not-in', content: { fieldName: 'donors.age', value: [10] }, pivot: 'donors' };
+			const b = { op: 'not-in', content: { fieldName: 'donors.age', value: [20] }, pivot: 'donors' };
+			const result = SqonBuilder.from({ op: 'and', content: [a, b] }).toValue();
+			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 'donors.age', value: [10, 20] }, pivot: 'donors' });
+		});
+
+		test('does not merge duplicate in filters on the same field under and (needs intersection, not union)', () => {
 			const result = SqonBuilder.in('status', ['active']).in('status', ['pending']).toValue();
 			assert.deepEqual(result, {
-				op: 'in',
-				content: { fieldName: 'status', value: ['active', 'pending'] },
+				op: 'and',
+				content: [
+					{ op: 'in', content: { fieldName: 'status', value: ['active'] } },
+					{ op: 'in', content: { fieldName: 'status', value: ['pending'] } },
+				],
 			});
+		});
+
+		test('an empty in filter is left as its own clause under and, not merged away', () => {
+			const result = SqonBuilder.in('status', []).and(SqonBuilder.in('status', ['active']).toValue()).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'in', content: { fieldName: 'status', value: [] } },
+					{ op: 'in', content: { fieldName: 'status', value: ['active'] } },
+				],
+			});
+		});
+
+		test('an empty not-in filter still unions normally under and (the absorb rule is in-only)', () => {
+			const result = SqonBuilder.notIn('s', []).and(SqonBuilder.notIn('s', ['x']).toValue()).toValue();
+			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 's', value: ['x'] } });
+		});
+
+		test('an empty in filter still unions normally under or', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.in('status', []).toValue(),
+				SqonBuilder.in('status', ['active']).toValue(),
+			]).toValue();
+			assert.deepEqual(result, { op: 'in', content: { fieldName: 'status', value: ['active'] } });
 		});
 
 		test('merges duplicate in filters on the same field under or (OR just widens the set)', () => {
@@ -511,6 +571,114 @@ suite('SQON builder', () => {
 			assert.deepEqual(result, { op: 'in', content: { fieldName: 'status', value: ['active'] } });
 		});
 
+		test('a match-none leaf survives alongside an empty combination that gets pruned', () => {
+			// Only the empty *combination* is pruned; a leaf, match-none or otherwise, never is.
+			const denyLeaf = { op: 'in', content: { fieldName: 'study', value: [] } };
+			const result = SqonBuilder.and([SqonBuilder.empty().toValue(), denyLeaf]).toValue();
+			assert.deepEqual(result, denyLeaf);
+		});
+
+		test('merges a same-field filter nested inside a single-item wrapper, in one pass', () => {
+			const a = { op: 'and', content: [{ op: 'not-in', content: { fieldName: 'a', value: ['1'] } }] };
+			const b = { op: 'and', content: [{ op: 'not-in', content: { fieldName: 'a', value: ['2'] } }] };
+			const result = SqonBuilder.from({ op: 'and', content: [a, b] }).toValue();
+			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 'a', value: ['1', '2'] } });
+		});
+
+		test('SqonBuilder.from(a).and(b) merges a same-field filter regardless of nesting', () => {
+			const a = { op: 'and', content: [{ op: 'not-in', content: { fieldName: 'a', value: ['1'] } }] };
+			const b = { op: 'and', content: [{ op: 'not-in', content: { fieldName: 'a', value: ['2'] } }] };
+			const result = SqonBuilder.from(a).and(b).toValue();
+			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 'a', value: ['1', '2'] } });
+		});
+
+		test('reduceSqon is idempotent: a second pass changes nothing a first pass already reduced', () => {
+			const nested = {
+				op: 'and',
+				content: [
+					{ op: 'and', content: [{ op: 'not-in', content: { fieldName: 'a', value: ['1'] } }] },
+					{ op: 'and', content: [{ op: 'not-in', content: { fieldName: 'a', value: ['2'] } }] },
+				],
+			};
+			const once = SqonBuilder.from(nested).toValue();
+			const twice = reduceSqon(once);
+			assert.deepEqual(twice, once);
+		});
+
+		test('merges a same-field filter across a sibling that only becomes a leaf via its own internal merge', () => {
+			// A child collapsing to a leaf via its own merge must still be offered to the parent's
+			// same-field merge check, not folded in unmerged.
+			const nested = {
+				op: 'and',
+				content: [
+					{
+						op: 'and',
+						content: [
+							{ op: 'not-in', content: { fieldName: 's', value: ['x'] } },
+							{ op: 'not-in', content: { fieldName: 's', value: ['y'] } },
+						],
+					},
+					{ op: 'not-in', content: { fieldName: 's', value: ['z'] } },
+				],
+			};
+			const once = SqonBuilder.from(nested).toValue();
+			assert.deepEqual(once, { op: 'not-in', content: { fieldName: 's', value: ['x', 'y', 'z'] } });
+			assert.deepEqual(reduceSqon(once), once);
+		});
+
+		test('preserves the pivot on a single-item pivoted group nested inside another combination', () => {
+			const pivoted = { op: 'and', content: [{ op: 'in', content: { fieldName: 'a', value: ['1'] } }], pivot: 'donors' };
+			const result = SqonBuilder.from({ op: 'and', content: [pivoted, { op: 'in', content: { fieldName: 'b', value: ['2'] } }] }).toValue();
+			assert.deepEqual(result, { op: 'and', content: [pivoted, { op: 'in', content: { fieldName: 'b', value: ['2'] } }] });
+		});
+
+		test('deduplicates a merged value array that stays part of a combination', () => {
+			// A merge result promoted to a bare leaf gets deduplicated by reduceSqon's leaf branch; one
+			// that stays inside a combination (kept alive here by a third clause on a different field)
+			// bypasses that branch, so mergeIntoExisting's result must already be deduplicated.
+			const nested = {
+				op: 'and',
+				content: [
+					{ op: 'not-in', content: { fieldName: 'a', value: ['1', '2'] } },
+					{ op: 'not-in', content: { fieldName: 'a', value: ['2'] } },
+					{ op: 'in', content: { fieldName: 'b', value: ['x'] } },
+				],
+			};
+			const once = SqonBuilder.from(nested).toValue();
+			assert.deepEqual(once, {
+				op: 'and',
+				content: [
+					{ op: 'not-in', content: { fieldName: 'a', value: ['1', '2'] } },
+					{ op: 'in', content: { fieldName: 'b', value: ['x'] } },
+				],
+			});
+			assert.deepEqual(reduceSqon(once), once);
+		});
+
+		test('does not merge same-field filters under not, of any op', () => {
+			// A `not`'s children are each negated independently (De Morgan): merging them like an
+			// `and`'s children solves a different query. Two `not-in` clauses would need to become an
+			// `in` of their *intersection*, not a `not-in` of their union, a flip none of the merge
+			// rules perform, so refusing to merge here is the only correct behaviour.
+			const notIn = { op: 'not', content: [
+				{ op: 'not-in', content: { fieldName: 'a', value: ['2', '3'] } },
+				{ op: 'not-in', content: { fieldName: 'a', value: ['1'] } },
+			]};
+			assert.deepEqual(SqonBuilder.from(notIn).toValue(), notIn);
+
+			const inOp = { op: 'not', content: [
+				{ op: 'in', content: { fieldName: 'a', value: ['1'] } },
+				{ op: 'in', content: { fieldName: 'a', value: ['2'] } },
+			]};
+			assert.deepEqual(SqonBuilder.from(inOp).toValue(), inOp);
+
+			const gt = { op: 'not', content: [
+				{ op: 'gt', content: { fieldName: 'age', value: 10 } },
+				{ op: 'gt', content: { fieldName: 'age', value: 20 } },
+			]};
+			assert.deepEqual(SqonBuilder.from(gt).toValue(), gt);
+		});
+
 		test('deduplicates values within an in filter', () => {
 			const result = SqonBuilder.in('status', ['active', 'active', 'pending']).toValue();
 			// Duplicates within a single filter's value array are removed
@@ -551,6 +719,15 @@ suite('SQON builder', () => {
 		test('sets a between filter', () => {
 			const result = SqonBuilder.setFilter('age', 'between', [18, 65]).toValue();
 			assert.deepEqual(result, { op: 'between', content: { fieldName: 'age', value: [18, 65] } });
+		});
+
+		test('does not replace a pivoted filter on the same field and op, adds a sibling instead', () => {
+			const pivoted = { op: 'in', content: { fieldName: 'donors.age', value: [10] }, pivot: 'donors' };
+			const result = SqonBuilder.from({ op: 'and', content: [pivoted] }).setFilter('donors.age', 'in', [20]).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [pivoted, { op: 'in', content: { fieldName: 'donors.age', value: [20] } }],
+			});
 		});
 	});
 

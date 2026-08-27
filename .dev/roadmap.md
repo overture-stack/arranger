@@ -598,6 +598,49 @@ A per-catalogue availability gauge, so "which catalogues are down, why, and for 
 
 ## CI/CD & Release Process
 
+### Check published type resolution with `arethetypeswrong`
+
+_Priority: medium. Publishing correctness, independent of feature work._
+
+`@arethetypeswrong/cli` (0.18.5 at time of writing) inspects a published tarball and reports whether its type declarations actually resolve under each module system and resolution mode a consumer might use: CJS require, ESM import, `node16`, `bundler`. It catches the class of defect where a package typechecks in its own repo and fails for a consumer, which is invisible to any check that runs inside the monorepo.
+
+This repo is unusually exposed to that class. It publishes five packages mid JS-to-TS migration, each with its own `exports` map, and `tsconfig.release.json` sets `noCheck`, so the build emits declarations without verifying them. A separate tech-debt entry already records a phantom export shipping undetected because no test asserts that every public name resolves; that is the same failure from the runtime side, and this tool is the type side of it.
+
+Done when: `attw` runs against each publishable package's packed tarball in the release pipeline, and a resolution failure blocks publish rather than being discovered by a consumer.
+
+_Pairs with the existing `release:check` script (`scripts/verify-pack.mjs`), which already packs and inspects contents; this extends that step rather than adding a new one._
+
+### Extend property-based testing beyond `modules/sqon`
+
+_Priority: medium. Test-coverage work, doable incrementally._
+
+`fast-check` is a devDependency of `modules/types` and `modules/sqon`, and `modules/sqon` now has a property test asserting `reduceSqon`'s idempotency and semantic preservation. That test exists because hand-picked cases repeatedly missed real defects that generated input found immediately.
+
+Three other places have the same shape, each named because a real defect was found there rather than because property testing is generally good:
+
+- **`normalizeFilters`** (`modules/graphql-router/src/middleware/buildQuery/`): idempotency, the identical property. Flattening a same-op child into its parent was applied to `not`, which is not associative, so a doubly-negated filter compiled to the complement of what was asked for. A generated-input idempotency check is exactly what finds that.
+- **`graphqlNameFns` and `graphqlNameRegistry`**: two properties. Every sanitized name is a legal GraphQL name, and no two distinct raw field paths share a sanitized name without being reported as a collision. The second is an open tech-debt entry: the flat aggregation namespace has collisions the per-parent check cannot see.
+- **`compileFilter`** (`modules/graphql-router/src/mapping/utils/`): the property that no composed filter is ever returned without a leaf clause. This is the access-control guard and it has no test file at all.
+
+Done when: each of the four functions above has a property test in its own package, and `fast-check` is a devDependency wherever one lives.
+
+_The `compileFilter` case is the one to do first: it is the only one on a security path, and it currently has zero coverage rather than partial coverage._
+
+### Consolidate code sorting onto one tool
+
+_Priority: low. Tooling cleanup, independent of everything else._
+
+Three mechanisms currently order code and none of them covers object literals, which is where ordering mistakes actually happen. `import/order` (`eslint.config.js:83`) sorts and groups imports. `prettier-plugin-organize-imports` sorts them again at format time, and separately removes unused ones via the TypeScript language service. Object keys, `type` and `interface` members, and JSX props are ordered by attention alone, which is the one case a linter would catch and a convention cannot: the property-ordering rule already describes the failure exhaustively, including the conditional-spread variant, and was still missed.
+
+`eslint-plugin-perfectionist` (5.10.1 at time of writing) covers all of it except unused-import removal, which it cannot do because that needs type information. So it replaces `import/order` and not `organize-imports`, leaving one sorter plus one pruner instead of two sorters plus one pruner.
+
+Done when: one tool owns ordering; `sort-objects`, `sort-interfaces`, `sort-object-types` and `sort-jsx-props` are enforced at error level; `import/order` is removed.
+
+_Two things to establish before committing to it, neither answerable by reading. Whether perfectionist's `sort-imports` can be configured to emit what `organize-imports` emits, since one runs at lint time and the other at format time and a disagreement makes them ping-pong; the existing `#` pathGroup makes this non-trivial. And whether `sort-objects` covers destructured parameters, which the convention's own text flags as uncertain._
+
+_Blocked on the `dist/` lint scope fix, tracked in `.dev/tech-debt.md`: with build output linted, a new rule lands in a backlog of roughly 17,600 problems that is about 89% `dist/`, so the control would exist and be invisible._
+
+
 ### Context
 
 Pipeline: `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`. Helper steps are in `step*` files in the same folder, loaded automatically via CasC (not imported explicitly in the Jenkinsfile).

@@ -550,6 +550,23 @@ suite('build_sqon existingSqon', () => {
 		});
 	});
 
+	test('widens an earlier "in" clause on the same field instead of ANDing an unsatisfiable second one', async () => {
+		// "also include study B": reduceSqon deliberately no longer merges same-field "in" under
+		// "and" (doing so would silently turn an intersection into a union), so build_sqon has to
+		// widen the existing clause itself rather than relying on normalization to do it.
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', 'B')],
+			existingSqon: { op: 'in', content: { fieldName: 'study', value: ['A'] } },
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'in', content: { fieldName: 'study', value: ['A', 'B'] } }],
+		});
+		assert.equal(output.filterCount, 1);
+	});
+
 	test('preserves an existing multi-clause "and" as one branch when combining with "or"', async () => {
 		const { output } = await buildSqon({
 			catalogueId: 'participants',

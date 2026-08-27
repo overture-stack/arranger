@@ -68,15 +68,9 @@ function getNestedPathsInField({ fieldName = '', nestedFieldNames = [] }) {
 }
 
 /**
- * Re-applies the access-control filter to a query that field-removal has just stripped it from.
- *
- * `removeFieldFromQuery` drops every clause naming the aggregated field, which is correct for the
- * caller's own facet filter and wrong for the server's, since the two are indistinguishable once
- * `compileFilter` has merged them. ANDing the server-side query back is what restores that
- * distinction: the caller's filter on the aggregated field stays dropped, the server's comes back.
- *
- * Clauses on other fields end up duplicated, which is harmless: a repeated `must` clause filters
- * identically, and these carry `boost: 0` so scoring is unaffected either way.
+ * Re-applies the access-control filter after field-removal strips it along with the caller's own
+ * filter on the aggregated field, the two being indistinguishable once `compileFilter` merges them.
+ * Duplicate clauses on other fields are harmless: same result, and `boost: 0` leaves scoring alone.
  */
 function reapplyServerFilter({ cleanedQuery, serverSideQuery }) {
 	if (!serverSideQuery || !Object.keys(serverSideQuery).length) {
@@ -99,16 +93,14 @@ function wrapWithFilters({
 	if (!aggregationsFilterThemselves) {
 		const cleanedQuery = removeFieldFromQuery({ fieldName: esFieldName, query });
 		// TODO: better way to figure out that the field wasn't found
-		//
-		// Relies on `query` never being empty: an empty one would compare unequal to `null` here and
-		// wrap every field. `compileFilter` guarantees that upstream by rejecting a clause-less
-		// server-side filter, so this holds only for callers that go through it.
+		// Relies on `query` never being empty, which `compileFilter` guarantees by rejecting a
+		// clause-less server-side filter. An empty one would compare unequal to `null` and wrap
+		// every field.
 		if (!isEqual(cleanedQuery || {}, query || {})) {
 			return createGlobalAggregation({
 				fieldName,
-				// A `global` aggregation ignores the search query entirely, so whatever must still
-				// constrain this aggregation has to be restated here. That includes the access-control
-				// filter, which is why it is re-applied rather than left to the query above.
+				// A `global` aggregation ignores the search query, so anything that must still
+				// constrain this one has to be restated here, access control included.
 				aggregation: createFilteredAggregation({
 					fieldName,
 					filter: reapplyServerFilter({ cleanedQuery, serverSideQuery }),
@@ -143,11 +135,10 @@ const buildAggregations = ({
 	const normalizedSqon = normalizeFilters(applyNestingPrefixToSqon(sqon, nestingPrefix));
 	const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
 		const fieldName = fieldKey.replace(/__/g, '.');
-		// `fieldName` stays the response key, built from the GraphQL name, exactly as the note above
-		// describes. Only the ES path is translated back to the raw one: undoing `__` recovers the
-		// nesting but not the characters sanitization replaced, so `qc_metrics__batch_id` would
-		// otherwise reach Elasticsearch as `qc_metrics.batch_id` and match nothing. This also feeds
-		// the SQON and nested-path comparisons below, which are against raw field names throughout.
+		// `fieldName` stays the response key; only the ES path is translated back. Undoing `__`
+		// recovers nesting but not sanitized characters, so `qc_metrics__batch_id` would reach
+		// Elasticsearch as `qc_metrics.batch_id` and match nothing. Also feeds the raw-name
+		// comparisons below.
 		const rawFieldPath = rawPathsByGraphqlFlatName[fieldKey] ?? fieldName;
 		const esFieldName = applyNestingPrefix(rawFieldPath, nestingPrefix);
 		const nestedPaths = getNestedPathsInField({ fieldName: esFieldName, nestedFieldNames });

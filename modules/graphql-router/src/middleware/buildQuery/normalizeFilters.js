@@ -22,7 +22,8 @@ function groupingOptimizer({ op, content, pivot }) {
 		pivot,
 		content: content.map(normalizeFilters).reduce((filters, f) => {
 			const samePivot = f.pivot === pivot || !f.pivot;
-			if (f.op === op && !f[_UNFLAT_KEY_] && samePivot) {
+			// `not` excluded: flattening is associativity, which negation lacks. `not[not[X]]` is X.
+			if (f.op === op && op !== NOT_OP && !f[_UNFLAT_KEY_] && samePivot) {
 				return [...filters, ...f.content];
 			} else {
 				return [...filters, omit(f, _UNFLAT_KEY_)];

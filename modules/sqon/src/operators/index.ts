@@ -31,22 +31,40 @@ export const normalizeSqonOp = (op: SqonAcceptedOp): SqonCanonicalOp => {
 	return isSqonOpAlias(op) ? SQON_OP_ALIASES[op] : op;
 };
 
+/** Matches the operator-selection table in docs/reference/03-building-sqon-queries.md. */
+const OPERATOR_DESCRIPTIONS: Record<(typeof SQON_FIELD_OPS)[number], string> = {
+	all: 'Field contains all of these values (multi-valued field only).',
+	between: 'Field is between these two values, both inclusive.',
+	gt: 'Field is greater than this value.',
+	gte: 'Field is greater than or equal to this value.',
+	in: 'Field matches any of these values.',
+	lt: 'Field is less than this value.',
+	lte: 'Field is less than or equal to this value.',
+	'not-in': 'Field does not match any of these values.',
+	'some-not-in': 'At least one nested item is excluded (multi-valued, per-item).',
+	wildcard: 'One or more fields contain this substring pattern.',
+};
+
 export const getSqonFieldOperatorDetails = (): SqonFieldOperatorDetail[] =>
 	SQON_FIELD_OPS.map((op) => {
+		const description = OPERATOR_DESCRIPTIONS[op];
+
 		switch (op) {
 			case 'all':
 				return {
-					op,
-					fieldRef: 'fieldName' as const,
 					applicableTo: 'all',
+					description,
+					fieldRef: 'fieldName' as const,
+					op,
 					valueType: 'Array<string | number | boolean>',
 				};
 
 			case 'between':
 				return {
-					op,
-					fieldRef: 'fieldName' as const,
 					applicableTo: [...RANGE_APPLICABLE_TYPES],
+					description,
+					fieldRef: 'fieldName' as const,
+					op,
 					valueType: 'Array<number | date>',
 				};
 
@@ -55,25 +73,28 @@ export const getSqonFieldOperatorDetails = (): SqonFieldOperatorDetail[] =>
 			case 'lt':
 			case 'lte':
 				return {
-					op,
-					fieldRef: 'fieldName' as const,
 					applicableTo: [...RANGE_APPLICABLE_TYPES],
+					description,
+					fieldRef: 'fieldName' as const,
+					op,
 					valueType: 'number | date',
 				};
 
 			case 'wildcard':
 				return {
-					op,
-					fieldRef: 'fieldNames' as const,
 					applicableTo: 'all',
+					description,
+					fieldRef: 'fieldNames' as const,
+					op,
 					valueType: 'string',
 				};
 
 			default:
 				return {
-					op,
-					fieldRef: 'fieldName' as const,
 					applicableTo: 'all',
+					description,
+					fieldRef: 'fieldName' as const,
+					op,
 					valueType: SCALAR_OR_ARRAY_VALUE_TYPE,
 				};
 		}

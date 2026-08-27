@@ -129,8 +129,8 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			graphqlFields,
 			nestedFieldNames,
 			nestingPrefix,
-			// Aggregation names flatten a whole dotted path into one GraphQL name, so recovering the
-			// Elasticsearch path takes the registry rather than a string transform.
+			// Recovering the ES path from a flattened aggregation name takes the registry, not a
+			// string transform.
 			rawPathsByGraphqlFlatName: type.graphqlNameRegistry?.rawPathsByGraphqlFlatName,
 			aggregationsFilterThemselves: aggregations_filter_themselves,
 		});

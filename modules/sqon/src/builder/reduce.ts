@@ -4,17 +4,19 @@ import type { SqonCombination, SqonNode } from '#schema/index.js';
 import { asArray, isFieldFilter, isGroupNode } from '#builder/utils.js';
 
 /**
- * Ops where duplicate field filters on the same field are merged by unioning their value arrays
- * under every combination type (and, or, not).
+ * Ops merged by unioning their value arrays, under `or` only.
  *
- * `in` is safe to merge unconditionally because OR semantics for value-list inclusion are
- * identical to expanding the list: OR(in:['A'], in:['B']) ≡ in:['A','B']. Both express
- * "field matches any of these values"; the OR just widens the set.
+ * `in`: OR(in:['A'], in:['B']) ≡ in:['A','B'], both meaning "matches any of these values", so union
+ * is correct. Under `and`, the correct merge is the values' *intersection*, not their union, which
+ * this does not compute; two same-field `in` clauses under `and` are left unmerged instead.
+ * Elasticsearch already evaluates two separate `terms` clauses under `bool.must` as an intersection
+ * on its own, so nothing is lost.
  */
-const MERGE_VALUES_UNDER_ALL_OPS = new Set(['in']);
+const MERGE_VALUES_UNDER_OR_OPS = new Set(['in']);
 
 /**
- * Ops where value-array merging is correct under `and`/`not` but must not happen under `or`.
+ * Ops where value-array merging is correct under `and` but must not happen under `or` (or `not`,
+ * see `shouldReduceOp` below).
  *
  * `not-in` / `some-not-in`: under `and`, merging tightens the exclusion correctly:
  * AND(not-in:['A'], not-in:['B']) ≡ not-in:['A','B'] (exclude both). Under `or`, the two
@@ -28,25 +30,33 @@ const MERGE_VALUES_UNDER_ALL_OPS = new Set(['in']);
 const MERGE_VALUES_UNDER_AND_OPS = new Set(['not-in', 'some-not-in', 'all']);
 
 /**
- * Ops where two filters on the same field under `and`/`not` keep the greater bound
- * (and under `or` keep the lesser bound: the weaker constraint wins).
+ * Ops where two filters on the same field under `and` keep the greater bound
+ * (and under `or` keep the lesser bound: the weaker constraint wins). Never merged under `not`,
+ * see `shouldReduceOp` below.
  */
 const KEEP_MAX_UNDER_AND_OPS = new Set(['gt', 'gte']);
 
 /**
- * Ops where two filters on the same field under `and`/`not` keep the lesser bound
- * (and under `or` keep the greater bound: the weaker constraint wins).
+ * Ops where two filters on the same field under `and` keep the lesser bound
+ * (and under `or` keep the greater bound: the weaker constraint wins). Never merged under `not`,
+ * see `shouldReduceOp` below.
  */
 const KEEP_MIN_UNDER_AND_OPS = new Set(['lt', 'lte']);
 
 /**
- * Returns true if `op` has a defined reduction rule when two filters on the same field
- * appear under `combinationOp`. Range ops (gt, gte, lt, lte) always have a rule;
- * value-merge ops are combination-type-dependent.
+ * Returns true if `op` has a defined reduction rule when two filters on the same field appear
+ * under `combinationOp`. Range ops always have a rule under `and`/`or`; value-merge ops are
+ * combination-type-dependent (see the `MERGE_VALUES_*` sets above).
+ *
+ * Never merges under `not`: `not[A, B]` means `¬A ∧ ¬B`, so a correct merge there needs to flip the
+ * operator itself (e.g. two `not-in` clauses combine to an `in` of their intersection, not a
+ * `not-in` of their union), which none of these rules do. Refusing to merge costs a missed
+ * normalization, not correctness.
  */
 const shouldReduceOp = (op: string, combinationOp: string): boolean => {
-	if (MERGE_VALUES_UNDER_ALL_OPS.has(op)) return true;
-	if (MERGE_VALUES_UNDER_AND_OPS.has(op)) return combinationOp === 'and' || combinationOp === 'not';
+	if (combinationOp === 'not') return false;
+	if (MERGE_VALUES_UNDER_OR_OPS.has(op)) return combinationOp === 'or';
+	if (MERGE_VALUES_UNDER_AND_OPS.has(op)) return combinationOp === 'and';
 	return KEEP_MAX_UNDER_AND_OPS.has(op) || KEEP_MIN_UNDER_AND_OPS.has(op);
 };
 
@@ -90,16 +100,19 @@ const compareBounds = (a: SqonScalarOrArray, b: SqonScalarOrArray): number | und
 
 /**
  * Returns a new node that merges `incoming` into `existing` per the applicable reduction rule, or
- * `undefined` when the rule cannot be applied because the two bounds are not orderable. Only the
- * range rules can decline; the value-merge rules concatenate and always apply.
+ * `undefined` when the rule cannot be applied because the two range bounds are not orderable. Only
+ * the range rules can decline; the value-merge rules concatenate and always apply.
  */
 const mergeIntoExisting = (
 	existing: SqonFieldFilter,
 	incoming: SqonFieldFilter,
 	combinationOp: string,
 ): SqonNode | undefined => {
-	if (MERGE_VALUES_UNDER_ALL_OPS.has(incoming.op) || MERGE_VALUES_UNDER_AND_OPS.has(incoming.op)) {
-		const merged = [...asArray(existing.content.value as SqonScalar[]), ...asArray(incoming.content.value as SqonScalar[])];
+	if (MERGE_VALUES_UNDER_OR_OPS.has(incoming.op) || MERGE_VALUES_UNDER_AND_OPS.has(incoming.op)) {
+		const merged = [
+			...asArray(existing.content.value as SqonScalar[]),
+			...asArray(incoming.content.value as SqonScalar[]),
+		];
 		return { ...existing, content: { ...existing.content, value: merged } } as unknown as SqonNode;
 	}
 
@@ -110,10 +123,11 @@ const mergeIntoExisting = (
 		return undefined;
 	}
 
-	// Under `and`/`not` the stricter bound wins; under `or` the looser one does. Which of the two is
-	// stricter flips with the operator: a greater floor is stricter for `gt`/`gte`, a lesser ceiling
-	// is stricter for `lt`/`lte`.
-	const stricterIsGreater = combinationOp === 'and' || combinationOp === 'not';
+	// Under `and` the stricter bound wins; under `or` the looser one does. `not` never reaches here:
+	// `shouldReduceOp` excludes range ops from `not` combinations before `mergeIntoExisting` is
+	// called. Which of the two is stricter flips with the operator: a greater floor is stricter for
+	// `gt`/`gte`, a lesser ceiling is stricter for `lt`/`lte`.
+	const stricterIsGreater = combinationOp === 'and';
 	const keepGreater = KEEP_MAX_UNDER_AND_OPS.has(incoming.op) ? stricterIsGreater : !stricterIsGreater;
 	const greater = comparison >= 0 ? a : b;
 	const lesser = comparison >= 0 ? b : a;
@@ -125,24 +139,69 @@ const mergeIntoExisting = (
 };
 
 /**
+ * Folds `reduced`, already the result of `reduceSqon`, into `output.content`: merging it into an
+ * existing same-op/same-field entry when a reduction rule applies, flattening it if it shares
+ * `output`'s op and pivot, or pushing it as-is otherwise. `reduced` must already be fully reduced,
+ * so a child that only collapsed to a leaf via its own internal merge still gets the same treatment.
+ */
+const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
+	if (!isGroupNode(reduced)) {
+		if (isFieldFilter(reduced) && shouldReduceOp(reduced.op, output.op)) {
+			const matchIdx = output.content.findIndex(
+				(existing): existing is SqonFieldFilter =>
+					isFieldFilter(existing) &&
+					existing.op === reduced.op &&
+					existing.content.fieldName === reduced.content.fieldName &&
+					existing.pivot === reduced.pivot,
+			);
+
+			if (matchIdx >= 0) {
+				const existing = output.content[matchIdx] as SqonFieldFilter;
+				const merged = mergeIntoExisting(existing, reduced, output.op);
+
+				// `undefined` means the two range bounds are not orderable (a boolean, an array, or
+				// a number against a non-parseable string), so both clauses are kept rather than
+				// collapsed into a corrupt one. That is safe under either combination: under `and`
+				// applying both is equivalent to applying the stricter one alone, and under `or`
+				// applying either is equivalent to the looser one.
+				if (merged !== undefined) {
+					// mergeIntoExisting doesn't dedupe its own result, so do it here.
+					output.content[matchIdx] = deduplicateValues(merged);
+					return;
+				}
+			}
+		}
+
+		output.content.push(reduced);
+		return;
+	}
+
+	if (reduced.content.length === 0) return; // remove empty combinations
+
+	if (reduced.op === 'not') {
+		// not combinations are never flattened into the outer
+		output.content.push(reduced);
+		return;
+	}
+
+	if (reduced.op === output.op && reduced.pivot === output.pivot) {
+		// Same op + same pivot: flatten into the outer combination
+		reduced.content.forEach((child) => foldIntoOutput(output, child));
+		return;
+	}
+
+	output.content.push(reduced);
+};
+
+/**
  * Reduces a SQON by removing redundant nesting and merging duplicate field filters.
  *
- * **Value-merge rules** (same `op` + `fieldName` under the same combination):
- *
- * - `in`: merge value arrays under any combination type. OR(in:['A'], in:['B']) ≡ in:['A','B']
- *   because both mean "field matches any of these values"; the OR just widens the set.
- *
- * - `not-in`, `some-not-in`, `all`: merge value arrays under `and`/`not` only.
- *   Under `or` these ops have independent semantics and must be kept as separate nodes to
- *   avoid producing a stricter result than the OR relationship implies.
- *
- * - `gt`, `gte`: keep greater value under `and`/`not`; keep lesser value under `or`
- *   (the weaker constraint wins under `or`: a lower floor admits more results).
- *
- * - `lt`, `lte`: keep lesser value under `and`/`not`; keep greater value under `or`
- *   (same reasoning: a higher ceiling admits more results under `or`).
- *
- * - `between`: kept as-is (non-reducible; semantics to be defined separately).
+ * **Value-merge rules** (same `op` + `fieldName` under the same combination; never under `not` —
+ * see `shouldReduceOp` for why). `in` merges under `or` only; `not-in`/`some-not-in`/`all` merge
+ * under `and` only; `gt`/`gte` keep the greater bound under `and` and the lesser under `or`;
+ * `lt`/`lte` keep the lesser bound under `and` and the greater under `or` (the weaker constraint
+ * wins under `or` in both cases); `between` is kept as-is. See the `MERGE_VALUES_*`/`KEEP_*` sets
+ * above for the per-op reasoning.
  *
  * The four range ops compare date-string bounds as well as numeric ones, since they apply to
  * `date` fields. Two bounds that cannot be ordered against each other (a boolean, an array, or
@@ -161,59 +220,10 @@ export const reduceSqon = (node: SqonNode): SqonNode => {
 	const output: SqonCombination = { op: node.op, content: [] };
 	if (node.pivot !== undefined) output.pivot = node.pivot;
 
-	for (const inner of node.content) {
-		if (!isGroupNode(inner)) {
-			// Field leaf: merge into an existing same-op/same-field node if a reduction rule applies
-			// for this combination type. Under `or`, not-in/some-not-in/all stay as separate nodes.
-			if (isFieldFilter(inner) && shouldReduceOp(inner.op, output.op)) {
-				const matchIdx = output.content.findIndex(
-					(existing): existing is SqonFieldFilter =>
-						isFieldFilter(existing) &&
-						existing.op === inner.op &&
-						existing.content.fieldName === inner.content.fieldName,
-				);
-
-				if (matchIdx >= 0) {
-					const existing = output.content[matchIdx] as SqonFieldFilter;
-					const merged = mergeIntoExisting(existing, inner, output.op);
-
-					// `undefined` means the two bounds are not orderable, so both clauses are
-					// kept rather than collapsed into a corrupt one. That is safe under either
-					// combination: under `and` applying both is equivalent to applying the
-					// stricter one alone, and under `or` applying either is equivalent to the
-					// looser one.
-					if (merged !== undefined) {
-						output.content[matchIdx] = merged;
-						continue;
-					}
-				}
-			}
-
-			output.content.push(deduplicateValues(inner));
-		} else {
-			if (inner.content.length === 0) continue; // remove empty combinations
-
-			if (inner.content.length === 1 && inner.op !== 'not') {
-				// Single-item and/or: promote the child directly
-				output.content.push(...inner.content);
-				continue;
-			}
-
-			if (inner.op === 'not') {
-				// not combinations are never flattened into the outer
-				output.content.push(inner);
-				continue;
-			}
-
-			if (inner.op === output.op && inner.pivot === output.pivot) {
-				// Same op + same pivot: flatten into the outer combination
-				output.content.push(...inner.content);
-				continue;
-			}
-
-			output.content.push(inner);
-		}
-	}
+	// Each child is fully reduced before being folded in, so a child that only becomes a leaf (or
+	// collapses to a smaller group) via its own internal merge is folded in on this same pass, not
+	// left for a second `reduceSqon` call to find.
+	node.content.forEach((inner) => foldIntoOutput(output, reduceSqon(inner)));
 
 	// If the outer is a single-item and/or after collection, unwrap it.
 	// Never unwrap a pivoted combination: the pivot has semantic meaning and must be preserved.
@@ -221,6 +231,5 @@ export const reduceSqon = (node: SqonNode): SqonNode => {
 		return reduceSqon(output.content[0]!);
 	}
 
-	output.content = output.content.map(reduceSqon);
 	return output;
 };

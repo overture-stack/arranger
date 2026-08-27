@@ -22,9 +22,11 @@ export type ESClientOptions = Prettify<
 	}
 >;
 
-export function createElasticSearchClient(options: ESClientOptions): SearchClient {
-	const elasticSearchClient = new Client(options);
-
+/**
+ * Adapts an already-constructed client to the normalized `SearchClient` surface, so a caller
+ * whose auth scheme this module cannot build (AWS SigV4, say) can still inject one.
+ */
+export function wrapElasticSearchClient(elasticSearchClient: Client): SearchClient {
 	const searchClient: SearchClient = {
 		indices: {
 			close: async (input, options) => {
@@ -133,4 +135,8 @@ export function createElasticSearchClient(options: ESClientOptions): SearchClien
 	};
 
 	return searchClient;
+}
+
+export function createElasticSearchClient(options: ESClientOptions): SearchClient {
+	return wrapElasticSearchClient(new Client(options));
 }

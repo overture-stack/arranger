@@ -54,7 +54,7 @@ export type ColumnConfigs = {
 	[dataFieldProperties.DISPLAY_TYPE]: string;
 	[dataFieldProperties.DISPLAY_VALUES]: Record<string, any>; // TODO: not "any". used for "readable" replacements e.g. true as "yes"
 	[dataFieldProperties.FIELD_NAME]: string;
-	[dataFieldProperties.IS_ARRAY]: boolean; // should it be displayed as a list of items, or leave as a single string
+	[dataFieldProperties.IS_ARRAY]: boolean | null; // is it many values, only one, or we don't know. 'undefined' avoided to identify old servers (MCP concern)
 	[dataFieldProperties.JSON_PATH]: string;
 	[dataFieldProperties.QUERY]: string;
 	[dataFieldProperties.SHOW]: boolean;

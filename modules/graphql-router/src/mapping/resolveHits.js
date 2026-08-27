@@ -313,10 +313,9 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 		// mismatch against a GraphQL-sanitized name; requesting the whole envelope is a strict
 		// superset of any narrower list, so it's the simple, always-correct choice here.
 		//
-		// The unprefixed branch selects by name, so each one has to be translated back out of its
-		// GraphQL form first: `_source` is matched against the raw index, where the field is still
-		// `ca19-9`. A name absent from the registry passes through unchanged, which covers the
-		// synthetic fields (`id`, `__typename`) that never came from the mapping.
+		// The unprefixed branch selects by name, so each is translated back to its raw form before
+		// `_source` matches it against the index. Unknown names pass through, covering synthetic
+		// fields like `id` that never came from the mapping.
 		const rawTopLevelNames = type.graphqlNameRegistry?.rawTopLevelNamesByGraphqlName || {};
 		const sourceFields = nestingPrefix
 			? [nestingPrefix]

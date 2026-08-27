@@ -275,5 +275,7 @@ export {
 	SCHEMA_BUILD_ERROR_NAME,
 } from './classifyCatalogueFailureReason.js';
 export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';
+export { wrapElasticSearchClient } from './createElasticSearchClient.js';
+export { wrapOpenSearchClient } from './createOpenSearchClient.js';
 export type { SearchClient, SupportedClientTypes } from './types.js';
 export { detectClientTypeFromHeaders, getClientType, resolveClientTypeFromNodeInfo };

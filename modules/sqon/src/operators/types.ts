@@ -18,4 +18,6 @@ export type SqonFieldOperatorDetail = {
 	fieldRef: 'fieldName' | 'fieldNames';
 	applicableTo: 'all' | SqonRangeApplicableType[];
 	valueType: string;
+	/** One-clause statement of what the operator means, e.g. `in` versus `all`. */
+	description: string;
 };

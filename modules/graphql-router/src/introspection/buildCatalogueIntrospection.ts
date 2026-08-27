@@ -28,6 +28,10 @@ const buildFields = (resolvedFields: ExtendedConfigs[]) =>
 				field.fieldName,
 				{
 					displayName: field.displayName || field.fieldName,
+					// The only declaration of whether a field can hold more than one value. Elasticsearch
+					// never enforces cardinality against its mapping, so a consumer cannot infer this from
+					// the type, and it decides whether two `in` clauses on one field can both match.
+					...(field.isArray !== undefined ? { isArray: field.isArray } : {}),
 					type: getFieldType(field),
 					...(field.unit !== undefined ? { unit: field.unit } : {}),
 				},
@@ -35,11 +39,7 @@ const buildFields = (resolvedFields: ExtendedConfigs[]) =>
 	);
 
 const buildFieldOperators = (resolvedFields: ExtendedConfigs[]): Record<string, string[]> => {
-	const types = [
-		...new Set(
-			resolvedFields.filter((field) => !!field.fieldName).map((field) => getFieldType(field)),
-		),
-	];
+	const types = [...new Set(resolvedFields.filter((field) => !!field.fieldName).map((field) => getFieldType(field)))];
 	return Object.fromEntries(types.map((type) => [type, getValidFieldOperators(type)]));
 };
 

@@ -113,7 +113,7 @@ suite('buildCatalogueIntrospectionBody', () => {
 		assert.ok(!('description' in result));
 	});
 
-	test('builds fields with correct displayName, type, and unit', () => {
+	test('builds fields with correct displayName, type, unit, and isArray', () => {
 		const result = buildCatalogueIntrospectionBody({
 			catalogId: 'models',
 			documentType: 'model',
@@ -124,12 +124,14 @@ suite('buildCatalogueIntrospectionBody', () => {
 			displayName: 'Analysis State',
 			type: 'keyword',
 			unit: null,
+			isArray: false,
 		});
 
 		assert.deepEqual(result.fields['donor.age'], {
 			displayName: 'Donor Age',
 			type: 'long',
 			unit: 'year',
+			isArray: false,
 		});
 	});
 

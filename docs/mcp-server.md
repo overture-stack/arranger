@@ -46,6 +46,8 @@ Most clauses name one field with `fieldName` and take a value operator: `in`, `n
 
 An asterisk inside an `in`, `not-in`, `some-not-in`, or `all` value is rejected, because Arranger runs such a value as a regular expression rather than matching it literally: use `wildcard` instead. `execute_query`'s raw `sqon` parameter still accepts it, so an asterisk-bearing keyword value is reachable there but not through `build_sqon`.
 
+Two `in` clauses on the same field also merge, by combining their value lists: `status in ['active']` together with `status in ['pending']` becomes `status in ['active', 'pending']`, meaning "either". That is the correct reading on a single-valued field, where no document could satisfy both clauses at once. It is not conditional on the field's `isArray` yet, so on a field that can hold several values at once (`isArray: true`, or `null` where nothing declared it) the other reading, "every one of these must be present", is equally legitimate and the merge silently picks "either" regardless. Use the `all` operator directly when you need that reading.
+
 One `combination` applies to the whole call. Mixed AND/OR nesting and the planned `fuzzy` operator are not yet supported: a query needing either still requires a hand-written `sqon`. An unfiltered query needs no `build_sqon` call at all; pass `{"op":"and","content":[]}` to `execute_query` directly.
 
 **Resources** (readable data by URI):
