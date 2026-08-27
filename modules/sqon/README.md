@@ -107,10 +107,17 @@ SqonBuilder.in('status', ['active'])
 
 ### Match-none filters
 
-`SqonBuilder.matchNothing(fieldName)` produces a filter guaranteed to match nothing, regardless of
-what it's later combined with. It's an `in` filter with an empty value list under the hood: a leaf,
-not a combination, and `reduceSqon` only ever prunes empty combinations, never a leaf, so this value
-is stable under composition and reduction.
+`SqonBuilder.matchNothing(fieldName)` produces a filter that matches nothing and stays that way
+whatever it is later combined with. It's an `in` filter with an empty value list under the hood.
+
+Three properties hold that guarantee together, and being a leaf is only the first of them:
+
+- It's a leaf rather than a combination, and `reduceSqon` only ever prunes empty combinations, so
+  reduction never removes it.
+- Nothing is merged under `not`, and `in` filters are never merged under `and`, so a permission on
+  the same field cannot absorb it into a wider filter during composition.
+- An empty `in` compiles to an empty `terms` clause, which the search engine matches no document
+  against. The guarantee rests there in the end, rather than on any reduction rule.
 
 `fieldName` has no effect on the result: an empty `in` matches nothing regardless of which field it
 names, including one absent from the mapping. A field name is still required, since every leaf

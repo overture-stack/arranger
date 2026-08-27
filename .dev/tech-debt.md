@@ -234,6 +234,27 @@ Every critical is dev-only. 42 of 45 are the Storybook 3 subtree above. Exactly 
 **Fix:** Sequence the roadmap item as cleanup-then-gate rather than gate-first: remove the Storybook subtree and the unused runtime dependencies, re-run both audits to record a real baseline, then wire the non-blocking report in. Separately, set `csrfPrevention: true` on both `ApolloServer` constructions in `graphqlRoutes.ts` (Apollo Server 4's default; costs nothing and is independent of the migration).
 **Standalone:** yes.
 
+### Test scripts are split by convenience rather than by what the tests need, so `test:dev` leaves four workspaces unrun
+
+**File:** root `package.json` (`test:dev`, `dev:check`, `test:watch`); documented in `DEVELOPMENT.md:83` and `AGENTS.md:119`
+**Severity:** medium (the script reads as the development test command, and a green run leaves 237 of 906 tests unrun, including every test that touches a live search engine)
+**Kind:** misleading verification surface
+**Issue:** `test:dev` names six workspaces: `modules/sqon`, `modules/types`, `modules/graphql-router`, `apps/search-server`, `apps/mcp-server`, and `integration-tests/import`. Four workspaces with test scripts are absent: `integration-tests/server` (98 tests), `integration-tests/mcp-server` (68), `modules/charts` (12), and `modules/components` (59). A green `test:dev` therefore says nothing about 237 tests and nothing at all about either suite that exercises a real search engine. Root `test` (`npm run test --ws --if-present`) does cover all ten. This compounds the two `dist/` staleness entries above: the suites most exposed to a stale `dist/` are among the ones `test:dev` omits.
+
+The membership is not just incomplete, it cuts across no principle. `integration-tests/import` is included while the other two `integration-tests/*` workspaces are not, so neither "fast" nor "no external dependency" nor "by directory" describes the set. `test:dev` cannot be made honest by adding workspaces, because there is no stated rule for what belongs in it.
+
+A second, quieter half: the two Jest workspaces (`integration-tests/import`, `modules/components`) report `Tests: N passed`, while the node:test workspaces report `# tests N`. A count grepped for one format silently omits the other, so a reader summarizing results rather than reading the exit code can drop a whole workspace without noticing.
+**Fix:** Replace `test:dev` with a split by what a suite actually requires, so the name states the precondition:
+
+- `test:unit`, needing nothing running: `modules/sqon`, `modules/types`, `modules/graphql-router`, `modules/charts`, `modules/components`, `apps/search-server`, `apps/mcp-server`
+- `test:integration`, needing a reachable search engine: `integration-tests/server` and `integration-tests/mcp-server`. Both read `ES_HOST` (defaulting to `http://127.0.0.1:9200`) and build a real client, so both genuinely belong here.
+- Root `test` stays the everything target.
+
+`integration-tests/import` needs a decision rather than a slot, and it is the reason the current script looks arbitrary: it requires a built `dist/` but no running service, so it is neither a unit test of source nor an integration test against an engine. It is a packaging check, verifying the published CJS and ESM entry points resolve. Either fold it into `test:unit` and accept that one `integration-tests/*` workspace runs there, or name it for what it does (`test:packaging`) and move the directory to match.
+
+Two consumers need updating in the same pass: `dev:check` (which just calls `test:dev`) and `DEVELOPMENT.md:83`. `AGENTS.md:119` also documents `test:dev` and is an instruction file, so that line is the developer's edit rather than an incidental one. No CI or Jenkins configuration references `test:dev`, so nothing outside the repo breaks. Worth doing alongside the `test:watch` no-op entry above, which is the same script surface with the same root cause.
+**Standalone:** yes; a package.json change plus two documentation lines, with the `integration-tests/import` placement as the only real decision
+
 ## apps/mcp-server
 
 ### `InMemoryEventStore` is not suitable for production
@@ -422,6 +443,15 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 
 ---
 
+### `build_sqon` merges same-field `in` clauses regardless of the field's declared cardinality
+
+**File:** `apps/mcp-server/src/mcp/buildSqonTool.ts` (`mergeIntoExistingInClause`, called from `foldClauses`)
+**Severity:** medium (returns a wider result set than one of the two readings a caller may have meant, with no signal; no access-control consequence, since the server-side filter is composed independently downstream)
+**Kind:** unhandled case, not deferred behaviour
+**Issue:** Two `in` clauses on one field are merged by unioning their value lists, so `status in ['active']` submitted with `status in ['pending']` builds `status in ['active', 'pending']`, meaning "either". That is the correct reading when a field holds only one value, because no document could satisfy both clauses at once. It is wrong as soon as the field can hold several at once, where "every one of these must be present" is an equally legitimate reading and the union silently picks the other. The merge never consults `isArray`, which catalogue introspection now reports, so `true` and `null` are **unhandled rather than knowingly accepted**: `true` means a configuration declared the field multi-valued, `null` means nothing declared it, and neither justifies the union. Every fixture in `buildSqonTool.test.ts` declares `isArray: false`, the one state the current behaviour is correct for, so no existing test can fail on this.
+**Fix:** Gate the merge on the field's `isArray` as parsed by `catalogueIntrospectionSchema`: union only when it is `false`. For `true`, keep the clauses separate or ask the caller which reading was meant. For `null`, treat it as undeclared rather than as `false`. Note that the cautious direction is operator-specific and inverts for `all`, which needs `isArray: true` to be satisfiable at all, so a shared "treat `null` like `false`" helper would be wrong for one of the two callers. Add a fixture per `isArray` state; the current fixtures cannot express the failure.
+**Standalone:** yes, though it lands most cleanly alongside the `all` operator work, which reads the same signal in the opposite direction
+
 ## apps/search-server
 
 ### `ENABLE_ADMIN` is read from the environment and reaches no consumer, and the docs describe the wrong channel
@@ -514,6 +544,15 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Standalone:** yes.
 
 ---
+
+### Two fixture documents share an `_id`, so `integration-tests/server` indexes three documents where the file declares four
+
+**File:** `integration-tests/server/test/assets/model_centric_1.data.json:5,45`; the same duplication in `model_centric_2.data.json`; indexed at `integration-tests/server/test/index.test.ts:153-155`
+**Severity:** medium (silently shrinks the data every test against this index reads, and any count-sensitive assertion is calibrated to the collapsed set)
+**Kind:** test fixture defect
+**Issue:** The loader passes `id: datum._id` to `esClient.index()`, so a fixture's `_id` becomes the Elasticsearch document id. Two distinct documents in `model_centric_1.data.json` both declare `_id: "sagsdhertdfdgsdfgsdfg"` (lines 5 and 45), so the second overwrites the first and the index holds three documents rather than the four the file appears to define. Nothing fails or warns: aggregation, sort, and pagination tests run against a smaller set than the fixture reads as, and one document's field values are never exercised at all.
+**Fix:** Give every fixture document a distinct `_id`. Expect assertions calibrated against the collapsed set to need updating in the same pass, which is the useful part: those are the tests whose real coverage was smaller than it appeared. A duplicate-id check over the fixture files at load time would stop it recurring.
+**Standalone:** yes, though the assertion updates make it larger than the fixture edit alone
 
 ## docs [URGENT: reminder every session]
 
@@ -1308,6 +1347,33 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Standalone:** yes.
 
 ---
+
+### `compileFilter` has no tests, and it is where the client and server SQONs are combined
+
+**File:** `modules/graphql-router/src/mapping/utils/compileFilter.js`
+**Severity:** medium (no known defect; the gap is that a regression here would be silent, in the one function every read path depends on)
+**Kind:** missing test coverage
+**Issue:** No test file in `modules/graphql-router` references `compileFilter` at all. It merges the incoming client SQON with the configured server-side filter into the single SQON `buildQuery` compiles, so what it does decides what every read path actually queries: record queries, aggregations, the export route, and federated queries all pass through it. Several entries in this file already name its contract as the seam worth changing (returning both filters separately instead of one merged SQON; rejecting a server-side filter that compiles to nothing), and each of those changes would be made with no regression coverage underneath it. The roadmap's property-based-testing entry lists it as a candidate for the same reason.
+**Fix:** Cover the composition directly: a client SQON with no server filter, a server filter with an empty client SQON, both present, and a server filter that reduces away to nothing. Extend with the property-based approach now used for `reduceSqon` if the input space proves wide enough to justify it.
+**Standalone:** yes
+
+### `esClient` names a `SearchClient`, and no documented path exists from a real engine client to one
+
+**File:** `modules/graphql-router/src/searchClient/` (the `SearchClient` type, `wrapOpenSearchClient`, `createOpenSearchClient`); the `esClient` option on the router config
+**Severity:** low (naming and documentation; no runtime defect)
+**Kind:** misleading name, plus a missing documented path
+**Issue:** The option is named `esClient`, which reads as an `@elastic/elasticsearch` `Client`. It is neither that nor an `@opensearch-project/opensearch` `Client`: it is `SearchClient`, a hand-written interface normalizing both. A consumer holding an already-configured engine client cannot tell from the name, or from any document, how to turn it into what the option accepts, and passing the engine client straight in typechecks in some positions while failing in others depending on which members the code path touches. `wrapOpenSearchClient` now exists for the OpenSearch case and nothing points a reader at it.
+**Fix:** Document the adapter path wherever the option is described, naming `wrapOpenSearchClient` for OpenSearch and the equivalent for Elasticsearch. Renaming the option to `searchClient` is the more durable fix and breaks a published config surface, so sequence it with the next intentional break rather than mid-cycle; accepting both names for one minor version is the usual bridge.
+**Standalone:** the documentation yes, immediately. The rename needs a deprecation window.
+
+### Route mount order in `router.ts` is load-bearing and unmarked
+
+**File:** `modules/graphql-router/src/router.ts:105-136`
+**Severity:** low (correct today; the risk is that a later reordering breaks it silently)
+**Kind:** implicit ordering dependency
+**Issue:** The request-preprocessing middleware is mounted at `:105`, ahead of every route, and `GET /introspection` is registered at `:114`, ahead of the GraphQL routes mounted by `router.use('/', graphQLRoutes)` at `:128`. Both orderings are required and neither is marked. Because the GraphQL mount matches on `'/'`, moving it above the introspection route makes it match first, at which point the introspection endpoint stops responding with no error raised anywhere: it simply never runs. The middleware has the same exposure, silently ceasing to apply to any route registered above it.
+**Fix:** A short comment at each of the two ordering-sensitive lines stating what breaks if it moves. A test asserting `GET /introspection` returns the introspection body rather than a GraphQL response would catch the actual regression and is worth more than the comment.
+**Standalone:** yes
 
 ## modules/charts
 

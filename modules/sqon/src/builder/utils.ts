@@ -19,8 +19,14 @@ const COMBINATION_OPS = new Set(['and', 'or', 'not']);
 export const isGroupNode = (node: SqonNode): node is SqonCombination => COMBINATION_OPS.has(node.op);
 
 /** Returns true when the node is a field-based leaf (has `content.fieldName`, not a wildcard filter). */
-export const isFieldFilter = (node: SqonNode): node is SqonFieldFilter =>
-	!isGroupNode(node) && 'fieldName' in (node as SqonLeaf & { content: Record<string, unknown> }).content;
+export const isFieldFilter = (node: SqonNode): node is SqonFieldFilter => {
+	if (isGroupNode(node)) {
+		return false;
+	}
+
+	const content = (node as SqonLeaf).content;
+	return typeof content === 'object' && content !== null && 'fieldName' in content;
+};
 
 /** Wraps a single value in an array; passes through arrays unchanged. */
 export const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
@@ -41,9 +47,10 @@ export const checkMatchingArrays = <T>(a: T[], b: T[]): boolean => {
 
 /**
  * Returns true when two field-based SQON leaf nodes are semantically equivalent:
- * same op, same fieldName, and same set of values (order-independent).
+ * same op, same fieldName, same pivot (a different pivot scopes to a different nested match), and
+ * same set of values (order-independent).
  */
 export const checkMatchingFilter = (a: SqonFieldFilter, b: SqonFieldFilter): boolean => {
-	if (a.op !== b.op || a.content.fieldName !== b.content.fieldName) return false;
+	if (a.op !== b.op || a.content.fieldName !== b.content.fieldName || a.pivot !== b.pivot) return false;
 	return checkMatchingArrays(asArray(a.content.value as SqonScalar[]), asArray(b.content.value as SqonScalar[]));
 };
