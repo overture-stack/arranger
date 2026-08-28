@@ -247,7 +247,7 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		});
 		const text = getErrorText(result);
 
-		assert.match(text, /unknown field "vital_status"/);
+		assert.match(text, /SQON references unknown field "vital_status"/);
 		assert.match(text, /get_catalogue_fields/);
 	});
 

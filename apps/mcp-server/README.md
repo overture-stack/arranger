@@ -16,7 +16,7 @@ The server registers five tools that cover the full query lifecycle:
 | `build_sqon`           | Builds a validated SQON from plain field, operator, and value clauses, with a plain-English summary. Builds only; it executes nothing. |
 | `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                             |
 
-The intended call order is `list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`, which is what `SERVER_INSTRUCTIONS` and the `query_arranger` prompt both describe. `build_sqon` covers the scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`) with one `and`/`or` per call; text operators and mixed combinators are not in version 1, so those still need a hand-written `sqon` passed to `execute_query`.
+The intended call order is `list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`, which is what `SERVER_INSTRUCTIONS` and the `query_arranger` prompt both describe. `build_sqon` covers every operator `modules/sqon` implements: the single-field operators (`in`, `not-in`, `some-not-in`, `all`, `gt`, `gte`, `lt`, `lte`, `between`) with `fieldName`, and `wildcard` text search across several fields with `fieldNames`. Mixed combinators and the planned `fuzzy` operator are not supported, so those still need a hand-written `sqon` passed to `execute_query`.
 
 ## Folder Structure
 

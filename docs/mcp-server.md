@@ -37,14 +37,18 @@ The server returns a short set of usage instructions that most clients fold into
 - `list_catalogues`: returns the catalogues registered on this Arranger instance
 - `get_sqon_schema`: returns the SQON JSON Schema and operator metadata
 - `get_catalogue_fields`: returns field metadata for one catalogue (input: `catalogueId`)
-- `build_sqon`: builds a validated SQON from plain field, operator, and value inputs, so a model never has to write SQON itself (input: `{ catalogueId, combination: 'and' | 'or', clauses: [{ fieldName, operator, value, negate? }], existingSqon? }`)
+- `build_sqon`: builds a validated SQON from plain field, operator, and value inputs, so a model never has to write SQON itself (input: `{ catalogueId, combination: 'and' | 'or', clauses: [{ fieldName | fieldNames, operator, value, negate? }], existingSqon? }`)
 - `execute_query`: builds, confirms, and executes a SQON-filtered query against one catalogue (input: `{ catalogueId, sqon, queryType = 'hits', fields [], first = 20, offset = 0, sort, aggregationFields = [], includeMissing = true, aggregationsFilterThemselves = false }`)
 
-`build_sqon` returns `{ sqon, summary, clauseCount, filterCount, notes? }` and executes nothing: pass its `sqon` to `execute_query` unchanged. Every clause is validated against the catalogue before a SQON is built, and one error is reported per invalid clause so a whole batch can be corrected in a single resubmission. `summary` is a plain-English rendering of the built SQON, using the catalogue's display names, meant to be read back to the user for confirmation. `clauseCount` and `filterCount` differ when equivalent clauses on the same field merged during the build (two lower bounds on one field collapse to the stricter one, for example); `notes` explains the difference when they do.
+`build_sqon` returns `{ sqon, summary, clauseCount, filterCount, notes? }` and executes nothing. Pass the resulting `sqon` to `execute_query` unchanged. Every clause is validated against the catalogue before a SQON is built, and one error is reported per invalid clause so that a whole batch can be corrected in a single resubmission. `summary` is a plain-English rendering of the built SQON, using the catalogue's display names, meant to be read back to the user for confirmation. `clauseCount` and `filterCount` differ when equivalent clauses on the same field merged during the build (two lower bounds on one field collapse to the stricter one, for example); `notes` explains the difference when they do.
 
-Two `in` clauses on the same field also merge, by combining their value lists: `status in ['active']` together with `status in ['pending']` becomes `status in ['active', 'pending']`, meaning "either". That is the correct reading on a single-valued field, where no document could satisfy both clauses at once. It is not conditional on the field's `isArray` yet, so on a field that can hold several values at once (`isArray: true`, or `null` where nothing declared it) the other reading, "every one of these must be present", is equally legitimate and the merge silently picks "either" regardless. `build_sqon` cannot express "every one of these" in v1: check `isArray` through `get_catalogue_fields`, and when you need that reading, hand-write a SQON using `all` and pass it to `execute_query` directly.
+Most clauses name one field with `fieldName` and take a value operator: `in`, `not-in`, `some-not-in`, `all`, `gt`, `gte`, `lt`, `lte`, `between`. A `wildcard` clause is the exception: it names several fields with `fieldNames` (plural) and matches when any one of them matches. Include `*` for a substring search, since `"TP53"` matches only a value that is exactly TP53 while `"*TP53*"` matches one containing it; `negate: true` expresses "does not contain". Which operators a field accepts is decided by the catalogue, not this tool, so read `operators` from `get_catalogue_fields`.
 
-Version 1 accepts the scalar operators (`in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`) and one `combination` for the whole call. Text-search operators and mixed AND/OR nesting are not yet supported: a query needing either still requires a hand-written `sqon` passed straight to `execute_query`. An unfiltered query needs no `build_sqon` call at all; pass `{"op":"and","content":[]}` to `execute_query` directly.
+An asterisk inside an `in`, `not-in`, `some-not-in`, or `all` value is rejected, because Arranger runs such a value as a regular expression rather than matching it literally: use `wildcard` instead. `execute_query`'s raw `sqon` parameter still accepts it, so an asterisk-bearing keyword value is reachable there but not through `build_sqon`.
+
+Two `in` clauses on the same field also merge, by combining their value lists: `status in ['active']` together with `status in ['pending']` becomes `status in ['active', 'pending']`, meaning "either". That is the correct reading on a single-valued field, where no document could satisfy both clauses at once. It is not conditional on the field's `isArray` yet, so on a field that can hold several values at once (`isArray: true`, or `null` where nothing declared it) the other reading, "every one of these must be present", is equally legitimate and the merge silently picks "either" regardless. Use the `all` operator directly when you need that reading.
+
+One `combination` applies to the whole call. Mixed AND/OR nesting and the planned `fuzzy` operator are not yet supported: a query needing either still requires a hand-written `sqon`. An unfiltered query needs no `build_sqon` call at all; pass `{"op":"and","content":[]}` to `execute_query` directly.
 
 **Resources** (readable data by URI):
 
@@ -74,7 +78,7 @@ For **LM Studio** and other model hosts, follow the client's documentation to ad
 
 A model connected over MCP should not construct SQON at all: `build_sqon` does it, from field, operator, and value inputs the model selects out of `get_catalogue_fields`. That is the whole point of the tool, so the rules below are enforced rather than merely documented, and a mistake is reported per clause instead of surfacing as an Arranger query error.
 
-The rest of this section is for a client constructing SQON directly, without the MCP server: a script, a pipeline, or the two cases `build_sqon` does not yet cover (text-search operators, and mixing AND and OR in one query). Use the [introspection API](./reference/05-introspection.md) to derive field names, types, and valid operators at runtime rather than hard-coding them. This keeps the client current when a catalogue mapping changes.
+The rest of this section is for a client constructing SQON directly, without the MCP server: a script, a pipeline, or the cases `build_sqon` does not yet cover (mixing AND and OR in one query, and the planned `fuzzy` operator). Use the [introspection API](./reference/05-introspection.md) to derive field names, types, and valid operators at runtime rather than hard-coding them. This keeps the client current when a catalogue mapping changes.
 
 Safe defaults for programmatic SQON construction:
 
@@ -92,6 +96,6 @@ For a detailed walkthrough of the SQON format and how to compose queries, see [B
 
 ## What's coming
 
-- **`build_sqon` text operators and mixed combinators**: version 1 covers scalar operators and one `and`/`or` per call; `wildcard` clauses and mixing AND and OR in one query are still to come
+- **`build_sqon` mixed combinators and fuzzy search**: mixing AND and OR in one query, and the `fuzzy` (edit-distance) operator, are still to come
 - **Authentication**: the MCP server currently requires no auth; support is planned
 - **Chat interface**: a conversational front-end for non-technical users to search catalogues in plain language

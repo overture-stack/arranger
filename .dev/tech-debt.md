@@ -62,15 +62,6 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Add an explicit max-depth check before or during parsing (a `zod.lazy` guard that tracks recursion depth and fails cleanly past a configurable limit, or a cheap pre-check walking the raw object once), so oversized nesting becomes a normal `{success:false}` validation failure instead of an engine-level exception.
 **Standalone:** yes.
 
-### Merging range filters (`gt`/`gte`/`lt`/`lte`) with date-string values silently produces `null` instead of a comparison
-
-**File:** `modules/sqon/src/builder/reduce.ts:66-75` (`mergeIntoExisting`)
-**Severity:** high
-**Kind:** bug (correctness)
-**Issue:** When two range filters on the same field are merged under `and`/`or`, the code does `Math.max(a, b)`/`Math.min(a, b)` after an `as number` cast, with no runtime check that the values are actually numeric. `gt`/`gte`/`lt`/`lte` explicitly support `'date'` fields (`operators/constants.ts:93`, `RANGE_APPLICABLE_TYPES`) and `SqonScalarValueSchema` permits string values for these ops, the ordinary shape for an ISO date filter. `Math.max`/`Math.min` on a date string coerces via `Number(...)`, which is `NaN` for a non-numeric string, and `NaN` serializes to `null`. Confirmed directly: merging `gt('donor.date_of_diagnosis','2020-01-01')` with `gt('donor.date_of_diagnosis','2021-06-15')` under `.and()` produces `{"op":"gt","content":{"fieldName":"donor.date_of_diagnosis","value":null}}`, silently corrupting an ordinary date-range-narrowing operation into a `null`-valued filter. `builder/index.test.ts`'s `reduceSqon` suite (lines 368-398) only exercises numeric values for these four ops; no test uses a date-typed (string) value.
-**Fix:** In `mergeIntoExisting`, detect non-numeric scalar values and compare via string ordering (correct for ISO 8601 dates) or `Date.parse`, falling back to numeric comparison only when both values are genuinely numbers. Add a date-value test case to the existing `reduceSqon` suite.
-**Standalone:** yes.
-
 ### `removeFilter` can leave a schema-invalid or semantically-empty filter instead of removing it, contradicting its own documented contract
 
 **File:** `modules/sqon/src/builder/index.ts:210-217` (`stripValues`), consumed at lines 225-226 and 244-250
@@ -618,14 +609,23 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Standalone:** no; needs a decision on the supported and intended Node versions before any file changes
 **Correction (2026-08-17):** `DEVELOPMENT.md:11` states the identical "v22 or higher" claim as `README.md:21` but isn't in this entry's file list; fix it in the same pass or it'll still disagree once the other three are resolved.
 
-### `docs/concepts.md` documents a `fuzzy` SQON operator that does not exist
+### `modules/sqon` reports operator field-type applicability that no catalogue agrees with
 
-**File:** `docs/concepts.md:57,92`
-**Severity:** high (a reader following this doc constructs an invalid SQON that fails schema validation)
-**Kind:** stale documentation
-**Issue:** Both lines present `fuzzy` as an existing, implemented operator on equal footing with `wildcard` ("Text-search operators (`wildcard`, `fuzzy`)..."). It isn't: `modules/sqon`'s leaf-node schema union has no `fuzzy` branch (`InLikeFilterSchema`/`AllFilterSchema`/`RangeLikeFilterSchema`/`BetweenFilterSchema`/`WildcardFilterSchema` only), and a filter with `op: "fuzzy"` fails validation outright. `CHANGELOG.md` (the entry that renamed `filter` to `wildcard`) explicitly says fuzzy/edit-distance matching "does not exist yet." `docs/reference/04-sqon-in-detail.md:224` gets this right (uses "fuzzy" only to name the not-yet-built concept being contrasted against); `concepts.md` is the only page with the incorrect claim. See also the roadmap's "Fuzzy (edit-distance) SQON operator" Features item, this is the real, planned-but-unbuilt op the doc is prematurely describing as shipped.
-**Fix:** Remove `fuzzy` from both `concepts.md` lines, or rephrase as "wildcard (and a planned future `fuzzy` operator, not yet implemented)."
-**Standalone:** yes; two-line docs fix.
+**File:** `modules/sqon/src/operators/index.ts` (`getSqonFieldOperatorDetails`), against `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts:11-21` (`getValidFieldOperators`)
+**Severity:** medium (a consumer trusting the module-level metadata advertises operators the catalogue rejects)
+**Kind:** bug (correctness), duplicated source of truth
+**Issue:** `getSqonFieldOperatorDetails()` reports `applicableTo: 'all'` for `in`, `not-in`, `some-not-in`, `all`, and `wildcard`, meaning every field type. `getValidFieldOperators` disagrees for three of the five: range-typed fields get `['in','not-in','gt','gte','lt','lte','between']`, enum-like fields get `['in','not-in','some-not-in','all','filter']`, and every other type gets `['in','not-in','filter']`. So `wildcard` is withheld from numeric and date fields, and `all` and `some-not-in` from those plus text fields. The catalogue is what actually gets enforced, since `apps/mcp-server`'s clause and SQON validation both check the introspected per-type lists. `build_sqon` hit this while building v2 and worked around it by having `describeOperators` say nothing about field types for an `applicableTo: 'all'` operator, rather than rendering it as "any field type" and advertising a clause the tool then rejects. `buildCatalogueIntrospection.ts` carries a comment acknowledging its own type sets were copied verbatim from `apps/search-server`, and names consolidation with `modules/sqon` as separate debt: this is that item, now with a concrete consumer.
+**Fix:** Give `modules/sqon` the authoritative per-type mapping and have `getValidFieldOperators` derive from it rather than restating it. Note this changes the published `get_sqon_schema`/`arranger://introspection/sqon` payload, since `applicableTo` is part of it, so it is not a silent internal fix. Once done, `describeOperators` in `apps/mcp-server/src/mcp/buildSqonTool.ts` can name field types again and its workaround comment should be removed.
+**Standalone:** no; changes a published introspection contract and touches two packages. Read the roadmap's SQON operator items first.
+
+### `integration-tests/mcp-server`'s tsconfig has never typechecked `apps/mcp-server` sources cleanly
+
+**File:** `integration-tests/mcp-server/tsconfig.json`, against `apps/mcp-server/src/mcp/buildSqonTool.ts` and `apps/mcp-server/src/mcp/executeQueryTool.ts`
+**Severity:** low (no runtime effect; the tests pass and the app's own typecheck is clean)
+**Kind:** build configuration
+**Issue:** `npx tsc --noEmit -p integration-tests/mcp-server` reports errors in `apps/mcp-server` sources that `npx tsc --noEmit -p apps/mcp-server` does not, because the two projects resolve different compiler options over the same files. Confirmed 2026-08-25: it reports a `catalogIntrospectionSchema` optional-property mismatch and a `clauses` argument mismatch in `buildSqonTool.ts`, plus four in `executeQueryTool.ts` (`SqonValidationResult.errors`, a `fields` record, and two `ArrangerSort` arrays). All of them are the same shape of complaint, an inferred-from-Zod type with optional properties assigned to a type requiring them, so the likely cause is a single differing option rather than seven separate defects. Nobody typechecks that project directly today (its `test` script runs `tsx`), so the errors are invisible in normal use and were only noticed while verifying that a change had introduced none of its own.
+**Fix:** Diff the two tsconfigs, align the option that differs, and either fix the resulting handful of genuine type errors or stop including app sources in that project's program. Worth doing before anything starts running `tsc` over it in CI, because the noise makes a real regression unfindable.
+**Standalone:** yes.
 
 ### `hits`'s `score` field is declared in the schema and documented as always populated, but the resolver never assigns it
 

@@ -112,13 +112,23 @@ const expectError = async (input: Record<string, unknown>, client: ArrangerClien
 const inClause = (fieldName: string, value: unknown) => ({ fieldName, operator: 'in', value });
 
 suite('BUILD_SQON_OPERATORS', () => {
-	test('offers only the single-field scalar operators v1 supports', () => {
-		assert.deepEqual([...BUILD_SQON_OPERATORS], ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between']);
+	test('offers every operator modules/sqon implements except the text operator it cannot build', () => {
+		assert.deepEqual(
+			[...BUILD_SQON_OPERATORS],
+			['in', 'not-in', 'some-not-in', 'gt', 'gte', 'lt', 'lte', 'between', 'all', 'wildcard'],
+		);
 	});
 
-	test('excludes the operators v1 deliberately withholds', () => {
-		for (const withheld of ['all', 'some-not-in', 'wildcard']) {
-			assert.ok(!BUILD_SQON_OPERATORS.includes(withheld as never), `${withheld} should not be offered`);
+	// `fuzzy` has no implementation in modules/sqon, and addFilterClause's text branch ignores
+	// `operator` and builds a wildcard clause regardless, so offering it would silently run a
+	// different query than the one asked for.
+	test('excludes the text operator that has no implementation', () => {
+		assert.ok(!BUILD_SQON_OPERATORS.includes('fuzzy' as never));
+	});
+
+	test('excludes every operator alias', () => {
+		for (const alias of ['=', '==', '>=', '<=', '>', '<', '!=', 'filter']) {
+			assert.ok(!BUILD_SQON_OPERATORS.includes(alias as never), `${alias} should not be offered`);
 		}
 	});
 
@@ -153,8 +163,25 @@ suite('describeOperators', () => {
 		assert.ok(!description.includes('"between"'));
 	});
 
-	test('renders an operator applicable to every field type in plain English', () => {
-		assert.ok(describeOperators(['in']).includes('applies to any field type'));
+	// modules/sqon reports these operators as applying to every field type, but a catalogue
+	// withholds them from some types, and `validateClauses` enforces the catalogue. Claiming "any
+	// field type" here would advertise a clause the tool then rejects, so the description says
+	// nothing about field types and lets the `clauses` array description name the catalogue instead.
+	test('claims no field types for an operator modules/sqon does not restrict', () => {
+		for (const operator of ['in', 'wildcard', 'all', 'some-not-in']) {
+			const description = describeOperators([operator]);
+			assert.ok(!description.includes('any field type'), `${operator} should not claim any field type`);
+			assert.ok(!description.includes('applies to'), `${operator} should not name field types at all`);
+			assert.ok(description.includes('value is'), `${operator} should still name its value type`);
+		}
+	});
+
+	test('names the field types for an operator modules/sqon does restrict', () => {
+		for (const operator of ['gt', 'between']) {
+			const description = describeOperators([operator]);
+			assert.ok(description.includes('applies to '), `${operator} should name its field types`);
+			assert.ok(description.includes('date'), `${operator} should list date among them`);
+		}
 	});
 
 	test('names the applicable field types for a type-restricted operator', () => {
@@ -215,9 +242,45 @@ suite('build_sqon input schema', () => {
 		assert.equal(parse(oneClause({ fieldName: 'a', operator: '=', value: 'A' })).success, false);
 	});
 
-	test('rejects the text operators, which v1 does not support', () => {
+	test('accepts a wildcard clause naming its fields with fieldNames', () => {
+		assert.equal(parse(oneClause({ fieldNames: ['a', 'b'], operator: 'wildcard', value: '*A*' })).success, true);
+		assert.equal(parse(oneClause({ fieldNames: ['a'], operator: 'wildcard', value: '*A*' })).success, true);
+	});
+
+	// The union discriminates on `operator`, so each branch carries only the field property its own
+	// operator takes. That enforces the fieldName/fieldNames split structurally, with no refinement.
+	test('rejects a wildcard clause that names its field with the singular fieldName', () => {
 		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'wildcard', value: '*A*' })).success, false);
-		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'fuzzy', value: '*A*' })).success, false);
+	});
+
+	test('rejects a scalar clause that names its fields with the plural fieldNames', () => {
+		assert.equal(parse(oneClause({ fieldNames: ['a'], operator: 'in', value: 'A' })).success, false);
+	});
+
+	test('rejects an empty fieldNames array, and an empty name within it', () => {
+		assert.equal(parse(oneClause({ fieldNames: [], operator: 'wildcard', value: '*A*' })).success, false);
+		assert.equal(parse(oneClause({ fieldNames: [''], operator: 'wildcard', value: '*A*' })).success, false);
+	});
+
+	test('rejects a non-string or empty wildcard value', () => {
+		assert.equal(parse(oneClause({ fieldNames: ['a'], operator: 'wildcard', value: 40 })).success, false);
+		assert.equal(parse(oneClause({ fieldNames: ['a'], operator: 'wildcard', value: '' })).success, false);
+	});
+
+	test('rejects "fuzzy", which has no implementation to build', () => {
+		assert.equal(parse(oneClause({ fieldNames: ['a'], operator: 'fuzzy', value: 'jon' })).success, false);
+		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'fuzzy', value: 'jon' })).success, false);
+	});
+
+	test('requires an array value for "all", which cannot take a bare scalar', () => {
+		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'all', value: ['A', 'B'] })).success, true);
+		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'all', value: 'A' })).success, false);
+		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'all', value: [] })).success, false);
+	});
+
+	test('accepts "some-not-in" on the in-like branch', () => {
+		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'some-not-in', value: ['A'] })).success, true);
+		assert.equal(parse(oneClause({ fieldName: 'a', operator: 'some-not-in', value: 'A' })).success, true);
 	});
 
 	test('requires exactly two bounds for "between"', () => {
@@ -546,6 +609,8 @@ suite('build_sqon existingSqon', () => {
 		assert.equal(output.clauseCount, 1);
 	});
 
+	// The alias is normalized before the catalogue check, not just before the fold: an existing SQON
+	// spelling `gte` as `>=` must not be reported as an operator this catalogue does not accept.
 	test('normalizes an operator alias in an existing SQON rather than rejecting it', async () => {
 		const { output } = await buildSqon({
 			catalogueId: 'participants',
@@ -580,9 +645,306 @@ suite('build_sqon existingSqon', () => {
 			clauses: [inClause('study', ['A'])],
 			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
 		});
-		assert.ok(message.includes('valid individually, but the resulting SQON is not'));
-		assert.ok(message.includes('unknown field "file.size"'));
+		assert.ok(message.startsWith('No SQON was built.'));
+		assert.ok(message.includes('existingSqon references unknown field "file.size"'));
 		assert.ok(message.includes('rebuild the query for "participants"'));
+	});
+
+	test('rejects an existing SQON whose operator does not fit the field it names in this catalogue', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['A'])],
+			existingSqon: { op: 'gt', content: { fieldName: 'donor.sex', value: 40 } },
+		});
+		assert.ok(message.includes('existingSqon operator "gt" is not valid for field "donor.sex"'));
+	});
+
+	// The regression this batching exists for: before it, validateClauses returned first and the
+	// existingSqon mismatch only surfaced on a second call, after the clauses had been fixed.
+	test('reports an unusable existingSqon and an invalid clause in the same response', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.sex', operator: 'gt', value: 40 }],
+			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
+		});
+		assert.ok(message.includes('existingSqon references unknown field "file.size"'));
+		assert.ok(message.includes('clauses[0]: '));
+		assert.ok(message.includes('rebuild the query for "participants"'));
+	});
+
+	test('reports a structurally invalid existingSqon alongside an invalid clause, not instead of it', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('not.a.field', ['A'])],
+			existingSqon: { op: 'in', value: ['A'] },
+		});
+		assert.ok(message.includes('existingSqon is not a valid SQON'));
+		assert.ok(message.includes('clauses[0]: unknown field "not.a.field"'));
+		// The rebuild advice speaks to a SQON built for another catalogue. A value that is not a SQON
+		// at all already carries its own remedy, so pointing at catalogues would be misdirection.
+		assert.ok(!message.includes('rebuild the query'));
+	});
+
+	test('lists existingSqon before the clauses, since a base query from another catalogue has to go first', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.sex', operator: 'gt', value: 40 }],
+			existingSqon: { op: 'in', content: { fieldName: 'file.size', value: ['A'] } },
+		});
+		assert.ok(message.indexOf('existingSqon references') < message.indexOf('clauses[0]: '));
+	});
+
+	test('does not offer the rebuild advice when only the clauses are at fault', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.sex', operator: 'gt', value: 40 }],
+			existingSqon: wrappedRoot,
+		});
+		assert.ok(message.includes('clauses[0]: '));
+		assert.ok(!message.includes('rebuild the query'));
+	});
+});
+
+suite('build_sqon text search', () => {
+	const wildcard = (fieldNames: string[], value: string) => ({ fieldNames, operator: 'wildcard', value });
+
+	test('builds a wildcard clause carrying every field it searches', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study', 'donor.sex'], '*A*')],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'wildcard', content: { fieldNames: ['study', 'donor.sex'], value: '*A*' } }],
+		});
+	});
+
+	test('negates a wildcard clause, which is how "does not contain" is expressed', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ ...wildcard(['study'], '*A*'), negate: true }],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'not',
+			content: [{ op: 'wildcard', content: { fieldNames: ['study'], value: '*A*' } }],
+		});
+	});
+
+	test('folds a wildcard clause alongside scalar clauses in one group', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('donor.sex', ['Male']), wildcard(['study'], '*A*')],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [
+				{ op: 'in', content: { fieldName: 'donor.sex', value: ['Male'] } },
+				{ op: 'wildcard', content: { fieldNames: ['study'], value: '*A*' } },
+			],
+		});
+	});
+
+	// reduceSqon has no merge rule for wildcard, so two text searches on the same fields stay
+	// separate rather than being collapsed the way two `in` clauses would be.
+	test('keeps two wildcard clauses on the same fields separate', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study'], '*A*'), wildcard(['study'], '*B*')],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [
+				{ op: 'wildcard', content: { fieldNames: ['study'], value: '*A*' } },
+				{ op: 'wildcard', content: { fieldNames: ['study'], value: '*B*' } },
+			],
+		});
+	});
+
+	test('summarizes a wildcard clause with display names joined by "or"', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study', 'donor.sex'], '*A*')],
+		});
+		assert.equal(output.summary, 'Study or Biological Sex matches "*A*"');
+	});
+
+	test('rejects a wildcard on a field type the catalogue withholds it from', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['donor.age_at_diagnosis'], '*4*')],
+		});
+		assert.ok(message.includes('operator "wildcard" is not valid for field "donor.age_at_diagnosis"'));
+		assert.ok(message.includes('(type "long")'));
+	});
+
+	test('reports every invalid field in one wildcard clause, as one clause error', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study', 'not.a.field', 'donor.age_at_diagnosis'], '*A*')],
+		});
+		assert.ok(message.includes('unknown field "not.a.field"'));
+		assert.ok(message.includes('operator "wildcard" is not valid for field "donor.age_at_diagnosis"'));
+		assert.equal(message.split('clauses[').length - 1, 1, 'one clause should report one error');
+	});
+
+	test('notes that a wildcard value without "*" matches the whole field, not a substring', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study'], 'A')],
+		});
+		const notes = output.notes as string[];
+		assert.ok(notes.some((note) => note.includes('contain no "*"')));
+	});
+
+	test('adds no such note when the value carries a wildcard character', async () => {
+		const withStar = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study'], '*A*')],
+		});
+		assert.equal(withStar.output.notes, undefined);
+
+		const withQuestionMark = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [wildcard(['study'], 'A?')],
+		});
+		assert.equal(withQuestionMark.output.notes, undefined);
+	});
+
+	test('accepts a wildcard clause inside existingSqon and extends it', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			existingSqon: { op: 'wildcard', content: { fieldNames: ['study'], value: '*A*' } },
+			clauses: [inClause('donor.sex', ['Male'])],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [
+				{ op: 'wildcard', content: { fieldNames: ['study'], value: '*A*' } },
+				{ op: 'in', content: { fieldName: 'donor.sex', value: ['Male'] } },
+			],
+		});
+	});
+});
+
+suite('build_sqon set-membership operators', () => {
+	test('builds an "all" clause requiring every value', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'study', operator: 'all', value: ['A', 'B'] }],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'all', content: { fieldName: 'study', value: ['A', 'B'] } }],
+		});
+		assert.equal(output.summary, 'Study includes all of "A" or "B"');
+	});
+
+	test('builds a "some-not-in" clause', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'study', operator: 'some-not-in', value: ['A'] }],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'some-not-in', content: { fieldName: 'study', value: ['A'] } }],
+		});
+	});
+
+	test('rejects negate on "some-not-in", which is already negative', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'study', operator: 'some-not-in', value: ['A'], negate: true }],
+		});
+		assert.ok(message.includes('double negative'));
+	});
+
+	test('rejects "all" and "some-not-in" on a field type the catalogue withholds them from', async () => {
+		for (const operator of ['all', 'some-not-in']) {
+			const message = await expectError({
+				catalogueId: 'participants',
+				combination: 'and',
+				clauses: [{ fieldName: 'donor.age_at_diagnosis', operator, value: [40] }],
+			});
+			assert.ok(
+				message.includes(`operator "${operator}" is not valid for field "donor.age_at_diagnosis"`),
+				`${operator} should be rejected on a long field`,
+			);
+		}
+	});
+});
+
+suite('build_sqon asterisk in a term-matched value', () => {
+	test('rejects an asterisk in an in-like value and points at the wildcard operator', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['*TP53*'])],
+		});
+		assert.ok(message.includes('contains "*"'));
+		assert.ok(message.includes('regular expression'));
+		assert.ok(message.includes('"wildcard"'));
+	});
+
+	test('checks every value, not only the first', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['A', 'B*'])],
+		});
+		assert.ok(message.includes('value "B*"'));
+	});
+
+	test('applies to every term-matched operator', async () => {
+		for (const operator of ['in', 'not-in', 'some-not-in', 'all']) {
+			const message = await expectError({
+				catalogueId: 'participants',
+				combination: 'and',
+				clauses: [{ fieldName: 'study', operator, value: ['*A*'] }],
+			});
+			assert.ok(message.includes('contains "*"'), `${operator} should reject an asterisked value`);
+		}
+	});
+
+	// A set reference and a missing-field sentinel are the other two magic in-like values, and
+	// neither contains an asterisk, so neither is caught by this check.
+	test('leaves set references and the missing-field sentinel alone', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['set_id:abc', '__missing__'])],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'in', content: { fieldName: 'study', value: ['set_id:abc', '__missing__'] } }],
+		});
+	});
+
+	test('leaves an asterisk in a wildcard value alone, which is where it belongs', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldNames: ['study'], operator: 'wildcard', value: '*TP53*' }],
+		});
+		assert.equal(output.filterCount, 1);
 	});
 });
 
@@ -607,7 +969,7 @@ suite('build_sqon clause validation', () => {
 				{ fieldName: 'donor.age_at_diagnosis', operator: 'gt', value: '40' },
 			],
 		});
-		assert.ok(message.includes('clauses[0]: Unknown field "not.a.field"'));
+		assert.ok(message.includes('clauses[0]: unknown field "not.a.field"'));
 		assert.ok(message.includes('clauses[2]: '));
 		assert.ok(!message.includes('clauses[1]: '));
 	});

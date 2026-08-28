@@ -222,7 +222,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 		);
 
 		assert.match(text, /No SQON was built/);
-		assert.match(text, /clauses\[0\]: Unknown field "not_a_field"/);
+		assert.match(text, /clauses\[0\]: unknown field "not_a_field"/);
 		assert.match(text, /clauses\[2\]: /);
 		assert.ok(!text.includes('clauses[1]: '), 'expected the valid clause not to be reported');
 	});
@@ -236,7 +236,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 			}),
 		);
 
-		assert.match(text, /operator "gt" is not valid for field "vital_status"/);
+		assert.match(text, /clauses\[0\]: operator "gt" is not valid for field "vital_status"/);
 	});
 
 	test("11.rejects an existing SQON built against another catalogue's fields", async () => {
@@ -252,7 +252,7 @@ export default ({ getClient }: BuildSqonEnv) => {
 			}),
 		);
 
-		assert.match(text, /unknown field "vital_status"/);
+		assert.match(text, /existingSqon references unknown field "vital_status"/);
 		assert.match(text, /rebuild the query for "catalogue-b"/);
 	});
 
@@ -286,12 +286,24 @@ export default ({ getClient }: BuildSqonEnv) => {
 		assert.match(text, /'gte'/, 'expected the error to name the canonical operator the alias maps to');
 	});
 
-	test('14.rejects the text operators, which this version of the tool does not build', async () => {
+	test('14.rejects a wildcard clause that names its field with the singular fieldName', async () => {
 		const text = getErrorText(
 			await callBuildSqon(getClient(), {
 				catalogueId: 'catalogue-a',
 				combination: 'and',
 				clauses: [{ fieldName: 'vital_status', operator: 'wildcard', value: 'ali*' }],
+			}),
+		);
+
+		assert.match(text, /Invalid arguments for tool build_sqon/);
+	});
+
+	test('14a.rejects "fuzzy", which has no implementation to build', async () => {
+		const text = getErrorText(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['vital_status'], operator: 'fuzzy', value: 'ali' }],
 			}),
 		);
 
@@ -403,5 +415,224 @@ export default ({ getClient }: BuildSqonEnv) => {
 			(structured.hits ?? []).map((hit) => hit.sample_id),
 			['b-001'],
 		);
+	});
+
+	test('20.reports an unusable existingSqon and an invalid clause in the same response', async () => {
+		const text = getErrorText(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-b',
+				combination: 'and',
+				// Invalid for two independent reasons: the clause names a field of catalogue-a, and so
+				// does the existing SQON.
+				clauses: [{ fieldName: 'vital_status', operator: 'in', value: ['Alive'] }],
+				existingSqon: {
+					op: 'and',
+					content: [{ op: 'in', content: { fieldName: 'age_at_diagnosis', value: [40] } }],
+				},
+			}),
+		);
+
+		assert.match(text, /existingSqon references unknown field "age_at_diagnosis"/);
+		assert.match(text, /clauses\[0\]: unknown field "vital_status"/);
+		assert.ok(
+			text.indexOf('existingSqon references') < text.indexOf('clauses[0]: '),
+			'expected the existingSqon problem to be listed before the clause problems',
+		);
+	});
+
+	test('21.builds a wildcard clause spanning several fields and summarizes them with "or"', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['analysis_id', 'vital_status'], operator: 'wildcard', value: '*a-00*' }],
+			}),
+		);
+
+		assert.deepEqual(built.sqon, {
+			op: 'and',
+			content: [{ op: 'wildcard', content: { fieldNames: ['analysis_id', 'vital_status'], value: '*a-00*' } }],
+		});
+		assert.match(built.summary, / or /, 'expected the summary to join the searched fields with "or"');
+	});
+
+	test('22.a built wildcard SQON runs through execute_query and matches on a substring', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['vital_status'], operator: 'wildcard', value: '*ceas*' }],
+			}),
+		);
+
+		const result = await getClient().callTool({
+			name: 'execute_query',
+			arguments: { catalogueId: 'catalogue-a', sqon: built.sqon, fields: ['analysis_id'] },
+		});
+		assert.ok(!result.isError, `execute_query rejected a built wildcard SQON: ${JSON.stringify(result)}`);
+		const structured = result.structuredContent as ExecuteQueryStructured;
+
+		// Matched case-insensitively against the whole value, so "*ceas*" finds both "Deceased" rows.
+		assert.equal(structured.total, 2);
+		assert.deepEqual((structured.hits ?? []).map((hit) => hit.analysis_id).sort(), ['a-002', 'a-005']);
+	});
+
+	test('23.a wildcard clause matches when any one of its fields matches', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				// Only analysis_id can match this pattern; vital_status never does. A clause spanning
+				// both must still return the analysis_id matches rather than requiring both to match.
+				clauses: [{ fieldNames: ['analysis_id', 'vital_status'], operator: 'wildcard', value: '*-004' }],
+			}),
+		);
+
+		const result = await getClient().callTool({
+			name: 'execute_query',
+			arguments: { catalogueId: 'catalogue-a', sqon: built.sqon, fields: ['analysis_id'] },
+		});
+		assert.ok(!result.isError, `execute_query rejected a built wildcard SQON: ${JSON.stringify(result)}`);
+		const structured = result.structuredContent as ExecuteQueryStructured;
+
+		assert.equal(structured.total, 1);
+		assert.deepEqual(
+			(structured.hits ?? []).map((hit) => hit.analysis_id),
+			['a-004'],
+		);
+	});
+
+	test('24.a negated wildcard excludes the matching documents', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['vital_status'], operator: 'wildcard', value: '*ceas*', negate: true }],
+			}),
+		);
+
+		const result = await getClient().callTool({
+			name: 'execute_query',
+			arguments: { catalogueId: 'catalogue-a', sqon: built.sqon, fields: ['analysis_id'] },
+		});
+		assert.ok(!result.isError, `execute_query rejected a negated wildcard SQON: ${JSON.stringify(result)}`);
+		const structured = result.structuredContent as ExecuteQueryStructured;
+
+		assert.equal(structured.total, 3);
+		assert.deepEqual((structured.hits ?? []).map((hit) => hit.analysis_id).sort(), ['a-001', 'a-003', 'a-004']);
+	});
+
+	test('25.notes that a wildcard value carrying no "*" matches the whole field value', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['vital_status'], operator: 'wildcard', value: 'Alive' }],
+			}),
+		);
+
+		assert.ok(built.notes, 'expected a note about the missing wildcard character');
+		assert.ok(
+			built.notes.some((note) => note.includes('contain no "*"')),
+			`expected a missing-asterisk note, got: ${JSON.stringify(built.notes)}`,
+		);
+	});
+
+	test('26.rejects a wildcard on a field type the catalogue withholds it from', async () => {
+		const text = getErrorText(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['age_at_diagnosis'], operator: 'wildcard', value: '*4*' }],
+			}),
+		);
+
+		assert.match(text, /operator "wildcard" is not valid for field "age_at_diagnosis"/);
+	});
+
+	test('27.rejects an asterisk in an in-like value, directing the caller to wildcard', async () => {
+		const text = getErrorText(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldName: 'vital_status', operator: 'in', value: ['*ceas*'] }],
+			}),
+		);
+
+		assert.match(text, /contains "\*"/);
+		assert.match(text, /"wildcard"/);
+	});
+
+	test('28.builds "all" and "some-not-in" clauses on a keyword field', async () => {
+		const all = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldName: 'vital_status', operator: 'all', value: ['Alive'] }],
+			}),
+		);
+		assert.deepEqual(all.sqon, {
+			op: 'and',
+			content: [{ op: 'all', content: { fieldName: 'vital_status', value: ['Alive'] } }],
+		});
+
+		const someNotIn = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldName: 'vital_status', operator: 'some-not-in', value: ['Alive'] }],
+			}),
+		);
+		assert.deepEqual(someNotIn.sqon, {
+			op: 'and',
+			content: [{ op: 'some-not-in', content: { fieldName: 'vital_status', value: ['Alive'] } }],
+		});
+	});
+
+	test('29.a built "all" SQON runs unchanged through execute_query', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldName: 'vital_status', operator: 'all', value: ['Deceased'] }],
+			}),
+		);
+
+		const result = await getClient().callTool({
+			name: 'execute_query',
+			arguments: { catalogueId: 'catalogue-a', sqon: built.sqon, fields: ['analysis_id'] },
+		});
+		assert.ok(!result.isError, `execute_query rejected a built "all" SQON: ${JSON.stringify(result)}`);
+		const structured = result.structuredContent as ExecuteQueryStructured;
+
+		assert.equal(structured.total, 2);
+		assert.deepEqual((structured.hits ?? []).map((hit) => hit.analysis_id).sort(), ['a-002', 'a-005']);
+	});
+
+	test('30.a multi-field wildcard SQON runs as an aggregations query', async () => {
+		const built = getStructured(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldNames: ['analysis_id', 'vital_status'], operator: 'wildcard', value: '*a-00*' }],
+			}),
+		);
+
+		const result = await getClient().callTool({
+			name: 'execute_query',
+			arguments: {
+				catalogueId: 'catalogue-a',
+				sqon: built.sqon,
+				queryType: 'aggregations',
+				aggregationFields: ['vital_status'],
+			},
+		});
+		assert.ok(!result.isError, `execute_query rejected a built wildcard SQON: ${JSON.stringify(result)}`);
+		const structured = result.structuredContent as ExecuteQueryStructured;
+
+		const vitalStatus = structured.aggregations?.vital_status;
+		assert.ok(vitalStatus?.buckets, 'expected buckets for vital_status');
+		const docCountsByKey = Object.fromEntries(vitalStatus.buckets.map((bucket) => [bucket.key, bucket.doc_count]));
+		assert.deepEqual(docCountsByKey, { Alive: 2, Deceased: 2, Unknown: 1 });
 	});
 };

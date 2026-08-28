@@ -244,7 +244,7 @@ Consumers that build on Arranger (portal frontends, and internally `modules/char
 
 ### MCP integration readiness
 
-_Priority: mixed per sub-item. One of six shipped (`build_sqon`, 2026-08-10); five open._
+_Priority: mixed per sub-item. One of six shipped (`build_sqon`, v1 2026-08-10, v2 2026-08-25); five open._
 
 Six improvements making Arranger a well-behaved upstream for an MCP server layer. Open: schema cache invalidation signal (ETag/schema hash, `high`), SQON documentation in schema descriptions, field descriptions in the generated schema, making invisible query defaults SDL-visible (research), and the accumulated `/docs` gap for the MCP surface.
 
@@ -318,7 +318,9 @@ This is a genuine prerequisite, not just adjacent work: access denial events (se
 
 _Priority: medium. Distinct from the `wildcard` operator already implemented._
 
-A `fuzzy` op doing Levenshtein matching via ES/OS `multi_match` with `fuzziness: "AUTO"`, same `fieldNames` shape as `wildcard`. Note `docs/concepts.md` already advertises this operator, so the published contract is fixed rather than free (see tech-debt).
+A `fuzzy` op doing Levenshtein matching via ES/OS `multi_match` with `fuzziness: "AUTO"`, same `fieldNames` shape as `wildcard`.
+
+Now also blocking `build_sqon` v2.1, which is otherwise ready: the tool shipped `wildcard` on 2026-08-25 and `fuzzy` is the one operator it cannot offer. A second `modules/sqon` fix rides with this one: `addFilterClause`'s text branch dispatches on `'fieldNames' in params` and ignores `operator` entirely, so it already returns a `wildcard` clause for a `fuzzy` request with no error (measured). Once both text operators share the plural shape, no caller can distinguish them and the dispatch has to read `operator`.
 
 [Detail: implementation notes, schema shape, and the AND-versus-OR design question](docs/atlas/roadmap/sqon-operators.md#fuzzy-edit-distance-sqon-operator)
 

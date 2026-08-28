@@ -10,48 +10,79 @@ import {
 	type SqonNode,
 	type SqonScalarOrArray,
 	SqonSchema,
+	type TextFilter,
 } from '@overture-stack/sqon';
 import { z as zod } from 'zod';
 
 import { validateClauses } from '#arranger/clauseValidation.js';
 import { type ArrangerClient, ArrangerRequestError } from '#arranger/client.js';
-import { validateSqon, type CatalogueQueryContext } from '#arranger/queryValidation.js';
+import { validateSqon, validateSqonFields, type CatalogueQueryContext } from '#arranger/queryValidation.js';
 import { countFilterClauses, summarizeSqon } from '#arranger/sqonSummary.js';
 import { catalogueIntrospectionSchema, type ArrangerCatalogueIntrospection } from '#arranger/types.js';
 import { type McpServerDeps } from '#server.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
 
 /**
- * v1 operators, grouped by the shape of their input values, to match the branching of the
+ * Operators grouped by the shape of their input values, to match the branching of the
  * discriminated union of the clause schema:
  *   - in-like operators take a scalar or an array
  *   - range operators take one bound
  *   - between takes exactly two
+ *   - all takes an array, never a bare scalar
+ *   - wildcard takes one search string, and names its fields with `fieldNames` (plural)
+ *
+ * Canonical names only, no aliases (`=`, `>=`, `filter`): `addFilterClause` dispatches scalar
+ * operators on the literal operator string and returns `undefined` for an alias, so accepting one
+ * would silently drop the clause rather than build an equivalent SQON.
+ *
+ * `fuzzy` is deliberately absent. It has no implementation in `modules/sqon`, and the text branch
+ * of `addFilterClause` ignores `operator` entirely, so a `fuzzy` clause there builds a `wildcard`
+ * clause with no error: listing it would offer an operator that silently runs a different query.
  */
-const IN_LIKE_OPERATORS = ['in', 'not-in'] as const;
+const IN_LIKE_OPERATORS = ['in', 'not-in', 'some-not-in'] as const;
 const RANGE_OPERATORS = ['gt', 'gte', 'lt', 'lte'] as const;
 const BETWEEN_OPERATOR = 'between' as const;
+const ALL_OPERATOR = 'all' as const;
+const WILDCARD_OPERATOR = 'wildcard' as const;
 
 /**
- * Accepted operators for v1 of `build_sqon` (single-field scalar operators only).
- * Canonical names only, no aliases. Used by tests to assert each accepted operator is described
- * exactly once, and no rejected one is described at all.
+ * Every operator `build_sqon` accepts, derived from the per-shape groups rather than restated, so
+ * the aggregate cannot drift from what the schema actually takes. Used by tests to assert each
+ * accepted operator is described exactly once, and no rejected one is described at all.
  */
-export const BUILD_SQON_OPERATORS = [...IN_LIKE_OPERATORS, ...RANGE_OPERATORS, BETWEEN_OPERATOR] as const;
+export const BUILD_SQON_OPERATORS = [
+	...IN_LIKE_OPERATORS,
+	...RANGE_OPERATORS,
+	BETWEEN_OPERATOR,
+	ALL_OPERATOR,
+	WILDCARD_OPERATOR,
+] as const;
 
 /**
  * Generates a description for the `operator` input of the `build_sqon` tool. Generated per-branch,
  * rather than hard-coded once to include all operator, in order to reduce context bloat.
+ *
+ * An `applicableTo` of `all` is rendered by saying nothing about field types, rather than by
+ * claiming "any field type", which would be wrong. `modules/sqon` reports the field types an
+ * operator generically applies to, while a catalogue advertises its own per-type operator lists,
+ * and the two disagree: `wildcard`, `all`, and `some-not-in` are all `all` here but are withheld
+ * from range-typed fields (and, for the latter two, from text fields) by catalogue introspection,
+ * which is what `validateClauses` enforces. Staying silent keeps this text honest without copying
+ * that classification into this package (tracked tech-debt), and the `clauses` array description
+ * already names the catalogue as the authority on which operators a field accepts, once, rather
+ * than repeating it on every unrestricted operator here.
+ *
  * @param operators - The operators this union branch accepts.
- * @returns A lead sentence followed by one line per operator, naming its field types and value type.
+ * @returns A lead sentence followed by one line per operator, naming its value type and, where
+ * `modules/sqon` restricts it, its field types.
  */
 export const describeOperators = (operators: readonly string[]): string => {
 	const operatorsSet = new Set<string>(operators);
 	const operatorDescriptions = getSqonFieldOperatorDetails()
 		.filter(({ op }) => operatorsSet.has(op))
 		.map(({ applicableTo, op, valueType }) => {
-			const fieldTypes = applicableTo === 'all' ? 'any field type' : applicableTo.join(', ');
-			return `- "${op}": applies to ${fieldTypes}; value is ${valueType}`;
+			const fieldTypes = applicableTo === 'all' ? '' : `applies to ${applicableTo.join(', ')}; `;
+			return `- "${op}": ${fieldTypes}value is ${valueType}`;
 		});
 
 	return [
@@ -82,6 +113,19 @@ const clauseBase = () => ({
 		),
 });
 
+const textClauseBase = () => ({
+	fieldNames: zod
+		.array(zod.string().min(1))
+		.min(1)
+		.describe(
+			'Dot-notation field names from get_catalogue_fields, searched together: a document matches when any one of them matches. Use fieldNames (plural) only for text search; every other operator takes fieldName (singular).',
+		),
+	negate: zod
+		.boolean()
+		.optional()
+		.describe('Wrap this one clause in a "not". This is how to express "does not contain".'),
+});
+
 const clauseSchema = () =>
 	zod.discriminatedUnion('operator', [
 		zod.object({
@@ -101,6 +145,24 @@ const clauseSchema = () =>
 				.array(rangeValue())
 				.length(2)
 				.describe('Exactly two bounds, [min, max], ascending and inclusive at both ends.'),
+		}),
+		zod.object({
+			...clauseBase(),
+			operator: zod.literal(ALL_OPERATOR).describe(describeOperators([ALL_OPERATOR])),
+			value: zod
+				.array(scalarValue())
+				.min(1)
+				.describe('Every value the field must contain. An array even for one value, never a bare scalar.'),
+		}),
+		zod.object({
+			...textClauseBase(),
+			operator: zod.literal(WILDCARD_OPERATOR).describe(describeOperators([WILDCARD_OPERATOR])),
+			value: zod
+				.string()
+				.min(1)
+				.describe(
+					'The search string, matched case-insensitively against the whole field value. Include "*" for substring search: "*TP53*" finds a value containing TP53, while "TP53" matches only a value that is exactly TP53. "?" matches one character.',
+				),
 		}),
 	]);
 
@@ -230,6 +292,93 @@ type BuildSqonClause = zod.infer<ReturnType<typeof clauseSchema>>;
 const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
 
 /**
+ * An `existingSqon` input after validation: the parsed, normalized node when it is usable, plus
+ * every problem found with it. The two are independent by design, so the caller can collect these
+ * errors alongside the clause errors and report the whole batch at once.
+ *
+ * `sqon` is absent whenever `errors` is non-empty, and a caller must never fold an `existingSqon`
+ * that came back with errors: for a structural failure there is nothing to fold, and folding past a
+ * catalogue mismatch would build a SQON the target catalogue cannot run.
+ *
+ * `catalogueMismatch` separates the two failures, because they take different advice. A SQON naming
+ * fields this catalogue does not have is usually one built for another catalogue, and the fix is to
+ * rebuild. A value that is not a SQON at all carries its own remedy in its message, and telling the
+ * caller to consider which catalogue it came from would point at the wrong thing.
+ */
+type ExistingSqonResolution = { sqon?: SqonNode; errors: string[]; catalogueMismatch: boolean };
+
+/**
+ * Validates the optional `existingSqon` input against the shared SQON schema and then against the
+ * catalogue, without stopping the caller from validating the new clauses too.
+ *
+ * The catalogue check runs here, before the fold, rather than on the folded result: a fold never
+ * invents a field name or rewrites a leaf's operator, so every leaf of the output comes from either
+ * this input or a clause, and checking both inputs separately catches the same problems one
+ * round-trip earlier. Checking the folded SQON instead meant a call carrying both an invalid clause
+ * and an `existingSqon` from another catalogue only ever reported the clauses, hiding the mismatch
+ * behind a resubmission.
+ *
+ * Structural failure short-circuits the catalogue check, since there is no tree to walk, but it is
+ * still returned as an error rather than thrown, so the caller can report it next to clause errors.
+ *
+ * @param raw - The unvalidated `existingSqon` argument, or undefined when the caller omitted it.
+ * @param context - The target catalogue's fields and per-type operator rules from introspection.
+ *
+ * @returns The normalized SQON to fold onto, or the reasons it cannot be used.
+ */
+const resolveExistingSqon = (raw: unknown, context: CatalogueQueryContext): ExistingSqonResolution => {
+	if (raw === undefined) {
+		return { catalogueMismatch: false, errors: [] };
+	}
+
+	const parsed = SqonSchema.safeParse(raw);
+	if (!parsed.success) {
+		const issues = parsed.error.issues.map((issue) => `  - at ${issue.path.join('.') || 'root'}: ${issue.message}`);
+		return {
+			catalogueMismatch: false,
+			errors: [
+				`existingSqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existingSqon to start a new query.\n${issues.join('\n')}`,
+			],
+		};
+	}
+
+	const sqon = normalizeSqonNode(parsed.data);
+	// Normalized first, so an operator alias in an existing SQON is checked in its canonical form
+	// rather than rejected as an operator the catalogue does not advertise.
+	const errors = validateSqonFields(sqon, context, { subject: 'existingSqon' });
+
+	return errors.length > 0 ? { catalogueMismatch: true, errors } : { catalogueMismatch: false, sqon, errors };
+};
+
+/**
+ * Composes the single error result for a call whose inputs did not validate, listing every problem
+ * found across `existingSqon` and the clauses so the whole batch can be fixed in one resubmission.
+ *
+ * @param errors - Every validation message, `existingSqon` first.
+ * @param catalogueId - The catalogue the call targeted, named in the rebuild advice.
+ * @param catalogueMismatch - Whether `existingSqon` named fields this catalogue does not have, the
+ * one failure the rebuild advice speaks to. Withheld otherwise, since it is misdirection when the
+ * clauses alone are at fault, or when `existingSqon` is not a SQON at all.
+ *
+ * @returns The message body for the error result.
+ */
+const composeValidationError = ({
+	catalogueId,
+	catalogueMismatch,
+	errors,
+}: {
+	catalogueId: string;
+	catalogueMismatch: boolean;
+	errors: string[];
+}): string => {
+	const rebuildAdvice = catalogueMismatch
+		? `\nIf existingSqon came from a different catalogue, drop it and rebuild the query for "${catalogueId}".`
+		: '';
+
+	return `No SQON was built. Fix everything listed, then resubmit the whole batch:\n${errors.join('\n')}${rebuildAdvice}`;
+};
+
+/**
  * If `sqon` already carries a plain (non-negated) "in" leaf on `fieldName`, with no `pivot`,
  * returns a new sqon with that leaf's value unioned with `value`. Returns `undefined` when there
  * is no such leaf, so the caller folds the clause normally instead.
@@ -285,8 +434,8 @@ const mergeIntoExistingInClause = (
  * Folds every clause into one SQON, making one `addFilterClause` call per clause, except a plain
  * "in" clause that matches a field already present, which is merged into the existing leaf's
  * value instead (see `mergeIntoExistingInClause`). Internal to the handler: the model only ever
- * sees the single `build_sqon` call. `reduceSqon` still runs inside each `addFilterClause` fold,
- * so every other equivalent-clause merge (`not-in`, `all`, range bounds) still happens as before.
+ * sees the single `build_sqon` call. `reduceSqon` still runs inside each fold, so every other
+ * equivalent-clause merge (`not-in`, `all`, range bounds) still happens as before.
  *
  * @param input.clauses - The list of clauses provided to the `build_sqon` tool
  * @param input.combination - The combination operator provided to the `build_sqon` tool
@@ -315,20 +464,36 @@ const foldClauses = ({
 			}
 		}
 
-		const params: ScalarFilter = {
-			combination,
-			existing: sqon,
-			fieldName: clause.fieldName,
-			negate: clause.negate ?? false,
-			operator: clause.operator,
-			value: clause.value,
-		};
+		const shared = { combination, existing: sqon, negate: clause.negate ?? false };
 
-		// `addFilterClause` dispatches scalar operators through a switch with no default, and
-		// returns undefined for anything outside it: a text operator, an operator alias, or an
-		// operator added to modules/sqon but not to buildScalarClause.
-		const next = addFilterClause(params);
-		// for v1 of build_sqon, this is unreachable. This guard exists as a failsafe for v2
+		// Two calls rather than one call on a union-typed object: `addFilterClause` is overloaded,
+		// and an overloaded signature will not accept `ScalarFilter | TextFilter`. Each argument is
+		// still checked against its own overload, so a signature change in modules/sqon breaks this
+		// at compile time.
+		//
+		// Dispatched on `operator`, the input union's own discriminator, rather than on whether a
+		// `fieldNames` key is present: an explicitly-present `undefined` key makes a key-presence
+		// test answer wrongly, and the operator is what actually decides the shape.
+		//
+		// `addFilterClause` dispatches scalar operators through a switch with no default and returns
+		// undefined for anything outside it: an operator alias, or an operator added to modules/sqon
+		// but not to buildScalarClause. It cannot catch a bad text operator, because its text branch
+		// ignores `operator` and builds a wildcard clause regardless, which is one of the reasons
+		// `fuzzy` stays out of the enum above.
+		const next =
+			clause.operator === WILDCARD_OPERATOR
+				? addFilterClause({
+						...shared,
+						fieldNames: clause.fieldNames,
+						operator: clause.operator,
+						value: clause.value,
+					} satisfies TextFilter)
+				: addFilterClause({
+						...shared,
+						fieldName: clause.fieldName,
+						operator: clause.operator,
+						value: clause.value,
+					} satisfies ScalarFilter);
 		if (next === undefined) {
 			throw new Error(`clauses[${index}]: operator "${clause.operator}" produced no filter clause.`);
 		}
@@ -378,6 +543,7 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 				'Before calling this tool you MUST call get_catalogue_fields for the catalogue, to get valid field names and the operators each field type accepts. ' +
 				'State your understanding of the query in plain English and confirm it with the user before calling: this tool does not ask them to confirm. ' +
 				'Submit every condition as one call with multiple clauses, not one call per condition. ' +
+				'For substring or text search across one or more fields, use the "wildcard" operator with fieldNames (plural) rather than putting "*" in a value. ' +
 				'This tool only builds a filter. Pass the returned "sqon" to execute_query, unchanged, to run it.' +
 				'For an unfiltered query (i.e. "show me all data"), skip this tool and pass {"op":"and","content":[]} to execute_query.',
 			inputSchema,
@@ -392,53 +558,66 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 				const { fields, operators } = resolution.introspection;
 				const context: CatalogueQueryContext = { fields, operators };
 
-				let existingSqon: SqonNode | undefined;
-				if (rawExistingSqon !== undefined) {
-					const parsed = SqonSchema.safeParse(rawExistingSqon);
-					if (!parsed.success) {
-						const issues = parsed.error.issues.map(
-							(issue) => `- at ${issue.path.join('.') || 'root'}: ${issue.message}`,
-						);
-						return errorResult(
-							`existingSqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existingSqon to start a new query.\n${issues.join('\n')}`,
-						);
-					}
-					existingSqon = normalizeSqonNode(parsed.data);
-				}
-
-				const clauseErrors = validateClauses(clauses, context);
-				if (clauseErrors.length > 0) {
+				// Both inputs are validated before either is acted on, and their errors are reported
+				// together: an invalid clause and an unusable existingSqon in the same call are one
+				// resubmission to fix, not two. `existingSqon` errors lead, since a base query built for
+				// another catalogue has to be dropped before the clause fixes are worth making.
+				const existing = resolveExistingSqon(rawExistingSqon, context);
+				const errors = [...existing.errors, ...validateClauses(clauses, context)];
+				if (errors.length > 0) {
 					return errorResult(
-						`No SQON was built. Fix every clause listed, then resubmit the whole batch:\n${clauseErrors.join('\n')}`,
+						composeValidationError({
+							catalogueId,
+							catalogueMismatch: existing.catalogueMismatch,
+							errors,
+						}),
 					);
 				}
 
-				const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon }));
+				const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon: existing.sqon }));
 
-				// Catches what the input schema cannot: fields referenced by existing_sqon that this
-				// catalogue does not have, and any structural surprise from the fold itself.
+				// A failsafe, not a user-facing check: every field name and operator in this SQON was
+				// already validated on the way in, as either a clause or part of existingSqon, so a
+				// failure here means the fold itself produced something the catalogue cannot run.
+				// Reaching it is a defect in this tool rather than a fixable input, which is why the
+				// message says not to retry. Kept because v2 and v3 add folds this cannot yet see.
 				const validation = validateSqon(sqon, context);
 				if (!validation.valid) {
 					return errorResult(
-						`The clauses were valid individually, but the resulting SQON is not:\n- ${validation.errors.join('\n- ')}\nIf existingSqon came from a different catalogue, rebuild the query for "${catalogueId}" instead of extending it.`,
+						`build_sqon combined valid inputs into an invalid SQON, so nothing was returned:\n- ${validation.errors.join('\n- ')}\nThis is a defect in the tool, not in the request: resubmitting the same inputs will not help. Tell the user what happened rather than retrying.`,
 					);
 				}
 
-				const submittedCount = clauses.length + (existingSqon ? countFilterClauses(existingSqon) : 0);
+				const submittedCount = clauses.length + (existing.sqon ? countFilterClauses(existing.sqon) : 0);
 				const filterCount = countFilterClauses(sqon);
-				const notes =
-					filterCount < submittedCount
-						? [
-								`${submittedCount} filter clauses reduced to ${filterCount}: clauses on the same field and operator were merged into one. The summary describes the merged query.`,
-							]
-						: undefined;
+				const notes: string[] = [];
+
+				if (filterCount < submittedCount) {
+					notes.push(
+						`${submittedCount} filter clauses reduced to ${filterCount}: clauses on the same field and operator were merged into one. The summary describes the merged query.`,
+					);
+				}
+
+				// A wildcard value carrying no wildcard character is matched against the whole field
+				// value, so it finds an exact term rather than a substring. That is a legitimate query,
+				// which is why this is a note rather than a rejection, but it is rarely what a text
+				// search was reaching for and the difference is invisible in the result.
+				const exactTermSearches = clauses.filter(
+					(clause) => clause.operator === WILDCARD_OPERATOR && !/[*?]/.test(clause.value),
+				);
+				if (exactTermSearches.length > 0) {
+					const values = exactTermSearches.map((clause) => `"${clause.value}"`).join(', ');
+					notes.push(
+						`Wildcard ${exactTermSearches.length === 1 ? 'value' : 'values'} ${values} contain no "*", so ${exactTermSearches.length === 1 ? 'it matches' : 'they match'} only a field equal to the whole string, not one containing it. Rebuild with "*" around the term if a substring search was meant.`,
+					);
+				}
 
 				return successResult({
 					sqon,
 					summary: summarizeSqon(sqon, fields),
 					clauseCount: submittedCount,
 					filterCount,
-					...(notes ? { notes } : {}),
+					...(notes.length > 0 ? { notes } : {}),
 				});
 			} catch (error) {
 				return errorResult(
