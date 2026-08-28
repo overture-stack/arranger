@@ -50,6 +50,8 @@ Two `in` clauses on the same field also merge, by combining their value lists: `
 
 One `combination` applies to the whole call. Mixed AND/OR nesting and the planned `fuzzy` operator are not yet supported: a query needing either still requires a hand-written `sqon`. An unfiltered query needs no `build_sqon` call at all; pass `{"op":"and","content":[]}` to `execute_query` directly.
 
+`execute_query` takes field names exactly as `get_catalogue_fields` reports them, but its **results** are keyed by the names Arranger's generated GraphQL schema uses, which are not always the same string. A name carrying a character GraphQL disallows is rewritten for the schema: dots separating an aggregation path become `__`, any other disallowed character becomes `_`, and a leading digit gets an `_` prefix. So a request for `donor-info.age-at-diagnosis` comes back as `donor_info { age_at_diagnosis }` under `hits`, and as `donor_info__age_at_diagnosis` under `aggregations`. Field names inside a `sqon` are never rewritten, in either direction: a SQON travels as a query variable rather than as part of the query document, so it always uses the raw name.
+
 **Resources** (readable data by URI):
 
 - `arranger://introspection/server`: server-wide catalogue inventory

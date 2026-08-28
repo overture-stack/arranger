@@ -36,6 +36,21 @@ const mcpPort = stringToNumber(process.env.MCP_TEST_PORT, 3199);
 
 const arrangerBaseUrl = `http://127.0.0.1:${arrangerPort}`;
 
+/**
+ * Expands a catalogue's configured field names into the full set introspection reports. A config
+ * lists only leaves, but Arranger also reports a container entry for every parent of a dotted path
+ * (`donor-info` alongside `donor-info.age-at-diagnosis`), so deriving them here keeps the expected
+ * field lists in step with the configs rather than hardcoding the containers.
+ */
+const withContainerFields = (fieldNames: string[]): string[] => [
+	...new Set(
+		fieldNames.flatMap((fieldName) => {
+			const segments = fieldName.split('.');
+			return segments.map((_, index) => segments.slice(0, index + 1).join('.'));
+		}),
+	),
+];
+
 const catalogueConfigs = [
 	{
 		catalogId: catalogueABase.catalogId,
@@ -43,7 +58,7 @@ const catalogueConfigs = [
 		esIndex: catalogueABase.esIndex,
 		mappings: catalogueAMappings,
 		data: catalogueAData,
-		extendedFieldNames: catalogueABase.extended.map((field) => field.fieldName),
+		extendedFieldNames: withContainerFields(catalogueABase.extended.map((field) => field.fieldName)),
 	},
 	{
 		catalogId: catalogueBBase.catalogId,
@@ -51,7 +66,7 @@ const catalogueConfigs = [
 		esIndex: catalogueBBase.esIndex,
 		mappings: catalogueBMappings,
 		data: catalogueBData,
-		extendedFieldNames: catalogueBBase.extended.map((field) => field.fieldName),
+		extendedFieldNames: withContainerFields(catalogueBBase.extended.map((field) => field.fieldName)),
 	},
 ];
 

@@ -356,4 +356,115 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		const ids = (structured.hits ?? []).map((hit) => hit.analysis_id).sort();
 		assert.deepEqual(ids, ['a-001', 'a-003']);
 	});
+
+	// Catalogue B carries three fields whose raw ES names GraphQL disallows: `ca19-9_level`,
+	// `2020_baseline`, and the object path `donor-info.age-at-diagnosis`. The generated schema
+	// exposes them under sanitized names, so these tests pin the MCP server to the same rules the
+	// schema was built with. Before that, execute_query rejected all three outright.
+	//
+	// Both halves of the round trip are asserted: the sanitized names the response is keyed by,
+	// and the values behind them. The values matter as much as the keys, because the two are
+	// resolved by different code with different needs. This server sanitizes names on the way into
+	// the query document, while Arranger has to send Elasticsearch the *raw* names to read the
+	// values back. A regression in either direction is quiet, showing up as a `null` value or an
+	// empty aggregation under a key that still looks correct.
+	//
+	// Dataset reference (test/assets/catalogue_b.data.json):
+	//   b-001 ca19-9 12.5 low  age 47 | b-002 ca19-9 37.5 high age 61
+	test('18.hits query addresses fields whose raw names GraphQL disallows', async () => {
+		const result = await callExecuteQuery(getClient(), {
+			catalogueId: 'catalogue-b',
+			sqon: EMPTY_ROOT_SQON,
+			fields: ['sample_id', 'ca19-9_level', '2020_baseline'],
+			sort: [{ fieldName: 'sample_id', order: 'asc' }],
+		});
+		const structured = getStructured(result);
+
+		assert.equal(structured.total, 2);
+		// Hits come back under the schema's names, not the raw introspection names: a hyphen
+		// becomes `_`, and a leading digit gets an `_` prefix. A name the server had not sanitized
+		// the same way would not appear in the response at all.
+		assert.deepEqual(structured.hits, [
+			{ sample_id: 'b-001', ca19_9_level: 12.5, _2020_baseline: 'low' },
+			{ sample_id: 'b-002', ca19_9_level: 37.5, _2020_baseline: 'high' },
+		]);
+	});
+
+	test('19.hits query traverses an object container whose name GraphQL disallows', async () => {
+		const result = await callExecuteQuery(getClient(), {
+			catalogueId: 'catalogue-b',
+			sqon: EMPTY_ROOT_SQON,
+			fields: ['sample_id', 'donor-info.age-at-diagnosis'],
+			sort: [{ fieldName: 'sample_id', order: 'asc' }],
+		});
+		const structured = getStructured(result);
+
+		assert.equal(structured.total, 2);
+		// The container segment is sanitized too, not just the leaf: the selection set has to nest
+		// `age_at_diagnosis` under `donor_info` for the schema to accept the query at all, and the
+		// object nesting has to survive into the compacted hit.
+		assert.deepEqual(structured.hits, [
+			{ sample_id: 'b-001', donor_info: { age_at_diagnosis: 47 } },
+			{ sample_id: 'b-002', donor_info: { age_at_diagnosis: 61 } },
+		]);
+	});
+
+	test('20.aggregations key off the sanitized flat name, not just dot-to-underscore', async () => {
+		const result = await callExecuteQuery(getClient(), {
+			catalogueId: 'catalogue-b',
+			sqon: EMPTY_ROOT_SQON,
+			queryType: 'aggregations',
+			aggregationFields: ['ca19-9_level', '2020_baseline', 'donor-info.age-at-diagnosis'],
+		});
+		const structured = getStructured(result);
+
+		// Dots become `__` and every other disallowed character becomes `_`, so both rules show
+		// up in one key: `donor-info.age-at-diagnosis` -> `donor_info__age_at_diagnosis`.
+		assert.deepEqual(Object.keys(structured.aggregations ?? {}).sort(), [
+			'_2020_baseline',
+			'ca19_9_level',
+			'donor_info__age_at_diagnosis',
+		]);
+
+		// `stats` for the two numerics, `buckets` for the keyword. A non-zero `count` is the part
+		// that proves the agg ran against the real ES field: aggregating on a name Elasticsearch
+		// does not have still returns a well-formed, empty result.
+		assert.deepEqual(structured.aggregations?.ca19_9_level?.stats, {
+			min: 12.5,
+			max: 37.5,
+			avg: 25,
+			sum: 50,
+			count: 2,
+		});
+		assert.deepEqual(structured.aggregations?.donor_info__age_at_diagnosis?.stats, {
+			min: 47,
+			max: 61,
+			avg: 54,
+			sum: 108,
+			count: 2,
+		});
+
+		const baseline = structured.aggregations?._2020_baseline;
+		assert.ok(baseline?.buckets, 'expected buckets for 2020_baseline');
+		assert.deepEqual(Object.fromEntries(baseline.buckets.map((bucket) => [bucket.key, bucket.doc_count])), {
+			high: 1,
+			low: 1,
+		});
+	});
+
+	// A SQON travels as a GraphQL variable, never inside the query document, so its field names are
+	// never parsed as GraphQL identifiers and stay raw. This is the asymmetry with the sanitized
+	// `fields`/`aggregationFields` above, and the reason build_sqon needed no change.
+	test('21.SQON filter clauses keep the raw field name a sanitized selection cannot use', async () => {
+		const result = await callExecuteQuery(getClient(), {
+			catalogueId: 'catalogue-b',
+			sqon: { op: 'gt', content: { fieldName: 'ca19-9_level', value: 20 } },
+			fields: ['sample_id', 'ca19-9_level'],
+		});
+		const structured = getStructured(result);
+
+		// b-001 is 12.5 and b-002 is 37.5, so filtering on the raw hyphenated name selects b-002.
+		assert.equal(structured.total, 1);
+		assert.deepEqual(structured.hits, [{ sample_id: 'b-002', ca19_9_level: 37.5 }]);
+	});
 };
