@@ -120,6 +120,11 @@ export type SqonBuilderHandle = {
 	 * `op` already exists at the top level of the current SQON, it is replaced; otherwise the new
 	 * filter is appended. Never touches a pivoted filter on the same field and op: this always
 	 * constructs an unpivoted leaf, so replacing a pivoted one would silently drop its nested scope.
+	 *
+	 * Throws if the current SQON's top level is a `not` combination. A `not`'s children are each
+	 * independently negated, so replacing or adding a child there would silently assert the opposite
+	 * of the requested condition instead of setting it. Reconstruct the SQON without a top-level `not`
+	 * before calling `setFilter`.
 	 */
 	setFilter: <K extends SqonFieldFilterKey>(
 		fieldName: string,
@@ -260,6 +265,15 @@ const createBuilder = (sqon: SqonNode): SqonBuilderHandle => {
 		op: K,
 		value: SqonFieldFilterTypeMap[K],
 	): SqonBuilderHandle => {
+		if (isGroupNode(_sqon) && _sqon.op === 'not') {
+			throw new Error(
+				`setFilter cannot target field "${fieldName}" while the current SQON's top level is a ` +
+					`'not' combination: its children are each independently negated, so replacing or adding ` +
+					`a child there would assert the opposite of the requested condition. Reconstruct the ` +
+					`SQON without a top-level 'not' before calling setFilter.`,
+			);
+		}
+
 		const normalizedValue = ARRAY_VALUE_OPS.has(op) ? asArray(value as SqonScalar[]) : value;
 		const newLeaf = makeFieldLeaf(op, fieldName, normalizedValue);
 

@@ -212,6 +212,11 @@ suite('SQON builder', () => {
 				const result = SqonBuilder.between('age', [18, 65]).toValue();
 				assert.deepEqual(result, { op: 'between', content: { fieldName: 'age', value: [18, 65] } });
 			});
+
+			test('keeps both bounds when min and max are equal, rather than deduplicating to one element', () => {
+				const result = SqonBuilder.between('age', [30, 30]).toValue();
+				assert.deepEqual(result, { op: 'between', content: { fieldName: 'age', value: [30, 30] } });
+			});
 		});
 
 		suite('wildcard()', () => {
@@ -266,7 +271,10 @@ suite('SQON builder', () => {
 			});
 
 			test('flattens nested and-combinations at the same pivot', () => {
-				const result = SqonBuilder.in('a', [1]).and(SqonBuilder.in('b', [2]).toValue()).and(SqonBuilder.in('c', [3]).toValue()).toValue();
+				const result = SqonBuilder.in('a', [1])
+					.and(SqonBuilder.in('b', [2]).toValue())
+					.and(SqonBuilder.in('c', [3]).toValue())
+					.toValue();
 				assert.equal(result.op, 'and');
 				assert.equal((result as { content: unknown[] }).content.length, 3);
 			});
@@ -314,7 +322,9 @@ suite('SQON builder', () => {
 			});
 
 			test('chains not onto an existing builder under an implicit and', () => {
-				const result = SqonBuilder.in('status', ['active']).not(SqonBuilder.in('type', ['internal']).toValue()).toValue();
+				const result = SqonBuilder.in('status', ['active'])
+					.not(SqonBuilder.in('type', ['internal']).toValue())
+					.toValue();
 				assert.deepEqual(result, {
 					op: 'and',
 					content: [
@@ -340,10 +350,7 @@ suite('SQON builder', () => {
 
 	suite('pivot', () => {
 		test('and() preserves a pivot on the combination', () => {
-			const result = SqonBuilder.and(
-				[SqonBuilder.in('nested.field', ['x']).toValue()],
-				'nested',
-			).toValue();
+			const result = SqonBuilder.and([SqonBuilder.in('nested.field', ['x']).toValue()], 'nested').toValue();
 			assert.deepEqual(result, {
 				op: 'and',
 				pivot: 'nested',
@@ -369,7 +376,11 @@ suite('SQON builder', () => {
 			const a = { op: 'not-in', content: { fieldName: 'donors.age', value: [10] }, pivot: 'donors' };
 			const b = { op: 'not-in', content: { fieldName: 'donors.age', value: [20] }, pivot: 'donors' };
 			const result = SqonBuilder.from({ op: 'and', content: [a, b] }).toValue();
-			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 'donors.age', value: [10, 20] }, pivot: 'donors' });
+			assert.deepEqual(result, {
+				op: 'not-in',
+				content: { fieldName: 'donors.age', value: [10, 20] },
+				pivot: 'donors',
+			});
 		});
 
 		test('does not merge duplicate in filters on the same field under and (needs intersection, not union)', () => {
@@ -384,7 +395,9 @@ suite('SQON builder', () => {
 		});
 
 		test('an empty in filter is left as its own clause under and, not merged away', () => {
-			const result = SqonBuilder.in('status', []).and(SqonBuilder.in('status', ['active']).toValue()).toValue();
+			const result = SqonBuilder.in('status', [])
+				.and(SqonBuilder.in('status', ['active']).toValue())
+				.toValue();
 			assert.deepEqual(result, {
 				op: 'and',
 				content: [
@@ -395,7 +408,9 @@ suite('SQON builder', () => {
 		});
 
 		test('an empty not-in filter still unions normally under and (the absorb rule is in-only)', () => {
-			const result = SqonBuilder.notIn('s', []).and(SqonBuilder.notIn('s', ['x']).toValue()).toValue();
+			const result = SqonBuilder.notIn('s', [])
+				.and(SqonBuilder.notIn('s', ['x']).toValue())
+				.toValue();
 			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 's', value: ['x'] } });
 		});
 
@@ -417,7 +432,10 @@ suite('SQON builder', () => {
 
 		test('merges not-in filters on the same field under and', () => {
 			const result = SqonBuilder.notIn('status', ['deleted']).notIn('status', ['archived']).toValue();
-			assert.deepEqual(result, { op: 'not-in', content: { fieldName: 'status', value: ['deleted', 'archived'] } });
+			assert.deepEqual(result, {
+				op: 'not-in',
+				content: { fieldName: 'status', value: ['deleted', 'archived'] },
+			});
 		});
 
 		test('keeps not-in filters on the same field separate under or', () => {
@@ -461,7 +479,10 @@ suite('SQON builder', () => {
 		});
 
 		test('keeps the lesser gt value under or', () => {
-			const result = SqonBuilder.or([SqonBuilder.gt('age', 20).toValue(), SqonBuilder.gt('age', 10).toValue()]).toValue();
+			const result = SqonBuilder.or([
+				SqonBuilder.gt('age', 20).toValue(),
+				SqonBuilder.gt('age', 10).toValue(),
+			]).toValue();
 			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'age', value: 10 } });
 		});
 
@@ -476,7 +497,10 @@ suite('SQON builder', () => {
 		});
 
 		test('keeps the greater lt value under or', () => {
-			const result = SqonBuilder.or([SqonBuilder.lt('age', 65).toValue(), SqonBuilder.lt('age', 100).toValue()]).toValue();
+			const result = SqonBuilder.or([
+				SqonBuilder.lt('age', 65).toValue(),
+				SqonBuilder.lt('age', 100).toValue(),
+			]).toValue();
 			assert.deepEqual(result, { op: 'lt', content: { fieldName: 'age', value: 100 } });
 		});
 
@@ -485,9 +509,8 @@ suite('SQON builder', () => {
 			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'age', value: 65 } });
 		});
 
-		// Date bounds are the ordinary shape of a range filter on a `date` field, and used to be
-		// coerced through Math.max/Math.min, which yields NaN and serializes to null: an ordinary
-		// date narrowing silently became a bound-less filter that fails schema validation.
+		// Date bounds are the ordinary shape of a range filter on a `date` field: comparing them
+		// needs parsed timestamps, not numeric coercion, which would corrupt a non-numeric bound.
 		test('keeps the later gt date under and', () => {
 			const result = SqonBuilder.gt('diagnosed', '2020-01-01')
 				.and(SqonBuilder.gt('diagnosed', '2021-06-15').toValue())
@@ -560,14 +583,19 @@ suite('SQON builder', () => {
 		});
 
 		test('keeps both between filters on the same field (non-reducible)', () => {
-			const result = SqonBuilder.between('age', [18, 40]).and(SqonBuilder.between('age', [30, 65]).toValue()).toValue();
+			const result = SqonBuilder.between('age', [18, 40])
+				.and(SqonBuilder.between('age', [30, 65]).toValue())
+				.toValue();
 			const content = (result as { content: unknown[] }).content;
 			assert.equal(result.op, 'and');
 			assert.equal(content.length, 2);
 		});
 
 		test('removes empty inner combinations', () => {
-			const result = SqonBuilder.and([SqonBuilder.empty().toValue(), SqonBuilder.in('status', ['active']).toValue()]).toValue();
+			const result = SqonBuilder.and([
+				SqonBuilder.empty().toValue(),
+				SqonBuilder.in('status', ['active']).toValue(),
+			]).toValue();
 			assert.deepEqual(result, { op: 'in', content: { fieldName: 'status', value: ['active'] } });
 		});
 
@@ -627,9 +655,19 @@ suite('SQON builder', () => {
 		});
 
 		test('preserves the pivot on a single-item pivoted group nested inside another combination', () => {
-			const pivoted = { op: 'and', content: [{ op: 'in', content: { fieldName: 'a', value: ['1'] } }], pivot: 'donors' };
-			const result = SqonBuilder.from({ op: 'and', content: [pivoted, { op: 'in', content: { fieldName: 'b', value: ['2'] } }] }).toValue();
-			assert.deepEqual(result, { op: 'and', content: [pivoted, { op: 'in', content: { fieldName: 'b', value: ['2'] } }] });
+			const pivoted = {
+				op: 'and',
+				content: [{ op: 'in', content: { fieldName: 'a', value: ['1'] } }],
+				pivot: 'donors',
+			};
+			const result = SqonBuilder.from({
+				op: 'and',
+				content: [pivoted, { op: 'in', content: { fieldName: 'b', value: ['2'] } }],
+			}).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [pivoted, { op: 'in', content: { fieldName: 'b', value: ['2'] } }],
+			});
 		});
 
 		test('deduplicates a merged value array that stays part of a combination', () => {
@@ -660,22 +698,31 @@ suite('SQON builder', () => {
 			// `and`'s children solves a different query. Two `not-in` clauses would need to become an
 			// `in` of their *intersection*, not a `not-in` of their union, a flip none of the merge
 			// rules perform, so refusing to merge here is the only correct behaviour.
-			const notIn = { op: 'not', content: [
-				{ op: 'not-in', content: { fieldName: 'a', value: ['2', '3'] } },
-				{ op: 'not-in', content: { fieldName: 'a', value: ['1'] } },
-			]};
+			const notIn = {
+				op: 'not',
+				content: [
+					{ op: 'not-in', content: { fieldName: 'a', value: ['2', '3'] } },
+					{ op: 'not-in', content: { fieldName: 'a', value: ['1'] } },
+				],
+			};
 			assert.deepEqual(SqonBuilder.from(notIn).toValue(), notIn);
 
-			const inOp = { op: 'not', content: [
-				{ op: 'in', content: { fieldName: 'a', value: ['1'] } },
-				{ op: 'in', content: { fieldName: 'a', value: ['2'] } },
-			]};
+			const inOp = {
+				op: 'not',
+				content: [
+					{ op: 'in', content: { fieldName: 'a', value: ['1'] } },
+					{ op: 'in', content: { fieldName: 'a', value: ['2'] } },
+				],
+			};
 			assert.deepEqual(SqonBuilder.from(inOp).toValue(), inOp);
 
-			const gt = { op: 'not', content: [
-				{ op: 'gt', content: { fieldName: 'age', value: 10 } },
-				{ op: 'gt', content: { fieldName: 'age', value: 20 } },
-			]};
+			const gt = {
+				op: 'not',
+				content: [
+					{ op: 'gt', content: { fieldName: 'age', value: 10 } },
+					{ op: 'gt', content: { fieldName: 'age', value: 20 } },
+				],
+			};
 			assert.deepEqual(SqonBuilder.from(gt).toValue(), gt);
 		});
 
@@ -723,11 +770,23 @@ suite('SQON builder', () => {
 
 		test('does not replace a pivoted filter on the same field and op, adds a sibling instead', () => {
 			const pivoted = { op: 'in', content: { fieldName: 'donors.age', value: [10] }, pivot: 'donors' };
-			const result = SqonBuilder.from({ op: 'and', content: [pivoted] }).setFilter('donors.age', 'in', [20]).toValue();
+			const result = SqonBuilder.from({ op: 'and', content: [pivoted] })
+				.setFilter('donors.age', 'in', [20])
+				.toValue();
 			assert.deepEqual(result, {
 				op: 'and',
 				content: [pivoted, { op: 'in', content: { fieldName: 'donors.age', value: [20] } }],
 			});
+		});
+
+		test('throws rather than silently invert the sign when a matching filter is inside a top-level not', () => {
+			const base = { op: 'not', content: [{ op: 'in', content: { fieldName: 'a', value: ['x'] } }] };
+			assert.throws(() => SqonBuilder.from(base).setFilter('a', 'in', ['z']), /top-level 'not'/);
+		});
+
+		test('throws rather than silently invert the sign when no filter matches inside a top-level not', () => {
+			const base = { op: 'not', content: [{ op: 'in', content: { fieldName: 'a', value: ['x'] } }] };
+			assert.throws(() => SqonBuilder.from(base).setFilter('b', 'in', ['q']), /top-level 'not'/);
 		});
 	});
 
@@ -743,12 +802,17 @@ suite('SQON builder', () => {
 		});
 
 		test('removes specific values from an in filter, keeping the rest', () => {
-			const result = SqonBuilder.in('status', ['active', 'pending', 'closed']).removeFilter('status', 'in', ['closed']).toValue();
+			const result = SqonBuilder.in('status', ['active', 'pending', 'closed'])
+				.removeFilter('status', 'in', ['closed'])
+				.toValue();
 			assert.deepEqual(result, { op: 'in', content: { fieldName: 'status', value: ['active', 'pending'] } });
 		});
 
 		test('removes the entire filter when all values are removed', () => {
-			const result = SqonBuilder.in('status', ['active']).gt('age', 18).removeFilter('status', 'in', ['active']).toValue();
+			const result = SqonBuilder.in('status', ['active'])
+				.gt('age', 18)
+				.removeFilter('status', 'in', ['active'])
+				.toValue();
 			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'age', value: 18 } });
 		});
 

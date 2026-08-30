@@ -105,6 +105,31 @@ SqonBuilder.in('status', ['active'])
 	.toValue();
 ```
 
+### Same-field merge rules
+
+When two filters on the same field end up under the same `and`/`or`, `reduceSqon` merges them into
+one only where merging preserves meaning; which rule applies depends on both the operator and the
+combination type:
+
+- `in` merges under `or` only: `OR(in:[A], in:[B])` = `in:[A,B]`, since either clause widens the
+  match to "any of these values". Under `and`, both clauses must hold at once, meaning their
+  **intersection**, not their union, so `in` clauses are left unmerged there instead. Elasticsearch
+  already evaluates two `terms` clauses under `and` as an intersection on its own, so nothing is lost.
+- `not-in`/`some-not-in`/`all` merge under `and` only, for the same intersecting reason.
+- `gt`/`gte`/`lt`/`lte` merge under both, keeping whichever bound is correct for the combination
+  (the stricter bound under `and`, the looser one under `or`).
+- `between` is never merged: always kept as separate clauses, under any combination.
+- Nothing merges under `not`: a `not`'s children are negated independently, so merging them the way
+  `and`'s children merge would need an operator flip (two `not-in` clauses would need to become an
+  `in` of their intersection) that no rule performs.
+
+**A facet union is `or`, not `and`.** Selecting two values in one facet means "either", so build it
+as `SqonBuilder.or([...])` (or a single `in` filter carrying both values), not by `.and()`-ing two
+single-value `in` filters and relying on merging to combine them: `or` produces the identical SQON
+regardless of these rules. If a result set changed unexpectedly after upgrading, see the "Two `in`
+filters on the same field no longer merge under `and`" section of the
+[3.1 migration guide](../../docs/reference/08-Migration/v3.1.md).
+
 ### Match-none filters
 
 `SqonBuilder.matchNothing(fieldName)` produces a filter that matches nothing and stays that way
@@ -114,8 +139,9 @@ Three properties hold that guarantee together, and being a leaf is only the firs
 
 - It's a leaf rather than a combination, and `reduceSqon` only ever prunes empty combinations, so
   reduction never removes it.
-- Nothing is merged under `not`, and `in` filters are never merged under `and`, so a permission on
-  the same field cannot absorb it into a wider filter during composition.
+- Nothing merges under `not`, and `in` never merges under `and` (see
+  [Same-field merge rules](#same-field-merge-rules) above), so a permission on the same field cannot
+  absorb it into a wider filter during composition.
 - An empty `in` compiles to an empty `terms` clause, which the search engine matches no document
   against. The guarantee rests there in the end, rather than on any reduction rule.
 

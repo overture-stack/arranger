@@ -60,9 +60,14 @@ const shouldReduceOp = (op: string, combinationOp: string): boolean => {
 	return KEEP_MAX_UNDER_AND_OPS.has(op) || KEEP_MIN_UNDER_AND_OPS.has(op);
 };
 
-/** Deduplicates values within an in-like filter's value array. */
+/**
+ * Deduplicates values within an in-like filter's value array. Excludes `between`: its value is a
+ * fixed-position `[min, max]` pair, not a set of interchangeable options, and deduplicating it
+ * collapses to a single element whenever `min === max`, producing a value the schema itself
+ * requires to have exactly two.
+ */
 const deduplicateValues = (node: SqonNode): SqonNode => {
-	if (!isFieldFilter(node) || !Array.isArray(node.content.value)) return node;
+	if (!isFieldFilter(node) || node.op === 'between' || !Array.isArray(node.content.value)) return node;
 	return { ...node, content: { ...node.content, value: [...new Set(node.content.value)] } } as unknown as SqonNode;
 };
 
@@ -77,9 +82,8 @@ const deduplicateValues = (node: SqonNode): SqonNode => {
  *
  * Anything else has no meaningful ordering here: a boolean, an array (which the range schemas
  * permit even though a bound is conceptually scalar), or one bound of each type. Those return
- * `undefined` so the caller keeps both clauses instead of merging them. Coercing them through
- * `Math.max`/`Math.min` produced `NaN`, which serializes to `null` and silently replaced a real
- * bound with an empty one.
+ * `undefined` so the caller keeps both clauses rather than coercing them through `Math.max`/
+ * `Math.min`, which yields `NaN` for a non-numeric bound and would serialize it to `null`.
  */
 const compareBounds = (a: SqonScalarOrArray, b: SqonScalarOrArray): number | undefined => {
 	if (typeof a === 'number' && typeof b === 'number') {
@@ -196,7 +200,7 @@ const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
 /**
  * Reduces a SQON by removing redundant nesting and merging duplicate field filters.
  *
- * **Value-merge rules** (same `op` + `fieldName` under the same combination; never under `not` —
+ * **Value-merge rules** (same `op` + `fieldName` under the same combination; never under `not`,
  * see `shouldReduceOp` for why). `in` merges under `or` only; `not-in`/`some-not-in`/`all` merge
  * under `and` only; `gt`/`gte` keep the greater bound under `and` and the lesser under `or`;
  * `lt`/`lte` keep the lesser bound under `and` and the greater under `or` (the weaker constraint
