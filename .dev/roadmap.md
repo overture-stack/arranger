@@ -8,9 +8,31 @@ This document covers two categories of planned work: **product and architecture*
 
 ## Architecture
 
+### Readiness reporting that reflects live state
+
+_Priority: high._
+
+`GET /ready` reports catalogue statuses computed once during startup and captured in a closure. Nothing updates them afterwards and no periodic re-check exists anywhere in the package, so the endpoint answers "did the catalogues load when this process booted" rather than "can this server serve a query now". A server that starts cleanly and later loses its search engine keeps reporting ready, and an orchestrator gets no signal to stop sending it traffic.
+
+Fix: a background interval re-checks each mounted catalogue with `indices.exists`, and `/ready` serves the cached result. Background rather than per-request, because checking on each request makes probe latency equal search-engine latency, so a slow engine trips the probe timeout and removes a working pod from service, which is a worse failure than the one being fixed. The cached result should carry its own timestamp, with a stale cache counting as unhealthy, so a stalled refresher cannot report healthy indefinitely: that is the same class of defect one level up. `indices.exists` needs no new `SearchClient` member, which matters because that interface is hand-written over two engines and every addition has to be implemented twice.
+
+Liveness stays blind to catalogue state. A live-checking `/ping` would restart every pod during a search-engine outage, which is precisely what it was made blind to avoid.
+
+Out of scope here: recovering a catalogue that failed at startup. Its routes are replaced by `buildFailedCatalogueRouter` at mount time, so recovery means rebuilding the schema and remounting, a much larger change. Detection is separable and is what closes the reporting gap.
+
+### Request rate limiting
+
+_Priority: high. On hold alongside the readiness item above, same reason._
+
+Neither `modules/graphql-router` nor `apps/search-server` has any rate limiting, and no such dependency exists in either package. Every deployed instance serves as many requests as it receives, and the GraphQL endpoint in particular accepts a single small request that can expand into an arbitrarily expensive query.
+
+Belongs in `modules/graphql-router` rather than in `apps/search-server`, so every consumer embedding the router inherits it instead of each one rediscovering the need independently.
+
+Related and separable: `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` already exist and default to unset, so the guards that do exist are off unless a deployment remembers to set them. Whether to give them defaults is a compatibility decision, since a default can reject queries that work today, and it is worth settling in the same pass rather than leaving the protection opt-in.
+
 ### Config plan/preview CLI
 
-_Priority: high. Sequenced at the top: no open design question blocks starting it._
+_Priority: high. The first item here that is neither on hold nor blocked by an open design question._
 
 A CLI that diffs a proposed catalogue configuration against a live ES/OS mapping and reports what would change (facets, columns, missing fields, validation errors) without starting the server or writing to the cluster. Absorbs the config-validation item rather than duplicating its Zod work.
 
@@ -394,6 +416,18 @@ Design question: a quicksearch-within-TermAggs should filter the displayed bucke
 
 _Good TDD candidate once the interaction design is settled._
 
+### Portable SQON encoding for URLs and citations (research)
+
+_Priority: medium. Research-first, and the central question is open: needs discussion before any implementation is scoped._
+
+Portal bookmarks are cited as references in published papers, so a SQON in a URL has to be short enough to print and stable enough to resolve years later. Measurement says those are two problems with different answers, rather than one problem with a single encoding.
+
+A compact syntax and a compressed blob win in opposite regimes: the syntax is roughly three times better than raw JSON on a small query and beats compression there, while compression wins on a heavy bookmark, where the payload is field names and values rather than syntax. Neither is usable at printed length, which points at a resolvable identifier for the citation case whatever is decided about syntax.
+
+Compactness is also not the binding constraint for a citation. A renamed field or a rebuilt index leaves the query parsing and running while quietly meaning something else, and no encoding addresses that. The date range aggregation entry below already contains one instance of this without naming it: a relative date resolved at query time returns a different result set every day the cited URL is opened.
+
+[Detail: measurements for both regimes, what a compact syntax would have to solve, prior art, and the four open questions](docs/atlas/roadmap/sqon-portability.md)
+
 ### SQON editor component
 
 _Priority: low. Developer tooling and power-user feature._
@@ -640,7 +674,6 @@ _Two things to establish before committing to it, neither answerable by reading.
 
 _Blocked on the `dist/` lint scope fix, tracked in `.dev/tech-debt.md`: with build output linted, a new rule lands in a backlog of roughly 17,600 problems that is about 89% `dist/`, so the control would exist and be invisible._
 
-
 ### Context
 
 Pipeline: `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`. Helper steps are in `step*` files in the same folder, loaded automatically via CasC (not imported explicitly in the Jenkinsfile).
@@ -795,7 +828,7 @@ Catches phantom dependencies at install time, faster CI installs, removes `dange
 
 **nx consideration:** nx is an alternative monorepo build system to Turborepo, not a complement. Turbo + pnpm is the current plan. If Turbo proves insufficient (e.g. more complex task orchestration, code generation, or module federation needs arise), nx is worth evaluating. For now, proceed with Turbo.
 
-**Resolved, corrects §3.1's own "Cleanup when this lands" note:** `changeset version` does not rewrite `file:` (or `workspace:`) deps to real version ranges; `workspace:^` means "always use the local version," there's no version number in that string for Changesets to touch. That substitution happens exclusively via pnpm's own publish step, described above. Changesets' `updateInternalDependencies` does something adjacent but different: deciding whether a *dependent* package needs its own cascading version bump when a sibling changes, not rewriting how the dependency is referenced. See [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md) for the full resolution. **Consequence: this section needs to land before §3.1, not after, despite the numbering** (§3.1's cascade-bump detection needs a `workspace:` or real-semver reference to act on, not `file:`).
+**Resolved, corrects §3.1's own "Cleanup when this lands" note:** `changeset version` does not rewrite `file:` (or `workspace:`) deps to real version ranges; `workspace:^` means "always use the local version," there's no version number in that string for Changesets to touch. That substitution happens exclusively via pnpm's own publish step, described above. Changesets' `updateInternalDependencies` does something adjacent but different: deciding whether a _dependent_ package needs its own cascading version bump when a sibling changes, not rewriting how the dependency is referenced. See [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md) for the full resolution. **Consequence: this section needs to land before §3.1, not after, despite the numbering** (§3.1's cascade-bump detection needs a `workspace:` or real-semver reference to act on, not `file:`).
 
 ---
 
