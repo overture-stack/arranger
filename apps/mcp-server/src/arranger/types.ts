@@ -70,6 +70,7 @@ export const sqonIntrospectionSchema = zod.object({
 
 const fieldSchema = zod.object({
 	displayName: zod.string(),
+	isArray: zod.boolean().nullable().optional(), // true is many, false is single, null is we don't know, undefined is an old server
 	type: zod.string(),
 	unit: zod.string().nullable().optional(),
 });

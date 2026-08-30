@@ -4,8 +4,8 @@ import {
 	getSqonFieldOperatorDetails,
 	isFieldFilter,
 	isGroupNode,
-	normalizeSqonNode,
 	type ScalarFilter,
+	SqonBuilder,
 	type SqonFieldFilter,
 	type SqonNode,
 	type SqonScalarOrArray,
@@ -23,21 +23,15 @@ import { type McpServerDeps } from '#server.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
 
 /**
- * Operators grouped by the shape of their input values, to match the branching of the
- * discriminated union of the clause schema:
- *   - in-like operators take a scalar or an array
- *   - range operators take one bound
- *   - between takes exactly two
- *   - all takes an array, never a bare scalar
- *   - wildcard takes one search string, and names its fields with `fieldNames` (plural)
+ * Operators grouped by input shape: in-like take a scalar or array, range operators take one
+ * bound, between takes two, all takes an array only, wildcard takes one string with `fieldNames`
+ * instead of `fieldName`.
  *
- * Canonical names only, no aliases (`=`, `>=`, `filter`): `addFilterClause` dispatches scalar
- * operators on the literal operator string and returns `undefined` for an alias, so accepting one
- * would silently drop the clause rather than build an equivalent SQON.
+ * Canonical names only, no aliases: an alias would silently drop the clause instead of building
+ * an equivalent one.
  *
- * `fuzzy` is deliberately absent. It has no implementation in `modules/sqon`, and the text branch
- * of `addFilterClause` ignores `operator` entirely, so a `fuzzy` clause there builds a `wildcard`
- * clause with no error: listing it would offer an operator that silently runs a different query.
+ * `fuzzy` is excluded: it has no implementation in `modules/sqon` and would silently build a
+ * `wildcard` clause instead of erroring.
  */
 const IN_LIKE_OPERATORS = ['in', 'not-in', 'some-not-in'] as const;
 const RANGE_OPERATORS = ['gt', 'gte', 'lt', 'lte'] as const;
@@ -45,11 +39,7 @@ const BETWEEN_OPERATOR = 'between' as const;
 const ALL_OPERATOR = 'all' as const;
 const WILDCARD_OPERATOR = 'wildcard' as const;
 
-/**
- * Every operator `build_sqon` accepts, derived from the per-shape groups rather than restated, so
- * the aggregate cannot drift from what the schema actually takes. Used by tests to assert each
- * accepted operator is described exactly once, and no rejected one is described at all.
- */
+/** Every operator `build_sqon` accepts, derived from the shape groups so it can't drift from the schema. */
 export const BUILD_SQON_OPERATORS = [
 	...IN_LIKE_OPERATORS,
 	...RANGE_OPERATORS,
@@ -59,22 +49,14 @@ export const BUILD_SQON_OPERATORS = [
 ] as const;
 
 /**
- * Generates a description for the `operator` input of the `build_sqon` tool. Generated per-branch,
- * rather than hard-coded once to include all operator, in order to reduce context bloat.
+ * Describes the operators accepted by one clause-shape branch of the schema.
  *
- * An `applicableTo` of `all` is rendered by saying nothing about field types, rather than by
- * claiming "any field type", which would be wrong. `modules/sqon` reports the field types an
- * operator generically applies to, while a catalogue advertises its own per-type operator lists,
- * and the two disagree: `wildcard`, `all`, and `some-not-in` are all `all` here but are withheld
- * from range-typed fields (and, for the latter two, from text fields) by catalogue introspection,
- * which is what `validateClauses` enforces. Staying silent keeps this text honest without copying
- * that classification into this package (tracked tech-debt), and the `clauses` array description
- * already names the catalogue as the authority on which operators a field accepts, once, rather
- * than repeating it on every unrestricted operator here.
+ * Says nothing about field types for an operator `modules/sqon` calls unrestricted (`all`,
+ * `wildcard`, `some-not-in`): the catalogue restricts these further, and claiming "any field
+ * type" here would be wrong.
  *
  * @param operators - The operators this union branch accepts.
- * @returns A lead sentence followed by one line per operator, naming its value type and, where
- * `modules/sqon` restricts it, its field types.
+ * @returns A lead sentence followed by one line per operator.
  */
 export const describeOperators = (operators: readonly string[]): string => {
 	const operatorsSet = new Set<string>(operators);
@@ -91,9 +73,7 @@ export const describeOperators = (operators: readonly string[]): string => {
 	].join('\n');
 };
 
-// NOTE: the following schemas are factories, not shared constants. This was done intentionally, to
-// prevent deep self-referential `$ref`s when `zodToJsonSchema` is used on the tool's input schema,
-// as some clients do not handle such pointers well.
+// Factories, not shared constants: avoids deep self-referential $refs when zodToJsonSchema runs on this schema.
 
 const scalarValue = () => zod.union([zod.string(), zod.number(), zod.boolean()]);
 
@@ -177,8 +157,7 @@ const inputSchema = {
 			'How to join every clause in this call, and the existingSqon when one is given. One combinator per call: a query mixing AND and OR is not yet supported.',
 		),
 	clauses: zod.array(clauseSchema()).min(1).describe(
-		// Batch-level guidance lives here, once, rather than trailing each branch's operator
-		// description, where it would be repeated per branch in the emitted schema.
+		// Lives here once, not per-operator branch, to avoid repeating in the emitted schema.
 		[
 			'One entry per condition. Submit all conditions in a single call rather than one call each.',
 			'Use the operator name, not a symbol: "gte", never ">=".',
@@ -194,8 +173,7 @@ const inputSchema = {
 };
 
 const outputSchema = zod.object({
-	// `sqon` is intentionally opaque (unknown) here, since declaring it as `SqonSchema` would add
-	// unnecessary bloat to context which is already shipped to the client in every `tools/list` call
+	// Left opaque: a full SqonSchema description would bloat every tools/list response.
 	sqon: zod
 		.record(zod.unknown())
 		.describe('The built SQON. Pass this to execute_query as "sqon" without editing it.'),
@@ -236,20 +214,17 @@ const failedCatalogueSchema = zod.object({
 type CatalogueResolution = { introspection: ArrangerCatalogueIntrospection } | { error: string };
 
 /**
- * Resolves `catalogueId` to usable catalogue introspection, or to a message explaining why it is
- * not usable: not in the configured allowlist for this MCP server, not present on the Arranger
- * server, or configured and present but failed to build.
+ * Resolves `catalogueId` to introspection, or an error: not configured, not on Arranger, or
+ * present but failed to build.
  *
- * Checks the allowlist before any requests, so an unvalidated identifier never reaches Arranger's
- * URL path, and inspects `status` before Zod parsing, because a `failed` catalogue answers with
- * HTTP 200 and a body that `catalogueIntrospectionSchema` cannot represent.
+ * Checks the allowlist before any request, so an unvalidated id never reaches Arranger's URL
+ * path. Inspects `status` before Zod parsing: a `failed` catalogue answers HTTP 200 with a body
+ * `catalogueIntrospectionSchema` can't represent.
  *
- * @param client - An instance of ArrangerClient used to make requests to Arranger.
- * @param config - The configuration for this Arranger MCP server.
- * @param catalogueId - The id of the catalogue to be introspected.
- *
- * @returns The catalogue introspection for the resolved catalogue, or an error explaining why the
- * catalogue failed to resolve.
+ * @param client - ArrangerClient used to fetch introspection.
+ * @param config - This MCP server's configuration.
+ * @param catalogueId - The catalogue to resolve.
+ * @returns The introspection, or an error message.
  */
 const resolveCatalogue = async (
 	client: ArrangerClient,
@@ -291,44 +266,185 @@ type BuildSqonClause = zod.infer<ReturnType<typeof clauseSchema>>;
 /** Wraps a single value in an array; passes through arrays unchanged. Not exported by `@overture-stack/sqon`. */
 const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
 
-/**
- * An `existingSqon` input after validation: the parsed, normalized node when it is usable, plus
- * every problem found with it. The two are independent by design, so the caller can collect these
- * errors alongside the clause errors and report the whole batch at once.
- *
- * `sqon` is absent whenever `errors` is non-empty, and a caller must never fold an `existingSqon`
- * that came back with errors: for a structural failure there is nothing to fold, and folding past a
- * catalogue mismatch would build a SQON the target catalogue cannot run.
- *
- * `catalogueMismatch` separates the two failures, because they take different advice. A SQON naming
- * fields this catalogue does not have is usually one built for another catalogue, and the fix is to
- * rebuild. A value that is not a SQON at all carries its own remedy in its message, and telling the
- * caller to consider which catalogue it came from would point at the wrong thing.
- */
-type ExistingSqonResolution = { sqon?: SqonNode; errors: string[]; catalogueMismatch: boolean };
+/** The isArray value a gate needs. `undefined` (an old server) is treated the same as `null`. */
+type FieldCardinality = { isArray: boolean | null | undefined };
 
 /**
- * Validates the optional `existingSqon` input against the shared SQON schema and then against the
- * catalogue, without stopping the caller from validating the new clauses too.
+ * Finds a same-field "in" collision, in `clauses` or against `existingSqon`, on a field not
+ * declared single-valued. An ambiguous "and" between two "in" clauses is refused instead of
+ * silently merged.
  *
- * The catalogue check runs here, before the fold, rather than on the folded result: a fold never
- * invents a field name or rewrites a leaf's operator, so every leaf of the output comes from either
- * this input or a clause, and checking both inputs separately catches the same problems one
- * round-trip earlier. Checking the folded SQON instead meant a call carrying both an invalid clause
- * and an `existingSqon` from another catalogue only ever reported the clauses, hiding the mismatch
- * behind a resubmission.
+ * `isArray: false` is the only safe value: `true` and undeclared (`null`) both leave "matches
+ * both" a real possibility.
  *
- * Structural failure short-circuits the catalogue check, since there is no tree to walk, but it is
- * still returned as an error rather than thrown, so the caller can report it next to clause errors.
+ * @returns One message per colliding field, not one per extra clause.
+ */
+const findInClauseCardinalityConflicts = (
+	clauses: BuildSqonClause[],
+	existingSqon: SqonNode | undefined,
+	fields: Record<string, FieldCardinality>,
+): string[] => {
+	const isUnpivotedInLeaf = (node: SqonNode): node is SqonFieldFilter =>
+		isFieldFilter(node) && node.op === 'in' && (node.pivot === undefined || node.pivot === null);
+
+	const existingInFieldNames = new Set<string>();
+	if (existingSqon !== undefined) {
+		const topLevelLeaves =
+			isGroupNode(existingSqon) && existingSqon.op !== 'not' ? existingSqon.content : [existingSqon];
+		for (const leaf of topLevelLeaves) {
+			if (isUnpivotedInLeaf(leaf)) {
+				existingInFieldNames.add(leaf.content.fieldName);
+			}
+		}
+	}
+
+	const conflicts: string[] = [];
+	const seenInFieldNames = new Set<string>();
+	const reportedFieldNames = new Set<string>();
+
+	for (const clause of clauses) {
+		if (clause.operator !== 'in' || clause.negate === true) {
+			continue;
+		}
+
+		const collides = seenInFieldNames.has(clause.fieldName) || existingInFieldNames.has(clause.fieldName);
+		seenInFieldNames.add(clause.fieldName);
+
+		if (!collides || reportedFieldNames.has(clause.fieldName)) {
+			continue;
+		}
+		reportedFieldNames.add(clause.fieldName);
+
+		const isArrayValue = fields[clause.fieldName]?.isArray;
+
+		// `all` is only safe to recommend when the field is confirmed multi-valued.
+		if (isArrayValue === true) {
+			conflicts.push(
+				`Field "${clause.fieldName}" can hold more than one value at once, so combining two "in" clauses on it ` +
+					`under "and" is ambiguous: it could mean "matches either" or "matches both". If you meant either, ` +
+					`resubmit as one "in" clause carrying every value. If you meant both, use the "all" operator instead of "in".`,
+			);
+			continue;
+		}
+
+		if (isArrayValue !== false) {
+			conflicts.push(
+				`Field "${clause.fieldName}"'s cardinality is not declared, so it is not known whether it can hold more ` +
+					`than one value at once. Combining two "in" clauses on it under "and" is ambiguous: it could mean ` +
+					`"matches either" or "matches both", and neither is safe to assume. If you meant either, resubmit as one ` +
+					`"in" clause carrying every value. If you meant both, confirm with the data owner that the field can ` +
+					`hold multiple values before using "all": on a single-valued field, "all" with more than one value ` +
+					`will not match either.`,
+			);
+		}
+	}
+
+	return conflicts;
+};
+
+/**
+ * Finds a field whose combined `all` value count, across every non-negated `all` clause and any
+ * existing `all` leaf, exceeds one while the field isn't confirmed multi-valued. `all` needs
+ * every listed value present at once, which only a multi-valued field can satisfy.
  *
- * @param raw - The unvalidated `existingSqon` argument, or undefined when the caller omitted it.
- * @param context - The target catalogue's fields and per-type operator rules from introspection.
+ * Checked as a combined total, not per clause: two single-value `all` clauses on the same field
+ * fold into one multi-value `all` under "and", the shape this check exists to catch. Values are
+ * deduplicated, so repeating the same value isn't mistaken for naming two different ones.
  *
- * @returns The normalized SQON to fold onto, or the reasons it cannot be used.
+ * @returns One message per offending field.
+ */
+const findAllClauseCardinalityConflicts = (
+	clauses: BuildSqonClause[],
+	existingSqon: SqonNode | undefined,
+	fields: Record<string, FieldCardinality>,
+): string[] => {
+	const isUnpivotedAllLeaf = (node: SqonNode): node is SqonFieldFilter =>
+		isFieldFilter(node) && node.op === 'all' && (node.pivot === undefined || node.pivot === null);
+
+	const valuesByField = new Map<string, Set<string | number | boolean>>();
+	const addValues = (fieldName: string, values: readonly (string | number | boolean)[]) => {
+		const existingValues = valuesByField.get(fieldName) ?? new Set<string | number | boolean>();
+		for (const value of values) {
+			existingValues.add(value);
+		}
+		valuesByField.set(fieldName, existingValues);
+	};
+
+	if (existingSqon !== undefined) {
+		const topLevelLeaves =
+			isGroupNode(existingSqon) && existingSqon.op !== 'not' ? existingSqon.content : [existingSqon];
+		for (const leaf of topLevelLeaves) {
+			if (isUnpivotedAllLeaf(leaf)) {
+				addValues(leaf.content.fieldName, asArray(leaf.content.value as (string | number | boolean)[]));
+			}
+		}
+	}
+
+	for (const clause of clauses) {
+		if (clause.operator !== 'all' || clause.negate === true) {
+			continue;
+		}
+		addValues(clause.fieldName, clause.value);
+	}
+
+	const conflicts: string[] = [];
+	for (const [fieldName, values] of valuesByField) {
+		if (values.size <= 1) {
+			continue;
+		}
+
+		const isArrayValue = fields[fieldName]?.isArray;
+		if (isArrayValue === true) {
+			continue;
+		}
+
+		if (isArrayValue === false) {
+			conflicts.push(
+				`Field "${fieldName}" is declared single-valued, so requiring it to contain more than one value at ` +
+					`once, whether from one "all" clause or combined across more than one, can never match: a single ` +
+					`value cannot equal every listed value at once. Use "in" instead if you meant "matches either".`,
+			);
+			continue;
+		}
+
+		conflicts.push(
+			`Field "${fieldName}"'s cardinality is not declared, so it is not confirmed that it can hold more than ` +
+				`one value at once. Requiring it to contain more than one value at once, whether from one "all" clause ` +
+				`or combined across more than one, will never match on a single-valued field. Confirm with the data ` +
+				`owner that the field can hold multiple values before resubmitting, or use "in" instead if you meant ` +
+				`"matches either".`,
+		);
+	}
+
+	return conflicts;
+};
+
+/**
+ * `existingSqon` after validation: the resolved node when usable, plus any problems found.
+ * `sqon` is absent whenever `errors` is non-empty; never fold an `existingSqon` that has errors.
+ */
+type ExistingSqonResolution = {
+	catalogueMismatch: boolean;
+	errors: string[];
+	sqon?: SqonNode;
+	/** Filter-clause count before reduction: what the caller actually submitted. */
+	submittedFilterCount: number;
+};
+
+/**
+ * Validates `existingSqon` against the SQON schema, then against the catalogue.
+ *
+ * Checked before the fold, not on the folded result: a fold never invents a field name, so
+ * checking both inputs separately catches a catalogue mismatch one round-trip earlier instead of
+ * hiding it behind a clause-only error.
+ *
+ * @param raw - The unvalidated `existingSqon` argument, or undefined.
+ * @param context - The target catalogue's fields and operators.
+ * @returns The normalized SQON to fold onto, or the reasons it can't be used.
  */
 const resolveExistingSqon = (raw: unknown, context: CatalogueQueryContext): ExistingSqonResolution => {
 	if (raw === undefined) {
-		return { catalogueMismatch: false, errors: [] };
+		return { catalogueMismatch: false, errors: [], submittedFilterCount: 0 };
 	}
 
 	const parsed = SqonSchema.safeParse(raw);
@@ -339,27 +455,31 @@ const resolveExistingSqon = (raw: unknown, context: CatalogueQueryContext): Exis
 			errors: [
 				`existingSqon is not a valid SQON. Pass the "sqon" value from an earlier build_sqon response unchanged, or omit existingSqon to start a new query.\n${issues.join('\n')}`,
 			],
+			submittedFilterCount: 0,
 		};
 	}
 
-	const sqon = normalizeSqonNode(parsed.data);
-	// Normalized first, so an operator alias in an existing SQON is checked in its canonical form
-	// rather than rejected as an operator the catalogue does not advertise.
+	// Counted before reduction: reduction can merge same-field clauses within existingSqon on its
+	// own, which would otherwise hide from the "reduced to" note.
+	const submittedFilterCount = countFilterClauses(parsed.data);
+
+	// Reduced up front so the cardinality gate sees the same shape addFilterClause folds onto;
+	// scanning the unreduced shape let a same-field collision hide inside a nested group.
+	const sqon = SqonBuilder.from(parsed.data).toValue();
 	const errors = validateSqonFields(sqon, context, { subject: 'existingSqon' });
 
-	return errors.length > 0 ? { catalogueMismatch: true, errors } : { catalogueMismatch: false, sqon, errors };
+	return errors.length > 0
+		? { catalogueMismatch: true, errors, submittedFilterCount }
+		: { catalogueMismatch: false, sqon, errors, submittedFilterCount };
 };
 
 /**
- * Composes the single error result for a call whose inputs did not validate, listing every problem
- * found across `existingSqon` and the clauses so the whole batch can be fixed in one resubmission.
+ * Composes the error result for a call whose inputs did not validate.
  *
  * @param errors - Every validation message, `existingSqon` first.
- * @param catalogueId - The catalogue the call targeted, named in the rebuild advice.
- * @param catalogueMismatch - Whether `existingSqon` named fields this catalogue does not have, the
- * one failure the rebuild advice speaks to. Withheld otherwise, since it is misdirection when the
- * clauses alone are at fault, or when `existingSqon` is not a SQON at all.
- *
+ * @param catalogueId - Named in the rebuild advice.
+ * @param catalogueMismatch - Whether `existingSqon` named fields this catalogue doesn't have; the
+ * one case the rebuild advice applies to.
  * @returns The message body for the error result.
  */
 const composeValidationError = ({
@@ -379,21 +499,11 @@ const composeValidationError = ({
 };
 
 /**
- * If `sqon` already carries a plain (non-negated) "in" leaf on `fieldName`, with no `pivot`,
- * returns a new sqon with that leaf's value unioned with `value`. Returns `undefined` when there
- * is no such leaf, so the caller folds the clause normally instead.
+ * Unions `value` into an existing unpivoted, non-negated "in" leaf on `fieldName`, if one exists
+ * at the top level of `sqon`. Returns `undefined` otherwise, so the caller folds normally.
  *
- * Exists because `reduceSqon` deliberately does not merge "in" clauses under "and": doing so
- * changes what the SQON matches (intersecting two "any of" sets is not the same as widening the
- * set), so it was correctly removed as a bug, not a feature. "Same field, and, means either" is a
- * judgement about caller intent, not a structural SQON simplification, so it belongs here, in the
- * tool that interprets that intent, not in generic reduction.
- *
- * Scoped to v1's flat shape: `sqon` is a bare leaf or a single-level and/or group, never deeper,
- * so a top-level-only search is complete rather than a heuristic. Never negated: a `not`-wrapped
- * "in" leaf is a group node at the top, `isFieldFilter` correctly excludes it, and folds normally.
- * Never pivoted: v1's clause schema has no `pivot` input, so only an unpivoted existing leaf is
- * ever a legitimate merge target, matching a plain new clause's implicit `pivot: undefined`.
+ * `reduceSqon` deliberately doesn't merge "in" under "and" (that would intersect, not widen), so
+ * "same field, and, means either" is a caller-intent decision made here instead.
  */
 const mergeIntoExistingInClause = (
 	sqon: SqonNode,
@@ -408,10 +518,8 @@ const mergeIntoExistingInClause = (
 
 	const union = (existingValue: SqonScalarOrArray) => [...new Set([...asArray(existingValue), ...asArray(value)])];
 
-	// `SqonNode` is a discriminated union keyed on `op`; spreading a narrowed branch and overriding
-	// `content` produces a shape TS can no longer verify against every other branch. The runtime
-	// shape is correct, `isMergeTarget` already confirmed it; the same `as unknown as SqonNode`
-	// pattern is already used in `modules/sqon` itself for equivalent cases.
+	// Spreading a narrowed branch defeats TS's discriminated-union check; isMergeTarget already
+	// confirmed the runtime shape.
 	if (isMergeTarget(sqon)) {
 		return { ...sqon, content: { ...sqon.content, value: union(sqon.content.value) } } as unknown as SqonNode;
 	}
@@ -431,18 +539,13 @@ const mergeIntoExistingInClause = (
 };
 
 /**
- * Folds every clause into one SQON, making one `addFilterClause` call per clause, except a plain
- * "in" clause that matches a field already present, which is merged into the existing leaf's
- * value instead (see `mergeIntoExistingInClause`). Internal to the handler: the model only ever
- * sees the single `build_sqon` call. `reduceSqon` still runs inside each fold, so every other
- * equivalent-clause merge (`not-in`, `all`, range bounds) still happens as before.
+ * Folds every clause into one SQON. A plain "in" clause matching an existing field merges into
+ * it instead (see `mergeIntoExistingInClause`); everything else goes through `addFilterClause`.
  *
- * @param input.clauses - The list of clauses provided to the `build_sqon` tool
- * @param input.combination - The combination operator provided to the `build_sqon` tool
- * @param input.existingSqon - The existing sqon provided to the `build_sqon` tool
- *
- * @returns A single SQON combining any existing SQON provided as input to the `build_sqon` tool
- * with any additional clauses that have been provided.
+ * @param input.clauses - Clauses provided to `build_sqon`.
+ * @param input.combination - Combination operator provided to `build_sqon`.
+ * @param input.existingSqon - Existing SQON provided to `build_sqon`.
+ * @returns The combined SQON.
  */
 const foldClauses = ({
 	clauses,
@@ -466,20 +569,8 @@ const foldClauses = ({
 
 		const shared = { combination, existing: sqon, negate: clause.negate ?? false };
 
-		// Two calls rather than one call on a union-typed object: `addFilterClause` is overloaded,
-		// and an overloaded signature will not accept `ScalarFilter | TextFilter`. Each argument is
-		// still checked against its own overload, so a signature change in modules/sqon breaks this
-		// at compile time.
-		//
-		// Dispatched on `operator`, the input union's own discriminator, rather than on whether a
-		// `fieldNames` key is present: an explicitly-present `undefined` key makes a key-presence
-		// test answer wrongly, and the operator is what actually decides the shape.
-		//
-		// `addFilterClause` dispatches scalar operators through a switch with no default and returns
-		// undefined for anything outside it: an operator alias, or an operator added to modules/sqon
-		// but not to buildScalarClause. It cannot catch a bad text operator, because its text branch
-		// ignores `operator` and builds a wildcard clause regardless, which is one of the reasons
-		// `fuzzy` stays out of the enum above.
+		// Two calls, not one on a union type: addFilterClause is overloaded and won't accept
+		// ScalarFilter | TextFilter together.
 		const next =
 			clause.operator === WILDCARD_OPERATOR
 				? addFilterClause({
@@ -509,22 +600,13 @@ const foldClauses = ({
 };
 
 /**
- * Wraps a root-level leaf filter in an `and` group before the SQON leaves this tool.
+ * Wraps a root-level leaf in an `and` group. `reduceSqon` unwraps a single-item group, so a
+ * one-clause build reduces to a bare leaf, which `buildAggregations` throws on.
  *
- * `reduceSqon` unwraps single-item groups, so a one-clause build reduces to a bare leaf. That is
- * valid SQON and the hits path accepts it, but `buildAggregations` assumes the root's `content` is
- * an array and throws on a leaf, so an unwrapped root would work for `hits` queries and fail for
- * `aggregations` and `both`. The canonical fix belongs in `buildAggregations`; until it lands, this
- * keeps every SQON this tool emits usable for all three query types.
- *
- * Applied only on the final output, never between folds: `SqonBuilder.from()` reduces the wrapper
- * away again, so wrapping mid-fold would be undone. Re-wrapping an already-wrapped SQON arriving
- * as `existingSqon` is stable, verified.
- *
- * TODO: delete this once `buildAggregations` handles a leaf root.
+ * TODO: delete once `buildAggregations` handles a leaf root.
  *
  * @param sqon - The SQON to normalize.
- * @returns A normalized, group node SQON that will be accepted by `buildAggregations`.
+ * @returns A group-node SQON.
  */
 const normalizeRoot = (sqon: SqonNode): SqonNode => (isGroupNode(sqon) ? sqon : { op: 'and', content: [sqon] });
 
@@ -558,12 +640,16 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 				const { fields, operators } = resolution.introspection;
 				const context: CatalogueQueryContext = { fields, operators };
 
-				// Both inputs are validated before either is acted on, and their errors are reported
-				// together: an invalid clause and an unusable existingSqon in the same call are one
-				// resubmission to fix, not two. `existingSqon` errors lead, since a base query built for
-				// another catalogue has to be dropped before the clause fixes are worth making.
+				// Both inputs validated before either is acted on, so one resubmission fixes everything.
 				const existing = resolveExistingSqon(rawExistingSqon, context);
-				const errors = [...existing.errors, ...validateClauses(clauses, context)];
+				// fields doesn't statically declare isArray (tracked tech debt), though it's present at runtime.
+				const cardinalityFields = fields as unknown as Record<string, FieldCardinality>;
+				const errors = [
+					...existing.errors,
+					...validateClauses(clauses, context),
+					...findInClauseCardinalityConflicts(clauses, existing.sqon, cardinalityFields),
+					...findAllClauseCardinalityConflicts(clauses, existing.sqon, cardinalityFields),
+				];
 				if (errors.length > 0) {
 					return errorResult(
 						composeValidationError({
@@ -576,11 +662,7 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 
 				const sqon = normalizeRoot(foldClauses({ clauses, combination, existingSqon: existing.sqon }));
 
-				// A failsafe, not a user-facing check: every field name and operator in this SQON was
-				// already validated on the way in, as either a clause or part of existingSqon, so a
-				// failure here means the fold itself produced something the catalogue cannot run.
-				// Reaching it is a defect in this tool rather than a fixable input, which is why the
-				// message says not to retry. Kept because v2 and v3 add folds this cannot yet see.
+				// A failsafe: every name here was already validated, so a failure means the fold itself is broken.
 				const validation = validateSqon(sqon, context);
 				if (!validation.valid) {
 					return errorResult(
@@ -588,7 +670,7 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 					);
 				}
 
-				const submittedCount = clauses.length + (existing.sqon ? countFilterClauses(existing.sqon) : 0);
+				const submittedCount = clauses.length + existing.submittedFilterCount;
 				const filterCount = countFilterClauses(sqon);
 				const notes: string[] = [];
 
@@ -598,10 +680,7 @@ export const registerBuildSqonTool = (server: McpServer, { client, config }: Mcp
 					);
 				}
 
-				// A wildcard value carrying no wildcard character is matched against the whole field
-				// value, so it finds an exact term rather than a substring. That is a legitimate query,
-				// which is why this is a note rather than a rejection, but it is rarely what a text
-				// search was reaching for and the difference is invisible in the result.
+				// A wildcard value with no "*" matches the whole field, not a substring: worth noting, not rejecting.
 				const exactTermSearches = clauses.filter(
 					(clause) => clause.operator === WILDCARD_OPERATOR && !/[*?]/.test(clause.value),
 				);
