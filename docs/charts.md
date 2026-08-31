@@ -157,7 +157,7 @@ Two concentric rings showing specific values grouped into broader categories. Th
 - `fieldName` (string, required): GraphQL field name to visualize
 - `mapper` (function, required): maps one of the field's values to the category it belongs to. Throws if omitted. A value the mapper returns nothing for is left out of the chart, so the mapper doubles as a filter; if it maps nothing at all, the chart renders its empty state.
 - `maxSegments` (number, required): how many **categories** (inner-ring segments) to display. Every value belonging to a displayed category is drawn, so the number of outer segments is not capped directly. Throws if omitted or `0`.
-- `handlers.onClick`: called with the clicked segment plus an `ids` array — the values under a category when the inner ring is clicked, or the single value when the outer ring is clicked, which is what you would feed into a SQON filter
+- `handlers.onClick`: called with the clicked segment plus an `ids` array: the values under a category when the inner ring is clicked, or the single value when the outer ring is clicked, which is what you would feed into a SQON filter
 
 ```jsx
 <SunburstChart

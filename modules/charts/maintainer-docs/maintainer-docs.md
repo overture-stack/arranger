@@ -452,7 +452,7 @@ const myMapper: SunburstMappingFn = (key) => lookupMap[key];
 
 ## Component Breakdown: NetworkNodesChart
 
-Displays federated network node data as a bar chart. Unlike `BarChart`, this component does not take a `fieldName` — it queries the network nodes endpoint directly, showing one bar per remote node with hit counts.
+Displays federated network node data as a bar chart. Unlike `BarChart`, this component does not take a `fieldName`: it queries the network nodes endpoint directly, showing one bar per remote node with hit counts.
 
 ### Consumer Interface
 
@@ -472,7 +472,7 @@ Displays federated network node data as a bar chart. Unlike `BarChart`, this com
 ### Validation and Registration Flow
 
 1. **No field registration**: Does not register a GQL field. Instead, calls `requireNetworkSearch()` on mount to signal the provider to include the network nodes query.
-2. **Data source**: Reads from `getNetworkNodesData()` — the `network.nodes` portion of the GQL response, not document aggregations.
+2. **Data source**: Reads from `getNetworkNodesData()`: the `network.nodes` portion of the GQL response, not document aggregations.
 
 ### View Rendering
 

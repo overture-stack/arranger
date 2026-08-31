@@ -5,10 +5,10 @@
  * Run before cutting a release: `npm run release:check`
  *
  * Checks both prefixes so it remains valid after the pnpm migration (Phase 3.3), when
- * file: deps become workspace: deps — same problem, different prefix.
+ * file: deps become workspace: deps, same problem, different prefix.
  *
  * Exits non-zero if anything is found so it can be used as a CI gate.
- * Does not modify files — use scripts/fix-workspace-deps.mjs for the fix (npm),
+ * Does not modify files: use scripts/fix-workspace-deps.mjs for the fix (npm),
  * or verify pnpm/Changesets handled the replacement correctly (pnpm).
  */
 
