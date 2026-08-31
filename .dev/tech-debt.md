@@ -418,16 +418,16 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Fix:** Remove "and optional `description`" from both the tool description in `tools.ts` and the README table until per-field descriptions actually ship, then re-add once they do.
 **Standalone:** yes.
 
----
+### Model-facing JSON is pretty-printed, paying an indentation cost on every call
 
-### `build_sqon` merges same-field `in` clauses regardless of the field's declared cardinality
+**File:** `apps/mcp-server/src/mcp/tools.ts:71` (`get_catalogue_fields`); `apps/mcp-server/src/mcp/resources.ts:19,36,65`
+**Severity:** low (no defect; a recurring token cost on the payloads a model reads most often)
+**Kind:** avoidable overhead
+**Issue:** These sites serialize with `JSON.stringify(data, null, 2)`, so every response carries newlines and two spaces per nesting level. No human reads a tool result, and a model parses compact JSON exactly as well, so the whitespace buys nothing on the `get_catalogue_fields` path. Measured on a synthesized catalogue introspection body of 47 fields, that count taken from `integration-tests/server/test/assets/model_centric_1.mappings.json` rather than from any mcp-server fixture: 7063 characters pretty against 4896 compact, a 31 percent reduction. The MCP specification has a tool that returns `structuredContent` also return the serialized JSON as a text block for backwards compatibility, so the same payload ships twice and the saving applies on both, roughly 4300 characters per call on a tool a model invokes before nearly every query.
+**Fix:** Drop the indent argument at `tools.ts:71`, which is read only by a model. The three `resources.ts` sites are a judgement call rather than an obvious win, since a client may render a resource for a person to read, and indentation is the only thing making that legible. Decide those deliberately rather than sweeping the pattern.
 
-**File:** `apps/mcp-server/src/mcp/buildSqonTool.ts` (`mergeIntoExistingInClause`, called from `foldClauses`)
-**Severity:** medium (returns a wider result set than one of the two readings a caller may have meant, with no signal; no access-control consequence, since the server-side filter is composed independently downstream)
-**Kind:** unhandled case, not deferred behaviour
-**Issue:** Two `in` clauses on one field are merged by unioning their value lists, so `status in ['active']` submitted with `status in ['pending']` builds `status in ['active', 'pending']`, meaning "either". That is the correct reading when a field holds only one value, because no document could satisfy both clauses at once. It is wrong as soon as the field can hold several at once, where "every one of these must be present" is an equally legitimate reading and the union silently picks the other. The merge never consults `isArray`, which catalogue introspection now reports, so `true` and `null` are **unhandled rather than knowingly accepted**: `true` means a configuration declared the field multi-valued, `null` means nothing declared it, and neither justifies the union. Every fixture in `buildSqonTool.test.ts` declares `isArray: false`, the one state the current behaviour is correct for, so no existing test can fail on this.
-**Fix:** Gate the merge on the field's `isArray` as parsed by `catalogueIntrospectionSchema`: union only when it is `false`. For `true`, keep the clauses separate or ask the caller which reading was meant. For `null`, treat it as undeclared rather than as `false`. Note that the cautious direction is operator-specific and inverts for `all`, which needs `isArray: true` to be satisfiable at all, so a shared "treat `null` like `false`" helper would be wrong for one of the two callers. Add a fixture per `isArray` state; the current fixtures cannot express the failure.
-**Standalone:** yes, though it lands most cleanly alongside the `all` operator work, which reads the same signal in the opposite direction
+**Do not change `executeQueryTool.ts:199`.** It looks identical and is not: that call formats the GraphQL variables inside `server.server.elicitInput()`, the confirmation prompt a person reads before a query runs. Its indentation is the feature. A regex sweep of `JSON.stringify(.*null, 2)` breaks it, which is the reason this entry names sites individually rather than describing a pattern.
+**Standalone:** yes; one argument removed, plus a decision on the resource sites
 
 ## apps/search-server
 

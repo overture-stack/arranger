@@ -27,10 +27,12 @@ const introspection = {
 		date: ['gt', 'gte', 'lt', 'lte', 'between'],
 	},
 	fields: {
-		study: { displayName: 'Study', type: 'keyword' },
-		'donor.sex': { displayName: 'Biological Sex', type: 'keyword' },
-		'donor.age_at_diagnosis': { displayName: 'Age at Diagnosis', type: 'long', unit: 'years' },
-		'donor.enrolled_on': { displayName: 'Enrolment Date', type: 'date' },
+		study: { displayName: 'Study', isArray: false, type: 'keyword' },
+		'donor.sex': { displayName: 'Biological Sex', isArray: false, type: 'keyword' },
+		'donor.age_at_diagnosis': { displayName: 'Age at Diagnosis', isArray: false, type: 'long', unit: 'years' },
+		'donor.enrolled_on': { displayName: 'Enrolment Date', isArray: false, type: 'date' },
+		biomarkers: { displayName: 'Biomarkers', isArray: true, type: 'keyword' },
+		'donor.legacy_tag': { displayName: 'Legacy Tag', isArray: null, type: 'keyword' },
 	},
 };
 
@@ -844,16 +846,18 @@ suite('build_sqon text search', () => {
 
 suite('build_sqon set-membership operators', () => {
 	test('builds an "all" clause requiring every value', async () => {
+		// `study` is declared single-valued (`isArray: false`), so `all` with more than one value
+		// would trip the cardinality gate below: use a field confirmed multi-valued instead.
 		const { output } = await buildSqon({
 			catalogueId: 'participants',
 			combination: 'and',
-			clauses: [{ fieldName: 'study', operator: 'all', value: ['A', 'B'] }],
+			clauses: [{ fieldName: 'biomarkers', operator: 'all', value: ['A', 'B'] }],
 		});
 		assert.deepEqual(output.sqon, {
 			op: 'and',
-			content: [{ op: 'all', content: { fieldName: 'study', value: ['A', 'B'] } }],
+			content: [{ op: 'all', content: { fieldName: 'biomarkers', value: ['A', 'B'] } }],
 		});
-		assert.equal(output.summary, 'Study includes all of "A" or "B"');
+		assert.equal(output.summary, 'Biomarkers includes all of "A" or "B"');
 	});
 
 	test('builds a "some-not-in" clause', async () => {
@@ -889,6 +893,199 @@ suite('build_sqon set-membership operators', () => {
 				`${operator} should be rejected on a long field`,
 			);
 		}
+	});
+});
+
+suite('build_sqon field cardinality gate', () => {
+	test('refuses to guess when two "in" clauses collide on a genuinely multi-valued field', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA1'] },
+				{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA2'] },
+			],
+		});
+		assert.ok(message.includes('Field "biomarkers" can hold more than one value'));
+		assert.ok(message.includes('matches either'));
+		assert.ok(message.includes('matches both'));
+		assert.ok(message.includes('"all" operator'));
+	});
+
+	test("refuses to guess when the field's cardinality was never declared", async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'donor.legacy_tag', operator: 'in', value: ['A'] },
+				{ fieldName: 'donor.legacy_tag', operator: 'in', value: ['B'] },
+			],
+		});
+		assert.ok(message.includes('Field "donor.legacy_tag"\'s cardinality is not declared'));
+		// An undeclared field is not a confirmed multi-valued one: "all" could be just as
+		// unsatisfiable as "in", so the message must not recommend it outright the way the
+		// isArray: true case does.
+		assert.ok(!message.includes('use the "all" operator'));
+		assert.ok(message.includes('confirm with the data owner'));
+	});
+
+	test('refuses the same collision when it arrives via existingSqon instead of one call', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA2'] }],
+			existingSqon: { op: 'in', content: { fieldName: 'biomarkers', value: ['BRCA1'] } },
+		});
+		assert.ok(message.includes('Field "biomarkers" can hold more than one value'));
+	});
+
+	// existingSqon is reduced (via SqonBuilder.from().toValue()) before the gate scans it, not just
+	// normalized. A single-item nested group unwraps to a bare leaf on reduction, the same shape
+	// addFilterClause folds against later; scanning the raw, pre-reduction shape would miss this
+	// collision entirely, since the gate's top-level scan sees a group, not a leaf, at that point.
+	test('refuses a collision hiding inside a nested single-item group in existingSqon', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA2'] }],
+			existingSqon: {
+				op: 'and',
+				content: [
+					{ op: 'and', content: [{ op: 'in', content: { fieldName: 'biomarkers', value: ['BRCA1'] } }] },
+				],
+			},
+		});
+		assert.ok(message.includes('Field "biomarkers" can hold more than one value'));
+	});
+
+	test('reports one collision per field, not once per extra colliding clause', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA1'] },
+				{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA2'] },
+				{ fieldName: 'biomarkers', operator: 'in', value: ['BRCA3'] },
+			],
+		});
+		assert.equal(message.split('Field "biomarkers" can hold more than one value').length - 1, 1);
+	});
+
+	test('still merges freely on a field declared single-valued', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'study', operator: 'in', value: ['A'] },
+				{ fieldName: 'study', operator: 'in', value: ['B'] },
+			],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'in', content: { fieldName: 'study', value: ['A', 'B'] } }],
+		});
+	});
+
+	test('refuses an "all" clause with more than one value on a field declared single-valued', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'study', operator: 'all', value: ['A', 'B'] }],
+		});
+		assert.ok(message.includes('Field "study" is declared single-valued'));
+		assert.ok(message.includes('can never match'));
+	});
+
+	test('refuses an "all" clause with more than one value when cardinality is undeclared', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.legacy_tag', operator: 'all', value: ['A', 'B'] }],
+		});
+		assert.ok(message.includes('Field "donor.legacy_tag"\'s cardinality is not declared'));
+		assert.ok(message.includes('will never match on a single-valued field'));
+	});
+
+	test('allows an "all" clause with more than one value on a field confirmed multi-valued', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'biomarkers', operator: 'all', value: ['BRCA1', 'BRCA2'] }],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'all', content: { fieldName: 'biomarkers', value: ['BRCA1', 'BRCA2'] } }],
+		});
+	});
+
+	test('exempts a single-value "all" clause regardless of cardinality', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'study', operator: 'all', value: ['A'] }],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'all', content: { fieldName: 'study', value: ['A'] } }],
+		});
+	});
+
+	// reduceSqon merges same-field "all" under "and", so the check has to be on the combined total.
+	test('refuses two single-value "all" clauses on the same field that would fold into a multi-value one', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'study', operator: 'all', value: ['A'] },
+				{ fieldName: 'study', operator: 'all', value: ['B'] },
+			],
+		});
+		assert.ok(message.includes('Field "study" is declared single-valued'));
+	});
+
+	test('refuses a single-value "all" clause that would fold against an existing "all" leaf on the same field', async () => {
+		const message = await expectError({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'study', operator: 'all', value: ['B'] }],
+			existingSqon: { op: 'all', content: { fieldName: 'study', value: ['A'] } },
+		});
+		assert.ok(message.includes('Field "study" is declared single-valued'));
+	});
+
+	// Two single-value clauses repeating the same value fold to one distinct value (deduplicated),
+	// not two: still satisfiable regardless of cardinality, so this must not be flagged.
+	test('does not flag two single-value "all" clauses naming the same value', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'study', operator: 'all', value: ['A'] },
+				{ fieldName: 'study', operator: 'all', value: ['A'] },
+			],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'all', content: { fieldName: 'study', value: ['A'] } }],
+		});
+	});
+
+	test('does not flag a negated single-value "all" clause colliding with an unnegated one, matching the fold', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [
+				{ fieldName: 'study', operator: 'all', value: ['A'] },
+				{ fieldName: 'study', operator: 'all', value: ['B'], negate: true },
+			],
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [
+				{ op: 'all', content: { fieldName: 'study', value: ['A'] } },
+				{ op: 'not', content: [{ op: 'all', content: { fieldName: 'study', value: ['B'] } }] },
+			],
+		});
 	});
 });
 
@@ -1072,6 +1269,33 @@ suite('build_sqon response', () => {
 		});
 		assert.ok(Array.isArray(output.notes) && output.notes[0].includes('2 filter clauses reduced to 1'));
 		assert.equal(output.summary, 'Age at Diagnosis is greater than 70');
+	});
+
+	// clauseCount has to count what was submitted, not what survived the reduction, or the
+	// "reduced to" note goes silent on exactly the case it exists to explain.
+	test('counts clauses submitted inside an existingSqon that reduces on its own', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('donor.sex', ['Male'])],
+			existingSqon: {
+				op: 'or',
+				content: [
+					{ op: 'in', content: { fieldName: 'study', value: ['A'] } },
+					{ op: 'in', content: { fieldName: 'study', value: ['B'] } },
+				],
+			},
+		});
+		assert.equal(output.clauseCount, 3);
+		assert.equal(output.filterCount, 2);
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [
+				{ op: 'in', content: { fieldName: 'study', value: ['A', 'B'] } },
+				{ op: 'in', content: { fieldName: 'donor.sex', value: ['Male'] } },
+			],
+		});
+		assert.ok(Array.isArray(output.notes) && output.notes[0].includes('3 filter clauses reduced to 2'));
 	});
 
 	test('summarizes two "in" clauses on one field as the single any-of filter they merge into', async () => {

@@ -635,4 +635,19 @@ export default ({ getClient }: BuildSqonEnv) => {
 		const docCountsByKey = Object.fromEntries(vitalStatus.buckets.map((bucket) => [bucket.key, bucket.doc_count]));
 		assert.deepEqual(docCountsByKey, { Alive: 2, Deceased: 2, Unknown: 1 });
 	});
+
+	// Proves the cardinality gate is wired through the real server, not just the unit suite's
+	// mocked catalogue. The `isArray: true`/`null` branches are covered there instead, since no
+	// fixture catalogue here declares a multi-valued or undeclared field.
+	test('31.rejects an "all" clause with more than one value on a field declared single-valued', async () => {
+		const text = getErrorText(
+			await callBuildSqon(getClient(), {
+				catalogueId: 'catalogue-a',
+				combination: 'and',
+				clauses: [{ fieldName: 'vital_status', operator: 'all', value: ['Alive', 'Deceased'] }],
+			}),
+		);
+
+		assert.match(text, /"vital_status" is declared single-valued/);
+	});
 };
