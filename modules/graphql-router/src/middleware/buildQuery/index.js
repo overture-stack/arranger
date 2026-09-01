@@ -290,6 +290,18 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	}
 };
 
+/**
+ * Compiles a SQON into an Elasticsearch query body.
+ *
+ * @param {object} args
+ * @param {string} [args.caller] Label used in diagnostics only.
+ * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`, so their clauses are wrapped.
+ * @param {string} [args.nestingPrefix] Prefix applied to field names before compilation.
+ * @param {object} [args.filters] The SQON to compile. Absent or empty compiles to `{}`, which
+ *   matches every document, so callers on an access-control path must guarantee a filter separately.
+ *   `compileFilter` is what enforces that, and it throws rather than returning a nullish filter.
+ * @returns {object} An Elasticsearch query body.
+ */
 export default function ({ caller = 'unknown', nestedFieldNames = [], nestingPrefix, filters: rawFilters }) {
 	if (Object.keys(rawFilters || {}).length === 0) return {};
 

@@ -13,7 +13,7 @@ import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/confi
  * The field is inert: an empty value list matches nothing whatever field it names, so `_id` is
  * chosen only because every document has one.
  */
-const getDefaultServerSideFilter: GetServerSideFilterFn = () => ({
+const getDefaultServerSideFilter: GetServerSideFilterFn<unknown> = () => ({
 	op: 'not',
 	content: [
 		{
