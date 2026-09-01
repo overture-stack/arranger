@@ -8,21 +8,9 @@ This document covers two categories of planned work: **product and architecture*
 
 ## Architecture
 
-### Readiness reporting that reflects live state
-
-_Priority: high._
-
-`GET /ready` reports catalogue statuses computed once during startup and captured in a closure. Nothing updates them afterwards and no periodic re-check exists anywhere in the package, so the endpoint answers "did the catalogues load when this process booted" rather than "can this server serve a query now". A server that starts cleanly and later loses its search engine keeps reporting ready, and an orchestrator gets no signal to stop sending it traffic.
-
-Fix: a background interval re-checks each mounted catalogue with `indices.exists`, and `/ready` serves the cached result. Background rather than per-request, because checking on each request makes probe latency equal search-engine latency, so a slow engine trips the probe timeout and removes a working pod from service, which is a worse failure than the one being fixed. The cached result should carry its own timestamp, with a stale cache counting as unhealthy, so a stalled refresher cannot report healthy indefinitely: that is the same class of defect one level up. `indices.exists` needs no new `SearchClient` member, which matters because that interface is hand-written over two engines and every addition has to be implemented twice.
-
-Liveness stays blind to catalogue state. A live-checking `/ping` would restart every pod during a search-engine outage, which is precisely what it was made blind to avoid.
-
-Out of scope here: recovering a catalogue that failed at startup. Its routes are replaced by `buildFailedCatalogueRouter` at mount time, so recovery means rebuilding the schema and remounting, a much larger change. Detection is separable and is what closes the reporting gap.
-
 ### Request rate limiting
 
-_Priority: high. On hold alongside the readiness item above, same reason._
+_Priority: high. Not started._
 
 Neither `modules/graphql-router` nor `apps/search-server` has any rate limiting, and no such dependency exists in either package. Every deployed instance serves as many requests as it receives, and the GraphQL endpoint in particular accepts a single small request that can expand into an arbitrarily expensive query.
 
@@ -608,6 +596,18 @@ _Priority: medium. Standalone once the approach is agreed._
 
 [Detail: the full fix, the rejected simpler alternative, and the Vault/Helm work required](docs/atlas/roadmap/health-check-credential.md)
 
+### Per-catalogue recovery in readiness reporting
+
+_Priority: low. Standalone._
+
+`/ready` now reflects live engine reachability: `PING_MS` drives a periodic `indices.exists` probe, and the endpoint reports 503 while the engine is unreachable and recovers on its own when it returns. It answers `{ status, engineReachable }`. That closes the case that recurs in a cluster, an engine going away or coming back under a process that is otherwise fine, and it needs no cluster-level permission, so the application credential stays as narrow as the item above wants it.
+
+What remains is narrower. **Catalogue statuses are still decided once, while routers are built.** A catalogue that failed at startup for a reason of its own, a missing index or a bad mapping, stays `failed` until the pod restarts even after the cause is fixed, and the aggregate keeps reporting it. Recovering that means re-attempting router construction per catalogue on a schedule and swapping in the rebuilt router, which is a different and larger change from probing a connection.
+
+**A second gap, and it is the sharper of the two.** The probe holds a plain boolean, so if the interval stops running the last result stands indefinitely. A stalled refresher that last saw a healthy engine reports healthy forever, which is the fail-open the probe exists to remove, one level up. The fix is for the cached result to carry the time it was taken and for a stale result to count as unreachable, so a refresher that dies takes the pod out of rotation rather than freezing its last good answer.
+
+`PING_MS` is the natural interval for it and is already threaded through config, so the wiring exists. Worth doing when catalogue-level flapping is observed in practice rather than pre-emptively: a rebuild loop that races an in-flight request is a worse failure than the one it fixes.
+
 ### Helm chart update
 
 _Priority: medium. Maintenance burden for production deployments._
@@ -896,4 +896,24 @@ When `sqon` changes, `--filter=[HEAD^1]` includes `types`, `graphql-router`, `se
 
 What the previous diagram got wrong: (1) `components` was marked "independent of server chain" but declares both `arranger-types` and `sqon`, so it is downstream of both; (2) `apps/mcp-server` was absent entirely despite declaring `sqon`; (3) `integration-tests/mcp-server` was absent despite depending on `graphql-router` and `types`; (4) the `components → charts` edge is not backed by a resolvable declaration at all, only a `peerDependencies` entry, which is the §3.3 blocker noted above.
 
-Two consequences for Phase 2: the `integration-tests/server` node was annotated `cache: false` here but `turbo.json` does not actually set it, and §2.2's `--filter=!integration-tests/server` excludes only one of the two ES-dependent suites (and uses a directory path where the package name is `integration-tests-search-server`). Both suites also default `SERVER_PORT` to 5678, which is safe under today's sequential `npm run test --ws` and will race the moment Turbo parallelizes them.
+Two consequences for Phase 2: the `integration-tests/server` node was annotated `cache: false` here but `turbo.json` does not actually set it, and §2.2's `--filter=!integration-tests/server` excludes only one of the two ES-dependent suites (and uses a directory path where the package name is `integration-tests-search-server`).
+
+The port collision named here is resolved: both suites defaulted `SERVER_PORT` to 5678, and `integration-tests/mcp-server` now defaults to 5680, clear of the 5678 and 5679 that `integration-tests/server` uses. Sequential runs were never affected; this removes the race that parallelizing them would have introduced.
+
+### Ephemeral ports for test harnesses
+
+**Low priority.** Distinct hardcoded defaults resolve today's collision but keep a coordination burden: every new harness has to know which ports are taken, and nothing enforces it. Binding port `0` removes the class, since the OS assigns a free port per process and no two suites can contend.
+
+The blocker is structural rather than conceptual. All three harnesses build their base URL at module scope, before any server exists:
+
+```
+const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
+const serverUrl = `http://localhost:${serverPort}`;
+const rootApi = ajax(serverUrl, {});
+```
+
+With port 0 the configured value is not the bound one, so `serverUrl` and every client built from it have to be created after the listener is up. That means each harness returning its bound port from the start step and deferring client construction, across three files where the client is currently a module-level constant used throughout. Mechanical, but not a default swap.
+
+`apps/search-server` is already ready for it: `server.ts` reports the port from `server.address()` rather than from the configured value, so an explicit `SERVER_PORT=0` works and logs a reachable URL today.
+
+**Not proposed for the repo-wide default.** `docker-compose.yml` publishes `5050:5050` and sets no `SERVER_PORT`, both Dockerfiles `EXPOSE 5050`, and `docs/reference/08-Migration/v3.1.md` documents 5050 as the default. Changing it is a breaking change requiring a Helm change in `overture/infra` that Jenkins deploys, and belongs in a release note rather than riding along with a test-harness fix.

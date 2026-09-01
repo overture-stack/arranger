@@ -5,7 +5,7 @@ import morgan from 'morgan';
 // TODO: add winston in module and import here
 
 import arrangerRoutes from '#arrangerRoutes.js';
-import { computeAggregateServerStatus, serverAggregateStatuses } from '#availability/index.js';
+import { computeAggregateServerStatus, serverAggregateStatuses, startEngineProbe } from '#availability/index.js';
 import loadAllConfigs from '#configs/index.js';
 import type { ExternalConfigs } from '#configs/types/index.js';
 import createIntrospectionRoutes from '#introspection/index.js';
@@ -84,21 +84,42 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 					(failedCatalogueIds.length ? ` (${failedCatalogueIds.join(', ')} unavailable)` : ''),
 			);
 
+		/**
+		 * Polls the engine every `pingMs` so readiness can change after startup. Catalogue statuses
+		 * themselves are still decided once, while routers are built; this covers the failure that
+		 * actually recurs in a cluster, which is the engine going away or coming back under a
+		 * process that is otherwise fine.
+		 */
+		const engineProbe = startEngineProbe({
+			esClient,
+			index: Object.values(catalogs)[0]?.esIndex ?? '_arranger_probe',
+			intervalMs: health.pingMs,
+		});
+
 		// Readiness: reflects whether this replica can usefully serve traffic right now. Only
 		// `unhealthy` (zero enabled catalogues available) should pull the pod out of rotation;
-		// `degraded` still serves real traffic for its available catalogues. Recomputed per
-		// request rather than captured once, since a future reload can change catalogue statuses
-		// without a server restart.
+		// `degraded` still serves real traffic for its available catalogues.
 		app.get(health.readyPath, (_req, res) => {
 			const status = computeAggregateServerStatus(catalogueStatuses);
-			res.status(status === serverAggregateStatuses.UNHEALTHY ? 503 : 200).json({ status });
+			const engineReachable = engineProbe.isReachable();
+			const ready = engineReachable && status !== serverAggregateStatuses.UNHEALTHY;
+
+			res.status(ready ? 200 : 503).json({ status, engineReachable });
 		});
 
 		app.use(createIntrospectionRoutes({ catalogs, catalogueRouters, catalogueStatuses }));
 		app.use('/', arrangerRouter);
 
 		const server = app.listen(serverPort, () => {
-			const message = `⚡️⚡️⚡️ Listening on port ${serverPort} ⚡️⚡️⚡️`;
+			/**
+			 * Reported from the bound address rather than from the configured value, because the two
+			 * differ whenever `serverPort` is 0: the OS assigns a free port and the configured value
+			 * is not the one anything can connect to.
+			 */
+			const address = server.address();
+			const boundPort = typeof address === 'object' && address !== null ? address.port : serverPort;
+
+			const message = `⚡️⚡️⚡️ Listening on port ${boundPort} ⚡️⚡️⚡️`;
 			const line = '-'.repeat(message.length);
 
 			console.info(`\n${line}`);
@@ -106,7 +127,7 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 			console.info(`${line}\n`);
 
 			if (enableDebug) {
-				console.log(`URL: http://localhost:${serverPort}\n`);
+				console.log(`URL: http://localhost:${boundPort}\n`);
 			}
 		});
 
@@ -117,6 +138,8 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 
 			process.exit(1);
 		});
+
+		server.on('close', () => engineProbe.stop());
 
 		return server;
 	} catch (err) {

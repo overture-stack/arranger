@@ -1,3 +1,4 @@
+export { type EngineProbe, startEngineProbe } from './engineReachability.js';
 export { computeAggregateServerStatus } from './computeAggregateServerStatus.js';
 export {
 	type CatalogueStatus,

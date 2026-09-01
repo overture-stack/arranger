@@ -31,7 +31,11 @@ const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-mcp-testing';
 const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-mcp-testing';
 const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
-const arrangerPort = stringToNumber(process.env.SERVER_PORT, 5678);
+// Distinct from integration-tests/server, which defaults to 5678 and 5679, so the two suites can run
+// concurrently. They are sequential under `npm run test --ws` today and would collide the moment
+// Turbo parallelizes them. A port of 0 would remove the coordination entirely; see `.dev/roadmap.md`
+// § Ephemeral ports for test harnesses.
+const arrangerPort = stringToNumber(process.env.SERVER_PORT, 5680);
 const mcpPort = stringToNumber(process.env.MCP_TEST_PORT, 3199);
 
 const arrangerBaseUrl = `http://127.0.0.1:${arrangerPort}`;

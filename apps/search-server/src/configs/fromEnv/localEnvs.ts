@@ -85,11 +85,11 @@ const configsFromEnv = {
 	[configFeatureFlagProperties.ENABLE_DEBUG]: stringToBool(process.env.ENABLE_DEBUG),
 	[configFeatureFlagProperties.ENABLE_LOGS]: stringToBool(process.env.ENABLE_LOGS),
 	health: {
-		pingMs: stringToNumber(process.env.PING_MS) || 2200,
+		pingMs: stringToNumber(process.env.PING_MS, 2200),
 		pingPath: process.env.PING_PATH || '/ping',
 		readyPath: process.env.READY_PATH || '/ready',
 	},
-	serverPort: stringToNumber(process.env.SERVER_PORT) || 5050,
+	serverPort: stringToNumber(process.env.SERVER_PORT, 5050),
 };
 
 export default configsFromEnv;
