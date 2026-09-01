@@ -178,7 +178,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 };
 
 /**
- * Create GQL schema and mockSchema based on type configuration and runtime flags.
+ * Create the GQL schema based on type configuration and runtime flags.
  */
 const createSchema = <Context extends ArrangerBaseContext>({
 	enableDebug = false,
@@ -194,7 +194,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	setsIndex: string;
 	types: SchemaTypesTuple;
-}): { schema: GraphQLSchema; mockSchema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
+}): { schema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
 	const { resolvers, typesWithSets } = createCatalogueResolvers({
 		debug: enableDebug,
 		enableAdmin,
@@ -204,13 +204,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	});
 
 	return {
-		mockSchema: createSchemaForResolvers({
-			mock: true,
-			typesWithSets,
-			resolvers,
-		}),
 		schema: createSchemaForResolvers({
-			mock: false,
 			middleware: graphqlOptions.middleware || [],
 			typesWithSets,
 			resolvers,
@@ -245,6 +239,7 @@ const formatError = (error: GraphQLError): GraphQLFormattedError => ({
 });
 
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
+	disableClientFilters = false,
 	disableGraphQLIntrospection,
 	disablePlayground,
 	enableDebug,
@@ -254,9 +249,9 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	label,
 	maxAliases,
 	maxDepth,
-	mockSchema,
 	schema,
 }: {
+	disableClientFilters?: boolean;
 	disableGraphQLIntrospection?: boolean;
 	disablePlayground: boolean;
 	enableDebug?: boolean;
@@ -267,11 +262,9 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	label?: string;
 	maxAliases?: number;
 	maxDepth?: number;
-	mockSchema: GraphQLSchema;
 	schema: GraphQLSchema;
 }) => {
 	const mainPath = '/graphql';
-	const mockPath = '/mock/graphql';
 	const router = Router();
 
 	console.log(`\n${logSeparator(label)}\nStarting GraphQL server${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
@@ -305,6 +298,9 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 					esClient,
 					request,
 					...(externalContext || {}),
+
+					// After the spread: an external context must not be able to switch this off.
+					disableClientFilters,
 				};
 			};
 
@@ -338,30 +334,6 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			router.use(mainPath, noSchemaHandler(mainPath));
 		}
 
-		if (mockSchema) {
-			const apolloMockServer = new ApolloServer({
-				allowBatchedHttpRequests: enableGraphQLBatching,
-				cache: 'bounded',
-				formatError,
-				introspection: !disableGraphQLIntrospection,
-				schema: mockSchema,
-				validationRules,
-				...apolloFeatureFlags,
-			});
-
-			await apolloMockServer.start();
-
-			apolloMockServer.applyMiddleware({
-				app: router,
-				// See the equivalent comment on apolloServer.applyMiddleware above.
-				cors: false,
-				path: '/mock/graphql',
-			});
-
-			console.log(`  - GraphQL mock endpoint running at ...${mockPath}`);
-		} else {
-			router.use(mockPath, noSchemaHandler(mockPath));
-		}
 	} catch (err) {
 		enableDebug && console.debug(`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${err}`);
 		throw schemaBuildError('Something went wrong while starting the GraphQL endpoint', err);
@@ -371,7 +343,6 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		'/',
 		addContext({
 			schema,
-			mockSchema,
 		}),
 	);
 
@@ -414,7 +385,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			mappingFromIndex,
 		});
 
-		const { mockSchema, schema, resolvers } = await createSchema({
+		const { schema, resolvers } = await createSchema({
 			enableDebug,
 			enableAdmin,
 			getServerSideFilter,
@@ -494,7 +465,6 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		return {
 			fieldsFromMapping,
 			typesWithMappings,
-			mockSchema,
 			schema: fullSchema,
 		};
 	} catch (error: unknown) {
@@ -540,7 +510,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
 
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
+		const { fieldsFromMapping, schema, typesWithMappings } = await createSchemasFromConfigs({
 			configs,
 			enableDebug,
 			enableAdmin,
@@ -553,6 +523,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		});
 
 		const graphQLEndpoints = await createEndpoint({
+			disableClientFilters: configs[configOptionalProperties.DISABLE_FILTERS] ?? false,
 			disableGraphQLIntrospection: configs[configOptionalProperties.DISABLE_GRAPHQL_INTROSPECTION] ?? false,
 			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND] ?? false,
 			enableDebug,
@@ -562,7 +533,6 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			label,
 			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
 			maxDepth: configs[configOptionalProperties.GRAPHQL_MAX_DEPTH],
-			mockSchema,
 			schema,
 		});
 

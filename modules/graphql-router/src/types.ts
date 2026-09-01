@@ -27,6 +27,8 @@ export type Resolver<
 
 export type RequestContextProps = { headers: Headers };
 export type ArrangerBaseContext = {
+	/** When true, `compileFilter` drops the caller's filter. */
+	disableClientFilters?: boolean;
 	esClient: SearchClient;
 	request: RequestContextProps;
 };

@@ -1,4 +1,3 @@
-import { addMocksToSchema } from '@graphql-tools/mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { applyMiddleware } from 'graphql-middleware';
@@ -85,14 +84,12 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 
 export const createSchemaForResolvers = ({
 	middleware = [],
-	mock = false,
 	resolvers,
 	rootTypes = [],
 	scalarTypes = [],
 	typesWithSets,
 }: {
 	middleware?: GraphQLEndpointMiddleware[];
-	mock?: boolean;
 	resolvers: any;
 	rootTypes?: any[];
 	scalarTypes?: any[];
@@ -112,13 +109,6 @@ export const createSchemaForResolvers = ({
 			requireResolversForResolveType: 'ignore',
 		},
 	});
-
-	if (mock) {
-		addMocksToSchema({
-			schema,
-			mocks: { JSON: () => JSON.stringify({ key: 'value' }) },
-		});
-	}
 
 	return applyMiddleware(schema, ...middleware);
 };

@@ -22,16 +22,15 @@ const convertDataToExportFormat =
 			})
 			.pipe(dataToExportFormat({ ...args, ctx, fileType }));
 
-const getFileStream = async ({ chunkSize, ctx, file, fileType, getServerSideFilter, mock }) => {
-	const exportArgs = defaults(file, { chunkSize, fileType, mock });
+const getFileStream = async ({ chunkSize, ctx, file, fileType, getServerSideFilter }) => {
+	const exportArgs = defaults(file, { chunkSize, fileType });
 
 	return convertDataToExportFormat({ ctx, fileType, getServerSideFilter })({
 		...exportArgs,
-		mock,
 	});
 };
 
-const multipleFiles = async ({ chunkSize, ctx, files, getServerSideFilter, mock }) => {
+const multipleFiles = async ({ chunkSize, ctx, files, getServerSideFilter }) => {
 	const pack = tarPack();
 
 	Promise.all(
@@ -47,7 +46,6 @@ const multipleFiles = async ({ chunkSize, ctx, files, getServerSideFilter, mock 
 					ctx,
 					file,
 					fileType: file.fileType,
-					mock,
 				});
 
 				fileStream.on('data', (chunk) => (data += chunk));
@@ -68,7 +66,7 @@ const multipleFiles = async ({ chunkSize, ctx, files, getServerSideFilter, mock 
 };
 
 export const dataStream = async ({ ctx, getServerSideFilter, params }) => {
-	const { chunkSize, files, fileName = 'file.tar.gz', fileType = 'tsv', mock } = params;
+	const { chunkSize, files, fileName = 'file.tar.gz', fileType = 'tsv' } = params;
 
 	if (files?.length > 0) {
 		return files.length === 1
@@ -79,13 +77,12 @@ export const dataStream = async ({ ctx, getServerSideFilter, params }) => {
 						ctx,
 						file: files[0],
 						fileType: files[0].fileType || fileType,
-						mock,
 					}),
 					responseFileName: files[0].fileName || fileName,
 				}
 			: {
 					contentType: 'application/gzip',
-					output: multipleFiles({ chunkSize, ctx, files, mock }),
+					output: multipleFiles({ chunkSize, ctx, files }),
 					responseFileName: fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'), // make sure file ends with '.tar.gz'
 				};
 	}

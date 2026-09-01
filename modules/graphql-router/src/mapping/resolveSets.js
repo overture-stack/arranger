@@ -76,6 +76,7 @@ export const saveSet =
 			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: sqon,
+				disableClientFilters: context.disableClientFilters,
 				serverSideFilter: getServerSideFilter(context),
 			}),
 		});

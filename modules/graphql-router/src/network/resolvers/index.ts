@@ -111,6 +111,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 			...remainingArgs,
 			filters: compileFilter({
 				clientSideFilter: remainingArgs.filters,
+				disableClientFilters: context.disableClientFilters,
 				serverSideFilter: getServerSideFilter?.(context),
 			}),
 		};

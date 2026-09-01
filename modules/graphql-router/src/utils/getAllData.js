@@ -21,12 +21,11 @@ export default async ({
 	ctx = {},
 	getServerSideFilter,
 	maxRows = null,
-	mock,
 	sort = [],
 	sqon,
 	...rest
 }) => {
-	const { configs, enableDebug, esClient, mockSchema, schema } = ctx;
+	const { configs, enableDebug, esClient, schema } = ctx;
 	const nestingPrefix = configs.config?.[configOptionalProperties.NESTING_PREFIX];
 
 	// TODO: review what "configs" come in here, trim down to what's relevant in this context
@@ -57,6 +56,7 @@ export default async ({
 		caller: 'getAllData',
 		filters: compileFilter({
 			clientSideFilter: sqon,
+			disableClientFilters: configs.config?.[configOptionalProperties.DISABLE_FILTERS] ?? false,
 			serverSideFilter: getServerSideFilter?.(ctx),
 		}),
 		nestedFieldNames,
@@ -74,7 +74,7 @@ export default async ({
           }
         }
       `,
-		schema: mock ? mockSchema : schema,
+		schema,
 		variables: { sqon },
 	})
 		.then(({ data }) => {

@@ -98,6 +98,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
+				disableClientFilters: context.disableClientFilters,
 				serverSideFilter,
 			}),
 		});

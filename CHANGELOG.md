@@ -29,6 +29,8 @@ This file covers high-level release notes for the Arranger project as a whole. W
 
 - **`@overture-stack/sqon` and `@overture-stack/arranger-types` now require Zod 4**: `zod` is a peer dependency at `^4.2.0` on both. Consumers on Zod 3 must upgrade, since these packages export Zod schema instances and two Zod majors in one tree do not interoperate.
 
+- **The `/mock/graphql` endpoint and the `mock` option on `/download` are removed**: vestigial, and not doing what their names said. `addMocksToSchema` returns a new schema rather than mutating its argument, and its return value was discarded, so the "mock" schema was the ordinary resolver-backed schema with the mocks thrown away. It was built and mounted unconditionally, given no middleware and no request context, and referenced by nothing in this repository: no test, no documentation, no component. What it produced was a second live GraphQL endpoint running production resolvers with access control absent rather than mocked, returning nothing today only because a resolver throws on the missing search client. `/download` selected the same schema through a client-supplied `mock` flag that no documentation described. Nothing replaces either; a deployment that never called them sees no change.
+
 - **`MAX_RESULTS_WINDOW` is now enforced**: Previously present in the env schema but not applied; now caps query results at `10000` by default. Deployments that return more than 10,000 documents must set this explicitly (via env var or per-catalogue `table.json`).
 
 See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) for upgrade instructions.

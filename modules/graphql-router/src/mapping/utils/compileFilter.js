@@ -1,30 +1,25 @@
 const isProperSqon = (sqon) => !!(sqon && sqon.op);
 
 /**
- * True when a SQON node contains no leaf clause at any depth.
- *
- * Such a node compiles to a `bool` with an empty clause array, which Elasticsearch treats as
- * match-all. The check has to recurse: `{op:'and', content:[{op:'and', content:[]}]}` has a
- * non-empty top level and still compiles to match-all.
- *
- * `Array.isArray` distinguishes a combination (content is an array of children) from a leaf
- * (content is an object carrying `fieldName`), and `every` on an empty array is true, which is
- * the empty-combination base case.
+ * A node with no leaf compiles to an empty `bool`, which Elasticsearch treats as match-all.
+ * Recursive because `{op:'and', content:[{op:'and', content:[]}]}` has a non-empty top level and
+ * still matches everything.
  */
 const hasNoLeafClause = (sqon) => Array.isArray(sqon?.content) && sqon.content.every(hasNoLeafClause);
 
 /**
  * Composes the caller's filter with the deployment's access-control filter.
  *
- * The server-side filter is validated and the client's is not, deliberately: a client filter that
- * restricts nothing is an ordinary unfiltered query, while a server-side filter that restricts
- * nothing is an access-control failure wearing the same shape. Rejecting is louder than falling
- * back to a deny, because a silent deny is indistinguishable from a query that legitimately
- * matched nothing, and every defect on this path so far has been one that failed silently.
+ * Only the server-side filter is validated: a client filter restricting nothing is an ordinary
+ * unfiltered query, while a server-side one restricting nothing is an access-control failure of
+ * the same shape. Throwing beats denying, which would look like a query that matched nothing.
+ *
+ * `disableClientFilters` drops the caller's filter here rather than at the request handler, which
+ * can only guess which variable holds one. By this point it is a parsed SQON however it arrived.
  *
  * @throws {Error} when the server-side filter is absent, or has no clauses to apply.
  */
-export default ({ clientSideFilter, serverSideFilter }) => {
+export default ({ clientSideFilter, disableClientFilters = false, serverSideFilter }) => {
 	if (!isProperSqon(serverSideFilter)) {
 		throw new Error(
 			'compileFilter: a server-side filter is required. A `getServerSideFilter` callback must ' +
@@ -42,10 +37,12 @@ export default ({ clientSideFilter, serverSideFilter }) => {
 		);
 	}
 
+	const applicableClientFilter = !disableClientFilters && isProperSqon(clientSideFilter);
+
 	return {
 		op: 'and',
 		content: [
-			isProperSqon(clientSideFilter)
+			applicableClientFilter
 				? clientSideFilter
 				: {
 						op: 'and',

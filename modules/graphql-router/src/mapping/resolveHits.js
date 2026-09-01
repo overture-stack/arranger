@@ -268,6 +268,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: filters || { op: 'and', content: [] },
+				disableClientFilters: context.disableClientFilters,
 				serverSideFilter: getServerSideFilter(context),
 			}),
 		});
