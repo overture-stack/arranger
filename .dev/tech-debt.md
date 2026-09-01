@@ -480,6 +480,8 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 ### Config-normalization functions are typed `any` at exactly the boundary where untrusted, freshly-parsed catalogue config first gets structural assumptions applied
 
 **File:** `apps/search-server/src/configs/fromFiles/normalize.ts:22,34,92,120`
+
+**Related, and worse than a typing gap: file values win over the environment for every key, including credentials.** `configTemplates/configs.json.schema` states that credentials in config JSON files are ignored. They are not: `merge({}, configsAcc, normalizedJSON)` lets a file override `esHost`, `esUser` and `esPass`. Verified by pointing an env `baseConfig` at a real cluster and overriding it from a `base.json`. Config directories are commonly mounted separately from the secret-bearing environment, which is what makes this reachable.
 **Severity:** low
 **Kind:** type-safety
 **Issue:** `getNetworkConfig`, `normalizeNetworkConfig`, `normalizeTableConfig`, and the exported `normalize` all take `fileDataJSON: any`/`configFilesJson: any`. `normalizeTableConfig` indexes into this data assuming an array shape (`fileDataJSON[configRootProperties.TABLE][tableProperties.DEFAULT_SORTING].map(...)`, lines 99-104) with no check, at the one place a malformed config shape would be most useful to catch before it merges into a live catalogue config.
@@ -505,6 +507,15 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Standalone:** yes.
 
 ---
+
+### `computeAggregateServerStatus({})` reports healthy, and the readiness endpoint reports it
+
+**File:** `apps/search-server/src/availability/computeAggregateServerStatus.ts`; `apps/search-server/src/introspection/serverDetails.ts`
+**Severity:** medium (fails open in the surface an operator would use to detect that something else failed)
+**Kind:** fail-open default
+**Issue:** Zero catalogue statuses yields `HEALTHY`, so `/ready` answers 200 for a server that knows nothing about its own catalogues. Separately, `buildServerDetails` defaults a catalogue carrying no recorded status to `AVAILABLE`. Both resolve "I do not know" to "fine". Not reachable through the main startup path today, so it is latent rather than live, and it is the same defaulting pattern as the config-load and coercion findings, sitting in the endpoint that exists to report those.
+**Fix:** Treat an empty status map as unhealthy rather than healthy, and an unrecorded catalogue as unknown rather than available. Still open, and now narrower: `/ready` also gates on live engine reachability, so a server that knows nothing about its catalogues *and* cannot reach the engine already answers 503. The defaulting defect stands for the case where the engine is reachable and the status map is empty. See `.dev/roadmap.md` § Per-catalogue recovery in readiness reporting.
+**Standalone:** yes
 
 ### Two fixture documents share an `_id`, so `integration-tests/server` indexes three documents where the file declares four
 
@@ -633,6 +644,18 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Kind:** missing documentation
 **Issue:** Same pattern already confirmed twice elsewhere this session (`DownloadButton`'s custom exporter, `Aggregations`'s `onValueChange`): a real, working, non-trivial public API with no doc page or mention at all. This is the mechanism a consumer would need to build a custom chart type beyond the three shipped ones. Distinct from the also-exported but genuinely non-functional `HeadlessChart` (see the `modules/charts` section below), which is correctly left undocumented since documenting it would be documenting a crash.
 **Fix:** Add a "Building a custom chart" section to `docs/charts.md` documenting `useChartsContext` and the `ChartContext` shape, or at minimum note its existence and point to the source for now.
+**Standalone:** yes.
+
+### Network test fixtures ship in the published `graphql-router` package
+
+**File:** `modules/graphql-router/src/network/tests/{fixtures.ts,utils.ts}`, `modules/graphql-router/src/network/aggregations/tests/fixture.ts`; exclusion list at `modules/graphql-router/tsconfig.release.json:2`
+**Severity:** low (published surface area, not a defect)
+**Kind:** build configuration
+**Issue:** The release config excludes `**/__tests__/*` and `**/*.test.ts`, so a fixture placed in either is kept out of the build. These four files are in a `tests/` directory and are named `fixtures`/`utils`/`fixture`, matching neither pattern, so they compile into `dist/network/tests/` and `dist/network/aggregations/tests/` and ship to npm with `.d.ts` files alongside. Confirmed against a fresh build. Adjacent to the earlier "trim published package contents" work, which did not cover this shape.
+
+The exclusion list now also carries `**/*.fixture.ts`, added when `src/accessControl/serverSideFilters.fixture.ts` was written, and verified to keep that file out of `dist`. That is why the naming matters: the same file under `tests/fixtures.ts` would have shipped.
+
+**Fix:** Either rename these to `*.fixture.ts` so the existing exclusion catches them, or add `**/tests/*` to the release exclusion. The rename is preferable, since it makes the excluded-from-publish property visible in the filename rather than dependent on which directory a file happens to sit in. Check the same shape in sibling packages before assuming it is graphql-router only.
 **Standalone:** yes.
 
 ### `graphql-router` README documents `mergeConfigs` as a public export; it isn't one
@@ -839,6 +862,15 @@ The other five sites are single-argument today and therefore latent rather than 
 **Fix:** Read by name across the whole `__arguments` array rather than by index, for example `Object.assign({}, ...(args ?? []))` once per field and then property lookup on the result. One helper, six call sites, one file. A test asserting that reordering arguments produces identical output would pin it.
 **Standalone:** yes.
 
+### `maxDepth` is bypassable by splitting a selection across fragments
+
+**File:** `modules/graphql-router/src/utils/queryValidation.ts` (`maxDepthRule`)
+**Severity:** medium (the depth limit is one of two configurable guards against an expensive query, and it can be defeated by rewriting the query rather than by any privilege)
+**Kind:** security (denial of service, guard bypass)
+**Issue:** graphql-js visits each `FragmentDefinition` as its own top-level definition, so the depth counter restarts at every fragment boundary while execution still inlines the spreads. Verified by execution: a depth-9 inline query produced 3 errors against a limit of 7, and the same selection at depth 13 split across fragments produced none. `maxAliasesRule` is unaffected, because it accumulates across the whole document rather than per definition.
+**Fix:** Accumulate depth across fragment spreads rather than per definition, by resolving spreads against the document's fragment map while walking. Note this makes cyclic fragment spreads reachable, so the walk needs a visited set.
+**Standalone:** yes
+
 ### `MAX_AGGREGATION_SIZE` is a default rather than a maximum, and nothing caps bucket or hit counts
 
 **File:** `modules/graphql-router/src/middleware/buildAggregations/createFieldAggregation.js:7,36,40,52,87`
@@ -879,15 +911,6 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Issue:** Apollo Server 3 is end-of-life. Several type errors in this file trace back to AS3 type definitions: `con` not on `ExpressContext` (line ~259), `IRouter` vs `Application` mismatch in `applyMiddleware` calls (lines ~269, ~289), and the `context` API shape. The file itself has a TODO at line 1 noting the upgrade is pending.
 **Fix:** The direction is to replace Apollo entirely, not upgrade to v4; see [GraphQL server migration](roadmap.md#graphql-server-migration-away-from-apollo) in the roadmap. graphql-yoga is the leading candidate. Upgrading to AS4 would be investing in a library the project intends to leave.
 **Standalone:** no; part of the broader GraphQL server migration in the roadmap
-
-### Duplicated server instantiation (main + mock)
-
-**File:** `modules/graphql-router/src/graphqlRoutes.ts` (`createEndpoint`)
-**Severity:** low
-**Kind:** design-smell
-**Issue:** Main and mock server instances are created with near-identical code blocks. A `// TODO: D.R.Y this thing!` comment acknowledges it.
-**Fix:** Will be a natural cleanup opportunity during the Apollo to graphql-yoga migration, when `createEndpoint` gets rewritten anyway. Not worth fixing in isolation against code that's slated for replacement.
-**Standalone:** no; better addressed as part of the GraphQL server migration
 
 ### `buildContext` connection parameter is vestigial
 
@@ -1075,7 +1098,13 @@ DISABLE_X="True " -> false      DISABLE_X=" true"  -> false
 ```
 
 A single trailing space is trivially produced by a Helm templated value or a `.env` line. `DISABLE_FILTERS=yes` leaves filtering enabled; `DISABLE_GRAPHQL_INTROSPECTION=on` leaves introspection open. There is no warning at any level and the boot log offers no way to tell which way a flag resolved. `parseSearchEngine`, two lines away in the same file, already warns on an unrecognized value, so the correct pattern exists in the codebase and simply was not applied here.
-**Fix:** Trim, accept the common truthy and falsy vocabularies, and warn on anything unrecognized. Given every consumer is a security flag, an unparseable value should resolve to the restrictive side, not the permissive one. Note the sibling `stringToNumber` has the analogous problem for limits: `MAX_RESULTS_WINDOW=5,000` parses as unparseable and falls back to the built-in 10000, _widening_ a cap the operator was trying to tighten.
+**Fixed.** Both coercers now trim, and `stringToBool` accepts `true`/`1`/`yes`/`on` and `false`/`0`/`no`/`off` case-insensitively. Anything else warns, naming the value, and resolves to `false`.
+
+**Resolving to the restrictive side was proposed here and deliberately not taken.** An unrecognized `DISABLE_*` value hardening itself to `true` silently disables downloads or filters in production, which is an outage with a non-obvious cause; the warning gives the operator the signal without that. The value the flag resolves to is unchanged, so no deployment behaves differently except one whose flag was already being misread.
+
+`stringToNumber` got the same treatment for the case this entry names: an unparseable limit warns rather than falling back silently, since the fallback is a default and a typo in a limit set to *tighten* below it restores the looser value. Two call sites also moved from `stringToNumber(x) || fallback` to passing the fallback as an argument, so an explicit `0` survives; `SERVER_PORT=0` means "any free port" and was becoming 5050.
+
+Not covered, and separate: the sibling `stringToArray` has the same silent-catch shape but **zero production call sites**, and it is not upstream of the CORS entry below, which parses `ALLOWED_CORS_ORIGINS` with its own `.split(',')`.
 **Standalone:** yes.
 
 ### An empty or whitespace-only `ALLOWED_CORS_ORIGINS` silently yields wildcard CORS
@@ -1086,27 +1115,6 @@ A single trailing space is trivially produced by a Helm templated value or a `.e
 **Issue:** `cors(allowedCorsOrigins?.length ? { origin: allowedCorsOrigins } : undefined)`. The parse `.filter(Boolean)`s empty tokens away, so `""`, `" "`, `","`, and `" , "` all yield `[]`, whose length is 0, so `cors()` is called with no options and defaults to `Access-Control-Allow-Origin: *`. An empty string is exactly what a Helm chart emits for a templated-but-unset value, and a stray comma is what an operator produces while editing a list down to one entry. Verified against a live express app: all four inputs produced `ACAO: *`, while a real origin list produced no wildcard. Mitigating: `cors()` sets no `Access-Control-Allow-Credentials`, so cookie-authenticated requests are not exposed; token-in-header portals are.
 **Fix:** Distinguish "unset" from "set but empty". If the variable is defined but parses to zero origins, warn and either fail startup or fall back to deny-all rather than the wildcard.
 **Standalone:** yes.
-
-### Aggregations on a server-side-filtered field escape the filter via an ES `global` wrapper, returning whole-index counts
-
-**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:63-79` (`wrapWithFilters`), `:31-54` (`removeFieldFromQuery`); root cause `modules/graphql-router/src/mapping/utils/compileFilter.js:3-17`
-**Severity:** high, and the most serious item found in the Phase 0 sweep. Live today, no plugin required.
-**Kind:** security (access-control bypass, data disclosure)
-**Issue:** With the default `aggregations_filter_themselves: false`, an aggregation on a field that the server-side filter restricts is wrapped in an ES `global` aggregation, which ignores the search query by definition, and the compensating `filter` sub-aggregation is rebuilt from the query with that field's clauses removed. When the field is the access-controlled one, the removed clause is the access-control clause. Verified by execution with a server-side filter of `access in ["public"]`, aggregating on `access`:
-
-```
-QUERY (correctly restricted): {"bool":{"must":[{"terms":{"access":["public"],"boost":0}}]}}
-AGGS (escapes it):            {"access:global":{"global":{},"aggs":{"access":{"terms":{"field":"access","size":300000}}, ...}}}
-```
-
-The caller receives exact per-bucket counts for every access tier across the whole index. Amplifications, all verified: `top_hits(_source:["*"])` rides inside the escaped bucket and returns complete documents from outside the filter, making this a record-disclosure channel rather than counts-only; `filter_by_term(filter: <SQON>)` gives a count oracle for any caller-authored predicate over the unfiltered index; and `stats { min max }` on a numeric field returns a single real record's value from outside the filter. No prior knowledge is needed to find the restricted field: run each field's buckets with the flag true and false and diff.
-
-**Root cause is structural, not a missing guard.** `compileFilter` merges the client and server SQONs into one before `buildQuery` compiles them, so by the time `removeFieldFromQuery` runs the two are indistinguishable. A mechanism intended to stop a facet filtering itself therefore strips access control with equal effect.
-**Fix:** Keep client and server filters separate through to aggregation building: have `compileFilter` return both rather than one merged SQON, pass both into `buildAggregations`, and run `removeFieldFromQuery` only over the client's. `createGlobalAggregation` must then always re-apply the server filter beneath the `global`, never subject to field removal.
-
-**Immediate stopgap, counter-intuitive and worth stating plainly:** `aggregations_filter_themselves: true` **closes** this; it returns early before any `global` wrapper is emitted. Verified: `aft=false -> global? true`, `aft=true -> global? false`. The flag's name invites the opposite assumption. A deployment handling sensitive data can force it server-side in `resolveAggregations` today, at the cost of facet completeness (selecting a facet value collapses that facet), which should be a deliberate tradeoff rather than a silent one.
-**Standalone:** the stopgap yes, immediately. The real fix touches `compileFilter`'s contract and its three callers, so sequence it with the export-bypass and federation fixes as one change to the seam.
-**See also:** [`.dev/docs/arranger-auth/phase-0-audit.md`](docs/arranger-auth/phase-0-audit.md) for the full amplification list and the bounds.
 
 ### No small-count suppression exists server-side, and cardinality ships at maximum precision
 
@@ -1155,15 +1163,6 @@ Three things remain open, and the first is the one that makes the others hard to
 **One interaction worth knowing.** Now that a clause-less server-side filter is rejected, a remote Arranger running current code whose callback returns `null` for anonymous requests throws rather than serving everything. Federation against such a remote fails loudly where it previously over-disclosed, which is an improvement, but it surfaces as a generic error rather than a message naming the cause.
 **Fix:** For provenance, keep per-node counts through the merge and expose them, or mark buckets that include remote contributions. For the default posture, warn at boot when `network.remoteNodes` is non-empty and no passthrough header is configured. For the trust model, decide it.
 **Standalone:** provenance and the boot warning are; the trust model is not.
-
-### `disableFilters` protects `/graphql` but not `/download`; a deployment disabling arbitrary filters can still get a fully-filtered export
-
-**File:** `modules/graphql-router/src/accessControl/disableFilters.ts:27-46`; `modules/graphql-router/src/download/index.js:106-110`
-**Severity:** high
-**Kind:** security
-**Issue:** `enforceAccessControl` runs `rejectSqonWhenFiltersDisabled` for every request when `disableFilters` is on, but `getVariablesFromRequest` only inspects `req.body.variables`/`req.query.variables`, the GraphQL wire shape. Confirmed directly: the download route parses its filter from a completely different location, `const { params } = req.body; ...JSON.parse(params)`, and that parsed object's `sqon` flows straight into `getAllData` to build the ES query for the export, never touching `getVariablesFromRequest` at all. A deployment that sets `disableFilters: true`, presumably to prevent arbitrary user-specified query criteria, still allows a fully filtered CSV/TSV export via `/download`.
-**Fix:** Either have `download/index.js` reject requests carrying a non-empty `sqon` when `disableFilters` is set, or extend the access-control middleware to also inspect `req.body.params` (after JSON-parsing) for the download route. Needs a test analogous to `disableFilters.test.ts` but exercising the download path.
-**Standalone:** yes; should land together with the `disableDownloads` fix above since both touch the same route's gating logic.
 
 ### TSV/JSON export has no CSV/formula-injection or delimiter-escaping protection
 
@@ -1225,15 +1224,6 @@ With exactly one sibling filter those are equivalent, which is why the naive fix
 **Kind:** security (OWASP A09)
 **Issue:** `saveSet` creates a new persistent, UUID-identified resource carrying a client-supplied `userId`, the full resolved document-ID list, and the originating `sqon`, exactly the kind of ownership-bearing, audit-relevant action this repo's own logging convention calls out. No `console.log`/`console.warn`/structured event of any kind exists anywhere in this function. Separate from the already-tracked `ENABLE_SETS`/ownership-check gap and from the "Sets: full feature implementation" roadmap item (neither mentions logging), and narrower than the "Structured request logging as a prerequisite for ABAC" roadmap item (scopes per-query-request logging for `hits`/`aggregations`, not this mutation).
 **Fix:** Add a structured log entry on set creation (`{ event: 'set_created', setId, userId, type, size, catalogue }` at minimum), independent of and ahead of the ABAC ownership work, so there's at least a trail of who created what before enforcement exists.
-**Standalone:** yes.
-
-### Download endpoint accepts an unauthenticated `mock` flag that corrupts export pagination
-
-**File:** `modules/graphql-router/src/download/index.js:69-70`; `modules/graphql-router/src/utils/getAllData.js:59-69`
-**Severity:** low-medium
-**Kind:** bug
-**Issue:** `dataStream` destructures `mock` directly from the client-supplied, JSON-parsed `params` body with no gating on `enableDebug`/`enableAdmin`. `mock` then selects `schema: mock ? mockSchema : schema` for the initial `runQuery` call used solely to compute `hitsCount`/`total`/pagination steps, but the actual per-page data fetch always uses the real `esClient.search` regardless of `mock`. Any caller of the public `/download` endpoint can force the total-hit-count estimate to come from GraphQL's auto-mock resolvers instead of the real index, corrupting the computed page count with no benefit to a legitimate caller. A concrete instance the existing "Download route body is brittle" entry's five numbered issues don't name.
-**Fix:** Strip or ignore `mock` from client-supplied `params` outside test/debug contexts, as part of the validation pass already scoped in the existing "Download route body is brittle" entry.
 **Standalone:** yes.
 
 ### Remote-node fetch error handler assumes a GraphQL-shaped error body and can throw from inside its own `catch` block
@@ -1876,7 +1866,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **File:** `modules/graphql-router/src/download/index.js`; `integration-tests/server/test/spinupActive.js:137`
 **Severity:** high
 **Kind:** test-coverage
-**Issue:** `/download` is a real mounted route, and both `integration-tests/server` and `integration-tests/mcp-server`'s server setups explicitly run with `disableDownloads: false`, i.e. the route is live in every integration test server instance. Despite that, no test anywhere exercises it: no co-located unit test for `download/index.js` or `dataToExportFormat.js` (only `dataToTSV.test.js`, a pure-function unit test one layer downstream), and `integration-tests/server/test/spinupActive.js:137` contains a literal `// TODO: add /download checks` that was never followed up. The download/export streaming path (headers, chunked writes, error handling) has zero coverage end to end. This sits directly upstream of the existing "Download route body is brittle" entry above (five separate fragility issues in the same file), the complete absence of any test is a plausible reason those issues went unnoticed long enough to be logged as debt rather than caught by a failing test. Also upstream of the `disableDownloads`/`disableFilters` gaps and the `mock`-flag and CSV-injection findings logged in the `graphql-router` section above, all in this same untested file.
+**Issue:** `/download` is a real mounted route, and both `integration-tests/server` and `integration-tests/mcp-server`'s server setups explicitly run with `disableDownloads: false`, i.e. the route is live in every integration test server instance. Despite that, no test anywhere exercises it: no co-located unit test for `download/index.js` or `dataToExportFormat.js` (only `dataToTSV.test.js`, a pure-function unit test one layer downstream), and `integration-tests/server/test/spinupActive.js:137` contains a literal `// TODO: add /download checks` that was never followed up. The download/export streaming path (headers, chunked writes, error handling) has zero coverage end to end. This sits directly upstream of the existing "Download route body is brittle" entry above (five separate fragility issues in the same file), the complete absence of any test is a plausible reason those issues went unnoticed long enough to be logged as debt rather than caught by a failing test. Also upstream of the `disableDownloads` gap and the CSV-injection finding logged in the `graphql-router` section above, in this same untested file. (`disableFilters` and the `mock` flag were also in this list; the first is closed by P0-c, the second by the removal of the mock server.)
 **Fix:** At minimum, add an integration test that POSTs a real download request against a live-ES-backed server and asserts on the response body/headers; ideally also a unit test for `download/index.js`'s request-handling logic in isolation.
 **Standalone:** yes.
 

@@ -1,10 +1,15 @@
 import type { ConfigsObject, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
-import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
+import {
+	configFeatureFlagProperties,
+	configOptionalProperties,
+	configRootProperties,
+} from '@overture-stack/arranger-types/configs/constants';
 import { Router, type RequestHandler } from 'express';
 import { merge } from 'lodash-es';
 
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
+import refuseDisabledDownloads from '#download/disableDownloads.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
 import { getIndexMapping } from '#searchClient/index.js';
@@ -128,11 +133,13 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		router.use('/', graphQLRoutes);
 		router.use(
 			`/download`,
-			downloadRoutes({
-				enableDebug,
-				getServerSideFilter,
-			}),
-		); // consumes
+			configs[configFeatureFlagProperties.DISABLE_DOWNLOADS]
+				? refuseDisabledDownloads()
+				: downloadRoutes({
+						enableDebug,
+						getServerSideFilter,
+					}),
+		);
 		router.get('/favicon.ico', (req, res) => res.status(204));
 
 		return router;
