@@ -5,9 +5,9 @@ import Parallel from 'paralleljs';
 
 import { hitsToEdges } from '#mapping/resolveHits.js';
 
-import nestedFieldNames from './mockData/nestedFieldNames.json';
-import expectedEdges from './mockData/wrangledExpectedEdges.json';
-import hitsFixture from './mockData/wrangledHits.json';
+import nestedFieldNames from './hitsToEdges.mockData/nestedFieldNames.json';
+import expectedEdges from './hitsToEdges.mockData/wrangledExpectedEdges.json';
+import hitsFixture from './hitsToEdges.mockData/wrangledHits.json';
 
 // processChunk mutates each hit's `_source` in place; a fresh clone per test keeps that
 // mutation from leaking into a later test that imports the same cached JSON module object

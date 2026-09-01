@@ -12,8 +12,13 @@ const runMiddleware = async ({
 	middleware: RequestHandler;
 	req: { body?: unknown; method?: string; query?: Record<string, unknown> };
 }) => {
-	const response = {
-		body: undefined as unknown,
+	const response: {
+		body: unknown;
+		statusCode: number;
+		json(payload: unknown): unknown;
+		status(code: number): unknown;
+	} = {
+		body: undefined,
 		statusCode: 200,
 		json(payload: unknown) {
 			this.body = payload;

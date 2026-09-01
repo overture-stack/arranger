@@ -1,4 +1,4 @@
-import { generateNextSQON } from '../TextFilter.js';
+import { generateNextSQON } from './TextFilter.js';
 
 const emptySQON = {
 	op: 'and',
