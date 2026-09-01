@@ -15,7 +15,7 @@ The Overture platform is building a cross-app ABAC system using Keycloak. The de
 Existence disclosure and admin listing/access separation are decided at the Usher level: see
 [`usher/.dev/design/permissions-model.md`](../../usher/.dev/design/permissions-model.md)
 sections "Visibility of private records" and "No system-wide access to private data". Arranger
-implements whatever the PEP plugin communicates; these decisions are not Arranger's to own.
+implements whatever the PEP adapter communicates; these decisions are not Arranger's to own.
 
 Key design questions (not yet answered):
 

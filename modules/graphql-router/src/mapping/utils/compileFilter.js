@@ -7,6 +7,13 @@ const isProperSqon = (sqon) => !!(sqon && sqon.op);
  */
 const hasNoLeafClause = (sqon) => Array.isArray(sqon?.content) && sqon.content.every(hasNoLeafClause);
 
+// TODO: when filtering separates from the GraphQL layer, move to its vocabulary; see
+// `.dev/docs/atlas/layers-and-vocabulary.md`. `serverSideFilter` becomes `constraint`, and
+// `clientSideFilter` and `disableClientFilters` take the requested filter's name once that is
+// settled. The TSDoc below then has to define a constraint outright, since the one used when nothing
+// is configured matches every document and reads as permissive. The error messages keep the router's
+// names on purpose: a deployment author can only act through `getServerSideFilter`, so translate there.
+
 /**
  * Composes the caller's filter with the deployment's access-control filter.
  *

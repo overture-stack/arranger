@@ -34,6 +34,8 @@ The problem this is aimed at: a catalogue's facets, columns, and searchable fiel
 
 **Scoping note:** this is, mechanically, the same comparison the Config plan/preview CLI item above already has to make (live index mapping versus configuration files). The likely right answer is that this does not need its own tool: running that CLI on a schedule against the currently-deployed configuration, with no proposed change, and alerting if it reports any diff, is a mapping-drift detector. This entry mainly exists to record that use case (scheduled, automatic drift-checking, not just pre-deploy validation) so it isn't lost when the CLI is scoped. Whoever picks up the CLI work should read this and decide whether a "drift-check mode" (for example, a machine-readable exit code or JSON diff suitable for a cron job and an alert) is worth designing in from the start, rather than building a second tool later.
 
+**A second drift the same comparison would catch, and it needs a different trigger.** Arranger reads the mapping once, at catalogue load, and derives `nested_fieldNames`, the extended fields and the GraphQL schema from it. A mapping change takes effect for queries immediately, while that derived state stays as it was read, and Arranger has no mapping-change signal to notice it with. So a check that runs only at boot or before a deploy misses an index that changed under a running server.
+
 **Distinct from the typed client SDK item further below:** despite sounding similar (both are "things that are supposed to match can silently drift apart"), they check different pairs of things for different people. This item is about Arranger's own configuration staying honest about the real data underneath it, an operator's concern. The typed client SDK is about a consumer's code staying honest about Arranger's current API, a downstream developer's concern. Neither substitutes for the other.
 
 ---
@@ -76,7 +78,7 @@ _Design work needed: define the interface between core and transport. The config
 
 ### Auth and field/record-level access control
 
-**Subsystem docs:** design, sequencing, and the scoped defect index now live in [`.dev/docs/arranger-auth/`](docs/arranger-auth/index.md). Key decision recorded there: enforcement belongs at the query-building boundary rather than the transport boundary, so the planned Beacon and REST adapters inherit it instead of reimplementing it, and the Usher plugin is a translator only. Three defects block building on the current seam, including a confirmed export-path bypass of `getServerSideFilter`.
+**Subsystem docs:** design, sequencing, and the scoped defect index now live in [`.dev/docs/arranger-auth/`](docs/arranger-auth/index.md). Key decision recorded there: enforcement belongs at the query-building boundary rather than the transport boundary, so the planned Beacon and REST adapters inherit it instead of reimplementing it, and the Usher adapter is a translator only. Three defects block building on the current seam, including a confirmed export-path bypass of `getServerSideFilter`.
 
 _Priority: medium. Blocked on the Overture ABAC design and the core module boundary._
 
@@ -316,7 +318,9 @@ _Priority: medium. Sequence before the auth/ABAC work above, not after._
 
 The [Observability](#observability-metrics-tracing-and-usage-analytics-research) item above covers metrics and tracing; neither addresses a narrower, more immediate gap: **there is currently no structured per-request log at all** for a query request. Confirmed absent: nothing in the query resolvers (`resolveHits.js`, `resolveAggregations.ts`) or `apps/search-server` emits a structured event per request today. No log line anywhere in the request path includes user identity, request ID, catalogue name, SQON size, or hit count, which is the minimum context needed for anomaly detection and post-incident reconstruction.
 
-Scope: one structured log event per query request with fields `{ catalogId, queryType, sqonSize, hitsReturned, durationMs }`, extendable to include `userId` once auth lands (the field can be established as absent/`null` now and populated later without a schema change). Unlike the full Observability item, this does not need OpenTelemetry or a `/metrics` endpoint: structured JSON to stdout is sufficient.
+Scope: one structured log event per query request with fields `{ catalogId, queryType, sqonSize, hitsReturned, durationMs }`, extendable to include the acting principal once auth lands (the field can be established as absent/`null` now and populated later without a schema change). Unlike the full Observability item, this does not need OpenTelemetry or a `/metrics` endpoint: structured JSON to stdout is sufficient.
+
+The envelope those fields sit in is settled and is CloudEvents, agreed across Overture rather than for Arranger alone, since denial events have to correlate by principal across services. The fields above become `data` contents; the principal is `actorId` rather than `userId`, which is a trust boundary rather than a rename, because `saveSet` already takes a caller-asserted `userId`. Decisions, rejected alternatives, and the two things the shape still owes are in [structured-logging.md](docs/atlas/roadmap/structured-logging.md).
 
 This is a genuine prerequisite, not just adjacent work: access denial events (see [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control)) need somewhere to land once ABAC ships, and that logging shape should exist before enforcement does, not be retrofitted after.
 
@@ -773,6 +777,8 @@ _Depends on Phases 2.1 and 2.2 being complete. The Docker change can land indepe
 Replaces manual version bumping and Jenkins git tagging; packages version independently. PR authors declare severity via `npx changeset`; the release branch runs `changeset publish`.
 
 Full detail, including the worked config, the API-surface-diff enhancement, and what Changesets does versus what pnpm's publish step does: [atlas: Changesets adoption](docs/atlas/roadmap/changesets-adoption.md).
+
+**Open question, deferred deliberately:** how `SQON_SCHEMA_VERSION` should move when the published SQON contract changes. It is stamped from `modules/sqon`'s own `package.json` version at build time, so on `main` it always reads `0.0.0-dev` and a contract change has no version to attach itself to until a release cuts one. While the package is on release candidates this is not worth solving: whatever the first non-RC publish carries will be correct by construction, since every accumulated contract change ships together under one real version. It becomes a live question once the package is past `1.x` and a consumer can be pinned to a stable version that a later correction invalidates, which is the same problem this section solves for package versions generally.
 
 ### 3.2 Testcontainers for integration test infrastructure
 

@@ -93,9 +93,9 @@ that don't know about Arranger. Neither applies to a static server URL in a page
 already renders its own siblings directly.
 
 The one thing that *would* justify this shape: auth headers/tokens, not the server URL. See
-"Usher plugin integration point" below; that's a genuinely runtime-changing value, and the
+"Usher adapter integration point" below; that's a genuinely runtime-changing value, and the
 recommended shape for it is a callback prop on `DataProvider` itself (`getAuthToken`), not a
-separate shared context, per the same reasoning `.dev/docs/usher-plugin.md` now documents.
+separate shared context, per the same reasoning `.dev/docs/arranger-auth/usher-adapter.md` now documents.
 
 ---
 
@@ -168,7 +168,7 @@ standalone or internally by `DataProvider`:
   in `tech-debt.md` rather than fixed here.
 
 **Room reserved, not built yet:** a capability flag on that same introspection response indicating
-whether the Usher plugin is active for a given catalogue. See `.dev/docs/usher-plugin.md` §
+whether the Usher adapter is active for a given catalogue. See `.dev/docs/arranger-auth/usher-adapter.md` §
 "Client-side considerations" for the fuller design thread; `ArrangerConfigResult` is the natural
 home for that future flag, now that it exists as a real, shipped type.
 
@@ -311,7 +311,7 @@ to notice something's missing rather than it silently looking correct.
 - Should `utils/api.ts`'s standalone `graphql()`/`fetchExtendedMapping()` helpers be fixed or
   removed? Depends on whether they still have real callers; not yet checked.
 - Exact shape of the `getAuthToken` callback prop for the future Usher integration point: per-call
-  callback vs. something richer. Deferred to `.dev/docs/usher-plugin.md`.
+  callback vs. something richer. Deferred to `.dev/docs/arranger-auth/usher-adapter.md`.
 - ~~Whether the silent catalogueId-collision-overwrite~~ Resolved 2026-08-05: not a real gap.
   `resolveCatalogueId` already dedupes every collision before it's used as a map key (see the
   caveat above); no tech-debt entry needed.
