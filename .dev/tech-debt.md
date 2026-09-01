@@ -287,14 +287,26 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
    **Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
    **Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
 
-### `mcp-server` pins Express 4 and Zod 3; `@modelcontextprotocol/sdk` uses Express 5 and Zod 4 internally
+### `mcp-server` declares Express as a runtime dependency but only uses its types; the MCP SDK serves the app on its own Express 5
 
-**File:** `apps/mcp-server/package.json`
-**Severity:** low-medium (version skew; potential for subtle type or behaviour divergence as the MCP SDK evolves)
+**File:** `apps/mcp-server/package.json`; `apps/mcp-server/src/http/app.ts`
+**Severity:** low-medium (two Express majors in one request path, with no compile-time signal)
 **Kind:** dependency management
-**Issue:** `mcp-server` explicitly pins `express: ^4` and `zod: ^3` for consistency with the rest of the monorepo, but `@modelcontextprotocol/sdk` bundles Express 5 and Zod 4 internally. The two copies coexist for now without breakage, but if the SDK exposes types that depend on its internal Zod 4 schemas at the boundary with our Zod 3 code, assignments can fail at runtime in ways that TypeScript won't catch. The Express gap is lower risk (the SDK's Express is an implementation detail) but should be resolved before the monorepo-wide Express upgrade.
-**Fix:** Coordinate a monorepo-wide upgrade: Express ^4 to ^5 across all packages, then Zod 3 to Zod 4 (Zod 4 has breaking API changes; audit all `.parse()`, `.safeParse()`, and `.refine()` usages). `mcp-server` should be updated in the same pass, not ahead of the rest of the repo.
-**Standalone:** no; requires coordinated upgrade across all workspace packages; do not upgrade `mcp-server` in isolation
+**Issue:** `mcp-server` pins `express: ^4.21.2` while `@modelcontextprotocol/sdk` depends on
+`express: ^5.2.1`, so npm installs both: `node_modules/express` at 4.22.2 and
+`node_modules/@modelcontextprotocol/sdk/node_modules/express` at 5.2.1. `http/app.ts:80` builds the
+serving app with `createMcpExpressApp` from `@modelcontextprotocol/sdk/server/express`, so the object
+handling every request is Express 5, while `http/app.ts:7` types that object and its handlers with
+`Express`, `Request`, and `Response` from Express 4. The mismatch does not surface as a type error
+because the root `overrides` block pins `@types/express` to `4.17.25` tree-wide, so the SDK's own
+`server/express.d.ts` resolves against Express 4 declarations too.
+**Fix:** Remove `express` from `dependencies`: nothing imports it at runtime and the serving app
+comes from the SDK. Keep `@types/express` in `devDependencies`, since `http/app.ts` needs Express
+`Request` and `Response` for `req.body` and `res.status().json()`, and the SDK's own
+`createMcpExpressApp` return type resolves against it.
+**Standalone:** no; the `@types/express` pin is shared with `apps/search-server` and
+`modules/graphql-router`, and the duplicate copy resolves at the MCP SDK v2 migration, where
+`@modelcontextprotocol/express` takes `express` as a peer rather than bundling it
 
 ### MCP endpoint has no authentication (URGENT: block demo deployment)
 
