@@ -106,7 +106,7 @@ export type ArrangerMcpConfig = zod.infer<typeof ArrangerMcpConfig>;
 export const createArrangerMcpConfig = (): ArrangerMcpConfig => {
 	const result = ArrangerMcpConfig.safeParse(process.env);
 	if (!result.success) {
-		const errorMessages = result.error.errors.map((err) => err.message).join('; ');
+		const errorMessages = result.error.issues.map((issue) => issue.message).join('; ');
 		logger.error(`Arranger configuration validation failed: ${errorMessages}`);
 		logger.info('Exiting.');
 		process.exit(1);

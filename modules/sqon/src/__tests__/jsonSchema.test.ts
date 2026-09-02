@@ -46,17 +46,47 @@ suite('sqon/jsonSchema', () => {
 			{ $ref: '#/$defs/Group' },
 			{ $ref: '#/$defs/Leaf' },
 		]);
-		assert.deepEqual(schema.$defs.InLike.properties.op.enum, [
-			'in',
-			'not-in',
-			'some-not-in',
-			'=',
-			'==',
-			'===',
-			'!=',
-			'!==',
+		// Canonical operators and aliases are two enums in a union, so they emit as two branches
+		// rather than the flat enum Zod 3 collapsed them into.
+		assert.deepEqual(schema.$defs.InLike.properties.op.oneOf, [
+			{ type: 'string', enum: ['in', 'not-in', 'some-not-in'] },
+			{ type: 'string', enum: ['=', '==', '===', '!=', '!=='] },
 		]);
-		assert.deepEqual(schema.$defs.RangeLike.properties.op.enum, ['gt', 'gte', 'lt', 'lte', '>', '>=', '<', '<=']);
+		assert.deepEqual(schema.$defs.RangeLike.properties.op.oneOf, [
+			{ type: 'string', enum: ['gt', 'gte', 'lt', 'lte'] },
+			{ type: 'string', enum: ['>', '>=', '<', '<='] },
+		]);
+	});
+
+	test('emits no dangling $ref, and points only at $defs entry roots', () => {
+		const schema = getSqonJsonSchema();
+		const refs = new Set<string>();
+
+		const collect = (value: unknown): void => {
+			if (Array.isArray(value)) {
+				return value.forEach(collect);
+			}
+			if (!value || typeof value !== 'object') {
+				return;
+			}
+			for (const [key, child] of Object.entries(value)) {
+				if (key === '$ref' && typeof child === 'string') {
+					refs.add(child);
+				} else {
+					collect(child);
+				}
+			}
+		};
+
+		collect(schema);
+		assert.ok(refs.size > 0);
+
+		// Entry roots only, never a path through a union branch: that is what makes the rename safe.
+		for (const ref of refs) {
+			const name = ref.replace('#/$defs/', '');
+			assert.equal(ref, `#/$defs/${name}`, `expected an entry-root pointer, got ${ref}`);
+			assert.ok(schema.$defs[name], `dangling $ref: ${ref}`);
+		}
 	});
 
 	test('returns a versioned JSON Schema payload', () => {

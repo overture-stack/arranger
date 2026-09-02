@@ -95,8 +95,8 @@ const outputSchema = zod.object({
 	executed: zod.boolean(),
 	endpoint: zod.string(),
 	total: zod.number().optional(),
-	hits: zod.array(zod.record(zod.unknown())).optional(),
-	aggregations: zod.record(zod.unknown()).optional(),
+	hits: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+	aggregations: zod.record(zod.string(), zod.unknown()).optional(),
 	message: zod.string().optional(),
 });
 

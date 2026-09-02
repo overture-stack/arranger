@@ -36,10 +36,6 @@
 		"test:watch": "npm test -- --watch",
 		"watch": "WIREIT_WATCH=true npm run build"
 	},
-	"dependencies": {
-		"zod": "^3.24.2",
-		"zod-to-json-schema": "^3.24.1"
-	},
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.0",
 		"@types/node": "^22.19.13",
@@ -48,7 +44,8 @@
 		"tsup": "^6.7.0",
 		"tsx": "^4.19.2",
 		"typescript": "^5.8.2",
-		"typescript-transform-paths": "^3.5.6"
+		"typescript-transform-paths": "^3.5.6",
+		"zod": "^4.2.0"
 	},
 	"imports": {
 		"#*": "./src/*"
@@ -68,5 +65,8 @@
 				"dist/**"
 			]
 		}
+	},
+	"peerDependencies": {
+		"zod": "^4.2.0"
 	}
 }

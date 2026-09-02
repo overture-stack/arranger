@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
+import { checkSqonDepth } from '#schema/depth.js';
 import { SqonSchema } from '#schema/index.js';
 
 suite('sqon/schema', () => {
@@ -275,7 +276,6 @@ suite('sqon/schema', () => {
 		assert.equal(SqonSchema.safeParse(input).success, true);
 	});
 
-
 	test('rejects filter with an empty string in fieldNames', () => {
 		const input = {
 			content: { fieldNames: ['donor.name', ''], value: 'jo' },
@@ -284,5 +284,33 @@ suite('sqon/schema', () => {
 
 		const output = SqonSchema.safeParse(input);
 		assert.equal(output.success, false);
+	});
+
+	// Past ~750 combinations the recursive parse overflows the stack, escaping `safeParse` as a
+	// `RangeError` instead of a failed result. `checkSqonDepth` runs before the recursion.
+	suite('nesting depth', () => {
+		const nest = (combinations: number) => {
+			let node: unknown = { op: 'in', content: { fieldName: 'f', value: ['a'] } };
+			for (let index = 0; index < combinations; index++) {
+				node = { op: 'and', content: [node] };
+			}
+			return node;
+		};
+
+		test('accepts nesting far deeper than any realistic query', () => {
+			assert.equal(SqonSchema.safeParse(nest(200)).success, true);
+		});
+
+		test('rejects over-deep nesting as a normal failure, without throwing', () => {
+			const output = SqonSchema.safeParse(nest(20_000));
+
+			assert.equal(output.success, false);
+			assert.match(output.error?.issues[0]?.message ?? '', /nesting depth/);
+		});
+
+		test('checkSqonDepth honours a caller-supplied limit stricter than the default', () => {
+			assert.equal(checkSqonDepth(nest(2), 100), true);
+			assert.equal(checkSqonDepth(nest(50), 10), false);
+		});
 	});
 });
