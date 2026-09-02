@@ -1,0 +1,229 @@
+{
+	"$defs": {
+		"All": {
+			"additionalProperties": true,
+			"properties": {
+				"content": {
+					"additionalProperties": true,
+					"properties": {
+						"fieldName": {
+							"minLength": 1,
+							"type": "string"
+						},
+						"value": {
+							"items": {
+								"type": ["string", "number", "boolean"]
+							},
+							"minItems": 1,
+							"type": "array"
+						}
+					},
+					"required": ["fieldName", "value"],
+					"type": "object"
+				},
+				"op": {
+					"const": "all",
+					"type": "string"
+				},
+				"pivot": {
+					"type": ["string", "null"]
+				}
+			},
+			"required": ["op", "content"],
+			"type": "object"
+		},
+		"Between": {
+			"additionalProperties": true,
+			"properties": {
+				"content": {
+					"additionalProperties": true,
+					"properties": {
+						"fieldName": {
+							"minLength": 1,
+							"type": "string"
+						},
+						"value": {
+							"items": {
+								"$ref": "#/$defs/All/properties/content/properties/value/items"
+							},
+							"maxItems": 2,
+							"minItems": 2,
+							"type": "array"
+						}
+					},
+					"required": ["fieldName", "value"],
+					"type": "object"
+				},
+				"op": {
+					"const": "between",
+					"type": "string"
+				},
+				"pivot": {
+					"type": ["string", "null"]
+				}
+			},
+			"required": ["op", "content"],
+			"type": "object"
+		},
+		"Group": {
+			"additionalProperties": true,
+			"properties": {
+				"content": {
+					"items": {
+						"oneOf": [
+							{
+								"$ref": "#/$defs/Group"
+							},
+							{
+								"$ref": "#/$defs/Leaf"
+							}
+						]
+					},
+					"type": "array"
+				},
+				"op": {
+					"enum": ["and", "or", "not"],
+					"type": "string"
+				},
+				"pivot": {
+					"type": ["string", "null"]
+				}
+			},
+			"required": ["op", "content"],
+			"type": "object"
+		},
+		"InLike": {
+			"additionalProperties": true,
+			"properties": {
+				"content": {
+					"additionalProperties": true,
+					"properties": {
+						"fieldName": {
+							"minLength": 1,
+							"type": "string"
+						},
+						"value": {
+							"oneOf": [
+								{
+									"$ref": "#/$defs/All/properties/content/properties/value/items"
+								},
+								{
+									"items": {
+										"$ref": "#/$defs/All/properties/content/properties/value/items"
+									},
+									"type": "array"
+								}
+							]
+						}
+					},
+					"required": ["fieldName", "value"],
+					"type": "object"
+				},
+				"op": {
+					"enum": ["in", "not-in", "some-not-in", "=", "==", "===", "!=", "!=="],
+					"type": "string"
+				},
+				"pivot": {
+					"type": ["string", "null"]
+				}
+			},
+			"required": ["op", "content"],
+			"type": "object"
+		},
+		"Leaf": {
+			"oneOf": [
+				{
+					"$ref": "#/$defs/InLike"
+				},
+				{
+					"$ref": "#/$defs/All"
+				},
+				{
+					"$ref": "#/$defs/RangeLike"
+				},
+				{
+					"$ref": "#/$defs/Between"
+				},
+				{
+					"$ref": "#/$defs/Wildcard"
+				}
+			]
+		},
+		"RangeLike": {
+			"additionalProperties": true,
+			"properties": {
+				"content": {
+					"additionalProperties": true,
+					"properties": {
+						"fieldName": {
+							"minLength": 1,
+							"type": "string"
+						},
+						"value": {
+							"$ref": "#/$defs/InLike/properties/content/properties/value"
+						}
+					},
+					"required": ["fieldName", "value"],
+					"type": "object"
+				},
+				"op": {
+					"enum": ["gt", "gte", "lt", "lte", ">", ">=", "<", "<="],
+					"type": "string"
+				},
+				"pivot": {
+					"type": ["string", "null"]
+				}
+			},
+			"required": ["op", "content"],
+			"type": "object"
+		},
+		"SQON": {
+			"oneOf": [
+				{
+					"$ref": "#/$defs/Group"
+				},
+				{
+					"$ref": "#/$defs/Leaf"
+				}
+			]
+		},
+		"Wildcard": {
+			"additionalProperties": true,
+			"properties": {
+				"content": {
+					"additionalProperties": true,
+					"properties": {
+						"fieldNames": {
+							"items": {
+								"minLength": 1,
+								"type": "string"
+							},
+							"minItems": 1,
+							"type": "array"
+						},
+						"value": {
+							"type": "string"
+						}
+					},
+					"required": ["fieldNames", "value"],
+					"type": "object"
+				},
+				"op": {
+					"enum": ["wildcard", "filter"],
+					"type": "string"
+				},
+				"pivot": {
+					"type": ["string", "null"]
+				}
+			},
+			"required": ["op", "content"],
+			"type": "object"
+		}
+	},
+	"$id": "https://overture-stack.org/schemas/arranger/sqon/v__SQON_SCHEMA_VERSION__.schema.json",
+	"$ref": "#/$defs/SQON",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"description": "JSON Schema for Serialized Query Object Notation.",
+	"title": "Serialized Query Object Notation",
+	"version": "__SQON_SCHEMA_VERSION__"
+}

@@ -35,14 +35,16 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. Switch introspection operator lists to canonical names in the same pass (client-visible change). See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
 **Standalone:** yes; internal refactor; the canonical-name switch changes API output and needs a coordinated note for introspection consumers
 
-### Published SQON JSON Schema contains dangling `$ref` pointers after `anyOf` → `oneOf` normalization
+### Published SQON JSON Schema can emit dangling `$ref` pointers after `anyOf` → `oneOf` normalization (latent)
 
 **File:** `modules/sqon/src/jsonSchema/runtime.ts` (`normalizeUnionKeywords`)
-**Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get_sqon_schema`)
-**Kind:** bug
-**Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf`, but does not rewrite the `$ref` _path strings_, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
-**Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway; see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
-**Standalone:** yes; self-contained fix in `runtime.ts` plus a resolution test
+**Severity:** low (latent; medium if triggered, since the published schema stops resolving for strict tooling and confuses LLM consumers of `get_sqon_schema`)
+**Kind:** bug (latent)
+**Issue:** `zodToJsonSchema` emits a `$ref` for every occurrence of a shared subschema after the first, and `normalizeUnionKeywords` renames `anyOf` to `oneOf` without rewriting `$ref` _path strings_. Any pointer routed through an `anyOf` segment stops resolving.
+
+Corrected 2026-09-01: this entry previously called the defect live, and it is not. Every `$ref` currently published resolves, verified by execution. It stays that way only by accident of declaration order: `SqonScalarValueSchema` is a branch of `SqonScalarOrArrayValueSchema`'s union, and `All` happens to lead the `definitions` map, so the first occurrence lands outside any union. Reorder that map so `InLike` leads and the pointer becomes `#/$defs/InLike/properties/content/properties/value/anyOf/0`, the broken shape. Adding an operator that shares a subschema can trip the same wire.
+**Fix:** Guarded as of 2026-09-01: `apps/search-server/src/introspection/introspectionSqonFixtures.test.ts` walks every pointer in the published schema and fails on any that does not resolve, so this can no longer ship silently. The structural fix rides with the Zod 4 migration, where `z.toJSONSchema` plus a registry emits `$ref`s targeting only registry roots and inlines shared subschemas, making the defect class impossible rather than absent (this entry's original second suggestion; see the LLM SQON-generation analysis, 2026-06-11 session). If that migration slips, string-replace `/anyOf/` → `/oneOf/` in `$ref` values during normalization.
+**Standalone:** guard is done; the structural fix rides with the Zod 4 JSON Schema rewrite, or a self-contained `runtime.ts` change if that slips
 
 ### `SqonBuilder.not([...])` inverts AND/OR semantics when merging same-field exclusion filters
 
