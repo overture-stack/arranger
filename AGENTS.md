@@ -1,4 +1,4 @@
-<!-- agentics-template-version: 0.19.0 | synced: 949de7215294dd9d4820f2a54ff48985ae6b3596 -->
+<!-- agentics-template-version: 0.20.0 | synced: 2d38a6d0bcb99cd84344a616f952a7421eaec119 -->
 # Arranger: Agent Instructions
 
 **For AI agents:** this file is instructions your agent reads and follows; it is not documentation written for people. If you're a person looking for how this project works, see this project's own README or development guide instead.
