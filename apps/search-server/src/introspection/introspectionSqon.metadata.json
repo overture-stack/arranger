@@ -1,0 +1,93 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"aliases": {
+		"!=": "not-in",
+		"!==": "not-in",
+		"<": "lt",
+		"<=": "lte",
+		"=": "in",
+		"==": "in",
+		"===": "in",
+		">": "gt",
+		">=": "gte",
+		"filter": "wildcard"
+	},
+	"description": "JSON Schema and operator metadata for building valid SQON filters.",
+	"operators": {
+		"combination": ["and", "or", "not"],
+		"field": [
+			{
+				"applicableTo": "all",
+				"description": "Field matches any of these values.",
+				"fieldRef": "fieldName",
+				"op": "in",
+				"valueType": "string | number | boolean | Array<string | number | boolean>"
+			},
+			{
+				"applicableTo": "all",
+				"description": "Field does not match any of these values.",
+				"fieldRef": "fieldName",
+				"op": "not-in",
+				"valueType": "string | number | boolean | Array<string | number | boolean>"
+			},
+			{
+				"applicableTo": "all",
+				"description": "At least one nested item is excluded (multi-valued, per-item).",
+				"fieldRef": "fieldName",
+				"op": "some-not-in",
+				"valueType": "string | number | boolean | Array<string | number | boolean>"
+			},
+			{
+				"applicableTo": "all",
+				"description": "Field contains all of these values (multi-valued field only).",
+				"fieldRef": "fieldName",
+				"op": "all",
+				"valueType": "Array<string | number | boolean>"
+			},
+			{
+				"applicableTo": ["long", "integer", "float", "double", "date"],
+				"description": "Field is greater than this value.",
+				"fieldRef": "fieldName",
+				"op": "gt",
+				"valueType": "number | date"
+			},
+			{
+				"applicableTo": ["long", "integer", "float", "double", "date"],
+				"description": "Field is greater than or equal to this value.",
+				"fieldRef": "fieldName",
+				"op": "gte",
+				"valueType": "number | date"
+			},
+			{
+				"applicableTo": ["long", "integer", "float", "double", "date"],
+				"description": "Field is less than this value.",
+				"fieldRef": "fieldName",
+				"op": "lt",
+				"valueType": "number | date"
+			},
+			{
+				"applicableTo": ["long", "integer", "float", "double", "date"],
+				"description": "Field is less than or equal to this value.",
+				"fieldRef": "fieldName",
+				"op": "lte",
+				"valueType": "number | date"
+			},
+			{
+				"applicableTo": ["long", "integer", "float", "double", "date"],
+				"description": "Field is between these two values, both inclusive.",
+				"fieldRef": "fieldName",
+				"op": "between",
+				"valueType": "Array<number | date>"
+			},
+			{
+				"applicableTo": "all",
+				"description": "One or more fields contain this substring pattern.",
+				"fieldRef": "fieldNames",
+				"op": "wildcard",
+				"valueType": "string"
+			}
+		]
+	},
+	"title": "Serialized Query Object Notation",
+	"version": "__SQON_SCHEMA_VERSION__"
+}
