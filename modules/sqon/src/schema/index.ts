@@ -12,70 +12,50 @@ import type { SqonCombination, SqonNode } from './types.js';
 
 export type { SqonScalar, SqonScalarOrArray } from './constants.js';
 
-export const InLikeFilterSchema = zod
-	.object({
-		op: InLikeOpSchema,
-		content: zod
-			.object({
-				fieldName: zod.string().min(1),
-				value: SqonScalarOrArrayValueSchema,
-			})
-			.passthrough(),
-		pivot: zod.union([zod.string(), zod.null()]).optional(),
-	})
-	.passthrough();
+export const InLikeFilterSchema = zod.looseObject({
+	op: InLikeOpSchema,
+	content: zod.looseObject({
+		fieldName: zod.string().min(1),
+		value: SqonScalarOrArrayValueSchema,
+	}),
+	pivot: zod.union([zod.string(), zod.null()]).optional(),
+});
 
-export const AllFilterSchema = zod
-	.object({
-		op: zod.literal('all'),
-		content: zod
-			.object({
-				fieldName: zod.string().min(1),
-				value: zod.array(SqonScalarValueSchema).min(1),
-			})
-			.passthrough(),
-		pivot: zod.union([zod.string(), zod.null()]).optional(),
-	})
-	.passthrough();
+export const AllFilterSchema = zod.looseObject({
+	op: zod.literal('all'),
+	content: zod.looseObject({
+		fieldName: zod.string().min(1),
+		value: zod.array(SqonScalarValueSchema).min(1),
+	}),
+	pivot: zod.union([zod.string(), zod.null()]).optional(),
+});
 
-export const RangeLikeFilterSchema = zod
-	.object({
-		op: RangeLikeOpSchema,
-		content: zod
-			.object({
-				fieldName: zod.string().min(1),
-				value: SqonScalarOrArrayValueSchema,
-			})
-			.passthrough(),
-		pivot: zod.union([zod.string(), zod.null()]).optional(),
-	})
-	.passthrough();
+export const RangeLikeFilterSchema = zod.looseObject({
+	op: RangeLikeOpSchema,
+	content: zod.looseObject({
+		fieldName: zod.string().min(1),
+		value: SqonScalarOrArrayValueSchema,
+	}),
+	pivot: zod.union([zod.string(), zod.null()]).optional(),
+});
 
-export const BetweenFilterSchema = zod
-	.object({
-		op: zod.literal('between'),
-		content: zod
-			.object({
-				fieldName: zod.string().min(1),
-				value: zod.array(SqonScalarValueSchema).length(2),
-			})
-			.passthrough(),
-		pivot: zod.union([zod.string(), zod.null()]).optional(),
-	})
-	.passthrough();
+export const BetweenFilterSchema = zod.looseObject({
+	op: zod.literal('between'),
+	content: zod.looseObject({
+		fieldName: zod.string().min(1),
+		value: zod.array(SqonScalarValueSchema).length(2),
+	}),
+	pivot: zod.union([zod.string(), zod.null()]).optional(),
+});
 
-export const WildcardFilterSchema = zod
-	.object({
-		op: zod.union([zod.literal('wildcard'), zod.literal('filter')]),
-		content: zod
-			.object({
-				fieldNames: zod.array(zod.string().min(1)).min(1),
-				value: zod.string(),
-			})
-			.passthrough(),
-		pivot: zod.union([zod.string(), zod.null()]).optional(),
-	})
-	.passthrough();
+export const WildcardFilterSchema = zod.looseObject({
+	op: zod.union([zod.literal('wildcard'), zod.literal('filter')]),
+	content: zod.looseObject({
+		fieldNames: zod.array(zod.string().min(1)).min(1),
+		value: zod.string(),
+	}),
+	pivot: zod.union([zod.string(), zod.null()]).optional(),
+});
 
 export const SqonLeafSchema = zod.union([
 	InLikeFilterSchema,
@@ -92,14 +72,12 @@ export const SqonLeafSchema = zod.union([
  * guard's pipe, but deliberately absent from the package root: callers get the guarded pair below.
  */
 export const SqonCombinationNodeSchema: zod.ZodType<SqonCombination, SqonCombination> = zod.lazy(() =>
-	zod
-		.object({
-			op: GroupOpSchema,
-			// eslint-disable-next-line @typescript-eslint/no-use-before-define -- deferred by zod.lazy
-			content: zod.array(SqonNodeSchema),
-			pivot: zod.union([zod.string(), zod.null()]).optional(),
-		})
-		.passthrough(),
+	zod.looseObject({
+		op: GroupOpSchema,
+		// eslint-disable-next-line @typescript-eslint/no-use-before-define -- deferred by zod.lazy
+		content: zod.array(SqonNodeSchema),
+		pivot: zod.union([zod.string(), zod.null()]).optional(),
+	}),
 );
 
 export const SqonNodeSchema: zod.ZodType<SqonNode, SqonNode> = zod.lazy(() =>

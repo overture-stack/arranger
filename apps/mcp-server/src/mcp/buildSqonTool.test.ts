@@ -46,8 +46,9 @@ type CapturedTool = {
 	name: string;
 	config: {
 		description: string;
-		inputSchema: zod.ZodRawShape;
-		outputSchema: zod.ZodTypeAny;
+		// Not `ZodRawShape` / `ZodTypeAny`: both live in Zod 4's compat shim.
+		inputSchema: Record<string, zod.ZodType>;
+		outputSchema: zod.ZodType;
 		title: string;
 	};
 	handler: (args: Record<string, unknown>) => Promise<ToolResult>;

@@ -41,15 +41,19 @@ const parseCatalogueList = (cataloguesString: string): string[] => {
  * where appropriate (i.e. for optional environment variables).
  */
 const envSchema = zod.object({
+	// A function error keeps the two messages `zod.string().url()` produced separately: unset, and
+	// set but not a URL.
 	ARRANGER_BASE_URL: zod
-		.string({
-			message: 'ARRANGER_BASE_URL is required and must be a valid URL',
+		.url({
+			error: (issue) =>
+				issue.input === undefined
+					? 'ARRANGER_BASE_URL is required and must be a valid URL'
+					: 'ARRANGER_BASE_URL must be a valid URL',
 		})
-		.url('ARRANGER_BASE_URL must be a valid URL')
 		.transform(trimTrailingSlash),
 	ARRANGER_CATALOGUES: zod
 		.string({
-			message: 'ARRANGER_CATALOGUES is required and must be a comma-separated list of catalogue names',
+			error: 'ARRANGER_CATALOGUES is required and must be a comma-separated list of catalogue names',
 		})
 		.min(1, 'ARRANGER_CATALOGUES is required and cannot be empty')
 		.transform(parseCatalogueList),
@@ -63,7 +67,7 @@ const envSchema = zod.object({
 		},
 		zod.coerce
 			.number({
-				message: 'ARRANGER_REQUEST_TIMEOUT_MS must be a valid number',
+				error: 'ARRANGER_REQUEST_TIMEOUT_MS must be a valid number',
 			})
 			.int('ARRANGER_REQUEST_TIMEOUT_MS must be an integer')
 			.positive('ARRANGER_REQUEST_TIMEOUT_MS must be a positive number')
@@ -75,7 +79,7 @@ const envSchema = zod.object({
 	MCP_PATH: zod.string().optional().default('/mcp'),
 	LOG_LEVEL: zod
 		.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'], {
-			message: 'LOG_LEVEL must be one of: trace, debug, info, warn, error, fatal',
+			error: 'LOG_LEVEL must be one of: trace, debug, info, warn, error, fatal',
 		})
 		.optional()
 		.default('info'),
