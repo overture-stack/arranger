@@ -286,8 +286,8 @@ suite('sqon/schema', () => {
 		assert.equal(output.success, false);
 	});
 
-	// Past ~750 combinations the recursive parse overflows the stack, escaping `safeParse` as a
-	// `RangeError` instead of a failed result. `checkSqonDepth` runs before the recursion.
+	// Deep enough nesting overflows the recursive parse, escaping `safeParse` as a `RangeError`
+	// instead of a failed result. `checkSqonDepth` runs before the recursion to prevent it.
 	suite('nesting depth', () => {
 		const nest = (combinations: number) => {
 			let node: unknown = { op: 'in', content: { fieldName: 'f', value: ['a'] } };
@@ -297,8 +297,13 @@ suite('sqon/schema', () => {
 			return node;
 		};
 
+		// 50 combinations is well past any real query and just under the 62 the limit allows.
 		test('accepts nesting far deeper than any realistic query', () => {
-			assert.equal(SqonSchema.safeParse(nest(200)).success, true);
+			assert.equal(SqonSchema.safeParse(nest(50)).success, true);
+		});
+
+		test('rejects nesting past the limit', () => {
+			assert.equal(SqonSchema.safeParse(nest(63)).success, false);
 		});
 
 		test('rejects over-deep nesting as a normal failure, without throwing', () => {

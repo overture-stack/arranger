@@ -1,17 +1,12 @@
 /**
- * The deepest a SQON may nest before it is rejected, counted in raw JSON nesting rather than
- * combination levels. Raw nesting is what drives the parser's stack usage and runs at about twice
- * the combination count, so 500 permits roughly 250 nested combinations.
+ * Maximum depth for a SQON before it is rejected, counted in raw JSON nesting rather than
+ * combination levels (roughly twice the combination count, so 128 allows 62).
  *
- * Measured at default stack size: 750 combinations parse (18.8KB), 1000 throws `RangeError` out of
- * `safeParse`.
- *
- * TODO(review before merge): confirm this number as a team. 500 is deliberately permissive so the
- * guard cannot reject an existing caller while the limit is still open. 128 is defensible too:
- * still 10x any real query, but an order of magnitude below a ceiling that is stack-dependent
- * rather than constant, and so only accidentally safe at 500.
+ * Without a cap, a deeply nested SQON overflows the recursive parse and escapes `safeParse` as a
+ * `RangeError`, which it is documented never to throw. The overflow point depends on the runtime
+ * and its stack size, so this sits well below any observed one rather than close to it.
  */
-export const SQON_MAX_DEPTH = 500;
+export const SQON_MAX_DEPTH = 128;
 
 /**
  * Iterative, not recursive: a recursive walk would hit the same stack limit this exists to prevent.

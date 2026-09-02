@@ -53,17 +53,6 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Remove `'not'` from `shouldReduceOp`'s condition for `MERGE_VALUES_UNDER_AND_OPS`, so `not-in`/`some-not-in`/`all` only merge under `and` (matching how `or` already correctly keeps them separate). Add a test exercising `not-in`/`some-not-in`/`all` inside `.not([...])`, asserting on `content`, not just `op`.
 **Standalone:** yes; a small, isolated logic fix plus a regression test.
 
-### `SqonSchema` recursion-depth limit is provisional and needs a team decision
-
-**File:** `modules/sqon/src/schema/depth.ts` (`SQON_MAX_DEPTH`)
-**Severity:** low (the crash is fixed; only the chosen number is open)
-**Kind:** follow-up
-**Issue:** The crash is fixed as of 2026-09-01: `SqonSchema` runs `checkSqonDepth` through a pipe before the recursive parse, so an over-deep SQON fails validation instead of overflowing the stack. Confirmed no throw at 20,000 nested combinations.
-
-Only the number is open. `SQON_MAX_DEPTH` is 500 in raw JSON nesting (roughly 250 combinations), deliberately permissive so it cannot reject an existing caller while under discussion. 128 is defensible: still 10x any real query, but an order of magnitude below the measured failure point (750 combinations parse, 1000 throw), which is stack-dependent rather than constant and so only accidentally safe at 500.
-**Fix:** Agree a number and set it in `modules/sqon/src/schema/depth.ts`, where a `TODO(review before merge)` marks it. Lowering it is a contract change and wants a changelog note.
-**Standalone:** yes; a one-line constant change plus a changelog note
-
 ### `removeFilter` can leave a schema-invalid or semantically-empty filter instead of removing it, contradicting its own documented contract
 
 **File:** `modules/sqon/src/builder/index.ts:210-217` (`stripValues`), consumed at lines 225-226 and 244-250
