@@ -5,9 +5,9 @@ import {
 	BetweenFilterSchema,
 	InLikeFilterSchema,
 	RangeLikeFilterSchema,
-	SqonCombinationSchema,
+	SqonCombinationNodeSchema,
 	SqonLeafSchema,
-	SqonSchema,
+	SqonNodeSchema,
 	WildcardFilterSchema,
 } from '../schema/index.js';
 import { SQON_SCHEMA_VERSION } from '../version/index.js';
@@ -19,16 +19,18 @@ import type { JsonSchemaObject, SqonJsonSchema, VersionedSqonJsonSchema } from '
  * The published `$defs` entries. Registering a schema makes `toJSONSchema` emit a `$ref` to its
  * entry root rather than inlining it, which is why no pointer ever runs through an `anyOf` segment.
  */
+// Registers the unguarded schemas: this describes the data shape, and the depth guard's pipe has
+// no JSON Schema representation, so registering it emits a broken `$ref` indirection instead.
 const sqonSchemaRegistry = zod.registry<{ id: string }>();
 
 sqonSchemaRegistry.add(AllFilterSchema, { id: 'All' });
 sqonSchemaRegistry.add(BetweenFilterSchema, { id: 'Between' });
 sqonSchemaRegistry.add(WildcardFilterSchema, { id: 'Wildcard' });
-sqonSchemaRegistry.add(SqonCombinationSchema, { id: 'Group' });
+sqonSchemaRegistry.add(SqonCombinationNodeSchema, { id: 'Group' });
 sqonSchemaRegistry.add(InLikeFilterSchema, { id: 'InLike' });
 sqonSchemaRegistry.add(SqonLeafSchema, { id: 'Leaf' });
 sqonSchemaRegistry.add(RangeLikeFilterSchema, { id: 'RangeLike' });
-sqonSchemaRegistry.add(SqonSchema, { id: 'SQON' });
+sqonSchemaRegistry.add(SqonNodeSchema, { id: 'SQON' });
 
 /**
  * Zod emits `anyOf`; this schema has published `oneOf` since it shipped. Every union here is

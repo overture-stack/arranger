@@ -85,7 +85,13 @@ export const SqonLeafSchema = zod.union([
 	WildcardFilterSchema,
 ]);
 
-export const SqonCombinationSchema: zod.ZodType<SqonCombination, SqonCombination> = zod.lazy(() =>
+/**
+ * The structural schemas, unguarded. The recursion runs through these so the depth check fires once
+ * at an entry point rather than re-walking every subtree at every nested level for the same answer.
+ * Exported for `jsonSchema/runtime.ts`, which describes the data shape and so must not see the
+ * guard's pipe, but deliberately absent from the package root: callers get the guarded pair below.
+ */
+export const SqonCombinationNodeSchema: zod.ZodType<SqonCombination, SqonCombination> = zod.lazy(() =>
 	zod
 		.object({
 			op: GroupOpSchema,
@@ -96,29 +102,33 @@ export const SqonCombinationSchema: zod.ZodType<SqonCombination, SqonCombination
 		.passthrough(),
 );
 
-/** The structural schema, without the depth guard. Not for direct use; see {@link SqonSchema}. */
-const SqonNodeSchema: zod.ZodType<SqonNode, SqonNode> = zod.lazy(() =>
-	zod.union([SqonCombinationSchema, SqonLeafSchema]),
+export const SqonNodeSchema: zod.ZodType<SqonNode, SqonNode> = zod.lazy(() =>
+	zod.union([SqonCombinationNodeSchema, SqonLeafSchema]),
 );
 
 /**
- * A SQON: a single filter leaf, or a combination of them.
- *
- * Piped so the depth check runs *before* the recursive parse. `safeParse` is documented never to
- * throw, but the recursion above overflows the stack on a deeply nested value, which escapes as a
- * `RangeError`. SQONs arrive as untrusted request content, so that is a crash reachable with about
- * 25KB of JSON. The pipe short-circuits: an over-deep value fails validation and never recurses.
+ * Checks nesting depth before `schema` parses, so an over-deep value fails validation instead of
+ * overflowing the recursion. `safeParse` is documented never to throw, but the recursive descent
+ * escapes as a `RangeError` on untrusted input of about 25KB. The pipe short-circuits, so the
+ * recursion is never entered.
  */
-export const SqonSchema: zod.ZodType<SqonNode, unknown> = zod
-	.unknown()
-	.superRefine((value, ctx) => {
-		if (!checkSqonDepth(value)) {
-			ctx.addIssue({
-				code: 'custom',
-				message: `SQON nests deeper than the maximum JSON nesting depth of ${SQON_MAX_DEPTH}.`,
-			});
-		}
-	})
-	.pipe(SqonNodeSchema);
+const withDepthGuard = <Output>(schema: zod.ZodType<Output, Output>): zod.ZodType<Output, unknown> =>
+	zod
+		.unknown()
+		.superRefine((value, ctx) => {
+			if (!checkSqonDepth(value)) {
+				ctx.addIssue({
+					code: 'custom',
+					message: `SQON exceeds the maximum nesting depth of ${SQON_MAX_DEPTH}, counted in JSON levels (roughly twice the number of nested filter combinations).`,
+				});
+			}
+		})
+		.pipe(schema);
+
+/** A combination of SQON nodes under `and`, `or`, or `not`. */
+export const SqonCombinationSchema: zod.ZodType<SqonCombination, unknown> = withDepthGuard(SqonCombinationNodeSchema);
+
+/** A SQON: a single filter leaf, or a combination of them. */
+export const SqonSchema: zod.ZodType<SqonNode, unknown> = withDepthGuard(SqonNodeSchema);
 
 export type { SqonCombination, SqonLeaf, SqonNode } from './types.js';

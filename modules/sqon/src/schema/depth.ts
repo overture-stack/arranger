@@ -19,7 +19,13 @@ export const checkSqonDepth = (value: unknown, maxDepth: number = SQON_MAX_DEPTH
 	const stack: { node: unknown; depth: number }[] = [{ node: value, depth: 0 }];
 
 	while (stack.length > 0) {
-		const { node, depth } = stack.pop() as { node: unknown; depth: number };
+		const item = stack.pop();
+
+		if (!item) {
+			break;
+		}
+
+		const { node, depth } = item;
 
 		if (depth > maxDepth) {
 			return false;

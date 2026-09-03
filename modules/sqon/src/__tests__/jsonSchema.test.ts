@@ -42,10 +42,9 @@ suite('sqon/jsonSchema', () => {
 			{ $ref: '#/$defs/Between' },
 			{ $ref: '#/$defs/Wildcard' },
 		]);
-		assert.deepEqual(schema.$defs.Group.properties.content.items.oneOf, [
-			{ $ref: '#/$defs/Group' },
-			{ $ref: '#/$defs/Leaf' },
-		]);
+		// A group's children reference the SQON union by name rather than inlining it, since the
+		// registry and the recursion share one schema instance.
+		assert.deepEqual(schema.$defs.Group.properties.content.items, { $ref: '#/$defs/SQON' });
 		// Canonical operators and aliases are two enums in a union, so they emit as two branches
 		// rather than the flat enum Zod 3 collapsed them into.
 		assert.deepEqual(schema.$defs.InLike.properties.op.oneOf, [
