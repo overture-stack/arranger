@@ -135,6 +135,10 @@ export const validateSqonFields = (
 	return errors;
 };
 
+/** Shared with `execute_query`'s input schema, which rejects a missing `sqon` before this runs. */
+export const SQON_REQUIRED_MESSAGE =
+	'A SQON is required. For an unfiltered query, pass an empty root SQON: { "op": "and", "content": [] }.';
+
 /**
  * Validates a raw SQON value: first structurally against the shared SQON schema from
  * `@overture-stack/sqon`, then semantically against the catalogue's fields and per-type
@@ -153,12 +157,7 @@ export const validateSqonFields = (
  */
 export const validateSqon = (rawSqon: unknown, context: CatalogueQueryContext): SqonValidationResult => {
 	if (rawSqon === undefined || rawSqon === null) {
-		return {
-			valid: false,
-			errors: [
-				'A SQON is required. For an unfiltered query, pass an empty root SQON: { "op": "and", "content": [] }.',
-			],
-		};
+		return { valid: false, errors: [SQON_REQUIRED_MESSAGE] };
 	}
 
 	const parsed = SqonSchema.safeParse(rawSqon);

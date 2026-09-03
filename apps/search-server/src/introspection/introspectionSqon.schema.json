@@ -1,10 +1,10 @@
 {
 	"$defs": {
 		"All": {
-			"additionalProperties": true,
+			"additionalProperties": {},
 			"properties": {
 				"content": {
-					"additionalProperties": true,
+					"additionalProperties": {},
 					"properties": {
 						"fieldName": {
 							"minLength": 1,
@@ -33,10 +33,10 @@
 			"type": "object"
 		},
 		"Between": {
-			"additionalProperties": true,
+			"additionalProperties": {},
 			"properties": {
 				"content": {
-					"additionalProperties": true,
+					"additionalProperties": {},
 					"properties": {
 						"fieldName": {
 							"minLength": 1,
@@ -44,7 +44,7 @@
 						},
 						"value": {
 							"items": {
-								"$ref": "#/$defs/All/properties/content/properties/value/items"
+								"type": ["string", "number", "boolean"]
 							},
 							"maxItems": 2,
 							"minItems": 2,
@@ -66,18 +66,11 @@
 			"type": "object"
 		},
 		"Group": {
-			"additionalProperties": true,
+			"additionalProperties": {},
 			"properties": {
 				"content": {
 					"items": {
-						"oneOf": [
-							{
-								"$ref": "#/$defs/Group"
-							},
-							{
-								"$ref": "#/$defs/Leaf"
-							}
-						]
+						"$ref": "#/$defs/SQON"
 					},
 					"type": "array"
 				},
@@ -93,10 +86,10 @@
 			"type": "object"
 		},
 		"InLike": {
-			"additionalProperties": true,
+			"additionalProperties": {},
 			"properties": {
 				"content": {
-					"additionalProperties": true,
+					"additionalProperties": {},
 					"properties": {
 						"fieldName": {
 							"minLength": 1,
@@ -105,11 +98,11 @@
 						"value": {
 							"oneOf": [
 								{
-									"$ref": "#/$defs/All/properties/content/properties/value/items"
+									"type": ["string", "number", "boolean"]
 								},
 								{
 									"items": {
-										"$ref": "#/$defs/All/properties/content/properties/value/items"
+										"type": ["string", "number", "boolean"]
 									},
 									"type": "array"
 								}
@@ -120,8 +113,16 @@
 					"type": "object"
 				},
 				"op": {
-					"enum": ["in", "not-in", "some-not-in", "=", "==", "===", "!=", "!=="],
-					"type": "string"
+					"oneOf": [
+						{
+							"enum": ["in", "not-in", "some-not-in"],
+							"type": "string"
+						},
+						{
+							"enum": ["=", "==", "===", "!=", "!=="],
+							"type": "string"
+						}
+					]
 				},
 				"pivot": {
 					"type": ["string", "null"]
@@ -150,25 +151,43 @@
 			]
 		},
 		"RangeLike": {
-			"additionalProperties": true,
+			"additionalProperties": {},
 			"properties": {
 				"content": {
-					"additionalProperties": true,
+					"additionalProperties": {},
 					"properties": {
 						"fieldName": {
 							"minLength": 1,
 							"type": "string"
 						},
 						"value": {
-							"$ref": "#/$defs/InLike/properties/content/properties/value"
+							"oneOf": [
+								{
+									"type": ["string", "number", "boolean"]
+								},
+								{
+									"items": {
+										"type": ["string", "number", "boolean"]
+									},
+									"type": "array"
+								}
+							]
 						}
 					},
 					"required": ["fieldName", "value"],
 					"type": "object"
 				},
 				"op": {
-					"enum": ["gt", "gte", "lt", "lte", ">", ">=", "<", "<="],
-					"type": "string"
+					"oneOf": [
+						{
+							"enum": ["gt", "gte", "lt", "lte"],
+							"type": "string"
+						},
+						{
+							"enum": [">", ">=", "<", "<="],
+							"type": "string"
+						}
+					]
 				},
 				"pivot": {
 					"type": ["string", "null"]
@@ -188,10 +207,10 @@
 			]
 		},
 		"Wildcard": {
-			"additionalProperties": true,
+			"additionalProperties": {},
 			"properties": {
 				"content": {
-					"additionalProperties": true,
+					"additionalProperties": {},
 					"properties": {
 						"fieldNames": {
 							"items": {
@@ -209,8 +228,16 @@
 					"type": "object"
 				},
 				"op": {
-					"enum": ["wildcard", "filter"],
-					"type": "string"
+					"oneOf": [
+						{
+							"const": "wildcard",
+							"type": "string"
+						},
+						{
+							"const": "filter",
+							"type": "string"
+						}
+					]
 				},
 				"pivot": {
 					"type": ["string", "null"]

@@ -5,10 +5,12 @@ export type { SqonScalar, SqonScalarOrArray };
 
 /**
  * A SQON node whose filter content is keyed by a single `fieldName`.
- * Excludes the wildcard leaf, which uses `fieldNames` (plural) instead of `fieldName`.
- * Defined as an intersection with `SqonNode` so it is assignable to `SqonNode` in type predicates.
+ * Excludes the wildcard leaf, which uses `fieldNames` (plural) instead.
+ *
+ * Intersected with `SqonLeaf`, not `SqonNode`: `isFieldFilter` already rejects groups at runtime,
+ * and the wider form made Zod 4 narrow `Exclude<SqonNode, SqonFieldFilter>` to `never`.
  */
-export type SqonFieldFilter = SqonNode & {
+export type SqonFieldFilter = SqonLeaf & {
 	content: { fieldName: string; value: SqonScalarOrArray; [key: string]: unknown };
 	pivot?: string | null;
 };

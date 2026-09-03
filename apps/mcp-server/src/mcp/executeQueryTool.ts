@@ -14,6 +14,7 @@ import {
 	validateSortFields,
 	validateSqon,
 	type CatalogueQueryContext,
+	SQON_REQUIRED_MESSAGE,
 } from '#arranger/queryValidation.js';
 import { catalogueIntrospectionSchema, serverIntrospectionSchema } from '#arranger/types.js';
 import { type McpServerDeps } from '#server.js';
@@ -35,8 +36,12 @@ const sortInputSchema = zod.object({
 
 const inputSchema = {
 	catalogueId: zod.string().min(1).describe('Catalogue identifier from the Arranger /introspection payload.'),
+	// Zod 4 makes an `unknown()` key required, so a missing `sqon` fails here rather than in the
+	// handler. `.nonoptional()` carries the guidance across; the default is an unhelpful
+	// "expected nonoptional".
 	sqon: zod
 		.unknown()
+		.nonoptional({ error: SQON_REQUIRED_MESSAGE })
 		.describe(
 			'SQON filter for the query (required). Call build_sqon to generate valid SQON for this input.' +
 				'For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null.',
@@ -95,8 +100,8 @@ const outputSchema = zod.object({
 	executed: zod.boolean(),
 	endpoint: zod.string(),
 	total: zod.number().optional(),
-	hits: zod.array(zod.record(zod.unknown())).optional(),
-	aggregations: zod.record(zod.unknown()).optional(),
+	hits: zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+	aggregations: zod.record(zod.string(), zod.unknown()).optional(),
 	message: zod.string().optional(),
 });
 

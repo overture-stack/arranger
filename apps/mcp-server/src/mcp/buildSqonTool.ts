@@ -175,7 +175,7 @@ const inputSchema = {
 const outputSchema = zod.object({
 	// Left opaque: a full SqonSchema description would bloat every tools/list response.
 	sqon: zod
-		.record(zod.unknown())
+		.record(zod.string(), zod.unknown())
 		.describe('The built SQON. Pass this to execute_query as "sqon" without editing it.'),
 	summary: zod.string().describe('Plain-English description of the built SQON. Read this back to the user.'),
 	clauseCount: zod.number().describe('Number of filter clauses submitted, including any inside existingSqon.'),

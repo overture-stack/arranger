@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
-import { type ZodRawShape } from 'zod';
+import { type ZodType } from 'zod';
 
 import { type ArrangerClient } from '#arranger/client.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
@@ -36,7 +36,8 @@ const client = {
 
 type RegisteredTool = {
 	name: string;
-	config: { description?: string; inputSchema?: ZodRawShape; title?: string };
+	// Not `ZodRawShape`: on Zod 4 its values are the core `$ZodType`, which has no `.description`.
+	config: { description?: string; inputSchema?: Record<string, ZodType>; title?: string };
 };
 
 const registerAllTools = (): RegisteredTool[] => {
