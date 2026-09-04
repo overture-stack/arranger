@@ -1,8 +1,7 @@
 import { after, before, suite } from 'node:test';
 import path from 'path';
 
-import { Client } from '@modelcontextprotocol/sdk/client';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
+import { type Client } from '@modelcontextprotocol/client';
 import { stringToNumber } from '@overture-stack/arranger-types/tools';
 import dotenv from 'dotenv';
 
@@ -17,6 +16,7 @@ import catalogueBData from './assets/catalogue_b.data.json' with { type: 'json' 
 import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
 import buildSqon from './buildSqon.js';
 import executeQuery from './executeQuery.js';
+import { connectMcpClient } from './mcpClient.js';
 import readPrompts from './readPrompts.js';
 import readResources from './readResources.js';
 import readTools from './readTools.js';
@@ -210,6 +210,11 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 					host: '127.0.0.1',
 					port: mcpPort,
 					path: '/mcp',
+					// Spelled out rather than derived: these are what a loopback bind resolves to,
+					// and stating them keeps the suite honest if that defaulting ever changes.
+					allowedHosts: ['localhost', '127.0.0.1', '[::1]'],
+					allowedOrigins: ['localhost', '127.0.0.1', '[::1]'],
+					maxBodyBytes: 102_400,
 				},
 			});
 		} catch (err) {
@@ -224,9 +229,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			console.error('\n------------------------------------');
 			console.log('Connecting MCP Client over Streamable HTTP\n');
 
-			const mcpClient = new Client({ name: 'arranger-mcp-server-integration-tests', version: '0.0.0-test' });
-			const transport = new StreamableHTTPClientTransport(new URL(mcpServer.url));
-			await mcpClient.connect(transport);
+			const mcpClient = await connectMcpClient(mcpServer.url, 'arranger-mcp-server-integration-tests');
 			context.mcpClient = mcpClient;
 			context.mcpServerUrl = mcpServer.url;
 		} catch (err) {

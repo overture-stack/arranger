@@ -2,7 +2,7 @@ import { type Server } from 'http';
 
 import { createArrangerClient } from '../../../apps/mcp-server/src/arranger/client.js';
 import { validateArrangerConnection } from '../../../apps/mcp-server/src/arranger/validation.js';
-import { createHttpApp } from '../../../apps/mcp-server/src/http/app.js';
+import { startMcpHttpServer } from '../../../apps/mcp-server/src/http/server.js';
 import { createMcpServer } from '../../../apps/mcp-server/src/server.js';
 import type { ArrangerMcpConfig } from '../../../apps/mcp-server/src/utils/config.js';
 
@@ -28,28 +28,16 @@ export const startMcpServerForTest = async (config: ArrangerMcpConfig): Promise<
 
 	await validateArrangerConnection(config, introspectionClient);
 
-	const { app, closeAllSessions } = createHttpApp(config, () =>
+	const { httpServer, close } = await startMcpHttpServer(config, () =>
 		createMcpServer({ config, client: introspectionClient }),
 	);
 
 	const { host, port, path } = config.mcp;
 
-	const httpServer = await new Promise<Server>((resolve, reject) => {
-		const server = app.listen(port, host, () => resolve(server));
-		server.once('error', reject);
-	});
-
-	const shutdown = async () => {
-		await closeAllSessions();
-		await new Promise<void>((resolve, reject) => {
-			httpServer.close((err) => (err ? reject(err) : resolve()));
-		});
-	};
-
 	return {
 		config,
 		httpServer,
 		url: `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${port}${path}`,
-		shutdown,
+		shutdown: close,
 	};
 };

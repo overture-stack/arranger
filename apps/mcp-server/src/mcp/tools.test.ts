@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
-import { type ZodType } from 'zod';
+import { type McpServer } from '@modelcontextprotocol/server';
+import { type ZodObject, type ZodType } from 'zod';
 
 import { type ArrangerClient } from '#arranger/client.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
@@ -15,7 +15,14 @@ const config: ArrangerMcpConfig = {
 	arrangerBaseUrl: 'https://arranger.test',
 	catalogues: ['participants'],
 	requestTimeoutMs: 10_000,
-	mcp: { host: '0.0.0.0', port: 3100, path: '/mcp' },
+	mcp: {
+		host: '0.0.0.0',
+		port: 3100,
+		path: '/mcp',
+		allowedHosts: ['arranger-mcp'],
+		allowedOrigins: [],
+		maxBodyBytes: 102_400,
+	},
 };
 
 const serverIntrospection = {
@@ -36,8 +43,9 @@ const client = {
 
 type RegisteredTool = {
 	name: string;
-	// Not `ZodRawShape`: on Zod 4 its values are the core `$ZodType`, which has no `.description`.
-	config: { description?: string; inputSchema?: Record<string, ZodType>; title?: string };
+	// A `ZodObject` rather than a raw shape: SDK v2 deprecates the raw-shape overloads of
+	// `registerTool`, so every tool now passes a wrapped schema and reads fields off `.shape`.
+	config: { description?: string; inputSchema?: ZodObject<Record<string, ZodType>>; title?: string };
 };
 
 const registerAllTools = (): RegisteredTool[] => {
@@ -111,7 +119,7 @@ suite('execute_query guidance', () => {
 	});
 
 	test('tells the caller where the sqon argument comes from', () => {
-		const sqon = executeQuery().config.inputSchema?.sqon;
+		const sqon = executeQuery().config.inputSchema?.shape.sqon;
 		assert.ok(sqon?.description?.includes('build_sqon'));
 	});
 });

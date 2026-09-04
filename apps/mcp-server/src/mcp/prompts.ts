@@ -1,4 +1,4 @@
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { type McpServer } from '@modelcontextprotocol/server';
 import { z as zod } from 'zod';
 
 import { type ArrangerServerIntrospection } from '#arranger/types.js';
@@ -123,9 +123,9 @@ export const registerPrompts = (server: McpServer, { client }: McpServerDeps): v
 				'Translates a natural language research goal into a validated SQON query. ' +
 				'Loads the live schema, classifies the question, and requires explicit researcher ' +
 				'confirmation before any data is retrieved.',
-			argsSchema: {
+			argsSchema: zod.object({
 				goal: zod.string().min(1).describe('Natural language description of the data the researcher wants.'),
-			},
+			}),
 		},
 		async ({ goal }) => {
 			const introspection = await client.getServerIntrospection();

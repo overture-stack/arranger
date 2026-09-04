@@ -1,8 +1,8 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { McpServer } from '@modelcontextprotocol/server';
 
 import { createArrangerClient, type ArrangerClient } from '#arranger/client.js';
 import { validateArrangerConnection } from '#arranger/validation.js';
-import { createHttpApp } from '#http/app.js';
+import { startMcpHttpServer } from '#http/server.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
 import { registerPrompts } from '#mcp/prompts.js';
 import { registerResources } from '#mcp/resources.js';
@@ -32,12 +32,12 @@ export const startServer = async (): Promise<void> => {
 	await validateArrangerConnection(config, client);
 
 	const deps: McpServerDeps = { config, client };
-	const { app, closeAllSessions } = createHttpApp(config, () => createMcpServer(deps));
+	// One instance per request: the handler serves each request independently, so nothing is held
+	// between them and there is no session map to reap on shutdown.
+	const { close } = await startMcpHttpServer(config, () => createMcpServer(deps));
 
 	const { host, port, path } = config.mcp;
-	app.listen(port, () => {
-		logger.info(`MCP server running at http://${host}:${port}${path}`);
-	});
+	logger.info(`MCP server running at http://${host}:${port}${path}`);
 
 	const gracefulShutdown = async (signal: string) => {
 		logger.info(`Received ${signal}, initiating graceful shutdown...`);
@@ -51,7 +51,7 @@ export const startServer = async (): Promise<void> => {
 		hardShutdownTimeout.unref(); // Allow process to exit if this is the only thing left
 
 		try {
-			await closeAllSessions();
+			await close();
 			logger.info('Graceful shutdown complete, exiting now.');
 			process.exit(0);
 		} catch (error) {

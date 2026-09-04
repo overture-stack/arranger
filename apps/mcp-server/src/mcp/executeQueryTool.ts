@@ -1,4 +1,4 @@
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { type McpServer } from '@modelcontextprotocol/server';
 import { z as zod } from 'zod';
 
 import {
@@ -34,7 +34,7 @@ const sortInputSchema = zod.object({
 	missing: zod.enum(['first', 'last']).optional(),
 });
 
-const inputSchema = {
+const inputSchema = zod.object({
 	catalogueId: zod.string().min(1).describe('Catalogue identifier from the Arranger /introspection payload.'),
 	// Zod 4 makes an `unknown()` key required, so a missing `sqon` fails here rather than in the
 	// handler. `.nonoptional()` carries the guidance across; the default is an unhelpful
@@ -91,7 +91,7 @@ const inputSchema = {
 		.describe(
 			'Whether an aggregation is narrowed by filters on its own field (default false, matching multi-select facet behaviour).',
 		),
-};
+});
 
 const outputSchema = zod.object({
 	catalogueId: zod.string(),
@@ -177,46 +177,19 @@ const validateRequest = ({
 };
 
 /**
- * Asks the user to review and confirm the generated GraphQL request before it is executed,
- * using MCP elicitation. When the connected client does not advertise the elicitation
- * capability, confirmation is skipped and the query proceeds; the executed request is
- * always echoed in the tool response for transparency.
- * @returns `true` when execution may proceed, `false` when the user declined or cancelled.
+ * DISABLED BY THIS COMMIT, restored by the next one.
+ *
+ * Confirm-before-execute used `server.server.elicitInput()`, a push-style server-to-client request.
+ * Protocol revision `2026-07-28` removed that channel: the call still type-checks on SDK v2 but
+ * throws on a modern-era request, so leaving it in place would fail every `execute_query` rather
+ * than skip confirmation. The replacement returns an `inputRequired(...)` result and is re-entered
+ * by the client with the answer attached, which is a large enough rewrite to be reviewed on its own.
+ *
+ * Until then `execute_query` runs without asking. That is a deliberate, temporary regression, and it
+ * is why this commit is not independently shippable.
+ * @returns `true` always, standing in for the user's answer.
  */
-const confirmExecution = async ({
-	server,
-	catalogueId,
-	endpoint,
-	query,
-	variables,
-}: {
-	server: McpServer;
-	catalogueId: string;
-	endpoint: string;
-	query: string;
-	variables: Record<string, unknown>;
-}): Promise<boolean> => {
-	if (!server.server.getClientCapabilities()?.elicitation) {
-		return true;
-	}
-
-	const confirmation = await server.server.elicitInput({
-		message: `About to execute this GraphQL query against Arranger catalogue "${catalogueId}" (POST ${endpoint}):\n\n${query}\n\nVariables:\n${JSON.stringify(variables, null, 2)}`,
-		requestedSchema: {
-			type: 'object',
-			properties: {
-				confirm: {
-					type: 'boolean',
-					title: 'Execute this query?',
-					description: 'Review the query and variables above, then confirm to run it against Arranger.',
-				},
-			},
-			required: ['confirm'],
-		},
-	});
-
-	return confirmation.action === 'accept' && confirmation.content?.confirm === true;
-};
+const confirmExecution = (): boolean => true;
 
 /** The slice of an Arranger GraphQL response the execute_query tool compacts for the LLM. */
 type ArrangerQueryData = {
@@ -310,13 +283,7 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 					operationName: OPERATION_NAME,
 				});
 
-				const confirmed = await confirmExecution({
-					server,
-					catalogueId,
-					endpoint,
-					query: request.query,
-					variables: request.variables,
-				});
+				const confirmed = confirmExecution();
 				if (!confirmed) {
 					return successResult({
 						catalogueId,

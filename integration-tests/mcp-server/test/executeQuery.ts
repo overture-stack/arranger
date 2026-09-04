@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { Client } from '@modelcontextprotocol/sdk/client';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
-import { ElicitRequestSchema, type ElicitRequest, type ElicitResult } from '@modelcontextprotocol/sdk/types';
+import {
+	Client,
+	StreamableHTTPClientTransport,
+	type ElicitRequest,
+	type ElicitResult,
+} from '@modelcontextprotocol/client';
+
+import { withModernNegotiation } from './mcpClient.js';
 
 export type ExecuteQueryEnv = {
 	getClient: () => Client;
@@ -55,7 +60,9 @@ const getErrorText = (result: Awaited<ReturnType<Client['callTool']>>): string =
 /**
  * Connects a second MCP client that advertises the elicitation capability, so the
  * execute_query tool's user-confirmation path runs (the shared suite client does not
- * advertise elicitation, so every other test takes the skip-confirmation path).
+ * advertise elicitation).
+ *
+ * Handlers are registered by method name on SDK v2, rather than by request schema.
  */
 const connectElicitingClient = async (
 	serverUrl: string,
@@ -63,9 +70,9 @@ const connectElicitingClient = async (
 ): Promise<Client> => {
 	const elicitingClient = new Client(
 		{ name: 'arranger-mcp-server-integration-tests-eliciting', version: '0.0.0-test' },
-		{ capabilities: { elicitation: {} } },
+		withModernNegotiation({ capabilities: { elicitation: {} } }),
 	);
-	elicitingClient.setRequestHandler(ElicitRequestSchema, async (request) => handleElicit(request));
+	elicitingClient.setRequestHandler('elicitation/create', async (request) => handleElicit(request));
 	await elicitingClient.connect(new StreamableHTTPClientTransport(new URL(serverUrl)));
 	return elicitingClient;
 };
@@ -283,7 +290,12 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		assert.match(text, /requires at least one entry in aggregationFields/);
 	});
 
-	test('14.declining the elicitation confirmation skips execution', async () => {
+	// Tests 14 and 15 are skipped by the SDK v2 transport migration, not by a decision to stop
+	// confirming. Confirm-before-execute is disabled in that commit because the push-style
+	// `elicitInput` call it used does not exist on protocol revision 2026-07-28, and the commit that
+	// rebuilds it on the multi-round-trip flow restores both tests. Their assertions describe the
+	// behaviour that commit has to reproduce, so they are left in place rather than deleted.
+	test.skip('14.declining the elicitation confirmation skips execution', async () => {
 		const elicitMessages: string[] = [];
 		const elicitingClient = await connectElicitingClient(getServerUrl(), (request) => {
 			elicitMessages.push(request.params.message);
@@ -310,7 +322,7 @@ export default ({ getClient, getServerUrl }: ExecuteQueryEnv) => {
 		}
 	});
 
-	test('15.accepting the elicitation confirmation executes the query', async () => {
+	test.skip('15.accepting the elicitation confirmation executes the query', async () => {
 		const elicitingClient = await connectElicitingClient(getServerUrl(), () => ({
 			action: 'accept',
 			content: { confirm: true },
