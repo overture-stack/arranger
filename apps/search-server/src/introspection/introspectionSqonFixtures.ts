@@ -43,8 +43,8 @@ export const sortKeysDeep = (value: unknown): unknown => {
 /**
  * Reads a fixture, substituting the live schema version back in.
  *
- * `readFileSync` rather than a JSON import: imported JSON is one cached object shared by every
- * importer, and the substitution below mutates.
+ * `readFileSync` rather than a JSON import: the version placeholder is swapped textually, so the
+ * substitution has to run on the file's contents before parsing rather than on a parsed object.
  */
 export const readFixture = (filename: string): unknown => {
 	const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), filename);
