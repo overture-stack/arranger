@@ -16,7 +16,7 @@ import catalogueBData from './assets/catalogue_b.data.json' with { type: 'json' 
 import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
 import buildSqon from './buildSqon.js';
 import executeQuery from './executeQuery.js';
-import { connectMcpClient } from './mcpClient.js';
+import { connectApprovingClient } from './mcpClient.js';
 import readPrompts from './readPrompts.js';
 import readResources from './readResources.js';
 import readTools from './readTools.js';
@@ -229,7 +229,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			console.error('\n------------------------------------');
 			console.log('Connecting MCP Client over Streamable HTTP\n');
 
-			const mcpClient = await connectMcpClient(mcpServer.url, 'arranger-mcp-server-integration-tests');
+			const mcpClient = await connectApprovingClient(mcpServer.url, 'arranger-mcp-server-integration-tests');
 			context.mcpClient = mcpClient;
 			context.mcpServerUrl = mcpServer.url;
 		} catch (err) {
