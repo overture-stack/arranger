@@ -8,8 +8,15 @@ const ENV_KEYS = [
 	'MCP_HOST',
 	'MCP_PORT',
 	'MCP_PATH',
+	'MCP_ALLOWED_HOSTS',
+	'MCP_ALLOWED_ORIGINS',
+	'MCP_REQUEST_STATE_SECRET',
+	'MCP_MAX_BODY_BYTES',
 	'LOG_LEVEL',
 ] as const;
+
+/** What an unset allowlist resolves to on a loopback bind, matching the SDK's own localhost guards. */
+const LOCALHOST_ALLOWED = ['localhost', '127.0.0.1', '[::1]'];
 
 // Redefining ArrangerMcpConfig type to avoid importing from config.ts before the logger module is mocked
 type ArrangerMcpConfig = {
@@ -20,6 +27,10 @@ type ArrangerMcpConfig = {
 		host: string;
 		port: number;
 		path: string;
+		allowedHosts: 'any' | string[];
+		allowedOrigins: string[];
+		requestStateSecret: string | undefined;
+		maxBodyBytes: number;
 	};
 };
 
@@ -109,6 +120,10 @@ suite('createArrangerMcpConfig', () => {
 				MCP_HOST: '127.0.0.1',
 				MCP_PORT: '4200',
 				MCP_PATH: '/custom-mcp',
+				MCP_ALLOWED_HOSTS: 'mcp.example.com, arranger-mcp',
+				MCP_ALLOWED_ORIGINS: 'portal.example.com',
+				MCP_REQUEST_STATE_SECRET: 'a-thirty-two-byte-or-longer-signing-key',
+				MCP_MAX_BODY_BYTES: '2_097_152',
 				LOG_LEVEL: 'debug',
 			});
 
@@ -122,14 +137,19 @@ suite('createArrangerMcpConfig', () => {
 					host: '127.0.0.1',
 					port: 4200,
 					path: '/custom-mcp',
+					allowedHosts: ['mcp.example.com', 'arranger-mcp'],
+					allowedOrigins: ['portal.example.com'],
+					requestStateSecret: 'a-thirty-two-byte-or-longer-signing-key',
+					maxBodyBytes: 2_097_152,
 				},
 			});
 		});
 
-		test('builds config with defaults for optional variables when only required variables are provided', () => {
+		test('builds config with defaults for optional variables on a loopback bind', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'http://localhost:5050',
 				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
 			});
 
 			const config = createArrangerMcpConfig();
@@ -139,9 +159,13 @@ suite('createArrangerMcpConfig', () => {
 				catalogues: ['catalogue-a'],
 				requestTimeoutMs: 10_000,
 				mcp: {
-					host: '0.0.0.0',
+					host: '127.0.0.1',
 					port: 3100,
 					path: '/mcp',
+					allowedHosts: LOCALHOST_ALLOWED,
+					allowedOrigins: LOCALHOST_ALLOWED,
+					requestStateSecret: undefined,
+					maxBodyBytes: 102_400,
 				},
 			});
 		});
@@ -150,6 +174,7 @@ suite('createArrangerMcpConfig', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com/',
 				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
 			});
 
 			const config = createArrangerMcpConfig();
@@ -157,10 +182,26 @@ suite('createArrangerMcpConfig', () => {
 			assert.strictEqual(config.arrangerBaseUrl, 'https://arranger.example.com');
 		});
 
+		// The variable ships listed but blank in `.env.schema`, so blank has to mean "unset" rather
+		// than "a zero-length signing key".
+		test('reads an empty MCP_REQUEST_STATE_SECRET as unset', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
+				MCP_REQUEST_STATE_SECRET: '',
+			});
+
+			const config = createArrangerMcpConfig();
+
+			assert.strictEqual(config.mcp.requestStateSecret, undefined);
+		});
+
 		test('filters empty entries from ARRANGER_CATALOGUES', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
 				ARRANGER_CATALOGUES: 'catalogue-a,, catalogue-b, ,catalogue-c,',
+				MCP_HOST: '127.0.0.1',
 			});
 
 			const config = createArrangerMcpConfig();
@@ -285,6 +326,117 @@ suite('createArrangerMcpConfig', () => {
 			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
 			assert.strictEqual(exitCode, 1);
 			assert.match(errorLogs.join(''), /LOG_LEVEL must be one of: trace, debug, info, warn, error, fatal/);
+		});
+
+		// Refused here rather than at the codec, which throws a RangeError from inside server startup
+		// where it reads as a crash rather than as a misconfigured variable.
+		test('exits when MCP_REQUEST_STATE_SECRET is shorter than the codec accepts', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
+				MCP_REQUEST_STATE_SECRET: 'too-short',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_REQUEST_STATE_SECRET must be at least 32 bytes/);
+		});
+
+		test('exits when MCP_MAX_BODY_BYTES is not a number', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
+				MCP_MAX_BODY_BYTES: 'not-a-number',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_MAX_BODY_BYTES must be a valid number/);
+		});
+
+		test('exits when MCP_MAX_BODY_BYTES is not positive', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
+				MCP_MAX_BODY_BYTES: '0',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_MAX_BODY_BYTES must be a positive number/);
+		});
+	});
+
+	// The server binds every interface by default, and the SDK only warns about that. A warning is
+	// the wrong volume for a DNS rebinding exposure that appears exactly when someone moves from a
+	// laptop to a container, so configuration refuses to resolve instead.
+	suite('Host allowlist safety', () => {
+		const requiredEnv = {
+			ARRANGER_BASE_URL: 'https://arranger.example.com',
+			ARRANGER_CATALOGUES: 'catalogue-a',
+		};
+
+		test('exits when the default bind is used without MCP_ALLOWED_HOSTS', () => {
+			setEnv(requiredEnv);
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_HOST is "0\.0\.0\.0".*MCP_ALLOWED_HOSTS is not set/);
+		});
+
+		test('exits when a routable bind is used without MCP_ALLOWED_HOSTS', () => {
+			setEnv({ ...requiredEnv, MCP_HOST: '10.1.2.3' });
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_HOST is "10\.1\.2\.3"/);
+		});
+
+		test('names the escape hatch in the failure message', () => {
+			setEnv(requiredEnv);
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.match(errorLogs.join(''), /MCP_ALLOWED_HOSTS=\*/);
+		});
+
+		for (const host of ['127.0.0.1', 'localhost', '::1']) {
+			test(`resolves the localhost allowlists for a ${host} bind with no allowlist set`, () => {
+				setEnv({ ...requiredEnv, MCP_HOST: host });
+
+				const { mcp } = createArrangerMcpConfig();
+
+				assert.deepStrictEqual(mcp.allowedHosts, LOCALHOST_ALLOWED);
+				assert.deepStrictEqual(mcp.allowedOrigins, LOCALHOST_ALLOWED);
+			});
+		}
+
+		test('accepts a routable bind once MCP_ALLOWED_HOSTS names the hostnames', () => {
+			setEnv({ ...requiredEnv, MCP_HOST: '0.0.0.0', MCP_ALLOWED_HOSTS: 'arranger-mcp, mcp.example.org' });
+
+			const { mcp } = createArrangerMcpConfig();
+
+			assert.deepStrictEqual(mcp.allowedHosts, ['arranger-mcp', 'mcp.example.org']);
+		});
+
+		test('treats MCP_ALLOWED_HOSTS=* as delegating Host validation to a gateway', () => {
+			setEnv({ ...requiredEnv, MCP_HOST: '0.0.0.0', MCP_ALLOWED_HOSTS: '*' });
+
+			const { mcp } = createArrangerMcpConfig();
+
+			assert.strictEqual(mcp.allowedHosts, 'any');
+		});
+
+		// An unset value is an empty allowlist rather than a disabled check: the Origin guard passes
+		// requests carrying no `Origin`, which is every non-browser MCP client, and rejects the rest.
+		test('leaves MCP_ALLOWED_ORIGINS empty on a routable bind when it is not set', () => {
+			setEnv({ ...requiredEnv, MCP_HOST: '0.0.0.0', MCP_ALLOWED_HOSTS: 'arranger-mcp' });
+
+			const { mcp } = createArrangerMcpConfig();
+
+			assert.deepStrictEqual(mcp.allowedOrigins, []);
 		});
 	});
 });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { type Client } from '@modelcontextprotocol/sdk/client';
+import { type Client } from '@modelcontextprotocol/client';
 
 export type PromptEnv = {
 	getClient: () => Client;
@@ -156,12 +156,15 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes }: Prom
 		);
 
 		// An empty string does reach the field, so this one can be pinned to `goal` specifically.
+		// SDK v2 renders the failing path unquoted and directly after the prompt name
+		// (`... query_arranger: goal: Too small`), where v1 quoted it as `"goal"`. Matching the
+		// prompt-name-then-path shape pins the same thing without coupling to Zod's issue wording.
 		await assert.rejects(
 			() => getClient().getPrompt({ name: 'query_arranger', arguments: { goal: '' } }),
 			(error: unknown) => {
 				const message = error instanceof Error ? error.message : String(error);
 				assert.match(message, /Invalid arguments for prompt query_arranger/);
-				assert.match(message, /"goal"/, 'expected the failing argument path to name goal');
+				assert.match(message, /query_arranger: goal\b/, 'expected the failing argument path to name goal');
 				return true;
 			},
 			'expected an empty goal to be rejected by the min(1) constraint',

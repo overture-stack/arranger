@@ -1,4 +1,4 @@
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { type McpServer } from '@modelcontextprotocol/server';
 import { z as zod } from 'zod';
 
 import {
@@ -56,12 +56,12 @@ export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
 			title: 'Get Catalogue Fields',
 			description:
 				'Return field introspection for one catalogue. `operators` maps each field type to its valid SQON operators. `fields` lists each field with its `type`, `displayName`, optional `unit`, and optional `description`.',
-			inputSchema: {
+			inputSchema: zod.object({
 				catalogueId: zod
 					.string()
 					.min(1)
 					.describe('Catalogue identifier from the Arranger /introspection payload.'),
-			},
+			}),
 			outputSchema: catalogueIntrospectionSchema,
 		},
 		async ({ catalogueId }) => {
