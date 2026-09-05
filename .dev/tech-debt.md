@@ -239,23 +239,14 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
 
 ## apps/mcp-server
 
-### `InMemoryEventStore` is not suitable for production
+### Arranger introspection is re-fetched on every call, with no cache and no sharing between callers
 
-**File:** `apps/mcp-server/src/utils/inMemoryEventStore.ts`
-**Severity:** medium (data reliability: state is lost on restart; no session resumability for clients)
-**Kind:** placeholder / incomplete implementation
-**Issue:** The `InMemoryEventStore` is copied verbatim from the MCP TypeScript SDK examples and is explicitly documented as intended for examples and testing, not production. It stores SSE event history in a `Map` in process memory, so all session state is lost on any restart or crash, and there is no mechanism for clients to replay missed events across server restarts.
-**Fix:** Replace with a persistent store (e.g. Redis, a database-backed event log) before any production deployment. The `EventStore` interface from `@modelcontextprotocol/sdk/server/streamableHttp` is already the right abstraction; only the implementation needs to change.
-**Standalone:** yes; swap the implementation behind the existing `EventStore` interface; no changes to `app.ts` or the MCP server wiring
-
-### MCP session map does not evict abandoned sessions
-
-**File:** `apps/mcp-server/src/http/app.ts`
-**Severity:** low (memory leak under adversarial or high-traffic conditions)
-**Kind:** resource management
-**Issue:** The `transports` map in `createHttpApp` is cleaned up when a client sends `DELETE` (via `onclose`) or on graceful shutdown. If a client disconnects without sending `DELETE` (network drop, crash), the transport entry persists for the lifetime of the process. For a low-traffic introspection server this is unlikely to matter in practice, but under adversarial conditions or bursty usage the map grows without bound.
-**Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
-**Standalone:** yes; self-contained change to `app.ts`; no protocol or API surface changes
+**File:** `apps/mcp-server/src/arranger/client.ts`; `apps/mcp-server/src/mcp/executeQueryTool.ts`, `tools.ts`, `resources.ts`
+**Severity:** medium (upstream load amplification; grew rather than appeared with the MCP SDK v2 migration)
+**Kind:** missing optimization
+**Issue:** `ArrangerClient` holds no cache, so every consumer that needs schema information asks Arranger for it again. `execute_query` alone calls `getServerIntrospection()` and `getCatalogueIntrospection()` on each entry, and protocol revision `2026-07-28` made confirmation a two-request exchange in which the handler re-runs from the top, so a single confirmed query now costs four introspection round trips where it cost two. Nothing is shared between the tools, the resources and `execute_query` even inside one request, and the payloads are identical for every caller today. The MCP server exists to sit in front of Arranger, which makes this its most direct cost.
+**Fix:** Cache introspection responses in `ArrangerClient` keyed by endpoint. Read [roadmap: query result caching](roadmap.md#query-result-caching-research) first rather than reinventing the choice it already frames: a short TTL of 30 to 60 seconds is that entry's option (b) and is self-contained, while tying entries to an ES/OS schema hash is option (a), is more correct, and depends on the ETag/schema-hash invalidation signal still open under [roadmap: MCP integration readiness](roadmap.md#mcp-integration-readiness). Note that the protocol's own `cacheHints` do not help here: those are client-side freshness hints on our results, not a cache in front of Arranger.
+**Standalone:** yes for the TTL version, which needs no Arranger change; the schema-hash version does not
 
 ### `NUMERIC_AGGREGATION_TYPES` in queryBuilder duplicates `esToAggTypesMap` from `modules/types`
 

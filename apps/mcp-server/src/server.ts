@@ -3,6 +3,7 @@ import { McpServer, type RequestStateCodec } from '@modelcontextprotocol/server'
 import { createArrangerClient, type ArrangerClient } from '#arranger/client.js';
 import { validateArrangerConnection } from '#arranger/validation.js';
 import { startMcpHttpServer } from '#http/server.js';
+import { RESULT_CACHE_HINTS } from '#mcp/cacheHints.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
 import { registerPrompts } from '#mcp/prompts.js';
 import { createConfirmationCodec, type ConfirmationState } from '#mcp/requestState.js';
@@ -10,6 +11,8 @@ import { registerResources } from '#mcp/resources.js';
 import { registerTools } from '#mcp/tools.js';
 import { createArrangerMcpConfig, type ArrangerMcpConfig } from '#utils/config.js';
 import logger from '#utils/logger.js';
+
+import packageJson from '../package.json' with { type: 'json' };
 
 export type McpServerDeps = {
 	config: ArrangerMcpConfig;
@@ -20,9 +23,10 @@ export type McpServerDeps = {
 
 export const createMcpServer = (deps: McpServerDeps): McpServer => {
 	const server = new McpServer(
-		{ name: 'arranger-mcp-server', version: '0.0.0-dev' },
+		{ name: 'arranger-mcp-server', version: packageJson.version },
 		{
 			instructions: SERVER_INSTRUCTIONS,
+			cacheHints: RESULT_CACHE_HINTS,
 			// Refuses a forged, expired or wrongly bound state before any handler runs, and decodes a
 			// good one for `ctx.mcpReq.requestState()` to read.
 			requestState: { verify: deps.requestStateCodec.verify },
