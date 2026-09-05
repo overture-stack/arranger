@@ -2,23 +2,25 @@
 
 This app is an MCP server that learns how to talk to Arranger by consuming Arranger's introspection endpoints.
 
-The current scaffold implements the Streamable HTTP MCP transport using **v1.x** of the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x).
+It serves the Streamable HTTP transport on **v2** of the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk), speaking protocol revision **`2026-07-28`**.
 
 ## Tools
 
 The server registers five tools that cover the full query lifecycle:
 
-| Tool                   | Purpose                                                                                                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                                 |
-| `get_sqon_schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema.          |
-| `get_catalogue_fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.                |
-| `build_sqon`           | Builds a validated SQON from plain field, operator, and value clauses, with a plain-English summary. Builds only; it executes nothing. |
-| `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                             |
+| Tool                   | Purpose                                                                                                                                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                                                                                                                                   |
+| `get_sqon_schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema.                                                                                                            |
+| `get_catalogue_fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.                                                                                                                  |
+| `build_sqon`           | Builds a validated SQON from plain field, operator, and value clauses, with a plain-English summary. Builds only; it executes nothing.                                                                                                   |
+| `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records. Requires a client that supports elicitation, and refuses one that does not, since the query must be confirmed before it runs. |
 
 The intended call order is `list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`, which is what `SERVER_INSTRUCTIONS` and the `query_arranger` prompt both describe. `build_sqon` covers every operator `modules/sqon` implements: the single-field operators (`in`, `not-in`, `some-not-in`, `all`, `gt`, `gte`, `lt`, `lte`, `between`) with `fieldName`, and `wildcard` text search across several fields with `fieldNames`. Mixed combinators and the planned `fuzzy` operator are not supported, so those still need a hand-written `sqon` passed to `execute_query`.
 
 ## Folder Structure
+
+Tests are co-located (`*.test.ts` beside the file they cover) and omitted below.
 
 ```text
 src/
@@ -32,19 +34,21 @@ src/
 │   ├── types.ts                # response types for introspection payloads
 │   └── validation.ts           # validates the connection to Arranger
 ├── http/
-│   └── app.ts                  # MCP express app with Streamable HTTP transport
+│   ├── requestBody.ts          # reads and size-caps the request body
+│   └── server.ts               # serves the MCP handler on node:http, with Host and Origin guards
 ├── mcp/
 │   ├── buildSqonTool.ts        # build SQON tool
+│   ├── cacheHints.ts           # freshness hints published on cacheable results
 │   ├── executeQueryTool.ts     # execute query tool
-│   ├── instructions.ts         # server instructions sent in the initialize response
+│   ├── instructions.ts         # server instructions, returned by server/discover
 │   ├── prompts.ts              # registers MCP prompts
+│   ├── requestState.ts         # signs and verifies execute_query's confirmation state
 │   ├── resources.ts            # registers MCP resources
 │   ├── sqonCheatSheet.ts       # compact SQON reference, returned by get_sqon_schema
 │   └── tools.ts                # registers MCP tools
 ├── utils/
 │   ├── config.ts               # env/config parsing
 │   ├── errors.ts               # error handling utilities
-│   ├── inMemoryEventStore.ts   # in-memory storage util for dev
 │   └── logger.ts               # pino logger wrapper
 ├── index.ts                    # entrypoint for the application
 └── server.ts                   # creates the MCP server
