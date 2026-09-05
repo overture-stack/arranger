@@ -214,6 +214,9 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 					// and stating them keeps the suite honest if that defaulting ever changes.
 					allowedHosts: ['localhost', '127.0.0.1', '[::1]'],
 					allowedOrigins: ['localhost', '127.0.0.1', '[::1]'],
+					// Left unset, which is the single-replica default: the suite runs one server, and
+					// exercising the per-process key is exercising what an operator gets by default.
+					requestStateSecret: undefined,
 					maxBodyBytes: 102_400,
 				},
 			});

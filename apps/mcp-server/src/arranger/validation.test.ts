@@ -20,6 +20,7 @@ const mockConfig = (catalogues: string[] = ['catalogue-a']): ArrangerMcpConfig =
 		path: '/mcp',
 		allowedHosts: ['arranger-mcp'],
 		allowedOrigins: [],
+		requestStateSecret: undefined,
 		maxBodyBytes: 102_400,
 	},
 });

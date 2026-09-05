@@ -10,6 +10,7 @@ const ENV_KEYS = [
 	'MCP_PATH',
 	'MCP_ALLOWED_HOSTS',
 	'MCP_ALLOWED_ORIGINS',
+	'MCP_REQUEST_STATE_SECRET',
 	'MCP_MAX_BODY_BYTES',
 	'LOG_LEVEL',
 ] as const;
@@ -28,6 +29,7 @@ type ArrangerMcpConfig = {
 		path: string;
 		allowedHosts: 'any' | string[];
 		allowedOrigins: string[];
+		requestStateSecret: string | undefined;
 		maxBodyBytes: number;
 	};
 };
@@ -120,6 +122,7 @@ suite('createArrangerMcpConfig', () => {
 				MCP_PATH: '/custom-mcp',
 				MCP_ALLOWED_HOSTS: 'mcp.example.com, arranger-mcp',
 				MCP_ALLOWED_ORIGINS: 'portal.example.com',
+				MCP_REQUEST_STATE_SECRET: 'a-thirty-two-byte-or-longer-signing-key',
 				MCP_MAX_BODY_BYTES: '2_097_152',
 				LOG_LEVEL: 'debug',
 			});
@@ -136,6 +139,7 @@ suite('createArrangerMcpConfig', () => {
 					path: '/custom-mcp',
 					allowedHosts: ['mcp.example.com', 'arranger-mcp'],
 					allowedOrigins: ['portal.example.com'],
+					requestStateSecret: 'a-thirty-two-byte-or-longer-signing-key',
 					maxBodyBytes: 2_097_152,
 				},
 			});
@@ -160,6 +164,7 @@ suite('createArrangerMcpConfig', () => {
 					path: '/mcp',
 					allowedHosts: LOCALHOST_ALLOWED,
 					allowedOrigins: LOCALHOST_ALLOWED,
+					requestStateSecret: undefined,
 					maxBodyBytes: 102_400,
 				},
 			});
@@ -175,6 +180,21 @@ suite('createArrangerMcpConfig', () => {
 			const config = createArrangerMcpConfig();
 
 			assert.strictEqual(config.arrangerBaseUrl, 'https://arranger.example.com');
+		});
+
+		// The variable ships listed but blank in `.env.schema`, so blank has to mean "unset" rather
+		// than "a zero-length signing key".
+		test('reads an empty MCP_REQUEST_STATE_SECRET as unset', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
+				MCP_REQUEST_STATE_SECRET: '',
+			});
+
+			const config = createArrangerMcpConfig();
+
+			assert.strictEqual(config.mcp.requestStateSecret, undefined);
 		});
 
 		test('filters empty entries from ARRANGER_CATALOGUES', () => {
@@ -306,6 +326,21 @@ suite('createArrangerMcpConfig', () => {
 			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
 			assert.strictEqual(exitCode, 1);
 			assert.match(errorLogs.join(''), /LOG_LEVEL must be one of: trace, debug, info, warn, error, fatal/);
+		});
+
+		// Refused here rather than at the codec, which throws a RangeError from inside server startup
+		// where it reads as a crash rather than as a misconfigured variable.
+		test('exits when MCP_REQUEST_STATE_SECRET is shorter than the codec accepts', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_HOST: '127.0.0.1',
+				MCP_REQUEST_STATE_SECRET: 'too-short',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_REQUEST_STATE_SECRET must be at least 32 bytes/);
 		});
 
 		test('exits when MCP_MAX_BODY_BYTES is not a number', () => {

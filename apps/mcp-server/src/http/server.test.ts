@@ -22,6 +22,7 @@ const baseConfig = (mcp: Partial<ArrangerMcpConfig['mcp']>): ArrangerMcpConfig =
 		path: '/mcp',
 		allowedHosts: ['arranger-mcp'],
 		allowedOrigins: [],
+		requestStateSecret: undefined,
 		maxBodyBytes: MAX_BODY_BYTES,
 		...mcp,
 	},

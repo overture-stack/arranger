@@ -3,6 +3,7 @@ import { type Server } from 'http';
 import { createArrangerClient } from '../../../apps/mcp-server/src/arranger/client.js';
 import { validateArrangerConnection } from '../../../apps/mcp-server/src/arranger/validation.js';
 import { startMcpHttpServer } from '../../../apps/mcp-server/src/http/server.js';
+import { createConfirmationCodec } from '../../../apps/mcp-server/src/mcp/requestState.js';
 import { createMcpServer } from '../../../apps/mcp-server/src/server.js';
 import type { ArrangerMcpConfig } from '../../../apps/mcp-server/src/utils/config.js';
 
@@ -28,8 +29,12 @@ export const startMcpServerForTest = async (config: ArrangerMcpConfig): Promise<
 
 	await validateArrangerConnection(config, introspectionClient);
 
+	// Built here rather than in the factory, as `startServer` does: the factory runs per request and
+	// a query confirmation spans two of them, so a codec built there would verify round two under a
+	// different key than it minted round one with.
+	const requestStateCodec = createConfirmationCodec(config);
 	const { httpServer, close } = await startMcpHttpServer(config, () =>
-		createMcpServer({ config, client: introspectionClient }),
+		createMcpServer({ config, client: introspectionClient, requestStateCodec }),
 	);
 
 	const { host, port, path } = config.mcp;

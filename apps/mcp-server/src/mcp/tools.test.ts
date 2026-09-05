@@ -7,9 +7,13 @@ import { type ZodObject, type ZodType } from 'zod';
 import { type ArrangerClient } from '#arranger/client.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
 import { registerPrompts } from '#mcp/prompts.js';
+import { createConfirmationCodec } from '#mcp/requestState.js';
 import { SQON_CHEAT_SHEET } from '#mcp/sqonCheatSheet.js';
 import { registerTools } from '#mcp/tools.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
+
+/** Fixed HMAC key so the confirmation codec is deterministic and does not warn about a per-process one. */
+const TEST_SIGNING_KEY = 'arranger-mcp-test-request-state-signing-key';
 
 const config: ArrangerMcpConfig = {
 	arrangerBaseUrl: 'https://arranger.test',
@@ -21,9 +25,12 @@ const config: ArrangerMcpConfig = {
 		path: '/mcp',
 		allowedHosts: ['arranger-mcp'],
 		allowedOrigins: [],
+		requestStateSecret: TEST_SIGNING_KEY,
 		maxBodyBytes: 102_400,
 	},
 };
+
+const requestStateCodec = createConfirmationCodec(config);
 
 const serverIntrospection = {
 	catalogCount: 1,
@@ -55,7 +62,7 @@ const registerAllTools = (): RegisteredTool[] => {
 			tools.push({ name, config: toolConfig } as RegisteredTool);
 		},
 	};
-	registerTools(server as unknown as McpServer, { client, config });
+	registerTools(server as unknown as McpServer, { client, config, requestStateCodec });
 	return tools;
 };
 
@@ -66,7 +73,7 @@ const renderQueryArrangerPrompt = async (): Promise<string> => {
 			prompts.push({ name, callback } as (typeof prompts)[number]);
 		},
 	};
-	registerPrompts(server as unknown as McpServer, { client, config });
+	registerPrompts(server as unknown as McpServer, { client, config, requestStateCodec });
 
 	const prompt = prompts[0];
 	if (!prompt) {

@@ -7,7 +7,11 @@ import type { z as zod } from 'zod';
 
 import { ArrangerRequestError, type ArrangerClient } from '#arranger/client.js';
 import { BUILD_SQON_OPERATORS, describeOperators, registerBuildSqonTool } from '#mcp/buildSqonTool.js';
+import { createConfirmationCodec } from '#mcp/requestState.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
+
+/** Fixed HMAC key so the confirmation codec is deterministic and does not warn about a per-process one. */
+const TEST_SIGNING_KEY = 'arranger-mcp-test-request-state-signing-key';
 
 const config: ArrangerMcpConfig = {
 	arrangerBaseUrl: 'https://arranger.test',
@@ -19,9 +23,12 @@ const config: ArrangerMcpConfig = {
 		path: '/mcp',
 		allowedHosts: ['arranger-mcp'],
 		allowedOrigins: [],
+		requestStateSecret: TEST_SIGNING_KEY,
 		maxBodyBytes: 102_400,
 	},
 };
+
+const requestStateCodec = createConfirmationCodec(config);
 
 const introspection = {
 	catalogId: 'participants',
@@ -88,7 +95,7 @@ const captureTool = (client: ArrangerClient): CapturedTool => {
 		},
 	};
 
-	registerBuildSqonTool(server as unknown as McpServer, { client, config });
+	registerBuildSqonTool(server as unknown as McpServer, { client, config, requestStateCodec });
 
 	const tool = registered[0];
 	if (!tool) {

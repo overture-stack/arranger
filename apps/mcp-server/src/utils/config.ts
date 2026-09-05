@@ -22,6 +22,13 @@ const LOCALHOST_ALLOWED_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]'];
 /** `MCP_ALLOWED_HOSTS` value meaning "an upstream gateway validates the Host header, do not". */
 const ALLOW_ANY_HOST = '*';
 
+/**
+ * Shortest `MCP_REQUEST_STATE_SECRET` the HMAC codec accepts, below which it throws a `RangeError`.
+ * Counted in UTF-8 bytes because that is what the codec counts, and that is not the same as
+ * characters once the value leaves ASCII: an accented letter is two bytes, an emoji four.
+ */
+const MIN_REQUEST_STATE_SECRET_BYTES = 32;
+
 const logger = createLogger('Config');
 
 /**
@@ -98,6 +105,18 @@ const envSchema = zod.object({
 	MCP_PATH: zod.string().optional().default('/mcp'),
 	MCP_ALLOWED_HOSTS: zod.string().optional().default(''),
 	MCP_ALLOWED_ORIGINS: zod.string().optional().default(''),
+	// An empty value reads as unset rather than as a too-short key: `.env.schema` lists the variable
+	// blank, and blank is the supported single-replica default.
+	MCP_REQUEST_STATE_SECRET: zod.preprocess(
+		(value) => (value === '' ? undefined : value),
+		zod
+			.string()
+			.refine(
+				(value) => Buffer.byteLength(value, 'utf8') >= MIN_REQUEST_STATE_SECRET_BYTES,
+				`MCP_REQUEST_STATE_SECRET must be at least ${MIN_REQUEST_STATE_SECRET_BYTES} bytes`,
+			)
+			.optional(),
+	),
 	MCP_MAX_BODY_BYTES: zod.preprocess(
 		stripNumericSeparators,
 		zod.coerce
@@ -167,6 +186,7 @@ const ArrangerMcpConfig = envSchema
 			path: data.MCP_PATH,
 			allowedHosts: resolveAllowedHosts(data.MCP_ALLOWED_HOSTS, data.MCP_HOST),
 			allowedOrigins: resolveAllowedOrigins(data.MCP_ALLOWED_ORIGINS, data.MCP_HOST),
+			requestStateSecret: data.MCP_REQUEST_STATE_SECRET,
 			maxBodyBytes: data.MCP_MAX_BODY_BYTES,
 		},
 	}))

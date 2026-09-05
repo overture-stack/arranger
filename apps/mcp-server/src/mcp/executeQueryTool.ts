@@ -6,6 +6,7 @@ import {
 	type ClientCapabilities,
 	type InputRequiredResult,
 	type McpServer,
+	type RequestStateCodec,
 	type ServerContext,
 } from '@modelcontextprotocol/server';
 import { z as zod } from 'zod';
@@ -26,6 +27,7 @@ import {
 	SQON_REQUIRED_MESSAGE,
 } from '#arranger/queryValidation.js';
 import { catalogueIntrospectionSchema, serverIntrospectionSchema } from '#arranger/types.js';
+import { digestApprovedQuery, type ConfirmationState } from '#mcp/requestState.js';
 import { type McpServerDeps } from '#server.js';
 import { describeExecutionError, formatGraphQLError } from '#utils/errors.js';
 
@@ -44,6 +46,29 @@ const CONFIRMATION_KEY = 'confirm';
 
 /** Shape the client's answer must satisfy before it is treated as an approval. */
 const confirmationSchema = zod.object({ confirm: zod.boolean() });
+
+/**
+ * Refusal when an answer arrives without the state that was minted with the question.
+ *
+ * Nothing in the protocol forces a client to echo `requestState`, so an absent value has to be
+ * refused exactly like a tampered one. Comparing only when it happens to be present would make the
+ * whole binding opt-out at the caller's discretion, which is the same hole it exists to close.
+ */
+const UNBOUND_STATE_MESSAGE =
+	'Query execution was refused: the confirmation answer did not carry back the requestState this server ' +
+	'minted alongside the question, so the approval cannot be tied to any particular query. Call execute_query ' +
+	'again and echo requestState verbatim on the retry.';
+
+/**
+ * Refusal when the approved query and the rebuilt one differ.
+ *
+ * Refused rather than re-asked: re-asking would hand a caller an unlimited retry loop against the
+ * confirmation gate.
+ */
+const DIGEST_MISMATCH_MESSAGE =
+	'Query execution was refused: the query built on this call is not the query that was confirmed. An approval ' +
+	'covers one exact GraphQL document, its variables and its endpoint, and this call produced different ones. ' +
+	'Call execute_query again to review and confirm the query you actually want to run.';
 
 const sortInputSchema = zod.object({
 	fieldName: zod.string().min(1).describe('Dot-notation field name to sort by (e.g. "donor.age_at_diagnosis").'),
@@ -214,6 +239,8 @@ type Confirmation =
 	| { status: 'confirmed' }
 	/** The user declined or cancelled, or answered with something that is not an approval. */
 	| { status: 'declined' }
+	/** An answer arrived, but nothing ties it to the query this call built. */
+	| { status: 'unbound'; message: string }
 	/** Nothing has been asked yet: return this and wait to be re-entered with the answer. */
 	| { status: 'pending'; result: InputRequiredResult };
 
@@ -228,21 +255,29 @@ type Confirmation =
  * An answer the SDK could not read (the wrapped shape some peers emit) arrives as `missing`, so the
  * request is re-issued rather than failed. The client's own round cap is what stops that repeating.
  *
- * **Not yet bound to what was approved.** Nothing is carried between rounds: the query is rebuilt
- * from the arguments the client re-sends, so an agent could show one query for confirmation and
- * re-enter with different ones. Closing that needs an integrity-protected `requestState`, which is
- * the next commit.
+ * **The approval is bound to what was approved.** The query is rebuilt from arguments the client
+ * re-sends, so without a binding an agent could show one query for confirmation and re-enter with
+ * different ones. Round one seals a digest of the built query into `requestState`; round two only
+ * counts as an approval when the state comes back carrying that same digest. The signature is what
+ * makes the digest worth comparing, and the server seam has already verified it by the time this
+ * runs, so a forged or expired value never reaches here at all.
  *
- * @param ctx - Request context, carrying any answer from a previous round.
+ * @param ctx - Request context, carrying any answer from a previous round and its verified state.
+ * @param codec - Seals the digest for the round trip and is verified back at the seam.
+ * @param digest - Digest of the query this call built, minted on the first round and compared on the second.
  * @param message - The confirmation prompt shown to the user.
  */
-const resolveConfirmation = (ctx: ServerContext, message: string): Confirmation => {
+const resolveConfirmation = async (
+	ctx: ServerContext,
+	{ codec, digest, message }: { codec: RequestStateCodec<ConfirmationState>; digest: string; message: string },
+): Promise<Confirmation> => {
 	const answer = inputResponse(ctx.mcpReq.inputResponses, CONFIRMATION_KEY);
 
 	if (answer.kind === 'missing') {
 		return {
 			status: 'pending',
 			result: inputRequired({
+				requestState: await codec.mint({ digest }, ctx),
 				inputRequests: {
 					[CONFIRMATION_KEY]: inputRequired.elicit({
 						message,
@@ -262,6 +297,19 @@ const resolveConfirmation = (ctx: ServerContext, message: string): Confirmation 
 				},
 			}),
 		};
+	}
+
+	// Checked before the answer itself: an approval that is tied to no query, or to a different one,
+	// is not an approval of this one whatever it says.
+	const state = ctx.mcpReq.requestState<ConfirmationState>();
+	if (typeof state?.digest !== 'string') {
+		return { status: 'unbound', message: UNBOUND_STATE_MESSAGE };
+	}
+	// Plain `===`: the digest is readable on the wire and so is not a secret, which is also why a
+	// constant-time compare would buy nothing. The codec already compares the parts that are secret,
+	// the MAC and the bind tag, in constant time.
+	if (state.digest !== digest) {
+		return { status: 'unbound', message: DIGEST_MISMATCH_MESSAGE };
 	}
 
 	if (answer.kind !== 'elicit' || answer.action !== 'accept') {
@@ -288,7 +336,7 @@ type ArrangerQueryData = {
  * GraphQL query against one Arranger catalogue, returning a compact result without the
  * GraphQL `edges`/`node` nesting.
  */
-export const registerExecuteQueryTool = (server: McpServer, { client }: McpServerDeps): void => {
+export const registerExecuteQueryTool = (server: McpServer, { client, requestStateCodec }: McpServerDeps): void => {
 	server.registerTool(
 		'execute_query',
 		{
@@ -382,13 +430,17 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 				});
 
 				// Re-entry re-runs everything above: introspection is fetched again and the query
-				// rebuilt, because nothing carries over between rounds.
-				const confirmation = resolveConfirmation(
-					ctx,
-					`About to execute this GraphQL query against Arranger catalogue "${catalogueId}" (POST ${endpoint}):\n\n${request.query}\n\nVariables:\n${JSON.stringify(request.variables, null, 2)}`,
-				);
+				// rebuilt, because only the confirmation digest carries over between rounds.
+				const confirmation = await resolveConfirmation(ctx, {
+					codec: requestStateCodec,
+					digest: digestApprovedQuery({ endpoint, query: request.query, variables: request.variables }),
+					message: `About to execute this GraphQL query against Arranger catalogue "${catalogueId}" (POST ${endpoint}):\n\n${request.query}\n\nVariables:\n${JSON.stringify(request.variables, null, 2)}`,
+				});
 				if (confirmation.status === 'pending') {
 					return confirmation.result;
+				}
+				if (confirmation.status === 'unbound') {
+					return errorResult(confirmation.message);
 				}
 				if (confirmation.status === 'declined') {
 					return successResult({

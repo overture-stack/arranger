@@ -39,4 +39,5 @@ If the goal maps to more than one plausible query, ask which was meant instead o
 ## Notes
 
 - \`execute_query\` validates the SQON, every field name, and every operator against the catalogue before anything reaches Arranger, and reports the specific problem when it rejects a call. Treat a rejection as a signal to re-read the field metadata, not to resend the same shape.
-- Where the client supports elicitation, the user is shown the generated GraphQL query and asked to confirm before it runs. Where it does not, nothing prompts them, so confirm intent in conversation before executing.`;
+- \`execute_query\` always shows the user the generated GraphQL query and asks them to confirm before it runs. A client that cannot present that request is refused rather than served unconfirmed, so there is no path on which the query runs unseen.
+- An approval covers one exact query. Answering the confirmation re-invokes \`execute_query\` with the same arguments; changing them between the question and the answer produces a different query than the one approved, and the call is refused.`;
