@@ -7,7 +7,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { McpServer } from '@modelcontextprotocol/server';
 import { z as zod } from 'zod';
 
-import { startMcpHttpServer, type McpHttpServer } from '#http/server.js';
+import { hostAsUrlAuthority, startMcpHttpServer, type McpHttpServer } from '#http/server.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
 
 const MAX_BODY_BYTES = 1024;
@@ -50,6 +50,7 @@ const request = (
 		headers = {},
 		body,
 		omitContentLength = false,
+		connectHost = '127.0.0.1',
 	}: {
 		method?: string;
 		path?: string;
@@ -57,13 +58,15 @@ const request = (
 		body?: string | Buffer;
 		/** Sends the body with chunked transfer encoding, so its size is not declared up front. */
 		omitContentLength?: boolean;
+		/** Address to dial, for the tests that bind something other than IPv4 loopback. */
+		connectHost?: string;
 	},
 ): Promise<Response> =>
 	new Promise((resolve, reject) => {
 		const payload = typeof body === 'string' ? Buffer.from(body) : body;
 		const req = http.request(
 			{
-				host: '127.0.0.1',
+				host: connectHost,
 				port,
 				path,
 				method,
@@ -303,6 +306,66 @@ suite('startMcpHttpServer serving a modern client', () => {
 		const result = await client.callTool({ name: 'echo', arguments: { value: 'hello' } });
 
 		assert.deepEqual(result.content, [{ type: 'text', text: 'echoed hello' }]);
+	});
+});
+
+suite('hostAsUrlAuthority', () => {
+	test('brackets a bare IPv6 literal so the logged URL is dialable', () => {
+		assert.equal(hostAsUrlAuthority('::1'), '[::1]');
+		assert.equal(hostAsUrlAuthority('::'), '[::]');
+	});
+
+	test('leaves an already-bracketed literal and every non-IPv6 host alone', () => {
+		assert.equal(hostAsUrlAuthority('[::1]'), '[::1]');
+		assert.equal(hostAsUrlAuthority('127.0.0.1'), '127.0.0.1');
+		assert.equal(hostAsUrlAuthority('0.0.0.0'), '0.0.0.0');
+		assert.equal(hostAsUrlAuthority('localhost'), 'localhost');
+	});
+});
+
+/**
+ * Whether this machine can bind IPv6 loopback at all.
+ *
+ * Container images and CI runners routinely run with IPv6 disabled, where binding `::1` fails with
+ * `EADDRNOTAVAIL`. The test below is skipped there rather than failed, since that would be the
+ * environment failing rather than the code.
+ */
+const ipv6LoopbackAvailable = (): Promise<boolean> =>
+	new Promise((resolve) => {
+		const probe = http.createServer();
+		probe.once('error', () => resolve(false));
+		probe.listen(0, '::1', () => probe.close(() => resolve(true)));
+	});
+
+suite('startMcpHttpServer on an IPv6 bind', () => {
+	test('serves a request when the bind address is an unbracketed IPv6 literal', async (t) => {
+		if (!(await ipv6LoopbackAvailable())) {
+			t.skip('IPv6 loopback is unavailable on this machine');
+			return;
+		}
+
+		// `::1` is documented as a supported MCP_HOST. Resolving the request path against it made
+		// `new URL` throw `Invalid URL`, so every request was answered 500 before it reached the
+		// handler, on a configuration nothing else in this suite covers.
+		const server = await startMcpHttpServer(
+			baseConfig({ host: '::1', allowedHosts: ['[::1]'] }),
+			emptyServerFactory,
+		);
+		const port = (server.httpServer.address() as AddressInfo).port;
+
+		try {
+			const { status } = await request(port, {
+				connectHost: '::1',
+				headers: { host: `[::1]:${port}` },
+				body: legacyInitialize,
+			});
+
+			// 400 is this endpoint refusing the 2025 era, which means the request reached the
+			// handler. Anything 500 is the bug this test exists for.
+			assert.equal(status, 400);
+		} finally {
+			await server.close();
+		}
 	});
 });
 

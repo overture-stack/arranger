@@ -16,6 +16,32 @@ export type McpHttpServer = {
 /** Guards answer the request themselves when they refuse, and report whether serving may continue. */
 type RequestGuard = (req: IncomingMessage, res: ServerResponse) => boolean;
 
+/**
+ * Base URL used only to pull the path out of `req.url`.
+ *
+ * `req.url` is always just a path and query (`/mcp?x=1`), and `new URL` refuses to parse one without
+ * an absolute base to resolve it against. Only `pathname` is read, so this host is thrown away and
+ * never reaches a response.
+ *
+ * It is a fixed literal rather than `config.mcp.host` because an operator can set that to anything:
+ * a bare IPv6 address like `::1` is not a legal URL host, so building the base from it threw on
+ * every request.
+ *
+ * @remarks `.invalid` is a reserved top-level domain (RFC 2606) guaranteed never to resolve, so if
+ * this value ever leaks into a log or an error it is unmistakably a placeholder and cannot
+ * accidentally name a real server.
+ */
+const REQUEST_PATH_BASE = 'http://request.invalid';
+
+/**
+ * Renders a bind address as the authority of a URL.
+ *
+ * An IPv6 literal has to be bracketed to be a valid authority, so an unbracketed `::1` would
+ * otherwise be shown to an operator as `http://::1:3100/mcp`, which no client can dial.
+ */
+export const hostAsUrlAuthority = (host: string): string =>
+	host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+
 const writeJsonRpcError = (res: ServerResponse, status: number, code: number, message: string): void => {
 	res.writeHead(status, { 'Content-Type': 'application/json' });
 	res.end(JSON.stringify({ jsonrpc: '2.0', error: { code, message }, id: null }));
@@ -85,7 +111,7 @@ export const startMcpHttpServer = async (
 					}
 				}
 
-				const { pathname } = new URL(req.url ?? '/', `http://${host}`);
+				const { pathname } = new URL(req.url ?? '/', REQUEST_PATH_BASE);
 				if (pathname !== path) {
 					writeJsonRpcError(res, 404, -32601, `Not found. The MCP endpoint is ${path}.`);
 					return;

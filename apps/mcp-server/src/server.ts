@@ -2,7 +2,7 @@ import { McpServer, type RequestStateCodec } from '@modelcontextprotocol/server'
 
 import { createArrangerClient, type ArrangerClient } from '#arranger/client.js';
 import { validateArrangerConnection } from '#arranger/validation.js';
-import { startMcpHttpServer } from '#http/server.js';
+import { hostAsUrlAuthority, startMcpHttpServer } from '#http/server.js';
 import { RESULT_CACHE_HINTS } from '#mcp/cacheHints.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
 import { registerPrompts } from '#mcp/prompts.js';
@@ -49,7 +49,7 @@ export const startServer = async (): Promise<void> => {
 	const { close } = await startMcpHttpServer(config, () => createMcpServer(deps));
 
 	const { host, port, path } = config.mcp;
-	logger.info(`MCP server running at http://${host}:${port}${path}`);
+	logger.info(`MCP server running at http://${hostAsUrlAuthority(host)}:${port}${path}`);
 
 	const gracefulShutdown = async (signal: string) => {
 		logger.info(`Received ${signal}, initiating graceful shutdown...`);
