@@ -568,6 +568,11 @@ compared by the SDK. It goes in the payload, and our handler does the comparison
   and round two verifies on pod B, which fails `mac` and surfaces as an intermittent `-32602` that
   reads like a bug. A process restart also invalidates in-flight confirmations, and the user simply
   re-confirms.
+    - **Narrowed by PR review, 2026-09-21.** The per-process fallback now applies to a loopback bind
+      only: a routable `MCP_HOST` with no `MCP_REQUEST_STATE_SECRET` is refused at startup, matching
+      the rule `MCP_ALLOWED_HOSTS` already had. Everything above still describes what the generated
+      key does; what changed is that the deployment shape most likely to be replicated can no longer
+      reach it, because the resulting failure reads as a bug rather than as a missing variable.
 - **On digest mismatch: refuse** with an error naming the mismatch, rather than re-asking. Re-asking
   would hand a caller an unlimited retry loop against the confirmation gate.
 
@@ -670,75 +675,75 @@ conversational step, not about elicitation.
   value fails fast rather than at request time. The SDK default is `{ ttlMs: 0, cacheScope: 'private'
 }`: compliant, but it throws the feature away.
 
-        **Decision 6, SETTLED 2026-09-05: the hint values.**
+            **Decision 6, SETTLED 2026-09-05: the hint values.**
 
-        | Method                     | `ttlMs`     | `cacheScope` |
-        | -------------------------- | ----------- | ------------ |
-        | `tools/list`               | `3_600_000` | `public`     |
-        | `prompts/list`             | `3_600_000` | `public`     |
-        | `resources/templates/list` | `3_600_000` | `public`     |
-        | `server/discover`          | `3_600_000` | `public`     |
-        | `resources/list`           | `60_000`    | `private`    |
-        | `resources/read`           | `60_000`    | `private`    |
+            | Method                     | `ttlMs`     | `cacheScope` |
+            | -------------------------- | ----------- | ------------ |
+            | `tools/list`               | `3_600_000` | `public`     |
+            | `prompts/list`             | `3_600_000` | `public`     |
+            | `resources/templates/list` | `3_600_000` | `public`     |
+            | `server/discover`          | `3_600_000` | `public`     |
+            | `resources/list`           | `60_000`    | `private`    |
+            | `resources/read`           | `60_000`    | `private`    |
 
-        **Verified 2026-09-05** by probe, as this section demanded, and the plan's own grouping was one of
-        the things the probe corrected.
+            **Verified 2026-09-05** by probe, as this section demanded, and the plan's own grouping was one of
+            the things the probe corrected.
 
-        | Probe                                                                   | Result                                                                      |
-        | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-        | `ttlMs` of `-1`, `1.5`, `Infinity`, `MAX_SAFE_INTEGER + 1`              | `RangeError` at construction                                                |
-        | `ttlMs` of `0` or `MAX_SAFE_INTEGER`                                    | accepted                                                                    |
-        | `cacheScope` other than `public` / `private`                            | `RangeError` at construction                                                |
-        | a method key that is not cacheable, e.g. `tools/call`                   | **accepted silently, and does nothing**                                     |
-        | configured hint on each of the six cacheable methods                    | reaches the wire verbatim                                                   |
-        | per-resource `cacheHint` against the server-level `resources/read` hint | overrides **field by field**, keeping the unset field from the server level |
-        | hint returned by the handler on the result                              | beats both                                                                  |
+            | Probe                                                                   | Result                                                                      |
+            | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+            | `ttlMs` of `-1`, `1.5`, `Infinity`, `MAX_SAFE_INTEGER + 1`              | `RangeError` at construction                                                |
+            | `ttlMs` of `0` or `MAX_SAFE_INTEGER`                                    | accepted                                                                    |
+            | `cacheScope` other than `public` / `private`                            | `RangeError` at construction                                                |
+            | a method key that is not cacheable, e.g. `tools/call`                   | **accepted silently, and does nothing**                                     |
+            | configured hint on each of the six cacheable methods                    | reaches the wire verbatim                                                   |
+            | per-resource `cacheHint` against the server-level `resources/read` hint | overrides **field by field**, keeping the unset field from the server level |
+            | hint returned by the handler on the result                              | beats both                                                                  |
 
-        **`ttlMs: 0` means do not cache**, not no expiry. The client SDK is explicit that a
-        `resources/read` result whose resolved TTL is at most zero is not stored at all, so the SDK default
-        really does throw the feature away.
+            **`ttlMs: 0` means do not cache**, not no expiry. The client SDK is explicit that a
+            `resources/read` result whose resolved TTL is at most zero is not stored at all, so the SDK default
+            really does throw the feature away.
 
-        **A typo in a method key is invisible**, which decides how commit 4 tests this: assert the values
-        on the wire, never on the configuration object.
+            **A typo in a method key is invisible**, which decides how commit 4 tests this: assert the values
+            on the wire, never on the configuration object.
 
-        **`resources/list` is not static per build**, contrary to the grouping this section previously
-        carried. `arranger_catalogue_fields` is a `ResourceTemplate` whose `list` callback calls
-        `client.getServerIntrospection()`, and the callback was measured running on every `resources/list`,
-        so the result enumerates whatever catalogues Arranger currently reports. It tracks Arranger's
-        configuration exactly as `resources/read` does and takes the same values. The other four are
-        genuinely build-static: tool and prompt descriptions are literals, with every live introspection
-        call inside a handler rather than in a registration, and `server/discover` carries
-        `SERVER_INSTRUCTIONS` plus capabilities.
+            **`resources/list` is not static per build**, contrary to the grouping this section previously
+            carried. `arranger_catalogue_fields` is a `ResourceTemplate` whose `list` callback calls
+            `client.getServerIntrospection()`, and the callback was measured running on every `resources/list`,
+            so the result enumerates whatever catalogues Arranger currently reports. It tracks Arranger's
+            configuration exactly as `resources/read` does and takes the same values. The other four are
+            genuinely build-static: tool and prompt descriptions are literals, with every live introspection
+            call inside a handler rather than in a registration, and `server/discover` carries
+            `SERVER_INSTRUCTIONS` plus capabilities.
 
-        **The scope is split rather than `public` for both**, which is a change from what this section
-        proposed. The fact that makes it cheap: **`private` does not mean "do not cache", it means "do not
-        share"**. The client still caches, partitioned by principal, so the benefit we actually want, one
-        agent re-reading catalogue fields repeatedly inside a session, survives intact. `public` would only
-        add cross-principal sharing at a shared gateway, which is speculative value for a single-tenant
-        unauthenticated deployment.
+            **The scope is split rather than `public` for both**, which is a change from what this section
+            proposed. The fact that makes it cheap: **`private` does not mean "do not cache", it means "do not
+            share"**. The client still caches, partitioned by principal, so the benefit we actually want, one
+            agent re-reading catalogue fields repeatedly inside a session, survives intact. `public` would only
+            add cross-principal sharing at a shared gateway, which is speculative value for a single-tenant
+            unauthenticated deployment.
 
-        Against that, the risk is concrete rather than hypothetical: catalogue introspection already
-        carries `meta.authFiltered`, so Arranger has a per-caller-filtered mode today. We neither read it
-        nor forward auth headers, so we see one fixed view; the day either changes, `public` on those two
-        is a cross-tenant leak. The spec is explicit that `cacheScope` is not access control and must never
-        be the thing keeping one tenant's data from another, so the version of this decision that needs
-        revisiting when auth lands is the version worth avoiding. The four build-static methods can never
-        be per-caller, being literals compiled into the process, so `public` there is unconditionally safe
-        and stays safe.
+            Against that, the risk is concrete rather than hypothetical: catalogue introspection already
+            carries `meta.authFiltered`, so Arranger has a per-caller-filtered mode today. We neither read it
+            nor forward auth headers, so we see one fixed view; the day either changes, `public` on those two
+            is a cross-tenant leak. The spec is explicit that `cacheScope` is not access control and must never
+            be the thing keeping one tenant's data from another, so the version of this decision that needs
+            revisiting when auth lands is the version worth avoiding. The four build-static methods can never
+            be per-caller, being literals compiled into the process, so `public` there is unconditionally safe
+            and stays safe.
 
-        **On the numbers.** An hour for build-static is a horizon where being wrong is cheap: a client
-        holding a stale tool list across a redeploy gets a clean error, and the client SDK has an
-        evict-refetch-retry path for tool schema drift specifically. Serving per request means
-        `listChanged` cannot reach anyone, so TTL expiry is the only correction mechanism, which argues
-        against much longer. Development staleness is answered by the Inspector's `refresh`, not by
-        shortening the production hint. A minute for the pair that tracks Arranger means a catalogue change
-        is visible without restarting this server, while still collapsing the burst of reads one agent
-        session makes.
+            **On the numbers.** An hour for build-static is a horizon where being wrong is cheap: a client
+            holding a stale tool list across a redeploy gets a clean error, and the client SDK has an
+            evict-refetch-retry path for tool schema drift specifically. Serving per request means
+            `listChanged` cannot reach anyone, so TTL expiry is the only correction mechanism, which argues
+            against much longer. Development staleness is answered by the Inspector's `refresh`, not by
+            shortening the production hint. A minute for the pair that tracks Arranger means a catalogue change
+            is visible without restarting this server, while still collapsing the burst of reads one agent
+            session makes.
 
-        **Deferred, deliberately:** `arranger_sqon_schema` tracks Arranger's build rather than its
-        catalogue configuration, so a longer per-resource `cacheHint` would fit it. It is one line and a
-        real difference in volatility, but it adds a third ttl for a resource read once per session. Leave
-        it out of commit 4.
+            **Deferred, deliberately:** `arranger_sqon_schema` tracks Arranger's build rather than its
+            catalogue configuration, so a longer per-resource `cacheHint` would fit it. It is one line and a
+            real difference in volatility, but it adds a third ttl for a resource read once per session. Leave
+            it out of commit 4.
 
 - **`serverInfo.version`** is hardcoded `'0.0.0-dev'` in `server.ts` and now appears on **every**
   result. Note the release process pins `main` at that placeholder, so the fix is to read the field,
@@ -913,16 +918,16 @@ only`. They are not new work.
 
 ## Decisions, collected
 
-| #   | Decision                                                         | Blocks               | Status                                                                                                                                    |
-| --- | ---------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | How the handler reaches Express, or whether Express stays at all | commit 1, everything | **settled 2026-09-03: Express dropped, `toNodeHandler` on `node:http`**                                                                   |
-| 2   | Which Express major, if it stays                                 | commit 1             | **moot, closed by decision 1**                                                                                                            |
-| 3   | Whether to serve 2025-era clients at all                         | commit 1, commit 2   | **settled 2026-09-03: `legacy: 'reject'`, one revision only**                                                                             |
-| 4   | Re-entry budget and its exhaustion message                       | commit 2             | **moot, closed by decision 3**                                                                                                            |
-| 5   | What goes into `requestState`                                    | commit 3             | **settled 2026-09-04: `{ digest }` of the built query, bind on method plus principal, per-process key by default**                        |
-| 6   | Cache hint values and scopes                                     | commit 4             | **settled 2026-09-05: one hour and `public` for the four build-static methods, one minute and `private` for the two that track Arranger** |
-| 7   | Inspector pin, if no compatible release exists                   | commit 5             | **settled 2026-09-03: unpin to `@2`, set `protocolEra: "modern"`**                                                                        |
-| 8   | `execute_query` when a modern client cannot elicit               | commit 2             | **settled 2026-09-03: refuse the call**                                                                                                   |
+| #   | Decision                                                         | Blocks               | Status                                                                                                                                                         |
+| --- | ---------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | How the handler reaches Express, or whether Express stays at all | commit 1, everything | **settled 2026-09-03: Express dropped, `toNodeHandler` on `node:http`**                                                                                        |
+| 2   | Which Express major, if it stays                                 | commit 1             | **moot, closed by decision 1**                                                                                                                                 |
+| 3   | Whether to serve 2025-era clients at all                         | commit 1, commit 2   | **settled 2026-09-03: `legacy: 'reject'`, one revision only**                                                                                                  |
+| 4   | Re-entry budget and its exhaustion message                       | commit 2             | **moot, closed by decision 3**                                                                                                                                 |
+| 5   | What goes into `requestState`                                    | commit 3             | **settled 2026-09-04: `{ digest }` of the built query, bind on method plus principal, per-process key by default**, narrowed 2026-09-21 to loopback binds only |
+| 6   | Cache hint values and scopes                                     | commit 4             | **settled 2026-09-05: one hour and `public` for the four build-static methods, one minute and `private` for the two that track Arranger**                      |
+| 7   | Inspector pin, if no compatible release exists                   | commit 5             | **settled 2026-09-03: unpin to `@2`, set `protocolEra: "modern"`**                                                                                             |
+| 8   | `execute_query` when a modern client cannot elicit               | commit 2             | **settled 2026-09-03: refuse the call**                                                                                                                        |
 
 Every commit is built and every decision is settled.
 

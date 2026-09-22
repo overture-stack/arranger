@@ -18,6 +18,12 @@ const ENV_KEYS = [
 /** What an unset allowlist resolves to on a loopback bind, matching the SDK's own localhost guards. */
 const LOCALHOST_ALLOWED = ['localhost', '127.0.0.1', '[::1]'];
 
+/**
+ * A signing key long enough for the codec, for the tests that need a routable bind to succeed
+ * without being about the key themselves.
+ */
+const SIGNING_SECRET = 'a-thirty-two-byte-or-longer-signing-key';
+
 // Redefining ArrangerMcpConfig type to avoid importing from config.ts before the logger module is mocked
 type ArrangerMcpConfig = {
 	arrangerBaseUrl: string;
@@ -373,6 +379,66 @@ suite('createArrangerMcpConfig', () => {
 	// The server binds every interface by default, and the SDK only warns about that. A warning is
 	// the wrong volume for a DNS rebinding exposure that appears exactly when someone moves from a
 	// laptop to a container, so configuration refuses to resolve instead.
+	// A generated per-process key is correct for one instance and breaks every confirmation across
+	// several, so it is refused on the bind that gets scaled rather than warned about at runtime.
+	suite('Request state secret safety', () => {
+		const routableEnv = {
+			ARRANGER_BASE_URL: 'https://arranger.example.com',
+			ARRANGER_CATALOGUES: 'catalogue-a',
+			MCP_HOST: '0.0.0.0',
+			MCP_ALLOWED_HOSTS: 'arranger-mcp',
+		};
+
+		test('exits when a routable bind has no MCP_REQUEST_STATE_SECRET', () => {
+			setEnv(routableEnv);
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /MCP_REQUEST_STATE_SECRET is not set/);
+		});
+
+		test('tells the operator how to generate one', () => {
+			setEnv(routableEnv);
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.match(errorLogs.join(''), /npm run generate-secret/);
+		});
+
+		test('accepts a routable bind once the secret is set', () => {
+			setEnv({ ...routableEnv, MCP_REQUEST_STATE_SECRET: SIGNING_SECRET });
+
+			const { mcp } = createArrangerMcpConfig();
+
+			assert.strictEqual(mcp.requestStateSecret, SIGNING_SECRET);
+		});
+
+		// The per-process fallback stays supported where it is correct, so local development needs no
+		// secret at all. This is the case the startup refusal must not catch.
+		for (const host of ['127.0.0.1', 'localhost', '::1']) {
+			test(`serves a ${host} bind with no secret, leaving the per-process key in place`, () => {
+				setEnv({
+					ARRANGER_BASE_URL: 'https://arranger.example.com',
+					ARRANGER_CATALOGUES: 'catalogue-a',
+					MCP_HOST: host,
+				});
+
+				const { mcp } = createArrangerMcpConfig();
+
+				assert.strictEqual(mcp.requestStateSecret, undefined);
+			});
+		}
+
+		// Both routable-bind rules are independent, so a config missing both is told about both
+		// rather than made to fix one, restart, and discover the other.
+		test('reports the missing allowlist and the missing secret together', () => {
+			setEnv({ ARRANGER_BASE_URL: 'https://arranger.example.com', ARRANGER_CATALOGUES: 'catalogue-a' });
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.match(errorLogs.join(''), /MCP_ALLOWED_HOSTS is not set/);
+			assert.match(errorLogs.join(''), /MCP_REQUEST_STATE_SECRET is not set/);
+		});
+	});
+
 	suite('Host allowlist safety', () => {
 		const requiredEnv = {
 			ARRANGER_BASE_URL: 'https://arranger.example.com',
@@ -414,7 +480,12 @@ suite('createArrangerMcpConfig', () => {
 		}
 
 		test('accepts a routable bind once MCP_ALLOWED_HOSTS names the hostnames', () => {
-			setEnv({ ...requiredEnv, MCP_HOST: '0.0.0.0', MCP_ALLOWED_HOSTS: 'arranger-mcp, mcp.example.org' });
+			setEnv({
+				...requiredEnv,
+				MCP_HOST: '0.0.0.0',
+				MCP_ALLOWED_HOSTS: 'arranger-mcp, mcp.example.org',
+				MCP_REQUEST_STATE_SECRET: SIGNING_SECRET,
+			});
 
 			const { mcp } = createArrangerMcpConfig();
 
@@ -422,7 +493,12 @@ suite('createArrangerMcpConfig', () => {
 		});
 
 		test('treats MCP_ALLOWED_HOSTS=* as delegating Host validation to a gateway', () => {
-			setEnv({ ...requiredEnv, MCP_HOST: '0.0.0.0', MCP_ALLOWED_HOSTS: '*' });
+			setEnv({
+				...requiredEnv,
+				MCP_HOST: '0.0.0.0',
+				MCP_ALLOWED_HOSTS: '*',
+				MCP_REQUEST_STATE_SECRET: SIGNING_SECRET,
+			});
 
 			const { mcp } = createArrangerMcpConfig();
 
@@ -432,7 +508,12 @@ suite('createArrangerMcpConfig', () => {
 		// An unset value is an empty allowlist rather than a disabled check: the Origin guard passes
 		// requests carrying no `Origin`, which is every non-browser MCP client, and rejects the rest.
 		test('leaves MCP_ALLOWED_ORIGINS empty on a routable bind when it is not set', () => {
-			setEnv({ ...requiredEnv, MCP_HOST: '0.0.0.0', MCP_ALLOWED_HOSTS: 'arranger-mcp' });
+			setEnv({
+				...requiredEnv,
+				MCP_HOST: '0.0.0.0',
+				MCP_ALLOWED_HOSTS: 'arranger-mcp',
+				MCP_REQUEST_STATE_SECRET: SIGNING_SECRET,
+			});
 
 			const { mcp } = createArrangerMcpConfig();
 

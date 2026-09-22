@@ -97,8 +97,10 @@ re-asking would hand a caller an unlimited retry loop against the gate:
 - an answer carrying no `requestState` at all, refused exactly like a mismatch. Nothing forces a
   client to echo it, so comparing only when present would make the whole binding opt-out.
 
-`MCP_REQUEST_STATE_SECRET` is the signing key. Unset, the server generates one per process, which is
-correct at a single replica and fails across several.
+`MCP_REQUEST_STATE_SECRET` is the signing key, and a routable `MCP_HOST` requires it at startup for
+the same reason `MCP_ALLOWED_HOSTS` is required there: a generated per-process key is correct for one
+instance and silently breaks every confirmation across several, since the replica verifying round two
+is not the one that minted round one. A loopback bind still needs no configuration.
 
 ## Results carry freshness hints
 
@@ -123,11 +125,11 @@ Arranger.
 
 ## New environment variables
 
-| Variable                   | Why it appeared                                                                                         |
-| -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `MCP_ALLOWED_HOSTS`        | DNS rebinding protection. Required whenever `MCP_HOST` is not loopback, or the server exits at startup. |
-| `MCP_ALLOWED_ORIGINS`      | Browser origins allowed to call the server. An empty list is a live check, not a disabled one.          |
-| `MCP_MAX_BODY_BYTES`       | Replaces the `100kb` cap `express.json()` used to apply.                                                |
-| `MCP_REQUEST_STATE_SECRET` | Signs query confirmations. Optional at one replica, required across several.                            |
+| Variable                   | Why it appeared                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `MCP_ALLOWED_HOSTS`        | DNS rebinding protection. Required whenever `MCP_HOST` is not loopback, or the server exits at startup.  |
+| `MCP_ALLOWED_ORIGINS`      | Browser origins allowed to call the server. An empty list is a live check, not a disabled one.           |
+| `MCP_MAX_BODY_BYTES`       | Replaces the `100kb` cap `express.json()` used to apply.                                                 |
+| `MCP_REQUEST_STATE_SECRET` | Signs query confirmations. Required whenever `MCP_HOST` is not loopback, or the server exits at startup. |
 
 Full descriptions are in [`apps/mcp-server/README.md`](../../apps/mcp-server/README.md#environment-variables).

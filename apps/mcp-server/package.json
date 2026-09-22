@@ -17,6 +17,9 @@
 	"private": true,
 	"scripts": {
 		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./src/index.ts",
+		"generate-secret": "node ./scripts/generateSecret.mjs",
+		"generate-secret:print": "node ./scripts/generateSecret.mjs --print",
+		"setup-env": "cp -n .env.schema .env; npm run generate-secret",
 		"start": "tsx ./src/index.ts",
 		"test": "tsx --test --experimental-test-module-mocks",
 		"inspect": "npx @modelcontextprotocol/inspector@2 --config ./mcp-inspector.json --server mcp-server"

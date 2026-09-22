@@ -47,9 +47,10 @@ export const digestApprovedQuery = ({ endpoint, query, variables }: ApprovedQuer
 /**
  * The configured secret, or a key generated for this process.
  *
- * A per-process key is the intended default at a single replica, so its absence is a warning rather
- * than a failure. It is secure but not shared, which is what the warning names: elsewhere round two
- * verifies under a different key than round one minted with, and fails as a forgery.
+ * Configuration refuses an unset secret on a routable bind, so reaching the fallback normally means
+ * a loopback server, where a per-process key is the supported default and its absence is a warning
+ * rather than a failure. The key is secure but neither shared nor persisted, which is what the
+ * warning names.
  */
 const resolveKey = (secret: string | undefined): string | Uint8Array => {
 	if (secret !== undefined) {
@@ -57,9 +58,9 @@ const resolveKey = (secret: string | undefined): string | Uint8Array => {
 	}
 	logger.warn(
 		'MCP_REQUEST_STATE_SECRET is not set: query confirmations are signed with a key generated for this ' +
-			'process. That is the intended default at a single replica. The key is not shared, so confirmations ' +
-			'issued before a restart stop being answerable, and every confirmation fails across multiple replicas. ' +
-			'Set MCP_REQUEST_STATE_SECRET when running more than one.',
+			'process. That is the supported default on a loopback bind, which is the only bind startup allows ' +
+			'it on. The key is not persisted, so a confirmation issued before a restart stops being answerable ' +
+			'and the user is asked to confirm again.',
 	);
 	return randomBytes(FALLBACK_KEY_BYTES);
 };

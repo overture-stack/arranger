@@ -190,19 +190,38 @@ const ArrangerMcpConfig = envSchema
 			maxBodyBytes: data.MCP_MAX_BODY_BYTES,
 		},
 	}))
-	// Refuse to start rather than warn. Binding a routable interface with no Host allowlist leaves
-	// the server open to DNS rebinding, and it is exactly the configuration an operator reaches for
-	// when moving from a laptop into a container, so a warning would be read as noise.
+	// Refuse to start rather than warn. Both rules below apply only to a routable bind, which is
+	// exactly the configuration an operator reaches for when moving from a laptop into a container,
+	// and in both cases a warning would be read as noise. A loopback bind needs neither variable and
+	// is asked for neither.
 	.superRefine(({ mcp }, ctx) => {
-		if (mcp.allowedHosts === 'any' || mcp.allowedHosts.length > 0 || LOCALHOST_HOSTNAMES.includes(mcp.host)) {
+		if (LOCALHOST_HOSTNAMES.includes(mcp.host)) {
 			return;
 		}
-		ctx.addIssue(
-			`MCP_HOST is "${mcp.host}", which is reachable from outside this machine, but MCP_ALLOWED_HOSTS is not set. ` +
-				'Set MCP_ALLOWED_HOSTS to the hostname(s) clients use to reach this server ' +
-				'(for example "arranger-mcp,mcp.example.org"), or set MCP_ALLOWED_HOSTS=* if an upstream gateway ' +
-				'validates the Host header. Binding a routable interface without either is a DNS rebinding risk.',
-		);
+
+		// No Host allowlist on a reachable interface leaves the server open to DNS rebinding.
+		if (mcp.allowedHosts !== 'any' && mcp.allowedHosts.length === 0) {
+			ctx.addIssue(
+				`MCP_HOST is "${mcp.host}", which is reachable from outside this machine, but MCP_ALLOWED_HOSTS is not set. ` +
+					'Set MCP_ALLOWED_HOSTS to the hostname(s) clients use to reach this server ' +
+					'(for example "arranger-mcp,mcp.example.org"), or set MCP_ALLOWED_HOSTS=* if an upstream gateway ' +
+					'validates the Host header. Binding a routable interface without either is a DNS rebinding risk.',
+			);
+		}
+
+		// A generated per-process key is correct for exactly one instance, and a routable bind is the
+		// deployment that gets scaled. The failure it prevents is invisible until it happens and does
+		// not look like configuration: one replica mints a query confirmation, another cannot verify
+		// it, and `execute_query` refuses every confirmed query in a way that reads like a bug.
+		if (mcp.requestStateSecret === undefined) {
+			ctx.addIssue(
+				`MCP_HOST is "${mcp.host}", which is reachable from outside this machine, but MCP_REQUEST_STATE_SECRET is not set. ` +
+					'Each process would sign query confirmations with a key it generated for itself, so a second replica ' +
+					'cannot verify a confirmation the first one issued and every confirmed query fails. ' +
+					'Generate one with "npm run generate-secret" from apps/mcp-server, or supply any 32 random bytes. ' +
+					'A loopback bind does not need one.',
+			);
+		}
 	});
 export type ArrangerMcpConfig = zod.infer<typeof ArrangerMcpConfig>;
 
