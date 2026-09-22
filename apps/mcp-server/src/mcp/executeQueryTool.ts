@@ -37,32 +37,22 @@ const MAX_OFFSET = 10_000;
 
 const OPERATION_NAME = 'ArrangerMcpExecuteQuery';
 
-/**
- * Identifier the confirmation request is filed under, and read back by on re-entry. It is the
- * server's own key, not a protocol name, so it only has to be stable within this tool.
- */
+/** Key the confirmation is filed under. The server's own, not a protocol name, so it only has to be stable here. */
 const CONFIRMATION_KEY = 'confirm';
 
 /** Shape the client's answer must satisfy before it is treated as an approval. */
 const confirmationSchema = zod.object({ confirm: zod.boolean() });
 
 /**
- * The part of the client's declared capabilities this tool reads.
- *
- * The SDK validates the whole envelope against its own schema before dispatch, so a malformed value
- * is already refused with `-32602` before this tool is entered. Parsed again here because this is
- * peer-controlled input reaching a security decision, and the failure that matters is a shape
- * mismatch being read as "supports elicitation". A failed parse means the capability was not
- * declared, which is the refusing answer.
+ * The capabilities this tool reads. The SDK already validates the envelope before dispatch, so this
+ * is a second gate on peer input reaching a security decision: a failed parse means "not declared",
+ * which refuses.
  */
 const clientCapabilitiesSchema = zod.object({ elicitation: zod.looseObject({}).optional() });
 
 /**
- * Refusal when an answer arrives without the state that was minted with the question.
- *
- * Nothing in the protocol forces a client to echo `requestState`, so an absent value has to be
- * refused exactly like a tampered one. Comparing only when it happens to be present would make the
- * whole binding opt-out at the caller's discretion, which is the same hole it exists to close.
+ * Refusal when an answer carries no state. Nothing forces a client to echo `requestState`, so
+ * comparing only when it is present would make the whole binding opt-out.
  */
 const UNBOUND_STATE_MESSAGE =
 	'Query execution was refused: the confirmation answer did not carry back the requestState this server ' +
@@ -70,10 +60,8 @@ const UNBOUND_STATE_MESSAGE =
 	'again and echo requestState verbatim on the retry.';
 
 /**
- * Refusal when the approved query and the rebuilt one differ.
- *
- * Refused rather than re-asked: re-asking would hand a caller an unlimited retry loop against the
- * confirmation gate.
+ * Refusal when the rebuilt query differs from the approved one. Refused rather than re-asked, which
+ * would be an unlimited retry loop against the gate.
  */
 const DIGEST_MISMATCH_MESSAGE =
 	'Query execution was refused: the query built on this call is not the query that was confirmed. An approval ' +
@@ -90,8 +78,7 @@ const sortInputSchema = zod.object({
 const inputSchema = zod.object({
 	catalogueId: zod.string().min(1).describe('Catalogue identifier from the Arranger /introspection payload.'),
 	// Zod 4 makes an `unknown()` key required, so a missing `sqon` fails here rather than in the
-	// handler. `.nonoptional()` carries the guidance across; the default is an unhelpful
-	// "expected nonoptional".
+	// handler. `.nonoptional({ error })` replaces its unhelpful "expected nonoptional" default.
 	sqon: zod
 		.unknown()
 		.nonoptional({ error: SQON_REQUIRED_MESSAGE })
@@ -177,11 +164,9 @@ const successResult = (structuredContent: ExecuteQueryOutput): ToolResult => ({
 });
 
 /**
- * Collects all validation errors for an execute_query request against the catalogue's
- * introspection context: the SQON, the requested hits fields, sort fields, and
- * aggregation fields.
- * @returns The validation errors (empty when the request is valid), the parsed SQON,
- * and the dot-notation aggregation field names.
+ * Validates a request against the catalogue: the SQON, hits fields, sort fields, and aggregation
+ * fields.
+ * @returns The errors (empty when valid), the parsed SQON, and the dot-notation aggregation names.
  */
 const validateRequest = ({
 	context,
@@ -230,13 +215,9 @@ const validateRequest = ({
 };
 
 /**
- * Whether the client that sent this request declared the `elicitation` capability.
- *
- * Protocol revision `2026-07-28` carries client capabilities per request rather than per session,
- * in the reserved `_meta` envelope. The SDK surfaces that envelope with its
- * `io.modelcontextprotocol/*` keys intact, and declares `RequestMetaEnvelope` as `{}`, so reading a
- * reserved key off it needs a cast to something indexable. That cast widens the value to `unknown`
- * rather than asserting a shape onto it, and the schema is what decides what the value is.
+ * Whether the client declared the `elicitation` capability. Revision `2026-07-28` carries
+ * capabilities per request in the `_meta` envelope, which the SDK types as `{}`, so reading a
+ * reserved key needs the cast. It widens to `unknown`; the schema decides the shape.
  */
 const clientCanElicit = (ctx: ServerContext): boolean => {
 	const envelope = ctx.mcpReq.envelope as Record<string, unknown> | undefined;
@@ -256,26 +237,20 @@ type Confirmation =
 	| { status: 'pending'; result: InputRequiredResult };
 
 /**
- * Resolves the user's confirmation for the query that is about to run.
+ * Resolves the user's confirmation for the query about to run.
  *
- * Revision `2026-07-28` removed the server-to-client request channel, so a server can no longer ask
- * and await an answer. It returns an `input_required` result instead, the call ends, and the client
- * re-invokes the tool with the answer attached. The handler therefore runs twice per confirmed
- * query, and this is what tells the two rounds apart.
+ * Revision `2026-07-28` has no server-to-client channel, so the handler returns `input_required`,
+ * the call ends, and the client re-invokes it with the answer. It therefore runs twice per confirmed
+ * query, and this is what tells the rounds apart. An answer the SDK could not read arrives as
+ * `missing` and re-asks; the client's own round cap stops that repeating.
  *
- * An answer the SDK could not read (the wrapped shape some peers emit) arrives as `missing`, so the
- * request is re-issued rather than failed. The client's own round cap is what stops that repeating.
+ * The approval is bound to what was approved: round two rebuilds the query from arguments the client
+ * re-sends, so without the digest an agent could confirm one query and run another.
  *
- * **The approval is bound to what was approved.** The query is rebuilt from arguments the client
- * re-sends, so without a binding an agent could show one query for confirmation and re-enter with
- * different ones. Round one seals a digest of the built query into `requestState`; round two only
- * counts as an approval when the state comes back carrying that same digest. The signature is what
- * makes the digest worth comparing, and the server seam has already verified it by the time this
- * runs, so a forged or expired value never reaches here at all.
- *
- * @param ctx - Request context, carrying any answer from a previous round and its verified state.
- * @param codec - Seals the digest for the round trip and is verified back at the seam.
- * @param digest - Digest of the query this call built, minted on the first round and compared on the second.
+ * @param ctx - Request context, carrying any previous answer and its verified state.
+ * @param codec - Seals the digest for the round trip; verified back at the seam, so a forged or
+ * expired state never reaches here.
+ * @param digest - Digest of the query this call built: minted on round one, compared on round two.
  * @param message - The confirmation prompt shown to the user.
  */
 const resolveConfirmation = async (
@@ -310,15 +285,14 @@ const resolveConfirmation = async (
 		};
 	}
 
-	// Checked before the answer itself: an approval that is tied to no query, or to a different one,
-	// is not an approval of this one whatever it says.
+	// Before the answer itself: an approval tied to no query, or to a different one, is not an
+	// approval of this one.
 	const state = ctx.mcpReq.requestState<ConfirmationState>();
 	if (typeof state?.digest !== 'string') {
 		return { status: 'unbound', message: UNBOUND_STATE_MESSAGE };
 	}
-	// Plain `===`: the digest is readable on the wire and so is not a secret, which is also why a
-	// constant-time compare would buy nothing. The codec already compares the parts that are secret,
-	// the MAC and the bind tag, in constant time.
+	// Plain `===`: the digest travels on the wire, so it is not a secret. The codec constant-time
+	// compares the MAC and bind tag, which are.
 	if (state.digest !== digest) {
 		return { status: 'unbound', message: DIGEST_MISMATCH_MESSAGE };
 	}
@@ -327,8 +301,8 @@ const resolveConfirmation = async (
 		return { status: 'declined' };
 	}
 
-	// Validated rather than read: this is attacker-controlled client input, and content failing the
-	// schema comes back `undefined`, which is treated the same as withholding approval.
+	// Schema-validated, not read: this is client input, and content that fails comes back `undefined`,
+	// which is not an approval.
 	const content = acceptedContent(ctx.mcpReq.inputResponses, CONFIRMATION_KEY, confirmationSchema);
 	return content?.confirm === true ? { status: 'confirmed' } : { status: 'declined' };
 };
@@ -379,10 +353,8 @@ export const registerExecuteQueryTool = (server: McpServer, { client, requestSta
 			},
 			ctx,
 		) => {
-			// Refused up front rather than executed unconfirmed. With 2025-era serving gone, a client
-			// that cannot elicit is the only remaining route to running a query nobody approved, and
-			// treating it as "skip the confirmation" would make the gate opt-out at the caller's
-			// discretion. Checked before any Arranger call, since the answer cannot change.
+			// Refused rather than executed unconfirmed: with 2025-era serving gone this is the only
+			// remaining route to running a query nobody approved. Checked before any Arranger call.
 			if (!clientCanElicit(ctx)) {
 				return errorResult(
 					'execute_query requires a client that supports elicitation, because the generated query must be ' +
@@ -392,7 +364,19 @@ export const registerExecuteQueryTool = (server: McpServer, { client, requestSta
 			}
 
 			try {
-				const serverIntrospection = serverIntrospectionSchema.parse(await client.getServerIntrospection());
+				// Fired together: the catalogue call needs only `catalogueId`, so sequencing them costs a
+				// round trip for nothing. `allSettled` rather than `all` because an unknown `catalogueId`
+				// fails the catalogue call, and the not-configured message below is the better answer, at
+				// the cost of one wasted request on that path.
+				const [serverSettled, catalogueSettled] = await Promise.allSettled([
+					client.getServerIntrospection(),
+					client.getCatalogueIntrospection(catalogueId),
+				]);
+
+				if (serverSettled.status === 'rejected') {
+					throw serverSettled.reason;
+				}
+				const serverIntrospection = serverIntrospectionSchema.parse(serverSettled.value);
 				const catalogue = serverIntrospection.catalogs[catalogueId];
 				if (!catalogue) {
 					const available = Object.keys(serverIntrospection.catalogs).join(', ');
@@ -405,17 +389,18 @@ export const registerExecuteQueryTool = (server: McpServer, { client, requestSta
 				// "/graphql" in single-catalogue mode, "/:catalogueId/graphql" in multi-catalogue mode.
 				const endpoint = catalogue.paths.graphql;
 
-				const catalogueIntrospection = catalogueIntrospectionSchema.parse(
-					await client.getCatalogueIntrospection(catalogueId),
-				);
+				// After the catalogue check, so a bad `catalogueId` gets the message above, not this failure.
+				if (catalogueSettled.status === 'rejected') {
+					throw catalogueSettled.reason;
+				}
+				const catalogueIntrospection = catalogueIntrospectionSchema.parse(catalogueSettled.value);
 				const { documentType, fields: catalogueFields, operators } = catalogueIntrospection;
 				const context: CatalogueQueryContext = { fields: catalogueFields, operators };
 				const fieldTypes = Object.fromEntries(
 					Object.entries(catalogueFields).map(([fieldName, field]) => [fieldName, field.type]),
 				);
-				// The same map re-keyed by the names the generated schema exposes. Hits come back keyed
-				// by those, not by the raw introspection paths, so compaction needs this copy to still
-				// recognize a `nested` container whose raw name GraphQL disallows.
+				// Re-keyed by the names the generated schema exposes: hits come back keyed by those, not
+				// by raw introspection paths, so compaction can still recognize a renamed `nested` container.
 				const responseFieldTypes = Object.fromEntries(
 					Object.entries(fieldTypes).map(([fieldName, type]) => [toGraphqlFieldPath(fieldName), type]),
 				);
@@ -440,8 +425,7 @@ export const registerExecuteQueryTool = (server: McpServer, { client, requestSta
 					operationName: OPERATION_NAME,
 				});
 
-				// Re-entry re-runs everything above: introspection is fetched again and the query
-				// rebuilt, because only the confirmation digest carries over between rounds.
+				// Re-entry re-runs everything above, because only the digest carries between rounds.
 				const confirmation = await resolveConfirmation(ctx, {
 					codec: requestStateCodec,
 					digest: digestApprovedQuery({ endpoint, query: request.query, variables: request.variables }),

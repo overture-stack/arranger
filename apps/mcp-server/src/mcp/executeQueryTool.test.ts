@@ -189,6 +189,43 @@ const answered = async (
 	return run({ inputResponses: { confirm: response }, requestState }, args);
 };
 
+suite('execute_query introspection', () => {
+	// Asserted on overlap rather than on a call count, because a sequential implementation makes the
+	// same two calls and would pass any count-based check.
+	test('fetches both introspection payloads concurrently', async () => {
+		const started: string[] = [];
+		let releaseServer: () => void = () => undefined;
+		const serverGate = new Promise<void>((resolve) => {
+			releaseServer = resolve;
+		});
+		const client = {
+			getServerIntrospection: async () => {
+				started.push('server');
+				await serverGate;
+				return serverIntrospection;
+			},
+			getCatalogueIntrospection: async () => {
+				started.push('catalogue');
+				return catalogueIntrospection;
+			},
+		} as unknown as ArrangerClient;
+
+		const pending = captureHandler(client)(queryArgs, createContext());
+		// Long enough for a sequential implementation to have started its first call and be parked on
+		// it, having never reached the second.
+		await new Promise((resolve) => setImmediate(resolve));
+
+		assert.deepEqual(
+			started,
+			['server', 'catalogue'],
+			'expected the catalogue call to start while the server call was still pending',
+		);
+
+		releaseServer();
+		await pending;
+	});
+});
+
 suite('execute_query confirmation', () => {
 	suite('a client that cannot elicit', () => {
 		// The refusal is the whole point of the branch: with 2025-era serving gone this is the only
