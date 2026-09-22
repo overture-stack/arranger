@@ -108,6 +108,12 @@ const captureHandler = (client: ArrangerClient) => {
 
 type ContextOptions = {
 	elicitation?: boolean;
+	/**
+	 * Replaces the declared capabilities wholesale, for the shapes a conforming client never sends.
+	 * The SDK's own envelope validation refuses these before dispatch, so they are unreachable over
+	 * a real connection and only the handler's own parse can be asked about them.
+	 */
+	capabilities?: unknown;
 	inputResponses?: Record<string, unknown>;
 	requestState?: ConfirmationState;
 };
@@ -121,11 +127,19 @@ type ContextOptions = {
  * that is what the server seam hands a handler once the configured verify hook has resolved with it.
  * `method` is populated because the codec's binding reads it.
  */
-const createContext = ({ elicitation = true, inputResponses, requestState }: ContextOptions = {}): ServerContext =>
+const createContext = ({
+	elicitation = true,
+	capabilities,
+	inputResponses,
+	requestState,
+}: ContextOptions = {}): ServerContext =>
 	({
 		mcpReq: {
 			method: 'tools/call',
-			envelope: { [CLIENT_CAPABILITIES_META_KEY]: elicitation ? { elicitation: {} } : {} },
+			envelope: {
+				[CLIENT_CAPABILITIES_META_KEY]:
+					capabilities !== undefined ? capabilities : elicitation ? { elicitation: {} } : {},
+			},
 			inputResponses,
 			requestState: () => requestState,
 		},
@@ -192,6 +206,23 @@ suite('execute_query confirmation', () => {
 			assert.equal(calls.introspection, 0, 'expected the refusal to cost no introspection round trip');
 			assert.equal(calls.executed, 0);
 		});
+
+		// A shape mismatch must never read as "supports elicitation", which is what a bare
+		// `!== undefined` check on an asserted type would have done. The SDK refuses these before
+		// dispatch, so this pins the handler's own parse rather than a reachable request.
+		for (const [label, capabilities] of [
+			['a non-object elicitation value', { elicitation: 0 }],
+			['a non-object capabilities value', 'elicitation'],
+			['a null capabilities value', null],
+		] as const) {
+			test(`${label} is refused rather than read as support`, async () => {
+				const { result, calls } = await run({ capabilities });
+
+				assert.equal(result.isError, true);
+				assert.match(result.content?.[0]?.text ?? '', /elicitation/);
+				assert.equal(calls.introspection, 0);
+			});
+		}
 	});
 
 	suite('the first round', () => {

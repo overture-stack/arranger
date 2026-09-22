@@ -3,7 +3,6 @@ import {
 	CLIENT_CAPABILITIES_META_KEY,
 	inputRequired,
 	inputResponse,
-	type ClientCapabilities,
 	type InputRequiredResult,
 	type McpServer,
 	type RequestStateCodec,
@@ -46,6 +45,17 @@ const CONFIRMATION_KEY = 'confirm';
 
 /** Shape the client's answer must satisfy before it is treated as an approval. */
 const confirmationSchema = zod.object({ confirm: zod.boolean() });
+
+/**
+ * The part of the client's declared capabilities this tool reads.
+ *
+ * The SDK validates the whole envelope against its own schema before dispatch, so a malformed value
+ * is already refused with `-32602` before this tool is entered. Parsed again here because this is
+ * peer-controlled input reaching a security decision, and the failure that matters is a shape
+ * mismatch being read as "supports elicitation". A failed parse means the capability was not
+ * declared, which is the refusing answer.
+ */
+const clientCapabilitiesSchema = zod.object({ elicitation: zod.looseObject({}).optional() });
 
 /**
  * Refusal when an answer arrives without the state that was minted with the question.
@@ -224,13 +234,14 @@ const validateRequest = ({
  *
  * Protocol revision `2026-07-28` carries client capabilities per request rather than per session,
  * in the reserved `_meta` envelope. The SDK surfaces that envelope with its
- * `io.modelcontextprotocol/*` keys intact and types it as an open object, so the value is narrowed
- * here rather than typed.
+ * `io.modelcontextprotocol/*` keys intact, and declares `RequestMetaEnvelope` as `{}`, so reading a
+ * reserved key off it needs a cast to something indexable. That cast widens the value to `unknown`
+ * rather than asserting a shape onto it, and the schema is what decides what the value is.
  */
 const clientCanElicit = (ctx: ServerContext): boolean => {
 	const envelope = ctx.mcpReq.envelope as Record<string, unknown> | undefined;
-	const capabilities = envelope?.[CLIENT_CAPABILITIES_META_KEY] as ClientCapabilities | undefined;
-	return capabilities?.elicitation !== undefined;
+	const capabilities = clientCapabilitiesSchema.safeParse(envelope?.[CLIENT_CAPABILITIES_META_KEY]);
+	return capabilities.success && capabilities.data.elicitation !== undefined;
 };
 
 /** What the confirmation exchange has resolved to for this round of the call. */
