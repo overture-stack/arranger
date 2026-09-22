@@ -1,3 +1,4 @@
+import { localhostAllowedHostnames, localhostAllowedOrigins } from '@modelcontextprotocol/server';
 import { z as zod } from 'zod';
 
 import { createLogger } from '#utils/logger.js';
@@ -10,14 +11,14 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
  */
 const DEFAULT_MAX_BODY_BYTES = 102_400;
 
-/** Bind addresses that are only reachable from this host, so a Host allowlist is not required. */
-const LOCALHOST_HOSTNAMES = ['127.0.0.1', 'localhost', '::1'];
-
 /**
- * Hostnames the SDK's own localhost guards allow. `[::1]` is bracketed because both guards compare
- * against `new URL(...).hostname`, which brackets IPv6 literals.
+ * Bind addresses that are only reachable from this host, so a Host allowlist is not required.
+ *
+ * These are bind addresses rather than URL hostnames, which is why `::1` is unbracketed here while
+ * the allowlists it resolves to carry `[::1]`: the SDK guards compare against `new URL(...).hostname`,
+ * and that brackets an IPv6 literal.
  */
-const LOCALHOST_ALLOWED_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]'];
+const LOCALHOST_HOSTNAMES = ['127.0.0.1', 'localhost', '::1'];
 
 /** `MCP_ALLOWED_HOSTS` value meaning "an upstream gateway validates the Host header, do not". */
 const ALLOW_ANY_HOST = '*';
@@ -138,9 +139,9 @@ const envSchema = zod.object({
  * Resolves `MCP_ALLOWED_HOSTS` into the list the Host guard is built from.
  *
  * An unset value on a loopback bind resolves to the localhost hostnames rather than to an empty
- * list, matching what the SDK's own adapters do for a localhost bind. On a routable bind it
- * resolves to an empty list, which the refinement below then refuses, so an empty list never
- * reaches the Host guard.
+ * list, taken from the SDK's own `localhostAllowedHostnames()` so this list cannot drift from what
+ * its guards expect. On a routable bind it resolves to an empty list, which the refinement below
+ * then refuses, so an empty list never reaches the Host guard.
  * @returns `'any'` when Host validation is delegated to an upstream gateway, otherwise the allowed
  * hostnames.
  */
@@ -152,7 +153,7 @@ const resolveAllowedHosts = (rawValue: string, host: string): 'any' | string[] =
 	if (allowedHosts.length > 0) {
 		return allowedHosts;
 	}
-	return LOCALHOST_HOSTNAMES.includes(host) ? LOCALHOST_ALLOWED_HOSTNAMES : [];
+	return LOCALHOST_HOSTNAMES.includes(host) ? localhostAllowedHostnames() : [];
 };
 
 /**
@@ -161,14 +162,16 @@ const resolveAllowedHosts = (rawValue: string, host: string): 'any' | string[] =
  * An empty list is a live check rather than a disabled one: the guard passes requests carrying no
  * `Origin` (which is every non-browser MCP client) and rejects any browser origin. As with hosts, an
  * unset value on a loopback bind resolves to the localhost origins so browser-based tooling works
- * against a local server.
+ * against a local server, taken from the SDK's own `localhostAllowedOrigins()`. That returns the
+ * same list as the host helper today, and is called separately so the two follow the SDK if it ever
+ * separates them.
  */
 const resolveAllowedOrigins = (rawValue: string, host: string): string[] => {
 	const allowedOrigins = parseCommaSeparatedList(rawValue);
 	if (allowedOrigins.length > 0) {
 		return allowedOrigins;
 	}
-	return LOCALHOST_HOSTNAMES.includes(host) ? LOCALHOST_ALLOWED_HOSTNAMES : [];
+	return LOCALHOST_HOSTNAMES.includes(host) ? localhostAllowedOrigins() : [];
 };
 
 /**

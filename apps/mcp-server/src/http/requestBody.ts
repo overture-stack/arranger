@@ -1,5 +1,9 @@
 import { type IncomingMessage } from 'node:http';
 
+import { PARSE_ERROR } from '@modelcontextprotocol/server';
+
+import { TRANSPORT_REJECTION } from '#http/errorCodes.js';
+
 /** Why a body was refused, and the answer to send. */
 export type RequestBodyRefusal = { status: number; code: number; message: string };
 
@@ -14,19 +18,16 @@ export type RequestBodyRefusal = { status: number; code: number; message: string
  */
 export type RequestBodyResult = { body?: unknown; refusal?: RequestBodyRefusal };
 
-/** JSON-RPC parse error, the answer for a body that is not valid JSON. */
-const PARSE_ERROR = -32700;
-
-/** Applied to a body over the configured ceiling. There is no JSON-RPC code for "too large". */
-const PAYLOAD_TOO_LARGE = -32600;
-
 /** Methods that carry no request body, so there is nothing to read or cap. */
 const BODY_LESS_METHODS = ['GET', 'HEAD'];
 
 const tooLarge = (maxBytes: number): RequestBodyResult => ({
 	refusal: {
 		status: 413,
-		code: PAYLOAD_TOO_LARGE,
+		// Refused before the body was parsed, so it is classified with the endpoint's other
+		// HTTP-layer refusals rather than as something about a message we read. The 413 is what says
+		// the body was too large.
+		code: TRANSPORT_REJECTION,
 		message: `Request body exceeds the ${maxBytes} byte limit (MCP_MAX_BODY_BYTES).`,
 	},
 });

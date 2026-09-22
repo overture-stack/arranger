@@ -15,7 +15,13 @@ const ENV_KEYS = [
 	'LOG_LEVEL',
 ] as const;
 
-/** What an unset allowlist resolves to on a loopback bind, matching the SDK's own localhost guards. */
+/**
+ * What an unset allowlist resolves to on a loopback bind.
+ *
+ * Restated rather than imported from the SDK, which is where the values themselves now come from.
+ * Comparing a result against its own source would pass whatever the list drifted to, so writing it
+ * out is also what makes this the check that the SDK still returns what this app expects.
+ */
 const LOCALHOST_ALLOWED = ['localhost', '127.0.0.1', '[::1]'];
 
 /**

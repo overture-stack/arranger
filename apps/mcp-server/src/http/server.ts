@@ -1,8 +1,9 @@
 import http, { type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
 import { hostHeaderValidation, originValidation, toNodeHandler } from '@modelcontextprotocol/node';
-import { createMcpHandler, type McpServerFactory } from '@modelcontextprotocol/server';
+import { createMcpHandler, INTERNAL_ERROR, type McpServerFactory } from '@modelcontextprotocol/server';
 
+import { TRANSPORT_REJECTION } from '#http/errorCodes.js';
 import { readCappedJsonBody } from '#http/requestBody.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
 import logger from '#utils/logger.js';
@@ -113,7 +114,7 @@ export const startMcpHttpServer = async (
 
 				const { pathname } = new URL(req.url ?? '/', REQUEST_PATH_BASE);
 				if (pathname !== path) {
-					writeJsonRpcError(res, 404, -32601, `Not found. The MCP endpoint is ${path}.`);
+					writeJsonRpcError(res, 404, TRANSPORT_REJECTION, `Not found. The MCP endpoint is ${path}.`);
 					return;
 				}
 
@@ -127,7 +128,7 @@ export const startMcpHttpServer = async (
 			} catch (error) {
 				logger.error({ err: error }, 'Unhandled error serving MCP request');
 				if (!res.headersSent) {
-					writeJsonRpcError(res, 500, -32603, 'Internal server error');
+					writeJsonRpcError(res, 500, INTERNAL_ERROR, 'Internal server error');
 				}
 				res.end();
 			}

@@ -166,6 +166,9 @@ suite('startMcpHttpServer', () => {
 
 			assert.equal(status, 413);
 			assert.match(body, /exceeds the 1024 byte limit/);
+			// Classified with the endpoint's other HTTP-layer refusals, which the SDK answers -32000,
+			// rather than as an error about a message that was read. Nothing else pins this.
+			assert.equal(JSON.parse(body).error.code, -32000);
 		});
 
 		// The content-length check is only an early out. Chunked encoding declares no size, so this
@@ -219,6 +222,9 @@ suite('startMcpHttpServer', () => {
 
 			assert.equal(status, 404);
 			assert.match(body, /The MCP endpoint is \/mcp/);
+			// Not `METHOD_NOT_FOUND`: the path is checked before the body is read, so no method was
+			// ever parsed to be missing. Same HTTP-layer classification as the body cap above.
+			assert.equal(JSON.parse(body).error.code, -32000);
 		});
 
 		test('ignores a query string when matching the endpoint', async () => {
