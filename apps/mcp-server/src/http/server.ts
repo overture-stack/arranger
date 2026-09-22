@@ -6,7 +6,9 @@ import { createMcpHandler, INTERNAL_ERROR, type McpServerFactory } from '@modelc
 import { TRANSPORT_REJECTION } from '#http/errorCodes.js';
 import { readCappedJsonBody } from '#http/requestBody.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
-import logger from '#utils/logger.js';
+import { createLogger } from '#utils/logger.js';
+
+const logger = createLogger('HttpServer');
 
 export type McpHttpServer = {
 	httpServer: Server;
@@ -127,10 +129,12 @@ export const startMcpHttpServer = async (
 				await serve(req, res, body);
 			} catch (error) {
 				logger.error({ err: error }, 'Unhandled error serving MCP request');
-				if (!res.headersSent) {
+				if (res.headersSent) {
+					// Something was already written, so the only thing left is to finish the response.
+					res.end();
+				} else {
 					writeJsonRpcError(res, 500, INTERNAL_ERROR, 'Internal server error');
 				}
-				res.end();
 			}
 		})();
 	});
