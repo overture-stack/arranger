@@ -10,7 +10,9 @@ import { createLogger } from '#utils/logger.js';
 
 const logger = createLogger('HttpServer');
 
+/** A listening MCP endpoint, and the means to stop it. */
 export type McpHttpServer = {
+	/** Exposed so a caller can read the bound address, which matters when the port was `0`. */
 	httpServer: Server;
 	/** Tears down the MCP handler and then stops accepting connections. */
 	close: () => Promise<void>;

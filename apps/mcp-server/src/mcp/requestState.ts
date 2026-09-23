@@ -81,8 +81,9 @@ export const createConfirmationCodec = (config: ArrangerMcpConfig): RequestState
 	createRequestStateCodec<ConfirmationState>({
 		key: resolveKey(config.mcp.requestStateSecret),
 		ttlSeconds: CONFIRMATION_TTL_SECONDS,
-		// The SDK's documented binding. With authentication out of scope the principal is always
-		// empty, so today this only stops state minted for one method being replayed against another;
-		// it starts separating principals the moment auth lands, with no change needed here.
+		// The SDK's documented binding, which separates nothing today: the seam verifies only on
+		// `tools/call`, so the method always matches, and the principal stays empty until auth lands.
+		// It starts separating principals then. Encode the two parts at that point rather than joining
+		// them, since `\0` is a safe delimiter only while neither part can contain it.
 		bind: (ctx: ServerContext) => `${ctx.mcpReq.method}\0${ctx.http?.authInfo?.clientId ?? ''}`,
 	});
