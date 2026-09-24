@@ -247,7 +247,7 @@
 			"type": "object"
 		}
 	},
-	"$id": "https://overture-stack.org/schemas/arranger/sqon/v__SQON_SCHEMA_VERSION__.schema.json",
+	"$id": "https://overture.bio/schemas/sqon/v__SQON_SCHEMA_VERSION__.schema.json",
 	"$ref": "#/$defs/SQON",
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"description": "JSON Schema for Serialized Query Object Notation.",
