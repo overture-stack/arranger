@@ -20,7 +20,7 @@ import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql
 import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
-import { addMappingsToTypes, extendFields } from '#mapping/index.js';
+import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
 import { buildGraphqlNameRegistry } from '#mapping/utils/graphqlNameRegistry.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
@@ -79,23 +79,11 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 			}
 
 			// Combines the mapping from ES with the "extended" custom configs
-			const extendedFields = await (async () => {
-				try {
-					const extendedConfigs = configs?.[configRootProperties.EXTENDED];
-					if (!extendedConfigs) {
-						throw new Error('No extended configs were provided.');
-					}
-					return extendFields(fieldsFromMapping, extendedConfigs);
-				} catch (err) {
-					console.log(
-						'    Something happened while extending the ES mappings.\n' +
-							'    Defaulting to "extended" config from files.\n',
-					);
-					enableDebug && console.debug(`  DEBUG: ${err}`);
-
-					return configs?.[configRootProperties.EXTENDED] || [];
-				}
-			})();
+			const extendedFields = resolveExtendedFields({
+				extendedConfigs: configs?.[configRootProperties.EXTENDED],
+				label: label ?? FALLBACK_LABEL,
+				mappingFields: fieldsFromMapping,
+			});
 
 			// Uses the "extended" fields to enhance the "facets" custom configs
 			const extendedFacetsConfigs = await (async () => {

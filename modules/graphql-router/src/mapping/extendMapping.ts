@@ -187,7 +187,30 @@ export const extendFields = (
 	extendedFromFile: ExtendedConfigs[],
 ): ExtendedConfigs[] => {
 	// TODO: `type` from ExtendedConfigs and FieldFromMapping do not match, they need to be mapped. Issue with `byte`.
+	// A field's type belongs to the index mapping: the search engine decides storage from it, and
+	// `nested` in particular decides whether a filter has to compile as a nested query. A type
+	// declared here has never been read, so say so rather than leaving it looking effective.
+	//
+	// Reported once for the whole catalogue rather than per field: the fix is a single edit to a
+	// single file, so the field list is detail rather than a finding each, and a per-field warning
+	// would bury the rest of startup output under it.
+	const fieldsDeclaringType = mappingFields
+		.map(({ fieldName }) => fieldName)
+		.filter((fieldName) => {
+			const fromFile = extendedFromFile.find((customData) => customData.fieldName === fieldName);
+			return fromFile !== undefined && 'type' in fromFile;
+		});
+
+	if (fieldsDeclaringType.length > 0) {
+		console.warn(
+			`  Ignoring the "type" declared in the extended config for: ${fieldsDeclaringType.join(', ')}.\n` +
+				`  A field's type comes from the index mapping, and a declaration here has no effect.`,
+		);
+	}
+
 	return mappingFields.map<ExtendedConfigs>(({ fieldName, type, ...rest }) => {
+		const fromFile = extendedFromFile.find((customData) => customData.fieldName === fieldName);
+
 		const {
 			displayName = startCase(fieldName.replace(/\./g, ' ')),
 			displayType = type,
@@ -198,7 +221,7 @@ export const extendFields = (
 			quickSearchEnabled = false,
 			rangeStep = 0,
 			unit = null,
-		} = extendedFromFile.find((customData) => customData.fieldName === fieldName) || {};
+		} = fromFile || {};
 
 		return {
 			displayName,

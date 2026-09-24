@@ -15,3 +15,4 @@ export { default as mapHits } from './utils/mapHits.js';
 export { default as getNestedFields } from './getNestedFields.js';
 export { default as flattenMapping } from './flattenMapping.js';
 export { extendFields } from './extendMapping.js';
+export { resolveExtendedFields } from './resolveExtendedFields.js';
