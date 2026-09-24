@@ -26,10 +26,17 @@ const buildSchema = (total) =>
 		},
 	});
 
-const buildConfigs = ({ allowCustomMaxRows = false, maxRows = 100, nestingPrefix, extendedFields = [] } = {}) => ({
+const buildConfigs = ({
+	allowCustomMaxRows = false,
+	maxRows = 100,
+	nestedFieldNames = [],
+	nestingPrefix,
+	extendedFields = [],
+} = {}) => ({
 	extendedFields,
 	index: DOCUMENT_TYPE,
 	name: DOCUMENT_TYPE,
+	nested_fieldNames: nestedFieldNames,
 	config: {
 		[configRootProperties.DOWNLOADS]: {
 			[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: allowCustomMaxRows,
@@ -187,6 +194,202 @@ suite('getAllData', () => {
 			const chunks = await collectStream(stream);
 
 			assert.equal(chunks[0]?.total, 100);
+		});
+	});
+
+	suite('nestedFieldNames', () => {
+		const NESTED_PATH = 'participants';
+
+		// A flat `terms` clause cannot see into a nested sub-document, so it matches nothing. Positive
+		// filters then return no rows, and a negated one (the shape an access-control filter takes)
+		// matches every row instead.
+		const captureSearch = (searchCalls) => ({
+			search: async (params) => {
+				searchCalls.push(params);
+				return { body: { hits: { hits: [{ _id: '1', _source: {}, sort: ['1'] }] } } };
+			},
+		});
+
+		test('wraps a client filter in a nested query when the mapping declares the field nested and the extended config does not', async () => {
+			const searchCalls = [];
+
+			const stream = await getAllData({
+				ctx: {
+					configs: buildConfigs({ extendedFields: [], nestedFieldNames: [NESTED_PATH] }),
+					esClient: captureSearch(searchCalls),
+					schema: buildSchema(1),
+				},
+				getServerSideFilter: getDefaultServerSideFilter,
+				sqon: { op: 'in', content: { fieldName: `${NESTED_PATH}.sample_type`, value: ['Blood'] } },
+			});
+
+			await collectStream(stream);
+
+			assert.deepEqual(searchCalls[0].body.query, {
+				bool: {
+					must: [
+						{
+							nested: {
+								path: NESTED_PATH,
+								query: {
+									bool: {
+										must: [{ terms: { [`${NESTED_PATH}.sample_type`]: ['Blood'], boost: 0 } }],
+									},
+								},
+							},
+						},
+						{ bool: { must_not: [{ terms: { _id: [], boost: 0 } }] } },
+					],
+				},
+			});
+		});
+
+		test('wraps a negated client filter, which would otherwise exclude nothing and export every document', async () => {
+			const searchCalls = [];
+
+			const stream = await getAllData({
+				ctx: {
+					configs: buildConfigs({ extendedFields: [], nestedFieldNames: [NESTED_PATH] }),
+					esClient: captureSearch(searchCalls),
+					schema: buildSchema(1),
+				},
+				getServerSideFilter: getDefaultServerSideFilter,
+				sqon: { op: 'not-in', content: { fieldName: `${NESTED_PATH}.provenance`, value: ['restricted'] } },
+			});
+
+			await collectStream(stream);
+
+			assert.deepEqual(searchCalls[0].body.query, {
+				bool: {
+					must: [
+						{
+							nested: {
+								path: NESTED_PATH,
+								query: {
+									bool: {
+										must_not: [{ terms: { [`${NESTED_PATH}.provenance`]: ['restricted'], boost: 0 } }],
+									},
+								},
+							},
+						},
+						{ bool: { must_not: [{ terms: { _id: [], boost: 0 } }] } },
+					],
+				},
+			});
+		});
+
+		// Depth 2 distinguishes a full fix from one forwarding only the outermost path: that emits a
+		// nested wrapper, so it reads as correct, while the inner clause still cannot see into the
+		// sub-document. Paired with a server-side filter here, where excluding nothing discloses.
+		test('wraps every level of a field nested more than one deep, not only the outermost', async () => {
+			const searchCalls = [];
+			const deepPath = `${NESTED_PATH}.samples`;
+
+			const stream = await getAllData({
+				ctx: {
+					configs: buildConfigs({ extendedFields: [], nestedFieldNames: [NESTED_PATH, deepPath] }),
+					esClient: captureSearch(searchCalls),
+					schema: buildSchema(1),
+				},
+				getServerSideFilter: () => ({
+					op: 'not-in',
+					content: { fieldName: `${deepPath}.provenance`, value: ['restricted'] },
+				}),
+				sqon: null,
+			});
+
+			await collectStream(stream);
+
+			assert.deepEqual(searchCalls[0].body.query, {
+				bool: {
+					must: [
+						{
+							nested: {
+								path: NESTED_PATH,
+								query: {
+									bool: {
+										must: [
+											{
+												nested: {
+													path: deepPath,
+													query: {
+														bool: {
+															must_not: [
+																{ terms: { [`${deepPath}.provenance`]: ['restricted'], boost: 0 } },
+															],
+														},
+													},
+												},
+											},
+										],
+									},
+								},
+							},
+						},
+					],
+				},
+			});
+		});
+
+		test('emits the same query when the extended config and the mapping agree on which fields are nested', async () => {
+			const searchCalls = [];
+
+			const stream = await getAllData({
+				ctx: {
+					configs: buildConfigs({
+						extendedFields: [{ fieldName: NESTED_PATH, type: 'nested' }],
+						nestedFieldNames: [NESTED_PATH],
+					}),
+					esClient: captureSearch(searchCalls),
+					schema: buildSchema(1),
+				},
+				getServerSideFilter: getDefaultServerSideFilter,
+				sqon: { op: 'in', content: { fieldName: `${NESTED_PATH}.sample_type`, value: ['Blood'] } },
+			});
+
+			await collectStream(stream);
+
+			assert.deepEqual(searchCalls[0].body.query, {
+				bool: {
+					must: [
+						{
+							nested: {
+								path: NESTED_PATH,
+								query: {
+									bool: {
+										must: [{ terms: { [`${NESTED_PATH}.sample_type`]: ['Blood'], boost: 0 } }],
+									},
+								},
+							},
+						},
+						{ bool: { must_not: [{ terms: { _id: [], boost: 0 } }] } },
+					],
+				},
+			});
+		});
+	});
+
+	// `buildQuery`'s signature defaults `nestedFieldNames` to `[]`, so a `configs` that never went
+	// through `addMappingsToTypes` produces the pre-fix flat emission with no throw and no log. The
+	// absence of a `?? []` fallback here does not make that loud; only an explicit guard does.
+	suite('a missing nested_fieldNames', () => {
+		test('is refused, rather than silently meaning "no field is nested"', async () => {
+			const { nested_fieldNames: _omitted, ...configsWithoutTheList } = buildConfigs();
+
+			await assert.rejects(
+				() =>
+					getAllData({
+						ctx: {
+							configs: configsWithoutTheList,
+							esClient: { search: async () => ({ body: { hits: { hits: [] } } }) },
+							schema: buildSchema(0),
+						},
+						getServerSideFilter: getDefaultServerSideFilter,
+						sqon: { op: 'in', content: { fieldName: 'participants.sample_type', value: ['Blood'] } },
+					}),
+				/nested_fieldNames/,
+				'a configs shape that never went through addMappingsToTypes must not reach the compiler',
+			);
 		});
 	});
 
