@@ -2,23 +2,25 @@
 
 This app is an MCP server that learns how to talk to Arranger by consuming Arranger's introspection endpoints.
 
-The current scaffold implements the Streamable HTTP MCP transport using **v1.x** of the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x).
+It serves the Streamable HTTP transport on **v2** of the official [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk), speaking protocol revision **`2026-07-28`**.
 
 ## Tools
 
 The server registers five tools that cover the full query lifecycle:
 
-| Tool                   | Purpose                                                                                                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                                 |
-| `get_sqon_schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema.          |
-| `get_catalogue_fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.                |
-| `build_sqon`           | Builds a validated SQON from plain field, operator, and value clauses, with a plain-English summary. Builds only; it executes nothing. |
-| `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records.                             |
+| Tool                   | Purpose                                                                                                                                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_catalogues`      | Returns the catalogues the connected Arranger exposes.                                                                                                                                                                                   |
+| `get_sqon_schema`      | Returns a compact SQON quick reference (grammar, operators, worked examples) plus the full machine-readable SQON JSON Schema.                                                                                                            |
+| `get_catalogue_fields` | Returns field introspection for one catalogue: each field's type, display name, unit, description, and valid operators.                                                                                                                  |
+| `build_sqon`           | Builds a validated SQON from plain field, operator, and value clauses, with a plain-English summary. Builds only; it executes nothing.                                                                                                   |
+| `execute_query`        | Builds, confirms, and executes a SQON-filtered query against a catalogue and returns the matching records. Requires a client that supports elicitation, and refuses one that does not, since the query must be confirmed before it runs. |
 
 The intended call order is `list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`, which is what `SERVER_INSTRUCTIONS` and the `query_arranger` prompt both describe. `build_sqon` covers every operator `modules/sqon` implements: the single-field operators (`in`, `not-in`, `some-not-in`, `all`, `gt`, `gte`, `lt`, `lte`, `between`) with `fieldName`, and `wildcard` text search across several fields with `fieldNames`. Mixed combinators and the planned `fuzzy` operator are not supported, so those still need a hand-written `sqon` passed to `execute_query`.
 
 ## Folder Structure
+
+Tests are co-located (`*.test.ts` beside the file they cover) and omitted below.
 
 ```text
 src/
@@ -32,19 +34,21 @@ src/
 │   ├── types.ts                # response types for introspection payloads
 │   └── validation.ts           # validates the connection to Arranger
 ├── http/
-│   └── app.ts                  # MCP express app with Streamable HTTP transport
+│   ├── requestBody.ts          # reads and size-caps the request body
+│   └── server.ts               # serves the MCP handler on node:http, with Host and Origin guards
 ├── mcp/
 │   ├── buildSqonTool.ts        # build SQON tool
+│   ├── cacheHints.ts           # freshness hints published on cacheable results
 │   ├── executeQueryTool.ts     # execute query tool
-│   ├── instructions.ts         # server instructions sent in the initialize response
+│   ├── instructions.ts         # server instructions, returned by server/discover
 │   ├── prompts.ts              # registers MCP prompts
+│   ├── requestState.ts         # signs and verifies execute_query's confirmation state
 │   ├── resources.ts            # registers MCP resources
 │   ├── sqonCheatSheet.ts       # compact SQON reference, returned by get_sqon_schema
 │   └── tools.ts                # registers MCP tools
 ├── utils/
 │   ├── config.ts               # env/config parsing
 │   ├── errors.ts               # error handling utilities
-│   ├── inMemoryEventStore.ts   # in-memory storage util for dev
 │   └── logger.ts               # pino logger wrapper
 ├── index.ts                    # entrypoint for the application
 └── server.ts                   # creates the MCP server
@@ -62,11 +66,11 @@ npm ci
 2. Configure environment variables:
 
 > [!NOTE]
-> See [Configuration](#configuration) for more details.
+> See [Configuration](#configuration) for more details. This copies `.env.schema` and generates the one value it cannot carry, a signing key. It will not overwrite a `.env` you already have.
 
 ```bash
-# from apps/mcp-server
-cp .env.schema .env
+# from project root
+npm run mcp-server:setup-env
 ```
 
 3. Build Arranger modules:
@@ -101,24 +105,39 @@ Configuration of this application is done by providing [environment variables](#
 > [!WARNING]
 > If **required** environment variables are not available or misconfigured at run time, the application will shut down immediately.
 
-An example environment variables file is located at [`.env.schema`](./.env.schema). This example file lists all available configuration variables and is prepopulated with default values that should work to run the application locally. You can copy the contents of this file to populate a `.env`:
+An example environment variables file is located at [`.env.schema`](./.env.schema). This example file lists all available configuration variables, prepopulated with working defaults. Because its `MCP_HOST` of `0.0.0.0` binds every interface, two variables are demanded of it that a loopback bind would not need: `MCP_ALLOWED_HOSTS`, which it sets for you, and `MCP_REQUEST_STATE_SECRET`, which it cannot, since no secret belongs in a committed file. Copy the file and generate that one value:
 
 ```bash
 # from apps/mcp-server
-cp .env.schema .env
+npm run setup-env
 ```
+
+That copies the template and fills in the key, and leaves an existing `.env` alone rather than overwriting whatever you have configured. Two narrower commands exist for the cases it does not cover:
+
+| Command                         | Does                                                                         |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `npm run generate-secret`       | Writes a key into an existing `.env`, without printing it.                   |
+| `npm run generate-secret:print` | Prints a key to stdout and touches no file, to paste into a secrets manager. |
+
+Each has a `mcp-server:`-prefixed alias at the repository root. Both refuse to replace a key `.env` already holds; to override that, run `npm run generate-secret -- --force` from `apps/mcp-server`, where `--` is npm's separator for passing an argument to the script rather than to npm itself. Run it from the root instead and npm reads the flag before the script can, so the refusal stands. Both generate with `node:crypto` rather than `openssl`, which is absent from the `node:24-alpine` deploy image and from a stock Windows shell.
+
+Setting `MCP_HOST=127.0.0.1` instead is the other way to start: a loopback bind requires neither variable.
 
 ### Environment Variables
 
-| Name                          | Description                                                             | Type     | Required     | Default                 |
-| ----------------------------- | ----------------------------------------------------------------------- | -------- | ------------ | ----------------------- |
-| `ARRANGER_BASE_URL`           | URL for the Arranger Server                                             | `string` | **Required** | `http://localhost:5050` |
-| `ARRANGER_CATALOGUES`         | Comma-separated list of Arranger catalogues to expose to the MCP Server | `string` | **Required** | `server`                |
-| `ARRANGER_REQUEST_TIMEOUT_MS` | Timeout for requests to Arranger                                        | `number` | Optional     | `10_000`                |
-| `MCP_HOST`                    | Host URL for the MCP server                                             | `string` | Optional     | `0.0.0.0`               |
-| `MCP_PORT`                    | Port the MCP Server will listen for requests on                         | `number` | Optional     | `3100`                  |
-| `MCP_PATH`                    | Endpoint for the MCP Streamable HTTP transport                          | `string` | Optional     | `/mcp`                  |
-| `LOG_LEVEL`                   | Pino [log level](https://getpino.io/#/docs/api?id=level-1)              | `string` | Optional     | `info`                  |
+| Name                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Type     | Required     | Default                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------ | ------------------------------------------------------- |
+| `ARRANGER_BASE_URL`           | URL for the Arranger Server                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `string` | **Required** | `http://localhost:5050`                                 |
+| `ARRANGER_CATALOGUES`         | Comma-separated list of Arranger catalogues to expose to the MCP Server                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `string` | **Required** | `server`                                                |
+| `ARRANGER_REQUEST_TIMEOUT_MS` | Timeout for requests to Arranger                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `number` | Optional     | `10_000`                                                |
+| `MCP_HOST`                    | Interface the MCP Server binds to. A loopback value (`127.0.0.1`, `localhost`, `::1`) defaults both allowlists below to the localhost hostnames; any other value requires `MCP_ALLOWED_HOSTS` and `MCP_REQUEST_STATE_SECRET`.                                                                                                                                                                                                                                                                                                           | `string` | Optional     | `0.0.0.0`                                               |
+| `MCP_PORT`                    | Port the MCP Server will listen for requests on                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `number` | Optional     | `3100`                                                  |
+| `MCP_PATH`                    | Endpoint for the MCP Streamable HTTP transport                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `string` | Optional     | `/mcp`                                                  |
+| `MCP_ALLOWED_HOSTS`           | Comma-separated hostnames clients use to reach this server (e.g. `arranger-mcp,mcp.example.org`), matched against the `Host` header for DNS rebinding protection. **Required whenever `MCP_HOST` is not loopback**: the server exits at startup rather than bind a routable interface unguarded. Set it to `*` only when an upstream gateway validates `Host` on your behalf.                                                                                                                                                           | `string` | Conditional  | localhost hostnames on a loopback bind                  |
+| `MCP_ALLOWED_ORIGINS`         | Comma-separated browser origin hostnames allowed to call this server. An empty list is still a live check, not a disabled one: a request carrying no `Origin` header (every non-browser MCP client) passes, and any browser origin is refused.                                                                                                                                                                                                                                                                                          | `string` | Optional     | localhost hostnames on a loopback bind, otherwise empty |
+| `MCP_REQUEST_STATE_SECRET`    | HMAC key the server signs `execute_query` confirmations with, so the query a user approves is the query that runs. Must be at least 32 bytes; generate one with `npm run generate-secret`. **Required whenever `MCP_HOST` is not loopback**, and the server exits at startup without it: each process would otherwise sign with a key it generated for itself, so a second replica cannot verify a confirmation the first one issued and every confirmed query fails. On a loopback bind it is optional, and a per-process key is used. | `string` | Conditional  | a key generated per process, on a loopback bind only    |
+| `MCP_MAX_BODY_BYTES`          | Largest request body accepted, in bytes; anything above it is refused with `413`. The default preserves the `100kb` limit `express.json()` applied before this app served MCP on plain `node:http`, which the MCP SDK does not replace. Raise it if a legitimate payload is found to exceed it, for example an `execute_query` SQON filtering on a very large set of identifiers.                                                                                                                                                       | `number` | Optional     | `102_400` (100kb)                                       |
+| `LOG_LEVEL`                   | Pino [log level](https://getpino.io/#/docs/api?id=level-1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `string` | Optional     | `info`                                                  |
 
 ## Testing
 

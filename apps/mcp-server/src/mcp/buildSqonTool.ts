@@ -1,4 +1,4 @@
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { type McpServer } from '@modelcontextprotocol/server';
 import {
 	addFilterClause,
 	getSqonFieldOperatorDetails,
@@ -146,7 +146,7 @@ const clauseSchema = () =>
 		}),
 	]);
 
-const inputSchema = {
+const inputSchema = zod.object({
 	catalogueId: zod
 		.string()
 		.min(1)
@@ -170,7 +170,7 @@ const inputSchema = {
 		.describe(
 			'The "sqon" from an earlier build_sqon response, to add conditions to a query that already ran. Pass it back unchanged. Omit it when starting a new query.',
 		),
-};
+});
 
 const outputSchema = zod.object({
 	// Left opaque: a full SqonSchema description would bloat every tools/list response.

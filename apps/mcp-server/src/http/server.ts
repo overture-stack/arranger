@@ -1,0 +1,160 @@
+import http, { type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+
+import { hostHeaderValidation, originValidation, toNodeHandler } from '@modelcontextprotocol/node';
+import { createMcpHandler, INTERNAL_ERROR, type McpServerFactory } from '@modelcontextprotocol/server';
+
+import { TRANSPORT_REJECTION } from '#http/errorCodes.js';
+import { readCappedJsonBody } from '#http/requestBody.js';
+import { type ArrangerMcpConfig } from '#utils/config.js';
+import { createLogger } from '#utils/logger.js';
+
+const logger = createLogger('HttpServer');
+
+/** A listening MCP endpoint, and the means to stop it. */
+export type McpHttpServer = {
+	/** Exposed so a caller can read the bound address, which matters when the port was `0`. */
+	httpServer: Server;
+	/** Tears down the MCP handler and then stops accepting connections. */
+	close: () => Promise<void>;
+};
+
+/** Guards answer the request themselves when they refuse, and report whether serving may continue. */
+type RequestGuard = (req: IncomingMessage, res: ServerResponse) => boolean;
+
+/**
+ * Base URL used only to pull the path out of `req.url`.
+ *
+ * `req.url` is always just a path and query (`/mcp?x=1`), and `new URL` refuses to parse one without
+ * an absolute base to resolve it against. Only `pathname` is read, so this host is thrown away and
+ * never reaches a response.
+ *
+ * It is a fixed literal rather than `config.mcp.host` because an operator can set that to anything:
+ * a bare IPv6 address like `::1` is not a legal URL host, so building the base from it threw on
+ * every request.
+ *
+ * @remarks `.invalid` is a reserved top-level domain (RFC 2606) guaranteed never to resolve, so if
+ * this value ever leaks into a log or an error it is unmistakably a placeholder and cannot
+ * accidentally name a real server.
+ */
+const REQUEST_PATH_BASE = 'http://request.invalid';
+
+/**
+ * Renders a bind address as the authority of a URL.
+ *
+ * An IPv6 literal has to be bracketed to be a valid authority, so an unbracketed `::1` would
+ * otherwise be shown to an operator as `http://::1:3100/mcp`, which no client can dial.
+ */
+export const hostAsUrlAuthority = (host: string): string =>
+	host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+
+const writeJsonRpcError = (res: ServerResponse, status: number, code: number, message: string): void => {
+	res.writeHead(status, { 'Content-Type': 'application/json' });
+	res.end(JSON.stringify({ jsonrpc: '2.0', error: { code, message }, id: null }));
+};
+
+/**
+ * Builds the DNS rebinding guards from configuration.
+ *
+ * The Host guard is omitted only for `MCP_ALLOWED_HOSTS=*`, which is the operator asserting that an
+ * upstream gateway validates the header. The Origin guard is always installed: an empty allowlist is
+ * a live check that passes requests carrying no `Origin` (every non-browser MCP client) and rejects
+ * any browser origin.
+ */
+const createGuards = ({ allowedHosts, allowedOrigins }: ArrangerMcpConfig['mcp']): RequestGuard[] => {
+	const guards: RequestGuard[] = [];
+	if (allowedHosts === 'any') {
+		logger.warn('MCP_ALLOWED_HOSTS is "*": Host header validation is delegated to an upstream gateway.');
+	} else {
+		guards.push(hostHeaderValidation(allowedHosts));
+	}
+	guards.push(originValidation(allowedOrigins));
+	return guards;
+};
+
+/**
+ * Starts the MCP server over Streamable HTTP on plain `node:http`.
+ *
+ * `createMcpHandler` returns a web-standard `{ fetch, close, notify, bus }`, and `toNodeHandler`
+ * bridges it to `(req, res, parsedBody)`. There is no framework in between: the SDK ships the Host
+ * and Origin guards as `node:http` guards, and the only thing Express was contributing was
+ * `express.json({ limit })`, which `readCappedJsonBody` replaces.
+ *
+ * `legacy: 'reject'` serves protocol revision `2026-07-28` only. A 2025-era client is answered with
+ * an unsupported-protocol-version error naming the revision this endpoint speaks, rather than served
+ * a degraded session: per-request legacy serving cannot receive server-to-client requests, so
+ * `execute_query` could not obtain its confirmation on that path.
+ *
+ * @param config - Validated server configuration.
+ * @param serverFactory - Produces a fresh `McpServer` for each request the handler serves.
+ * @returns The listening server and a shutdown function.
+ */
+export const startMcpHttpServer = async (
+	config: ArrangerMcpConfig,
+	serverFactory: McpServerFactory,
+): Promise<McpHttpServer> => {
+	const { host, port, path, maxBodyBytes } = config.mcp;
+
+	const handler = createMcpHandler(serverFactory, {
+		legacy: 'reject',
+		// Reporting only: the handler has already answered. The common case here is a 2025-era
+		// client being turned away, which is expected traffic rather than a fault of ours, so this
+		// is a warning. Genuine handler failures surface in the response either way.
+		onerror: (err) => logger.warn({ err }, 'MCP handler rejected or reported a request'),
+	});
+	const serve = toNodeHandler(handler, {
+		onerror: (err) => logger.error({ err }, 'MCP transport adapter error'),
+	});
+	const guards = createGuards(config.mcp);
+
+	const httpServer = http.createServer((req, res) => {
+		void (async () => {
+			try {
+				// Before anything reads the body: a refused request should never cost us the payload.
+				for (const guard of guards) {
+					if (!guard(req, res)) {
+						return;
+					}
+				}
+
+				const { pathname } = new URL(req.url ?? '/', REQUEST_PATH_BASE);
+				if (pathname !== path) {
+					writeJsonRpcError(res, 404, TRANSPORT_REJECTION, `Not found. The MCP endpoint is ${path}.`);
+					return;
+				}
+
+				const { body, refusal } = await readCappedJsonBody(req, maxBodyBytes);
+				if (refusal) {
+					writeJsonRpcError(res, refusal.status, refusal.code, refusal.message);
+					return;
+				}
+
+				await serve(req, res, body);
+			} catch (error) {
+				logger.error({ err: error }, 'Unhandled error serving MCP request');
+				if (res.headersSent) {
+					// Something was already written, so the only thing left is to finish the response.
+					res.end();
+				} else {
+					writeJsonRpcError(res, 500, INTERNAL_ERROR, 'Internal server error');
+				}
+			}
+		})();
+	});
+
+	await new Promise<void>((resolve, reject) => {
+		httpServer.once('error', reject);
+		httpServer.listen(port, host, () => {
+			httpServer.removeListener('error', reject);
+			resolve();
+		});
+	});
+
+	const close = async () => {
+		await handler.close();
+		await new Promise<void>((resolve, reject) => {
+			httpServer.close((error) => (error ? reject(error) : resolve()));
+		});
+	};
+
+	return { httpServer, close };
+};

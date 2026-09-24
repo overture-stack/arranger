@@ -1,4 +1,4 @@
-import { ResourceTemplate, type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { ResourceTemplate, type McpServer } from '@modelcontextprotocol/server';
 
 import { type McpServerDeps } from '#server.js';
 

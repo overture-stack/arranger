@@ -1,20 +1,34 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { type McpServer } from '@modelcontextprotocol/server';
 import { getSqonFieldOperatorDetails } from '@overture-stack/sqon';
-import { z as zod } from 'zod';
+import type { z as zod } from 'zod';
 
 import { ArrangerRequestError, type ArrangerClient } from '#arranger/client.js';
 import { BUILD_SQON_OPERATORS, describeOperators, registerBuildSqonTool } from '#mcp/buildSqonTool.js';
+import { createConfirmationCodec } from '#mcp/requestState.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
+
+/** Fixed HMAC key so the confirmation codec is deterministic and does not warn about a per-process one. */
+const TEST_SIGNING_KEY = 'arranger-mcp-test-request-state-signing-key';
 
 const config: ArrangerMcpConfig = {
 	arrangerBaseUrl: 'https://arranger.test',
 	catalogues: ['participants', 'files'],
 	requestTimeoutMs: 10_000,
-	mcp: { host: '0.0.0.0', port: 3100, path: '/mcp' },
+	mcp: {
+		host: '0.0.0.0',
+		port: 3100,
+		path: '/mcp',
+		allowedHosts: ['arranger-mcp'],
+		allowedOrigins: [],
+		requestStateSecret: TEST_SIGNING_KEY,
+		maxBodyBytes: 102_400,
+	},
 };
+
+const requestStateCodec = createConfirmationCodec(config);
 
 const introspection = {
 	catalogId: 'participants',
@@ -46,8 +60,9 @@ type CapturedTool = {
 	name: string;
 	config: {
 		description: string;
-		// Not `ZodRawShape` / `ZodTypeAny`: both live in Zod 4's compat shim.
-		inputSchema: Record<string, zod.ZodType>;
+		// A `ZodObject` rather than a raw shape: SDK v2 deprecates the raw-shape overloads of
+		// `registerTool`, so the tool passes a wrapped schema and this parses with it directly.
+		inputSchema: zod.ZodObject<Record<string, zod.ZodType>>;
 		outputSchema: zod.ZodType;
 		title: string;
 	};
@@ -80,7 +95,7 @@ const captureTool = (client: ArrangerClient): CapturedTool => {
 		},
 	};
 
-	registerBuildSqonTool(server as unknown as McpServer, { client, config });
+	registerBuildSqonTool(server as unknown as McpServer, { client, config, requestStateCodec });
 
 	const tool = registered[0];
 	if (!tool) {
@@ -92,7 +107,7 @@ const captureTool = (client: ArrangerClient): CapturedTool => {
 /** Parses input through the registered input schema, exactly as the SDK does, then runs the handler. */
 const invoke = async (client: ArrangerClient, input: Record<string, unknown>): Promise<ToolResult> => {
 	const tool = captureTool(client);
-	return tool.handler(zod.object(tool.config.inputSchema).parse(input) as Record<string, unknown>);
+	return tool.handler(tool.config.inputSchema.parse(input) as Record<string, unknown>);
 };
 
 const buildSqon = async (input: Record<string, unknown>, client: ArrangerClient = healthyClient) => {
@@ -215,7 +230,7 @@ suite('build_sqon registration', () => {
 });
 
 suite('build_sqon input schema', () => {
-	const schema = zod.object(captureTool(healthyClient).config.inputSchema);
+	const schema = captureTool(healthyClient).config.inputSchema;
 	const parse = (input: Record<string, unknown>) => schema.safeParse(input);
 	const oneClause = (clause: Record<string, unknown>) => ({
 		catalogueId: 'participants',

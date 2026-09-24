@@ -1,22 +1,36 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
-import { type ZodType } from 'zod';
+import { type McpServer } from '@modelcontextprotocol/server';
+import { type ZodObject, type ZodType } from 'zod';
 
 import { type ArrangerClient } from '#arranger/client.js';
 import { SERVER_INSTRUCTIONS } from '#mcp/instructions.js';
 import { registerPrompts } from '#mcp/prompts.js';
+import { createConfirmationCodec } from '#mcp/requestState.js';
 import { SQON_CHEAT_SHEET } from '#mcp/sqonCheatSheet.js';
 import { registerTools } from '#mcp/tools.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
+
+/** Fixed HMAC key so the confirmation codec is deterministic and does not warn about a per-process one. */
+const TEST_SIGNING_KEY = 'arranger-mcp-test-request-state-signing-key';
 
 const config: ArrangerMcpConfig = {
 	arrangerBaseUrl: 'https://arranger.test',
 	catalogues: ['participants'],
 	requestTimeoutMs: 10_000,
-	mcp: { host: '0.0.0.0', port: 3100, path: '/mcp' },
+	mcp: {
+		host: '0.0.0.0',
+		port: 3100,
+		path: '/mcp',
+		allowedHosts: ['arranger-mcp'],
+		allowedOrigins: [],
+		requestStateSecret: TEST_SIGNING_KEY,
+		maxBodyBytes: 102_400,
+	},
 };
+
+const requestStateCodec = createConfirmationCodec(config);
 
 const serverIntrospection = {
 	catalogCount: 1,
@@ -36,8 +50,9 @@ const client = {
 
 type RegisteredTool = {
 	name: string;
-	// Not `ZodRawShape`: on Zod 4 its values are the core `$ZodType`, which has no `.description`.
-	config: { description?: string; inputSchema?: Record<string, ZodType>; title?: string };
+	// A `ZodObject` rather than a raw shape: SDK v2 deprecates the raw-shape overloads of
+	// `registerTool`, so every tool now passes a wrapped schema and reads fields off `.shape`.
+	config: { description?: string; inputSchema?: ZodObject<Record<string, ZodType>>; title?: string };
 };
 
 const registerAllTools = (): RegisteredTool[] => {
@@ -47,7 +62,7 @@ const registerAllTools = (): RegisteredTool[] => {
 			tools.push({ name, config: toolConfig } as RegisteredTool);
 		},
 	};
-	registerTools(server as unknown as McpServer, { client, config });
+	registerTools(server as unknown as McpServer, { client, config, requestStateCodec });
 	return tools;
 };
 
@@ -58,7 +73,7 @@ const renderQueryArrangerPrompt = async (): Promise<string> => {
 			prompts.push({ name, callback } as (typeof prompts)[number]);
 		},
 	};
-	registerPrompts(server as unknown as McpServer, { client, config });
+	registerPrompts(server as unknown as McpServer, { client, config, requestStateCodec });
 
 	const prompt = prompts[0];
 	if (!prompt) {
@@ -111,7 +126,7 @@ suite('execute_query guidance', () => {
 	});
 
 	test('tells the caller where the sqon argument comes from', () => {
-		const sqon = executeQuery().config.inputSchema?.sqon;
+		const sqon = executeQuery().config.inputSchema?.shape.sqon;
 		assert.ok(sqon?.description?.includes('build_sqon'));
 	});
 });
