@@ -40,8 +40,8 @@ const OPERATOR_DESCRIPTIONS: Record<(typeof SQON_FIELD_OPS)[number], string> = {
 	in: 'Field matches any of these values.',
 	lt: 'Field is less than this value.',
 	lte: 'Field is less than or equal to this value.',
-	'not-in': 'Field does not match any of these values.',
-	'some-not-in': 'At least one nested item is excluded (multi-valued, per-item).',
+	'not-in': "Field does not match any of these values. On a nested field, at least one nested item's value is outside the list.",
+	'some-not-in': "Field does not match any of these values. On a nested field, no nested item's value is in the list.",
 	wildcard: 'One or more fields contain this substring pattern.',
 };
 

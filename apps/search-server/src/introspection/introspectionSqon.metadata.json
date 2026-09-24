@@ -25,14 +25,14 @@
 			},
 			{
 				"applicableTo": "all",
-				"description": "Field does not match any of these values.",
+				"description": "Field does not match any of these values. On a nested field, at least one nested item's value is outside the list.",
 				"fieldRef": "fieldName",
 				"op": "not-in",
 				"valueType": "string | number | boolean | Array<string | number | boolean>"
 			},
 			{
 				"applicableTo": "all",
-				"description": "At least one nested item is excluded (multi-valued, per-item).",
+				"description": "Field does not match any of these values. On a nested field, no nested item's value is in the list.",
 				"fieldRef": "fieldName",
 				"op": "some-not-in",
 				"valueType": "string | number | boolean | Array<string | number | boolean>"

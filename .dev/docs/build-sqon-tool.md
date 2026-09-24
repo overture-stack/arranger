@@ -215,7 +215,7 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 | `lt`          | v1         | yes        | Scalar | `fieldName`    | `number`                          | `range.lt`                            |
 | `lte`         | v1         | yes        | Scalar | `fieldName`    | `number`                          | `range.lte`                           |
 | `between`     | v1         | yes        | Scalar | `fieldName`    | `[number, number]`                | `range.gte` + `range.lte`             |
-| `some-not-in` | v2         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | nested `bool.must_not` per value      |
+| `some-not-in` | v2         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must_not` around one `nested.terms` (universal exclusion, differs from `not-in` only when nested; see tech-debt) |
 | `all`         | v2         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must` per value (all required)  |
 | `wildcard`    | v2         | yes        | Text   | `fieldNames`   | `string`                          | one `wildcard` query per field, OR'd  |
 | `fuzzy`       | v2.1       | **no**     | Text   | `fieldNames`   | `string`                          | `multi_match` with `fuzziness:"AUTO"` |

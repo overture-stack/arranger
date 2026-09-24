@@ -51,9 +51,9 @@ Every filter clause needs an operator. The table below maps what you want to exp
 | I want to express...                                          | Operator      |
 | ------------------------------------------------------------- | ------------- |
 | Field matches any of these values                             | `in`          |
-| Field does not match any of these values                      | `not-in`      |
+| Field does not match any of these values (on a nested field: at least one nested item's value is outside the list) | `not-in`      |
 | Field contains all of these values (multi-valued field only)  | `all`         |
-| At least one nested item is excluded (multi-valued, per-item) | `some-not-in` |
+| Field does not match any of these values (on a nested field: no nested item's value is in the list) | `some-not-in` |
 
 ```json
 { "op": "in",     "content": { "fieldName": "status",   "value": ["active", "pending"] } }
@@ -64,6 +64,27 @@ Every filter clause needs an operator. The table below maps what you want to exp
 **`in` vs `not-in` vs wrapping in `not`**
 
 `not-in` is the right choice for excluding values: it maps directly to an Elasticsearch `must_not` terms query and expresses the intent clearly. Reserve the combination-level `not` operator for negating a whole sub-SQON or an operator that has no built-in negated form (range operators, for example). Using `not { in: [...] }` where `not-in` would do is technically equivalent but harder to read.
+
+**`not-in` vs `some-not-in`: identical on a flat field, opposite quantifiers on a nested one**
+
+On a field with no nesting, `not-in` and `some-not-in` compile to the same query: there is only one
+value to check, so "at least one" and "none" collapse into the same thing. The distinction only
+exists for a multi-valued field nested under a repeating object (an array of sub-documents), where
+each clause quantifies over the nested items differently:
+
+- `not-in`: **at least one** nested item's value is outside the list (existential). A document with
+  one matching item and one non-matching item still passes.
+- `some-not-in`: **no** nested item's value is in the list (universal exclusion). A document with
+  even one matching item is excluded.
+
+**To express "every nested item's value is in the list"** (universal containment, the opposite of
+`some-not-in`), wrap `not-in` in a combination-level `not`: `not(not-in(field, values))`. This only
+gives that meaning on a nested field; on a flat field the query still emits a double negation
+(`must_not` around `must_not` around the `terms` clause) rather than being rewritten to a plain
+`terms` query, but the two negations cancel and match the same documents as `in` would
+(existential: "matches any of these values"), which is a different, weaker guarantee than universal
+quantification. Do not use this idiom on a flat field expecting universal quantification, since
+there is nothing to quantify over there.
 
 ### Range operators: for numeric and date fields
 
