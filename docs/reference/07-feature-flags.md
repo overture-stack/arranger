@@ -11,6 +11,23 @@ For numeric query-validation limits (`GRAPHQL_MAX_ALIASES`, `GRAPHQL_MAX_DEPTH`,
 
 ---
 
+## How flag values are read
+
+Every flag's environment variable is read by one rule, except `ENABLE_ACCESS_CONTROL`, which has a stricter rule of its own (see [Access control](#access-control)):
+
+| Value | Reads as |
+| --- | --- |
+| `true` or `1` | `true` |
+| `false` or `0` | `false` |
+| Unset, empty, or whitespace only | The flag's default |
+| Anything else | The flag's default, with a startup warning naming the value (event `config.boolean_value_ignored`) |
+
+Values are trimmed and read in any case, so `TRUE`, and `true` with spaces around it, both count as `true`. Word pairs such as `yes`/`no` and `on`/`off` are not accepted, since `no` and `on` are one transposition apart and mean opposites. An ignored value leaves the flag at its default, which can leave a hardening flag off while you believe it is on, so read the startup warnings after changing a flag.
+
+In `base.json`, give a flag a JSON boolean, `true` or `false`. This value rule applies to environment variables only.
+
+---
+
 ## Security hardening
 
 These two flags close specific, identified attack surface. Both default to the permissive setting for backward compatibility, except where noted, so review them explicitly before a production deployment.
@@ -30,8 +47,8 @@ These flags turn off a feature entirely. None carry a security recommendation ei
 
 | Flag | Env var | Default | What it does |
 | --- | --- | --- | --- |
-| `disableDownloads` | `DISABLE_DOWNLOADS` | `false` | Disables the TSV/CSV file download endpoint for a catalogue. |
-| `disableFilters` | `DISABLE_FILTERS` | `false` | Disables SQON filter support on queries for a catalogue. |
+| `disableDownloads` | `DISABLE_DOWNLOADS` | `false` | Disables a catalogue's `/download` endpoint, which then answers `404` for every method and path beneath it. |
+| `disableFilters` | `DISABLE_FILTERS` | `false` | Drops the client's filter for a catalogue: a request whose GraphQL variables carry `filters` or `sqon` is refused with `400`, and a filter written inline in the query, or sent as an export's `sqon`, is left out of the search query, though aggregations on nested fields can still apply it to their buckets. The server-side filter still applies. |
 | `disablePlayground` | `DISABLE_GRAPHQL_PLAYGROUND` | `false` | Disables the GraphQL Playground UI at the catalogue's GraphQL endpoint. |
 | `enableSets` | `ENABLE_SETS` | `false` | Enables saved Sets (create/query saved document groupings). Off by default because the feature is incomplete: only creation exists today, with no list/delete/update; see the Sets roadmap item for status before enabling in a real deployment. |
 
@@ -51,6 +68,23 @@ Unlike the flags above, these apply to the whole server process, not to an indiv
 
 ---
 
+## Access control
+
+`ENABLE_ACCESS_CONTROL` says whether the server applies access control. It applies to the whole server and cannot be set per catalogue.
+
+| `ENABLE_ACCESS_CONTROL` | Effect | Startup log |
+| --- | --- | --- |
+| Unset | No access control, unless a host application passes its own `filters` option, which then applies | `access control source: defaulted (unset)`, or `access control source: configured by host` when such filters apply |
+| `false` or `0` | No access control, stated explicitly: every catalogue's router is given `includeEverything`, the filter that keeps every document | `access control source: explicit (set to false)` |
+| `true` or `1` | Requires the Usher adapter and its configuration, which this build does not include, so the server refuses to start | `access_control.startup_refused`, saying so |
+| Anything else, an empty value included | The server refuses to start | `access_control.startup_refused`, quoting the value |
+
+Values are trimmed and read in any case. Unlike every other flag on this page, an unrecognized value refuses startup instead of taking the default, since a mistyped value taking the default could leave access control off unnoticed.
+
+A host application that starts the server with its own `filters` option cannot also set `ENABLE_ACCESS_CONTROL=false`: the two contradict each other, so the server refuses to start. Leave the variable unset to apply those filters.
+
+---
+
 ## Where these are declared
 
-The canonical property names live in `modules/types/src/configs/constants.ts` (`configArrangerFeatureFlagProperties` for the per-catalogue group, `configRuntimeFeatureFlagProperties` for the server-level group). The env var to property mapping is wired in `apps/search-server/src/configs/fromEnv/localEnvs.ts`. If you're adding a new flag, both files, plus `apps/search-server/.env.schema` and `configTemplates/configs.json.schema`, need to agree.
+The canonical property names live in `modules/types/src/configs/constants.ts` (`configArrangerFeatureFlagProperties` for the per-catalogue group, `configRuntimeFeatureFlagProperties` for the server-level group). The env var to property mapping is wired in `apps/search-server/src/configs/fromEnv/localEnvs.ts`. If you're adding a new flag, both files, plus `apps/search-server/.env.schema` and `configTemplates/configs.json.schema`, need to agree. `ENABLE_ACCESS_CONTROL` is read and decided in `apps/search-server/src/configs/fromEnv/enableAccessControl.ts` instead, and is not a catalogue property.

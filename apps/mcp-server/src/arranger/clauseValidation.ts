@@ -131,8 +131,8 @@ const validateClause = (clause: SqonClauseInput, context: CatalogueQueryContext)
 	const fieldType = context.fields[fieldName]?.type;
 
 	// A range bound on a non-date field is numeric. A quoted number passes both the input schema
-	// and the SQON schema, then gets compared lexicographically by ES/OS, where "9" > "70" is true.
-	// That returns the wrong documents silently, which is worse than an error.
+	// and the SQON schema, then relies on ES/OS numeric coercion, which a mapping can turn off.
+	// Rejecting it here is safer than depending on a per-deployment mapping setting.
 	if (RANGE_OPERATORS.has(canonicalOperator) && fieldType !== 'date') {
 		const bounds = Array.isArray(value) ? value : [value];
 		if (bounds.some((bound) => typeof bound !== 'number')) {

@@ -26,17 +26,17 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 ## Arranger runs without Usher, and the dependency direction guarantees it
 
 - **Only `apps/search-server` depends on `usher-adapter`.** `modules/graphql-router`, `modules/types` and `modules/sqon` never list it in their `package.json`, which a grep can check.
-- **A deployment with no Usher changes nothing below the server.** The server mounts no bridge, `getServerSideFilter` defaults to `getDefaultServerSideFilter`, which returns a constraint that excludes nothing, and every other layer runs exactly as it does with Usher.
+- **A deployment with no Usher changes nothing below the server.** The server mounts no bridge, the router given no `getServerSideFilter` applies `includeEverything`, which returns a filter that keeps every document, and every other layer runs exactly as it does with Usher.
 
 **Name a module or directory for what always runs, not for who might call it.** The directory now called `accessControl/` fails that test. Every file in it is required by an Arranger with no access control at all: the default constraint, the `disableFilters` guard, the middleware registry holding that guard, and the test fixtures. "Access control" is reserved for what depends on Usher, which is `usher-adapter` alone.
 
 ## One filter, three vocabularies
 
-| Layer | The filter a search asks for | The filter the deployment imposes | The value that excludes nothing |
+| Layer | The filter a search asks for | The filter the deployment imposes | The value that keeps every document |
 |---|---|---|---|
 | SQON | a SQON | a SQON | `SqonBuilder.matchEverything()` |
-| Filtering | the requested filter | the constraint | a constraint that excludes nothing |
-| GraphQL layer | `clientSideFilter` | the server-side filter: `getServerSideFilter`, `GetServerSideFilterFn` | `getDefaultServerSideFilter()` |
+| Filtering | the requested filter | the constraint | a filter that keeps every document |
+| GraphQL layer | `clientSideFilter` | the server-side filter: `getServerSideFilter`, `GetServerSideFilterFn` | `includeEverything(context)` |
 
 **"Server-side" and "client-side" are GraphQL-layer words.** They say who supplied a filter, and only the layer handling requests knows that. Below it, nothing is supplied by anyone. There are filters, and the rule that combines them.
 
@@ -46,19 +46,29 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 
 - **Access control:** behaviour that depends on Usher. Only `usher-adapter` has any. Composing filters happens with or without Usher, so it is filtering and not access control.
 - **Constraint:** the filter every search is intersected with, supplied by the deployment. A constraint can only narrow what a search returns, never widen it. `compileFilter` requires one on every call and refuses one with no clauses.
-  **Its TSDoc has to say this outright.** The constraint used when nothing is configured matches every document, and a reader who meets that value first will take "constraint" to mean something that permits. It is still a constraint. It excludes nothing.
+  **Its TSDoc has to say this outright.** The constraint used when nothing is configured matches every document, and a reader who meets that value first will take "constraint" to mean something that permits. It is still a constraint, one that keeps every document.
+- **`includeEverything`:** the router's filter callback that returns `matchEverything`'s SQON, `not[ in _id [] ]`, whatever the context. It is what a router given no `getServerSideFilter` applies, and what a callback returns as `includeEverything(context)` to allow one request without restricting it. It is a GraphQL-layer name because it is a callback taking the request context; `matchEverything` is the value it returns. `getDefaultServerSideFilter` is its deprecated alias, the same function object.
 - **`matchEverything`:** the SQON matching every document, `not[ in _id [] ]`, which is the negation of `matchNothing('_id')`. It takes no field name, because the field has no effect: an empty value list matches nothing on any field, including one that a `nestingPrefix` has turned into a path that does not exist. It carries a leaf, so `reduceSqon` never prunes it down to an empty combination, and `compileFilter` accepts it where it refuses a leafless one. Its test must cover that the reducer leaves it intact: as a `SqonBuilder` value it is reduced on construction, which the router's hand-written literal never was.
   **It is the one value built to pass `compileFilter`'s guard, so reaching for it by mistake fails open.** The same mistake with `matchNothing` fails closed and gets noticed. Its TSDoc must say so, so that it does not read as `matchNothing`'s harmless twin.
 - **`matchNothing`:** the SQON matching no document, `in <fieldName> []`. The encoding every deny must use.
+- **Recorded access-control decision:** what a router records on every request context it builds, under a registry symbol: the filter callback it applies and its source. The source is one of two values, and the startup log reports one of three states, because one state is read from the callback rather than recorded:
+
+  | State, as logged | Recorded source | What the router was given |
+  |---|---|---|
+  | `filter configured` | `configured` | a callback other than `includeEverything` |
+  | `none (explicit)` | `configured` | `includeEverything` itself |
+  | `none (defaulted)` | `defaulted` | nothing, so it applies `includeEverything` |
+
+  **"Explicit" is a report, never a decision.** It is recognized by identity at logging time, so a wrapper around `includeEverything` reads as `filter configured`, and nothing downstream branches on it. Exports branch only on whether a record is present at all.
 - **Requested filter:** the filter a search asked for. The proposed name for `compileFilter`'s other input; not yet settled.
-- **Server-side filter:** the GraphQL layer's name for the constraint, as the deployment supplies it. Correct in the router's API (`getServerSideFilter`, `getDefaultServerSideFilter`, `GetServerSideFilterFn`) and nowhere below it.
+- **Server-side filter:** the GraphQL layer's name for the constraint, as the deployment supplies it. Correct in the router's API (`getServerSideFilter`, `includeEverything`, `getDefaultServerSideFilter`, `GetServerSideFilterFn`) and nowhere below it.
 
 Words to avoid, and what to say instead:
 
 | Avoid | Why | Say instead |
 |---|---|---|
-| allow-all | Reads as permitting, which contradicts "constraint" | `matchEverything`, or "a constraint that excludes nothing" |
-| empty constraint | An empty combination is exactly what `compileFilter` refuses | "a constraint that excludes nothing" |
+| allow-all | Reads as permitting, which contradicts "constraint" | `matchEverything`, or "a filter that keeps every document" |
+| empty constraint | An empty combination is exactly what `compileFilter` refuses | "a filter that keeps every document" |
 | matchAll | `SqonBuilder.all(fieldName, values)` already means "the field contains all of these values" | `matchEverything`, the opposite of `matchNothing` |
 | sentinel, for this value | Names a property of `matchEverything` as though it were a second thing | `matchEverything`, stating the leaf property where it matters |
 
@@ -73,7 +83,7 @@ None of these has been made yet.
 | Rename `graphql-router/src/accessControl/` to `filtering/` | No. Reached only through the package's private `#accessControl/` imports |
 | Move `compileFilter` from `mapping/utils/` into `filtering/` | No. Nothing in `mapping/` calls it |
 | Rename `enforceAccessControl` to `enforceFilterPolicy` | No. Internal |
-| Add `SqonBuilder.matchEverything()`, and make `getDefaultServerSideFilter` a wrapper returning it | No. Additive in `sqon`, and the router's published name is unchanged |
+| Add `SqonBuilder.matchEverything()`, and make `includeEverything` return it | No. Additive in `sqon`, and the router's published names are unchanged |
 | Rename `compileFilter`'s parameters to the filtering vocabulary | No. Internal, and marked with a TODO in the file |
 | Move `GetServerSideFilterFn` from `modules/types` to the router | **Yes**, for anyone importing it from `@overture-stack/arranger-types/configs` |
 | Create `modules/usher-adapter` | No. Additive |

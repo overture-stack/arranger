@@ -342,14 +342,15 @@ SQON already supports this structurally: a combination node's children can be le
 `reduceSqon` runs automatically inside `SqonBuilder`, and therefore inside `build_sqon`/`combine_sqons`. It does not run on a raw SQON sent straight to `execute_query`.
 
 - **`not` wraps one item in an array; it does not rewrite the operator.** A negated clause is `{"op":"not","content":[<leaf>]}`, never something like `{"op":"not-gt", ...}`.
-- **Two clauses on the same field and operator get merged, not kept separate.** The merge rule depends on the combinator:
-    - `in` merges under any combinator.
-    - `not-in`/`some-not-in`/`all` merge under `and`/`not`, but stay separate under `or` (merging would change the meaning).
-    - `gt`/`gte` keeps the larger value under `and`/`not`, the smaller under `or`.
+- **Two clauses on the same field and operator may be merged into one.** The merge rule depends on the combinator:
+    - `in` merges under `or` only. Under `and` the two clauses mean an intersection, so they stay separate.
+    - `not-in`/`some-not-in`/`all` merge under `and` only, and stay separate under `or` (merging would change the meaning).
+    - `gt`/`gte` keeps the larger value under `and`, the smaller under `or`.
     - `lt`/`lte` is the mirror image.
+    - Nothing merges under `not`, since a `not`'s children are each negated independently.
     - `between` never merges.
     - `wildcard` never merges either, so two text searches on the same fields stay as two clauses.
-    - Range bounds compare numerically, by parsed timestamp when both are date strings, or lexicographically when both are strings that do not parse as dates. Two bounds with no ordering between them (a boolean, an array, or one of each type) are kept as separate clauses. Fixed 2026-08-25: date bounds previously went through `Math.max`/`Math.min`, yielding `NaN` and serializing to `null`, so an ordinary date narrowing produced a filter with no bound.
+    - Range bounds merge only when both are numbers, both are `YYYY-MM-DD` dates, or the two are identical. Any other pair is kept as two clauses: quoted numbers, date math, other date formats, datetimes, a boolean, an array, or one bound of each type, since how a string bound sorts depends on the field's mapping. A datetime narrowing therefore reports one more filter than a `YYYY-MM-DD` one. Fixed 2026-08-25: date bounds previously went through `Math.max`/`Math.min`, yielding `NaN` and serializing to `null`, so an ordinary date narrowing produced a filter with no bound.
     - Example: two clauses for "age > 50" and "age > 70" under `and` come back as one `gt: 70` clause, not two. Only the `summary` string shows this happened.
 - **A group with one item gets unwrapped**, and an empty group gets dropped, unless it carries a `pivot`.
 - **`not` groups never get flattened into a parent group.**

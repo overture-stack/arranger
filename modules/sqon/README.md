@@ -117,7 +117,12 @@ combination type:
   already evaluates two `terms` clauses under `and` as an intersection on its own, so nothing is lost.
 - `not-in`/`some-not-in`/`all` merge under `and` only, for the same intersecting reason.
 - `gt`/`gte`/`lt`/`lte` merge under both, keeping whichever bound is correct for the combination
-  (the stricter bound under `and`, the looser one under `or`).
+  (the stricter bound under `and`, the looser one under `or`), when both bounds are numbers, both
+  are `YYYY-MM-DD` dates, or the two are identical. Any other pair, such as quoted numbers, date
+  math, other date formats or datetimes, is kept as two clauses: how a string bound sorts depends on
+  the field's mapping, which the reducer cannot see, and applying both clauses always gives the same
+  result. Merging only saves a clause: a bound in any date format is accepted, and reaches the search
+  engine unchanged.
 - `between` is never merged: always kept as separate clauses, under any combination.
 - Nothing merges under `not`: a `not`'s children are negated independently, so merging them the way
   `and`'s children merge would need an operator flip (two `not-in` clauses would need to become an

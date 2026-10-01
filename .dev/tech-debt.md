@@ -237,6 +237,15 @@ A second, quieter half: the two Jest workspaces (`integration-tests/import`, `mo
 Two consumers need updating in the same pass: `dev:check` (which just calls `test:dev`) and `DEVELOPMENT.md:83`. `AGENTS.md:119` also documents `test:dev` and is an instruction file, so that line is the developer's edit rather than an incidental one. No CI or Jenkins configuration references `test:dev`, so nothing outside the repo breaks. Worth doing alongside the `test:watch` no-op entry above, which is the same script surface with the same root cause.
 **Standalone:** yes; a package.json change plus two documentation lines, with the `integration-tests/import` placement as the only real decision
 
+### Only graphql-router has a test keeping `removeComments` off in its release build
+
+**File:** `modules/components/tsconfig.release.json`, `modules/types/tsconfig.release.json`, `modules/sqon/tsconfig.release.json`
+**Severity:** low
+**Kind:** build configuration
+**Issue:** The published declarations of components and types carry TSDoc only because `removeComments` is `false` in their release configs, and nothing would notice if it flipped back; graphql-router's `getDefaultServerSideFilter.test.ts` pins its own. `modules/sqon/tsconfig.release.json` is read by no build, since sqon's build uses `tsconfig.json`. Keeping comments also keeps them in graphql-router's emitted JavaScript.
+**Fix:** Add a declarations check like graphql-router's for components and types, delete or wire sqon's unused release config, and emit declarations separately if the JavaScript should stay comment-free.
+**Standalone:** yes
+
 ## apps/mcp-server
 
 ### Arranger introspection is re-fetched on every call, with no cache and no sharing between callers
@@ -302,16 +311,32 @@ Partially resolved 2026-09-01: `express` and `cors` are no longer declared by `a
   **Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
   **Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
 
-### `get_catalogue_fields` does not validate `catalogueId` against the configured allowlist
+### `get_catalogue_fields` and `execute_query` must validate `catalogueId` before any request
 
-**Status (2026-08-10):** narrowed, not closed. `build_sqon` shipped with the check, so the entry no longer covers all three catalogue-taking tools: `get_catalogue_fields` and `execute_query` still forward an unchecked `catalogueId`.
-
-**File:** `apps/mcp-server/src/mcp/tools.ts` (`get_catalogue_fields` tool handler); `apps/mcp-server/src/mcp/executeQueryTool.ts`
-**Severity:** medium (OWASP A03: Injection; unvalidated ID forwarded into URL path; also information disclosure if Arranger hosts undeclared catalogues)
+**File:** `apps/mcp-server/src/mcp/tools.ts` (`get_catalogue_fields` tool handler); `apps/mcp-server/src/mcp/executeQueryTool.ts`; `apps/mcp-server/src/arranger/client.ts` (`getUrl`)
+**Severity:** high (input validation; fix before the next release)
 **Kind:** missing input validation
-**Issue:** The `get_catalogue_fields` tool accepts any non-empty string as `catalogueId` and forwards it directly to `client.getCatalogueIntrospection(catalogueId)`, which calls `GET /introspection/{catalogueId}` on Arranger. The `ARRANGER_CATALOGUES` config declares the intended allowlist, but the tool never checks it. An adversarial agent can probe arbitrary strings: either to enumerate undeclared catalogues on the Arranger instance, or to attempt path traversal in the constructed URL (e.g. `../sqon`).
-**Fix:** `resolveCatalogue` in `apps/mcp-server/src/mcp/buildSqonTool.ts` is the reference implementation: it checks membership in `config.catalogues` before any HTTP call, so an unvalidated identifier never reaches Arranger's URL path, and returns a message naming the configured catalogues instead. Lift it into a shared module (`arranger/` is the right home, as it takes a client and a config and no MCP surface) and call it from all three tools. The config is already available via `deps` in `registerTools`. Doing it as a lift rather than three copies also closes the entry below in the same pass, since `resolveCatalogue` handles both problems together.
-**Standalone:** yes; extracting one existing function and calling it from two more handlers; no new dependencies
+**Issue:** Every tool that takes a `catalogueId` must check it against `config.catalogues` before making any request to Arranger, and the introspection URL must carry the identifier encoded as a single path segment. `build_sqon` already checks through `resolveCatalogue`; `get_catalogue_fields` and `execute_query` do not yet.
+**Fix:** Lift `resolveCatalogue` from `apps/mcp-server/src/mcp/buildSqonTool.ts` into a shared module (`arranger/` is the right home, as it takes a client and a config and no MCP surface) and call it first in all three tools, before any request, including `execute_query`'s server introspection call. In `client.ts`, encode the identifier with `encodeURIComponent` when building the introspection URL, so a caller that skips the check still sends a single path segment. Test that an identifier outside the configured list makes no HTTP request at all.
+**Standalone:** yes; extracting one existing function and calling it from two more handlers, plus one encoding change in `client.ts`; no new dependencies
+
+### `build_sqon` must compose a new same-field `in` clause under the requested `combination`
+
+**File:** `apps/mcp-server/src/mcp/buildSqonTool.ts` (`mergeIntoExistingInClause`)
+**Severity:** high (results must match the composition the call asked for)
+**Kind:** correctness defect
+**Issue:** When `existingSqon` reduces to a group whose `op` differs from the call's `combination`, a new same-field `in` clause must be composed under `combination` beside that group, never merged into the group's existing clause.
+**Fix:** `mergeIntoExistingInClause` merges only into a group whose `op` equals the caller's `combination`. Add a test with an `existingSqon` of `and` wrapping one `or`, plus a same-field `in` clause under `and`, expecting both conditions to apply.
+**Standalone:** yes; one added equality check in one function
+
+### `build_sqon`'s cardinality gate refuses safe `or`-combined `in` calls
+
+**File:** `apps/mcp-server/src/mcp/buildSqonTool.ts` (`findInClauseCardinalityConflicts`)
+**Severity:** medium (false positive: a legitimate, unambiguous call is refused)
+**Kind:** correctness defect
+**Issue:** `findInClauseCardinalityConflicts` takes `clauses`, `existingSqon`, and `fields`, with no `combination` parameter, so it can't distinguish an `and`-combined call from an `or`-combined one. Two same-field `in` clauses are genuinely ambiguous under `and` (the field's cardinality decides whether "matches either" or "matches both" is intended), which is the case this gate exists to catch. Under `or`, there is no competing "matches both" reading to be ambiguous with, so refusing there is a false positive against a caller who did nothing wrong.
+**Fix:** Pass `combination` into the gate and skip the same-field `in` check when `combination === 'or'`.
+**Standalone:** yes; one added parameter and one early-return check
 
 ### `integration-tests/mcp-server` is never typechecked
 
@@ -432,6 +457,15 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Fix:** Decide the intended channel. If server-level as documented, destructure `enableAdmin` in `server.ts` and thread it to the catalogue configs; if per-catalogue, move the env read under `catalogs.fromEnv` in `localEnvs.ts` and correct `07-feature-flags.md:44` to exclude it from the server-level group. Either way, add the flag-toggles-behaviour test proposed elsewhere in this file, and extend it beyond `configArrangerFeatureFlagProperties`, since `enableAdmin` sits outside that group. Note the `FIXME` already on `constants.ts:20` saying this flag must be removed and the facets-versus-numeric-aggs coupling untangled, which may make removal the correct answer rather than repair.
 **Standalone:** yes.
 
+### Feature flags set in a catalogue's JSON files skip boolean parsing
+
+**File:** `apps/search-server/src/configs/fromFiles/fileHandlers.ts` (file values merged over `catalogs.fromEnv`)
+**Severity:** medium
+**Kind:** configuration correctness
+**Issue:** A flag from the environment goes through `stringToBool`, so only `true`, `false`, `1` and `0` count and anything else is ignored with a warning. The same flag set in a catalogue's JSON (`disableFilters`, `disableDownloads`, `enableSets` and the rest) is merged over the environment's value without any parsing, and its consumers test it for truthiness. So the string `"false"` turns a flag on, as does any other non-empty string or non-zero number, and nothing warns.
+**Fix:** Parse every boolean flag read from catalogue files with the same rule as the environment, in `getConfigFromFiles` or its normalization step: keep the default and warn for any unrecognized value. Test each kind of value per flag: `true`, `false`, `1`, `0`, the string `"false"`, and an unrecognized string.
+**Standalone:** yes
+
 ### No unit tests for `fromEnv/` env var aggregation
 
 **Files:** `apps/search-server/src/configs/fromEnv/` (3 files)
@@ -525,6 +559,24 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Issue:** The loader passes `id: datum._id` to `esClient.index()`, so a fixture's `_id` becomes the Elasticsearch document id. Two distinct documents in `model_centric_1.data.json` both declare `_id: "sagsdhertdfdgsdfgsdfg"` (lines 5 and 45), so the second overwrites the first and the index holds three documents rather than the four the file appears to define. Nothing fails or warns: aggregation, sort, and pagination tests run against a smaller set than the fixture reads as, and one document's field values are never exercised at all.
 **Fix:** Give every fixture document a distinct `_id`. Expect assertions calibrated against the collapsed set to need updating in the same pass, which is the useful part: those are the tests whose real coverage was smaller than it appeared. A duplicate-id check over the fixture files at load time would stop it recurring.
 **Standalone:** yes, though the assertion updates make it larger than the fixture edit alone
+
+### The image's readiness probe never runs, so `/ready` ignores the search engine's state
+
+**File:** `apps/search-server/index.ts`; `apps/search-server/src/server.ts:93`; `apps/search-server/src/availability/engineReachability.ts`
+**Severity:** medium
+**Kind:** operability
+**Issue:** `startEngineProbe` polls the engine only when given a search client, and the image's entry point calls `arrangerServer({ currentDirectory })` without one, building its clients per catalogue later. So in the image the probe returns early, `engineReachable` stays true, and readiness reflects only the catalogue statuses decided at startup.
+**Fix:** Give the probe a client the image actually builds, for example the first catalogue's, and treat an authentication failure as reachable but misconfigured rather than unreachable.
+**Standalone:** yes
+
+### `PING_MS=0` makes the engine probe poll continuously
+
+**File:** `apps/search-server/src/availability/engineReachability.ts:60`
+**Severity:** low
+**Kind:** configuration correctness
+**Issue:** `PING_MS` is honoured as given, `0` included, and `startEngineProbe` passes it straight to `setInterval`, so a server given a search client with `PING_MS=0` probes the engine about once a millisecond.
+**Fix:** Refuse or floor a zero or negative interval at the config seam, with a warning naming the value.
+**Standalone:** yes
 
 ## docs [URGENT: reminder every session]
 
@@ -970,6 +1022,8 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 
 ### Download route body is brittle
 
+**Status:** narrowed, not closed. Items 3 and 5 of this entry's list are done, and item 4 in part. `dataStream` validates the parsed `params` itself, one file per request, and refuses a broken rule before any output. `/download` answers an invalid request with `400` and a server fault with `500`, each as fixed plain text, with the detail logged on the server only, so a caller can tell its own mistake from a server fault but not which rule it broke; the server log names the rule. The file name is set through Express's `res.attachment`, which encodes it. Items 1 and 2 are open: `params` still arrives as JSON text in a form field, and callers still send full column descriptors.
+
 **File:** `modules/graphql-router/src/download/index.js` (the `download` router)
 **Severity:** medium
 **Kind:** design-smell / reliability
@@ -1112,6 +1166,7 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Kind:** security
 **Issue:** `disableDownloads` is a first-class feature flag (`modules/types/src/configs/constants.ts`), read from the environment (`apps/search-server/src/configs/fromEnv/localEnvs.ts:39`) and documented as functional in both `modules/graphql-router/README.md:86` ("Disable the TSV/file download endpoint") and `docs/reference/07-feature-flags.md:33`. But `router.ts` mounts the download router unconditionally: `router.use('/download', downloadRoutes({ enableDebug }))`, confirmed directly, no reference to `disableDownloads`/`DISABLE_DOWNLOADS` anywhere in the file. Every sibling flag in the same feature-flag group is actually wired (`disableFilters` → `accessControl`, `disableGraphQLIntrospection`/`disablePlayground`/`enableGraphQLBatching` → `graphqlRoutes.ts`); this is the only one that isn't. Confirmed via repo-wide grep: `disableDownloads: true` never appears anywhere in the monorepo outside a false-only assertion in two integration-test files.
 **Fix:** Gate the `/download` mount (or the router's own `POST /` handler) on the flag, returning 404/403 when set. Add a test (`disableDownloads.test.ts`) asserting the endpoint actually refuses when the flag is on, mirroring `disableFilters.test.ts`/`disablePlayground.test.ts`.
+**Fixed.** The router mounts `refuseDisabledDownloads` in place of the download routes when the flag is set, so `/download` answers 404, pinned by `download/disableDownloads.test.ts`.
 **Standalone:** yes.
 
 ### `stringToBool` resolves every unrecognized value to the permissive side, so hardening flags silently fail to apply
@@ -1127,9 +1182,9 @@ DISABLE_X="True " -> false      DISABLE_X=" true"  -> false
 ```
 
 A single trailing space is trivially produced by a Helm templated value or a `.env` line. `DISABLE_FILTERS=yes` leaves filtering enabled; `DISABLE_GRAPHQL_INTROSPECTION=on` leaves introspection open. There is no warning at any level and the boot log offers no way to tell which way a flag resolved. `parseSearchEngine`, two lines away in the same file, already warns on an unrecognized value, so the correct pattern exists in the codebase and simply was not applied here.
-**Fixed.** Both coercers now trim, and `stringToBool` accepts `true`/`1`/`yes`/`on` and `false`/`0`/`no`/`off` case-insensitively. Anything else warns, naming the value, and resolves to `false`.
+**Fixed.** Both coercers now trim, and `stringToBool` accepts `true`/`1` and `false`/`0` case-insensitively, plus the booleans themselves and the numbers `1` and `0`. A value that is blank once trimmed counts as unset and takes the fallback silently. Any other value, `null` included, is ignored: it warns under `config.boolean_value_ignored`, naming the value, and the flag's default applies. Word pairs such as `yes`/`no` and `on`/`off` stay unrecognized on purpose: `no` and `on` are one transposition apart and mean opposites, so accepting both turns a slip into an inverted flag instead of a warning.
 
-**Resolving to the restrictive side was proposed here and deliberately not taken.** An unrecognized `DISABLE_*` value hardening itself to `true` silently disables downloads or filters in production, which is an outage with a non-obvious cause; the warning gives the operator the signal without that. The value the flag resolves to is unchanged, so no deployment behaves differently except one whose flag was already being misread.
+**Resolving to the restrictive side was proposed here and deliberately not taken.** An unrecognized `DISABLE_*` value hardening itself to `true` silently disables downloads or filters in production, which is an outage with a non-obvious cause; the warning gives the operator the signal without that. Every flag defaults to `false` except `DISABLE_GRAPHQL_INTROSPECTION` under `NODE_ENV=production`, so taking the default leaves every other flag where reading the value as `false` left it, and only there does an ignored value now keep introspection disabled.
 
 `stringToNumber` got the same treatment for the case this entry names: an unparseable limit warns rather than falling back silently, since the fallback is a default and a typo in a limit set to *tighten* below it restores the looser value. Two call sites also moved from `stringToNumber(x) || fallback` to passing the fallback as an argument, so an explicit `0` survives; `SERVER_PORT=0` means "any free port" and was becoming 5050.
 
@@ -1201,6 +1256,24 @@ Three things remain open, and the first is the one that makes the others hard to
 **Issue:** `rowToTSV` joins raw ES field values with a hardcoded tab, no escaping of any kind. Two distinct problems: (1) **CSV/Formula injection (CWE-1236):** a field value beginning with `=`, `+`, `-`, or `@` is written into the export unmodified; opening the resulting file in Excel/Sheets can execute a formula (including data-exfiltration formulas like `HYPERLINK`/`WEBSERVICE`) if any indexed free-text field (clinical notes, sample descriptions) can be influenced by a data submitter. (2) **Data integrity:** a value containing a literal tab or newline is not quoted or stripped, silently shifting columns for that row. The planned `saveCSV` roadmap item scopes RFC 4180 comma/quote/newline escaping for a _future_ `csv` format, but doesn't address formula-prefix neutralization, a distinct concern, and doesn't fix today's TSV path either way.
 **Fix:** Neutralize formula-triggering leading characters (prefix with a single quote, or otherwise ensure spreadsheet software won't interpret the value as a formula) in both the current TSV path and the planned CSV path, and escape/strip embedded tabs and newlines in `rowToTSV`. Worth doing in the same pass as the `saveCSV` work, since new escaping code is being written there anyway, but the TSV gap is a today problem, not contingent on that work.
 **Standalone:** yes for the TSV half; the CSV half naturally lands alongside the `saveCSV` roadmap item.
+
+### Export writes the empty placeholder for `0` and `false`, not only for missing values
+
+**File:** `modules/graphql-router/src/utils/dataToExportFormat.js:150` (`rowToTSV`), `:261` (`rowToJSON`)
+**Severity:** medium
+**Kind:** data integrity
+**Issue:** Both formatters substitute the placeholder with `value || valueWhenEmpty`, so every falsy value is written as empty. A document holding `{ age: 0, access_denied: false }` exports both columns as `--`, the default placeholder, in TSV and as `"--"` in JSON, and a reader of the file cannot tell a recorded zero or `false` from a missing value.
+**Fix:** Substitute only when the value is `null`, `undefined` or an empty string, and write `0` and `false` as themselves. It changes exported content for any catalogue with numeric or boolean columns, so it belongs in a planned release with a changelog entry.
+**Standalone:** yes
+
+### `ConfigsObject.getServerSideFilter` is declared, but `arrangerRouter` never reads it
+
+**File:** `modules/types/src/configs/index.ts:175` (declaration); `modules/graphql-router/src/router.ts:59` (the router reads only its top-level `getServerSideFilter` parameter)
+**Severity:** medium
+**Kind:** security (fail-open configuration)
+**Issue:** The configs type declares a `getServerSideFilter` field, so an embedder who follows the type and supplies their own back-end filter there, without Usher, gets no access control and no warning: the router reads the callback only from its top-level parameter, which defaults to allow-all. Nothing in `graphql-router` reads the field, network search included, since the hub composes its own top-level callback and each remote enforces its own. The search server uses the key only as an internal carrier: its aggregator maps the host's `filters` option onto it, and `apps/search-server/src/arrangerRoutes.ts:25` lifts it back out into the top-level parameter. A value that is not a function, such as a SQON object or a string, is ignored the same way, so a deployment that meant to apply a constant filter serves everything.
+**Fix:** Wire the field for embedders applying their own back-end filters. When it holds a function and the top-level parameter is absent, use it and warn that the top-level parameter is preferred. Refuse at startup when both are set and differ. Tolerate `undefined` or `null` with a warning, and refuse any other type with a message saying a constant filter must be returned from a function. At 1.0.0, remove the field from the type and refuse it at startup, naming the top-level parameter.
+**Standalone:** yes; route the refusals through the same resolution function as the router's own parameter once that exists.
 
 ### `modules/graphql-router/src/admin/` is a fully disconnected legacy admin backend, still compiled into the published package, with no access control of its own
 
@@ -1344,6 +1417,7 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Kind:** missing test coverage
 **Issue:** No test file in `modules/graphql-router` references `compileFilter` at all. It merges the incoming client SQON with the configured server-side filter into the single SQON `buildQuery` compiles, so what it does decides what every read path actually queries: record queries, aggregations, the export route, and federated queries all pass through it. Several entries in this file already name its contract as the seam worth changing (returning both filters separately instead of one merged SQON; rejecting a server-side filter that compiles to nothing), and each of those changes would be made with no regression coverage underneath it. The roadmap's property-based-testing entry lists it as a candidate for the same reason.
 **Fix:** Cover the composition directly: a client SQON with no server filter, a server filter with an empty client SQON, both present, and a server filter that reduces away to nothing. Extend with the property-based approach now used for `reduceSqon` if the input space proves wide enough to justify it.
+**Fixed.** `mapping/utils/compileFilter.test.js` covers the composition: a server-side filter with and without a client filter, `disableClientFilters`, and the refusal of an absent or empty server-side filter.
 **Standalone:** yes
 
 ### `esClient` names a `SearchClient`, and no documented path exists from a real engine client to one
@@ -1385,6 +1459,60 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Issue:** `displayValues` maps a field's raw values to display labels, and the obvious configuration fills it, since raw values are often identifiers. It is configuration, not query output, so the server-side filter, which narrows documents, does not apply to it. Where access control is keyed on a labelled field, the labels a principal receives have to be limited to the values that principal reaches.
 **Fix:** either suffices. An operator rule not to label a field that access control keys on, which costs nothing and has to reach `/docs` to be read. Or narrowing the map per principal: the configs resolver gains the request context and a per-request shaping hook ([auth roadmap Phase 1 item 9](docs/arranger-auth/roadmap.md)), and since which values a principal reaches comes from their grants, the Usher adapter supplies the narrowing.
 **Standalone:** the operator rule, yes; the hook is Phase 1 item 9. It does not depend on field-level restriction, since the field's *name* is public either way and only its values need narrowing.
+
+### Exports ignore a catalogue's configured `chunkSize`
+
+**File:** `modules/graphql-router/src/utils/getAllData.js:168`
+**Severity:** low
+**Kind:** configuration correctness
+**Issue:** `getAllData` defaults its page size to `fallbackConfigs.downloads.chunkSize` (2000) and never reads `configs.config.downloads.chunkSize`, so `DOWNLOAD_STREAM_BUFFER_SIZE` and a catalogue's `downloads.chunkSize` have no effect on exports, although `docs/reference/06-defaults-and-limits.md` documents them.
+**Fix:** Default to the catalogue's configured value and fall back to the constant only when it is absent; test both.
+**Standalone:** yes
+
+### `disableFilters` still lets a client filter shape nested aggregations and saved sets
+
+**File:** `modules/graphql-router/src/mapping/resolveAggregations.ts` (`buildAggregations` receives the client filter); `modules/graphql-router/src/mapping/resolveSets.js` (`saveSet`)
+**Severity:** low (the flag is off by default, and the server-side filter still applies)
+**Kind:** incomplete feature flag
+**Issue:** With `disableFilters` on, `compileFilter` leaves the client filter out of the search query, but `resolveAggregations` still passes the client's filter to `buildAggregations`, which uses it for nested-field sub-aggregations, so those buckets apply it. `saveSet` computes a set's ids without the client filter but stores the client's `sqon` on the set, so the stored filter does not describe the ids.
+**Fix:** Pass the filter `compileFilter` actually applied to `buildAggregations`, and store that same filter on a saved set.
+**Standalone:** yes
+
+### Network search answers only access-control failures with fixed text
+
+**File:** `modules/graphql-router/src/network/resolvers/aggregations.ts`
+**Severity:** low
+**Kind:** error handling
+**Issue:** Every node error should reach `nodes[].errors` as fixed text, as access-control failures already do; other errors from a local or remote node, and one thrown by a host's `customizeRemoteRequest`, still carry their own message.
+**Fix:** Answer every node error with fixed text naming only the node and an error class, and log the detail under an event name.
+**Standalone:** yes
+
+### The download handshake trips the lint configuration, and its header write is unguarded
+
+**File:** `modules/graphql-router/src/download/index.js` (`pipeFromFirstChunk`)
+**Severity:** low
+**Kind:** code quality
+**Issue:** The handlers in `pipeFromFirstChunk` detach one another, a reference cycle the configured `@typescript-eslint/no-use-before-define` rule flags three times. `startResponse` calls `setHeaders` without a guard; a throw there should settle the request with a 500, though today's parameter rules keep it from throwing.
+**Fix:** Restructure the handlers, for example as one cleanup closure registered through an `AbortController`, and make a throw from `setHeaders` reject the promise so the route answers 500; test it with a throwing `setHeaders`.
+**Standalone:** yes
+
+### `tar-stream` is no longer used
+
+**File:** `modules/graphql-router/package.json`
+**Severity:** low
+**Kind:** dependency hygiene
+**Issue:** `tar-stream` and `@types/tar-stream` served only the removed multi-file export.
+**Fix:** Remove both and regenerate the lockfile.
+**Standalone:** yes
+
+### Route tests using `supertest(app)` can collide with other local listeners
+
+**File:** tests across `modules/graphql-router/src` that pass an app rather than a bound server to `supertest`
+**Severity:** low
+**Kind:** test reliability
+**Issue:** `supertest(app)` binds an ephemeral port on every interface and connects to `127.0.0.1`, so another local process listening on the same port number there can answer instead, giving an intermittent 404 or an empty body. `download/index.test.js` already binds its servers to `127.0.0.1`.
+**Fix:** Bind test servers to `127.0.0.1` the same way, through one shared helper.
+**Standalone:** yes
 
 ## modules/charts
 
@@ -1535,6 +1663,15 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Standalone:** yes for the declaration; the re-audit is its own task and belongs on §3.3's checklist.
 
 ---
+
+### `useNetworkQuery` may post to the wrong address with the default fetcher
+
+**File:** `modules/charts/src/hooks/useNetworkQuery.tsx:21-27`
+**Severity:** medium (not yet checked against a running server)
+**Kind:** correctness
+**Issue:** The default fetcher posts to `url` joined with `endpoint`, and the components queries name an endpoint (`graphql` or `/graphql`). The charts query names none, so with the default fetcher it posts to the catalogue's base URL itself, where the router serves no GraphQL. Known consumers use custom fetchers that pick their own address, which would hide it.
+**Fix:** Pass `endpoint: 'graphql'` in `buildNetworkQueryFetchArgs`, and test the resolved URL with the default fetcher.
+**Standalone:** yes
 
 ## modules/components
 
@@ -1773,6 +1910,42 @@ This is the inverse of the phantom-dependency audit, which looked only for impor
 
 ---
 
+### Toggling a filter can merge or drop sibling nested groups
+
+**File:** `modules/components/src/SQONViewer/utils.js:18-23` (`compareTerms`)
+**Severity:** medium
+**Kind:** correctness
+**Issue:** `compareTerms` treats any two nodes with the same `op` and no `fieldName` as equal, so `toggleSQON` merges or drops a sibling group that merely shares the operator, and a leaf keyed by the old `field`, as MatchBox writes it, compares equal to any leaf with the same operator.
+**Fix:** Never match a group by its operator alone, and key leaves on `fieldName`; test with two sibling groups sharing an operator.
+**Standalone:** yes
+
+### AdvancedSqonBuilder and MatchBox still use the old `field` key
+
+**File:** `modules/components/src/AdvancedSqonBuilder/sqonPieces/FieldOp.jsx:30`, `filterComponents/RangeFilter.js:67-90`, `filterComponents/index.jsx:30,69`; `modules/components/src/Arranger/MatchBox.jsx`
+**Severity:** medium
+**Kind:** correctness
+**Issue:** SQON leaves name their field with `fieldName`, but the builder reads `content.field` and MatchBox writes it, and `FieldOpModifier` passes a `field` prop while `TermFilter` and `BooleanFilter` read `fieldName`. A SQON from anywhere else renders and edits wrongly in the builder.
+**Fix:** Move both to `fieldName` throughout, keeping a read-only fallback for `field` if stored SQONs need it.
+**Standalone:** yes
+
+### AdvancedSqonBuilder leaves stale references, emptied groups and empty value lists behind
+
+**File:** `modules/components/src/AdvancedSqonBuilder/utils.js:72-92` (`removeSqonAtIndex`), `:127-142` (`removeSqonPath`); `index.jsx:117-129,235`; `filterComponents/TermFilter.jsx:89-100`
+**Severity:** medium
+**Kind:** correctness
+**Issue:** Deleting a query rewrites references to it only at the top level, so nested references go stale, although the dialog says dependent queries are deleted; the selection is not cleared either, so the and/or buttons can then reference queries that no longer exist. Removing the last condition from a nested group leaves the empty group in place, since only the root is checked, so the builder can produce `or[ X, or[] ]`. TermFilter's Clear leaves `in(field, [])`, which matches no document, so clearing a term filter inside an `and` makes the whole query match nothing.
+**Fix:** Rewrite or remove nested references on delete and clear the selection; remove a group once it is empty; make Clear remove the condition rather than empty its values. Test each through the builder's own actions.
+**Standalone:** yes
+
+### Components publicly exports SQON types that differ from `@overture-stack/sqon`
+
+**File:** `modules/components/src/SQONViewer/types.ts:40-107`, re-exported from `src/types.ts`
+**Severity:** low
+**Kind:** type drift
+**Issue:** The exported operator types include `is`, which sqon lacks, spell the range operators only by alias (`>`, `>=`, `<`, `<=`), and omit `not-in`, `some-not-in`, `all` and `between`. `ValueOpTypes` is an intersection of unrelated string unions and resolves to `never`.
+**Fix:** Re-export sqon's own types instead, keeping temporary aliases if consumers import these names.
+**Standalone:** yes
+
 ## modules/types
 
 ### No unit tests for `networkAggregationConfigUtils`, and its two exports turned out to be unused, not just untested
@@ -1920,7 +2093,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Severity:** high
 **Kind:** test-coverage
 **Issue:** `/download` is a real mounted route, and both `integration-tests/server` and `integration-tests/mcp-server`'s server setups explicitly run with `disableDownloads: false`, i.e. the route is live in every integration test server instance. Despite that, no test anywhere exercises it: no co-located unit test for `download/index.js` or `dataToExportFormat.js` (only `dataToTSV.test.js`, a pure-function unit test one layer downstream), and `integration-tests/server/test/spinupActive.js:137` contains a literal `// TODO: add /download checks` that was never followed up. The download/export streaming path (headers, chunked writes, error handling) has zero coverage end to end. This sits directly upstream of the existing "Download route body is brittle" entry above (five separate fragility issues in the same file), the complete absence of any test is a plausible reason those issues went unnoticed long enough to be logged as debt rather than caught by a failing test. Also upstream of the `disableDownloads` gap and the CSV-injection finding logged in the `graphql-router` section above, in this same untested file. (`disableFilters` and the `mock` flag were also in this list; the first is closed by P0-c, the second by the removal of the mock server.)
-**Fix:** At minimum, add an integration test that POSTs a real download request against a live-ES-backed server and asserts on the response body/headers; ideally also a unit test for `download/index.js`'s request-handling logic in isolation.
+**Fixed.** `download/index.test.js` builds a real router over a search engine stand-in and covers the route and `dataStream`: rows and their order across pages, the router's filter and a caller's narrowing of it, every validation rule, error statuses and texts, failures before and during output, and a client disconnecting. `integration-tests/server/test/download.js` posts downloads the way the stock UI does against a live cluster, with a server-side filter in multicatalogue mode and with none on a single catalogue, which covers what the `spinupActive.js` TODO asked for.
 **Standalone:** yes.
 
 ### Only one of seven classified catalogue failure modes is integration-tested against a real cluster
@@ -1942,6 +2115,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes.
 
 ---
+
+### `stringToNumber`'s warning quotes the raw value and carries no event name, and neither parser names the variable
+
+**File:** `modules/types/src/tools/stringFns.ts` (`stringToNumber`, `stringToBool`)
+**Severity:** low
+**Kind:** logging
+**Issue:** `stringToNumber` interpolates the raw string into its warning without escaping and without an event name, unlike `stringToBool`. Both warnings name the value but not the variable it came from, so an operator has to work out which setting is wrong.
+**Fix:** Render the value with the same escaping as `stringToBool`, add an event name, and accept an optional variable name for the warning, passed from `localEnvs.ts`.
+**Standalone:** yes
 
 ## release / publishing
 

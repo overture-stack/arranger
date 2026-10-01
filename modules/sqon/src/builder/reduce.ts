@@ -95,6 +95,9 @@ const isCalendarDate = (value: string): boolean => {
  * string bound sorts depends on the field's mapping, which the reducer cannot see: a quoted number,
  * date math, another date format, a datetime, or one bound of each type. The caller then keeps
  * both clauses, which is always correct, since the engine applies each one.
+ *
+ * Merging only saves a clause. A bound in any date format is accepted and reaches the engine
+ * unchanged, so declining to merge never refuses a value or changes what a filter matches.
  */
 const compareBounds = (a: SqonScalarOrArray, b: SqonScalarOrArray): number | undefined => {
 	if (a === b) {
@@ -220,7 +223,8 @@ const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
  * The four range ops merge two bounds only when both are numbers, both are YYYY-MM-DD calendar
  * dates, or the two are identical. Any other pair (a quoted number, date math, another date
  * format, a datetime, a boolean, an array, or one bound of each type) is left as two separate
- * clauses rather than merged, which preserves the meaning under every combination type.
+ * clauses rather than merged, which preserves the meaning under every combination type. Merging
+ * only saves a clause, so a bound in any date format is accepted either way.
  *
  * **Combination-node rules:**
  * - Empty inner combination: removed.

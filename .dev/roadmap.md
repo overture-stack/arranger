@@ -574,6 +574,19 @@ Options: run as a non-blocking report (visibility without blocking), block on cr
 
 _Recommended starting point: add `npm audit --audit-level=critical` as a non-blocking CI report to understand the current baseline before committing to a failure policy._
 
+### Vulnerability disclosure as part of the release workflow
+
+_Priority: medium. Process, no code._
+
+A fix for a vulnerability in a released version follows one sequence, written into `.dev/docs/release-process.md` as a step of every release:
+
+1. `SECURITY.md` at the repository root says how to report a vulnerability privately (GitHub's private vulnerability reporting) and which release lines receive fixes.
+2. Until the fix is released, public text (commits, changelog, `.dev/`, docs) states what the code must do, never how earlier versions fail.
+3. Deployments the team runs are upgraded, or mitigated at their ingress, before anything is published.
+4. A GitHub security advisory is drafted privately in the repository's Security tab and published with the release that fixes it: affected and fixed versions, severity, and a workaround for anyone who cannot upgrade yet. Dependabot and similar tools then notify affected users.
+
+_Recommended starting point: add `SECURITY.md` and enable private vulnerability reporting in the repository settings, then add the advisory step to `release-process.md`'s RC promotion and final release sections. Worth carrying into the agentics release convention that `release-process.md` § 10 is already scoping._
+
 ### Aggregation privacy masking (small count suppression)
 
 _Priority: high for deployments with sensitive data. Needs design before implementation._
