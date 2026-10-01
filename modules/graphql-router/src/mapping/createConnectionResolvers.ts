@@ -30,7 +30,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 }: {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
-	getServerSideFilter?: GetServerSideFilterFn<Context>;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
 	Parallel: Parallel<any>;
 	type: SchemaTypesDefinition;
 }): IResolvers<any, Context> => {

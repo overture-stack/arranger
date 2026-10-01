@@ -10,22 +10,25 @@ import {
 } from '@overture-stack/arranger-types/configs/constants';
 import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
 
+import { parseEnableAccessControl } from './enableAccessControl.js';
+
 // TODO: make a more robust isProd helper (e.g. casing + alternatives like 'prod')
 const isProd = process.env.NODE_ENV === 'production';
 
 const isSearchEngineType = (value: string | undefined): value is SearchEngineType =>
 	value === 'elasticsearch' || value === 'opensearch';
 
-/** Validates SEARCH_ENGINE against the supported engines at the env-var boundary; an unrecognised value is warned about here rather than silently passed through or silently dropped. */
+/** Validates SEARCH_ENGINE against the supported engines at the env-var boundary; an unrecognized value is warned about here rather than silently passed through or silently dropped. */
 const parseSearchEngine = (value: string | undefined): SearchEngineType | undefined => {
 	if (isSearchEngineType(value)) {
 		return value;
 	}
 
-	value && console.warn(`Unrecognised SEARCH_ENGINE value "${value}"; falling back to auto-detection.`);
+	value && console.warn(`Unrecognized SEARCH_ENGINE value "${value}"; falling back to auto-detection.`);
 	return undefined;
 };
 
+/** The image's configuration as the environment sets it, read once, when this module is first imported. */
 const configsFromEnv = {
 	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')
 		.map((origin) => origin.trim())
@@ -81,6 +84,7 @@ const configsFromEnv = {
 			},
 		},
 	},
+	enableAccessControl: parseEnableAccessControl(process.env.ENABLE_ACCESS_CONTROL),
 	[configFeatureFlagProperties.ENABLE_ADMIN]: stringToBool(process.env.ENABLE_ADMIN),
 	[configFeatureFlagProperties.ENABLE_DEBUG]: stringToBool(process.env.ENABLE_DEBUG),
 	[configFeatureFlagProperties.ENABLE_LOGS]: stringToBool(process.env.ENABLE_LOGS),

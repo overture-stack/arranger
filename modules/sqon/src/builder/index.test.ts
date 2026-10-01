@@ -509,8 +509,9 @@ suite('SQON builder', () => {
 			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'age', value: 65 } });
 		});
 
-		// Date bounds are the ordinary shape of a range filter on a `date` field: comparing them
-		// needs parsed timestamps, not numeric coercion, which would corrupt a non-numeric bound.
+		// Date bounds are the ordinary shape of a range filter on a `date` field. Two YYYY-MM-DD bounds
+		// compare by text, which is their date order, rather than by numeric coercion, which would
+		// corrupt a non-numeric bound.
 		test('keeps the later gt date under and', () => {
 			const result = SqonBuilder.gt('diagnosed', '2020-01-01')
 				.and(SqonBuilder.gt('diagnosed', '2021-06-15').toValue())
@@ -552,17 +553,118 @@ suite('SQON builder', () => {
 			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'diagnosed', value: '2020-01-01' } });
 		});
 
-		test('orders non-ISO date strings by parsed timestamp, not lexicographically', () => {
-			// Lexicographically '01/02/2021' sorts before '12/31/2020'; by date it is later.
+		// On the numeric and date fields range ops apply to, only identical bounds, two numbers or two
+		// YYYY-MM-DD dates have an order the search engine is certain to share. Any other pair sorts by
+		// the field's mapping, which the reducer cannot see, so both clauses are kept: that is always
+		// correct, since the engine applies each one.
+		test('keeps both range filters for date strings in a format other than YYYY-MM-DD', () => {
 			const result = SqonBuilder.gt('diagnosed', '12/31/2020')
 				.and(SqonBuilder.gt('diagnosed', '01/02/2021').toValue())
 				.toValue();
-			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'diagnosed', value: '01/02/2021' } });
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'gt', content: { fieldName: 'diagnosed', value: '12/31/2020' } },
+					{ op: 'gt', content: { fieldName: 'diagnosed', value: '01/02/2021' } },
+				],
+			});
 		});
 
-		test('orders unparseable strings lexicographically rather than declining to merge', () => {
+		test('keeps both range filters for string bounds that are not dates', () => {
 			const result = SqonBuilder.gt('label', 'alpha').and(SqonBuilder.gt('label', 'beta').toValue()).toValue();
-			assert.deepEqual(result, { op: 'gt', content: { fieldName: 'label', value: 'beta' } });
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'gt', content: { fieldName: 'label', value: 'alpha' } },
+					{ op: 'gt', content: { fieldName: 'label', value: 'beta' } },
+				],
+			});
+		});
+
+		test('keeps both range filters when numbers are written as strings', () => {
+			const result = SqonBuilder.gte('age', '18').and(SqonBuilder.gte('age', '5').toValue()).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'gte', content: { fieldName: 'age', value: '18' } },
+					{ op: 'gte', content: { fieldName: 'age', value: '5' } },
+				],
+			});
+		});
+
+		test('keeps both range filters for numbers written as strings under or', () => {
+			const result = SqonBuilder.or([
+				SqonBuilder.gt('age', '13').toValue(),
+				SqonBuilder.gt('age', '5').toValue(),
+			]).toValue();
+			assert.deepEqual(result, {
+				op: 'or',
+				content: [
+					{ op: 'gt', content: { fieldName: 'age', value: '13' } },
+					{ op: 'gt', content: { fieldName: 'age', value: '5' } },
+				],
+			});
+		});
+
+		test('keeps both range filters when one bound is a number and the other a quoted number', () => {
+			// A slider sends a number while a filter restored from a URL sends the same kind of bound as text.
+			const result = SqonBuilder.gte('age', 18).and(SqonBuilder.gte('age', '5').toValue()).toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'gte', content: { fieldName: 'age', value: 18 } },
+					{ op: 'gte', content: { fieldName: 'age', value: '5' } },
+				],
+			});
+		});
+
+		test('merges two identical range bounds whatever their form', () => {
+			const result = SqonBuilder.lte('released', 'now-6M')
+				.and(SqonBuilder.lte('released', 'now-6M').toValue())
+				.toValue();
+			assert.deepEqual(result, { op: 'lte', content: { fieldName: 'released', value: 'now-6M' } });
+		});
+
+		test('keeps both range filters for date math', () => {
+			const result = SqonBuilder.lte('released', 'now-6M')
+				.and(SqonBuilder.lte('released', 'now-1d').toValue())
+				.toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'lte', content: { fieldName: 'released', value: 'now-6M' } },
+					{ op: 'lte', content: { fieldName: 'released', value: 'now-1d' } },
+				],
+			});
+		});
+
+		test('keeps both range filters for datetimes, whose text order need not match their time order', () => {
+			// 12:00 at +05:00 is 07:00 UTC, earlier than 10:00 UTC, though it sorts later as text.
+			const result = SqonBuilder.lte('released', '2024-01-01T12:00:00+05:00')
+				.and(SqonBuilder.lte('released', '2024-01-01T10:00:00Z').toValue())
+				.toValue();
+			assert.deepEqual(result, {
+				op: 'and',
+				content: [
+					{ op: 'lte', content: { fieldName: 'released', value: '2024-01-01T12:00:00+05:00' } },
+					{ op: 'lte', content: { fieldName: 'released', value: '2024-01-01T10:00:00Z' } },
+				],
+			});
+		});
+
+		test('keeps both range filters when a YYYY-MM-DD bound names a day that does not exist', () => {
+			// Under or a merge keeps the looser bound, so a wrong one would silently drop the invalid day.
+			const result = SqonBuilder.or([
+				SqonBuilder.gt('diagnosed', '2024-02-30').toValue(),
+				SqonBuilder.gt('diagnosed', '2024-01-01').toValue(),
+			]).toValue();
+			assert.deepEqual(result, {
+				op: 'or',
+				content: [
+					{ op: 'gt', content: { fieldName: 'diagnosed', value: '2024-02-30' } },
+					{ op: 'gt', content: { fieldName: 'diagnosed', value: '2024-01-01' } },
+				],
+			});
 		});
 
 		test('keeps both range filters when the two bounds cannot be ordered against each other', () => {

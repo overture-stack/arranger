@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
@@ -184,4 +184,73 @@ suite('middleware/normalizeFilter', () => {
 
 		assert.deepEqual(normalizeFilters(input), output);
 	});
+});
+
+// A SQON arrives from the client, so whatever it holds is client input, including the entries a
+// combination wraps. The refusal has to say what was wrong without repeating the value: the message
+// reaches logs, GraphQL error payloads, and any response an integration builds from it.
+suite('normalizeFilters error messages', () => {
+	const CLIENT_TEXT = 'text-the-client-chose';
+	const CLIENT_NUMBER = 987654321;
+
+	const cases = [
+		{
+			clientValue: CLIENT_TEXT,
+			filter: { content: [CLIENT_TEXT], op: AND_OP },
+			name: 'reports a combination entry given as a string without quoting it',
+		},
+		{
+			clientValue: CLIENT_TEXT,
+			filter: { content: [[CLIENT_TEXT]], op: AND_OP },
+			name: 'reports a combination entry given as an array without quoting what it holds',
+		},
+		{
+			clientValue: `${CLIENT_NUMBER}`,
+			filter: { content: [CLIENT_NUMBER], op: OR_OP },
+			name: 'reports a combination entry given as a number without quoting it',
+		},
+		{
+			clientValue: CLIENT_TEXT,
+			filter: CLIENT_TEXT,
+			name: 'reports a whole filter given as a string without quoting it',
+		},
+		{
+			clientValue: CLIENT_TEXT,
+			filter: [CLIENT_TEXT],
+			name: 'reports a whole filter given as an array without quoting what it holds',
+		},
+		{
+			clientValue: `${CLIENT_NUMBER}`,
+			filter: CLIENT_NUMBER,
+			name: 'reports a whole filter given as a number without quoting it',
+		},
+		{
+			clientValue: CLIENT_TEXT,
+			filter: { op: CLIENT_TEXT },
+			name: 'reports a clause with no content without quoting the clause',
+		},
+		{
+			clientValue: CLIENT_TEXT,
+			filter: { content: [{ content: CLIENT_TEXT }], op: NOT_OP },
+			name: 'reports a clause with no op without quoting the clause',
+		},
+	];
+
+	for (const { clientValue, filter, name } of cases) {
+		test(name, () => {
+			// Given a filter the client shaped wrongly, When it is normalized,
+			// Then it is still refused, and the message does not repeat the client's value
+			assert.throws(
+				() => normalizeFilters(filter),
+				(error) => {
+					assert.ok(error instanceof Error, 'the refusal should be an Error');
+					assert.ok(
+						!error.message.includes(clientValue),
+						`the message should not quote the client's value, got: ${error.message}`,
+					);
+					return true;
+				},
+			);
+		});
+	}
 });

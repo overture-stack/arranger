@@ -2,7 +2,7 @@
 	"exclude": ["**/__tests__/*"],
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
-		"removeComments": true,
+		"removeComments": false,
 		"paths": {
 			"#*": ["./src/*"]
 		},

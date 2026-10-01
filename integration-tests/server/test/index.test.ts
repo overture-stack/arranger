@@ -17,10 +17,11 @@ import mappings_1 from './assets/model_centric_1.mappings.json' with { type: 'js
 import data_2 from './assets/model_centric_2.data.json' with { type: 'json' };
 import mappings_2 from './assets/model_centric_2.mappings.json' with { type: 'json' };
 import awkwardFieldNames from './awkwardFieldNames.js';
+import download, { downloadWithoutAccessControl } from './download.js';
 import manageSets from './manageSets.js';
-import readAggregation from './readAggregation.js';
+import readAggregation, { readAggregationWithoutAccessControl } from './readAggregation.js';
 import readMetadata from './readMetadata.js';
-import readSearchData from './readSearchData.js';
+import readSearchData, { readSearchDataWithoutAccessControl } from './readSearchData.js';
 import checkBaseEndpoints from './spinupActive.js';
 
 dotenv.config({ path: path.resolve('../../.env.test') });
@@ -51,6 +52,7 @@ const catalogueConfigs = [
 		mappings: mappings_1,
 		gqlPath: `/${catalog1Base.catalogId}/graphql`,
 		api: createCatalogueApi(catalog1Base.catalogId),
+		downloadUrl: `${serverUrl}/${catalog1Base.catalogId}/download`,
 	},
 	{
 		catalogId: catalog2Base.catalogId,
@@ -60,8 +62,19 @@ const catalogueConfigs = [
 		mappings: mappings_2,
 		gqlPath: `/${catalog2Base.catalogId}/graphql`,
 		api: createCatalogueApi(catalog2Base.catalogId),
+		downloadUrl: `${serverUrl}/${catalog2Base.catalogId}/download`,
 	},
 ];
+
+const [singleCatalogue] = catalogueConfigs;
+
+/** The single-catalogue server answers at the root, over the first catalogue's index and documents. */
+const singleCatalogueEnv = {
+	api: ajax(serverUrl, { endpoint: '/graphql' }),
+	documents: singleCatalogue.data,
+	documentType: singleCatalogue.documentType,
+	downloadUrl: `${serverUrl}/download`,
+};
 
 const useESAuth = !!esPass && !!esUser;
 const esClient = await buildSearchClient({
@@ -125,6 +138,10 @@ const runTestSuites = (env, { smokeTestConfig } = {}) => {
 
 	suite('sets management', () => {
 		manageSets(env);
+	});
+
+	suite('data download', () => {
+		download(env);
 	});
 
 	awkwardFieldNames(env);
@@ -212,13 +229,7 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			}
 		});
 
-		const [singleCatalogue] = catalogueConfigs;
-		const env = {
-			api: ajax(serverUrl, { endpoint: '/graphql' }),
-			documentType: singleCatalogue.documentType,
-		};
-
-		runTestSuites(env, {
+		runTestSuites(singleCatalogueEnv, {
 			smokeTestConfig: {
 				api: rootApi,
 				catalogs: [
@@ -302,7 +313,9 @@ suite('integration-tests/server', { concurrency: false }, () => {
 		catalogueConfigs.forEach((config) => {
 			const catalogueEnv = {
 				api: config.api,
+				documents: config.data,
 				documentType: config.documentType,
+				downloadUrl: config.downloadUrl,
 			};
 
 			suite(`Catalogue ${config.catalogId}`, () => {
@@ -314,6 +327,54 @@ suite('integration-tests/server', { concurrency: false }, () => {
 			try {
 				serverApp.close();
 				console.log('\nStopped Arranger Server - Multicatalogue\n');
+			} catch (err) {
+				// console.log('err after', err);
+			}
+		});
+	});
+
+	suite('No access control configured', () => {
+		let serverApp;
+
+		before(async () => {
+			console.error('\n------------------------------------');
+			console.log('Setting up Arranger with no access control\n');
+
+			try {
+				serverApp = await ArrangerServer({
+					disableDownloads: false,
+					disableFilters: false,
+					enableAdmin,
+					esClient,
+					serverPort,
+					setsIndex,
+					setsType,
+				});
+			} catch (err) {
+				console.error('\n\n------------------------------------');
+				console.error('FATAL: Arranger Server is not available, aborting tests\n');
+				console.error(`  ${err instanceof Error ? err.stack : err}\n`);
+				console.error('------------------------------------\n');
+				process.exit(1);
+			}
+		});
+
+		suite('search data reading', () => {
+			readSearchDataWithoutAccessControl(singleCatalogueEnv);
+		});
+
+		suite('aggregation reading', () => {
+			readAggregationWithoutAccessControl(singleCatalogueEnv);
+		});
+
+		suite('data download', () => {
+			downloadWithoutAccessControl(singleCatalogueEnv);
+		});
+
+		after(async () => {
+			try {
+				serverApp.close();
+				console.log('\nStopped Arranger Server with no access control\n');
 			} catch (err) {
 				// console.log('err after', err);
 			}

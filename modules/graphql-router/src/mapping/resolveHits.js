@@ -3,6 +3,7 @@ import getFields from 'graphql-fields';
 import { JSONPath } from 'jsonpath-plus';
 import { chunk, isObject, flattenDeep } from 'lodash-es';
 
+import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 // import { ENV_CONFIG } from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, applyNestingPrefixToFieldNames, unwrapHits } from '#middleware/utils/nestingPrefix.js';
@@ -269,7 +270,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 			filters: compileFilter({
 				clientSideFilter: filters || { op: 'and', content: [] },
 				disableClientFilters: context.disableClientFilters,
-				serverSideFilter: getServerSideFilter(context),
+				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
 			}),
 		});
 

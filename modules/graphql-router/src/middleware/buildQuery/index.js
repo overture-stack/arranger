@@ -249,7 +249,7 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	} = filter;
 
 	if (pivot && pivot !== '.' && !nestedFieldNames.includes(pivot)) {
-		throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
+		throw new Error('Invalid pivot field, not a nested field');
 	}
 
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {

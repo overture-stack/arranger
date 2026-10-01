@@ -51,7 +51,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 }: {
 	customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 	enableDebug: boolean;
-	getServerSideFilter?: GetServerSideFilterFn<Context>;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
 	remoteNodeConfigs: RemoteNodeConfig[];
 	localNodeConfigs: LocalNodeConfig[];
 	localCatalogues: LocalCatalogueSchemaData<Context>[];

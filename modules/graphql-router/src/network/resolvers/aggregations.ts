@@ -2,6 +2,7 @@ import type { CustomizeRemoteRequestFn } from '@overture-stack/arranger-types/co
 import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
 import graphqlFields from 'graphql-fields';
 
+import { ACCESS_CONTROL_FAILURE_MESSAGE, isAccessControlError } from '#accessControl/AccessControlError.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import { AggregationAccumulator, type NetworkAggregationsMap } from '#network/aggregations/AggregationAccumulator.js';
 import { fetchData } from '#network/resolvers/fetch.js';
@@ -26,6 +27,27 @@ export type NetworkNodeResponseData = {
 };
 
 type SuccessResponse = Record<string, { hits: Hits; aggregations: NetworkAggregationsMap }>;
+
+/**
+ * What a node's `errors` reports for `error`: an access-control failure only as the fixed public text,
+ * its detail logged on the server, and any other error as its own message.
+ */
+const nodeErrorMessageFor = ({
+	error,
+	fallback,
+	nodeName,
+}: {
+	error: unknown;
+	fallback: string;
+	nodeName: string;
+}): string => {
+	if (isAccessControlError(error)) {
+		console.error('access_control.evaluation_failed', error.message, { cause: error.cause, node: nodeName });
+		return ACCESS_CONTROL_FAILURE_MESSAGE;
+	}
+
+	return error instanceof Error ? error.message : fallback;
+};
 
 /**
  * Query each network node then combine the results into total aggregations.
@@ -118,8 +140,11 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 				`[network/aggregationPipeline] - Error with network query while fetching data from '${config.displayName}' at graphqlUrl: ${config.graphqlUrl} - ${error}`,
 			);
 
-			const message =
-				error instanceof Error ? error.message : 'Unexpected error while fetching data from this node.';
+			const message = nodeErrorMessageFor({
+				error,
+				fallback: 'Unexpected error while fetching data from this node.',
+				nodeName: config.displayName,
+			});
 
 			nodeInfo.push({
 				name: config.displayName,
@@ -181,10 +206,12 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 					`[network/aggregationPipeline] - Error resolving hits on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
 				);
 
-				const errorMessage =
-					error instanceof Error
-						? error.message
-						: 'Unexpected error while resolving total hits for this node, the final hits value will be reported as 0.';
+				const errorMessage = nodeErrorMessageFor({
+					error,
+					fallback:
+						'Unexpected error while resolving total hits for this node, the final hits value will be reported as 0.',
+					nodeName: config.displayName,
+				});
 
 				localNodeStatusInfo.status = 'ERROR';
 				localNodeStatusInfo.errors = localNodeStatusInfo.errors
@@ -229,10 +256,11 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 					`[network/aggregationPipeline] - Error resolving aggregations on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
 				);
 
-				const errorMessage =
-					error instanceof Error
-						? error.message
-						: 'Unexpected error while resolving aggregations for this node.';
+				const errorMessage = nodeErrorMessageFor({
+					error,
+					fallback: 'Unexpected error while resolving aggregations for this node.',
+					nodeName: config.displayName,
+				});
 
 				localNodeStatusInfo.status = 'ERROR';
 				localNodeStatusInfo.errors = localNodeStatusInfo.errors

@@ -1,41 +1,65 @@
-const TRUTHY_VALUES = ['true', '1', 'yes', 'on'];
-const FALSY_VALUES = ['false', '0', 'no', 'off'];
+const ACCEPTED_BOOLEANS = new Map<unknown, boolean>([
+	[0, false],
+	[1, true],
+	[false, false],
+	[true, true],
+	['0', false],
+	['1', true],
+	['false', false],
+	['true', true],
+]);
+
+// JSON renders NaN and the infinities as null and throws on a bigint, so both kinds of number are
+// named directly; anything else it cannot render is named by its type.
+const describeIgnoredValue = (value: unknown): string => {
+	if (typeof value === 'number') {
+		return String(value);
+	}
+
+	if (typeof value === 'bigint') {
+		return `${value}n`;
+	}
+
+	try {
+		return JSON.stringify(value) ?? typeof value;
+	} catch {
+		return typeof value;
+	}
+};
 
 /**
- * Parses an environment string into a boolean, trimming and lowercasing first.
+ * Reads a configuration value as a boolean. Accepts the booleans `true` and `false`, the numbers `1`
+ * and `0`, and the strings `true` and `false` in any case and `1` and `0`, each trimmed.
  *
- * Warns on a value matching neither list rather than coercing it silently. Every `DISABLE_*` flag
- * reads through here, so an unrecognized value leaves a hardening flag off while the operator
- * believes it is on: `DISABLE_FILTERS=yes` used to parse as `false`, and a single trailing space
- * from a Helm value or `.env` line did the same to `true`.
+ * `undefined`, or a string that is empty once trimmed, means nothing was configured and returns
+ * `fallback` silently. Any other value, `null` included, is ignored: it returns `fallback` too, and
+ * warns, naming the value. A flag whose value is ignored keeps its default, which can leave a hardening
+ * flag off while the operator believes it is on, so the warning is the only sign of the slip.
  *
- * @param str the raw value; `undefined` or blank yields `fallback`.
- * @param fallback returned when nothing was configured.
- * @returns the parsed boolean, or `false` for a value in neither list.
+ * Word pairs such as `yes`/`no` and `on`/`off` are left out on purpose: `no` and `on` are one
+ * transposition apart and mean opposites, so accepting both would turn a slip into an inverted flag.
+ *
+ * @param value the configured value, usually an environment variable's raw text.
+ * @param fallback returned when nothing was configured or the value is ignored.
+ * @returns the value read as a boolean, or `fallback`.
  */
-export const stringToBool = (str: string | undefined, fallback = false) => {
-	if (str === undefined) {
+export const stringToBool = (value: unknown, fallback = false): boolean => {
+	const normalized = typeof value === 'string' ? value.trim().toLowerCase() : value;
+	const accepted = ACCEPTED_BOOLEANS.get(normalized);
+
+	if (typeof accepted === 'boolean') {
+		return accepted;
+	}
+
+	if (normalized === undefined || normalized === '') {
 		return fallback;
-	}
-
-	const normalized = str.trim().toLocaleLowerCase();
-
-	if (normalized === '') {
-		return fallback;
-	}
-
-	if (TRUTHY_VALUES.includes(normalized)) {
-		return true;
-	}
-
-	if (FALSY_VALUES.includes(normalized)) {
-		return false;
 	}
 
 	console.warn(
-		`Unrecognized boolean value "${str}", treated as false. Expected one of: ${[...TRUTHY_VALUES, ...FALSY_VALUES].join(', ')}.`,
+		'config.boolean_value_ignored',
+		`Ignored boolean value ${describeIgnoredValue(value)}, so the default, ${fallback}, applies. Expected true, false, 1 or 0.`,
 	);
-	return false;
+	return fallback;
 };
 
 /**

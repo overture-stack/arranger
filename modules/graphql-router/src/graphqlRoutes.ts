@@ -17,6 +17,12 @@ import { ApolloServer } from 'apollo-server-express';
 import { Router, type Request, type RequestHandler, type Response } from 'express';
 import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql';
 
+import {
+	ACCESS_CONTROL_FAILURE_MESSAGE,
+	type AccessControlError,
+	isAccessControlError,
+} from '#accessControl/AccessControlError.js';
+import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
@@ -211,6 +217,22 @@ const noSchemaHandler =
 		});
 	};
 
+// Built from scratch rather than spread from `error`, so neither the refusal's own message nor the
+// stack Apollo adds under debug can reach the client.
+const maskAccessControlError = (error: GraphQLError, accessControlError: AccessControlError): GraphQLFormattedError => {
+	console.error('access_control.evaluation_failed', accessControlError.message, {
+		cause: accessControlError.cause,
+		path: error.path,
+	});
+
+	return {
+		...(error.extensions?.code ? { extensions: { code: error.extensions.code } } : {}),
+		locations: error.locations,
+		message: ACCESS_CONTROL_FAILURE_MESSAGE,
+		path: error.path,
+	};
+};
+
 // graphql-js appends "Did you mean ...?" field-name suggestions to validation errors on a
 // separate code path from introspection, so they leak schema structure even when
 // disableGraphQLIntrospection is true.
@@ -221,10 +243,13 @@ const noSchemaHandler =
 // graphql-js's `formatError`/`error.toJSON()`, which assumes a GraphQLError prototype.
 // TODO: evaluate whether this is needed after switching away from Apollo
 const FIELD_SUGGESTION_SUFFIX = / Did you mean .+\?$/i;
-const formatError = (error: GraphQLError): GraphQLFormattedError => ({
-	...error,
-	message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
-});
+const formatError = (error: GraphQLError): GraphQLFormattedError =>
+	isAccessControlError(error.originalError)
+		? maskAccessControlError(error, error.originalError)
+		: {
+				...error,
+				message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
+			};
 
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	disableClientFilters = false,
@@ -321,7 +346,6 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		} else {
 			router.use(mainPath, noSchemaHandler(mainPath));
 		}
-
 	} catch (err) {
 		enableDebug && console.debug(`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${err}`);
 		throw schemaBuildError('Something went wrong while starting the GraphQL endpoint', err);
@@ -361,6 +385,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	mappingFromIndex: Record<string, unknown>;
 	setsIndex: string;
 }) => {
+	assertFilterCallback({ getServerSideFilter, receiver: 'createSchemasFromConfigs' });
+
 	try {
 		if (!configs) {
 			throw new Error('  No configs were provided. Please provide a config object.');
@@ -494,6 +520,10 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	mappingFromIndex,
 	rethrowOnError = false,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
+	// Ahead of the try, so even with rethrowOnError off an unusable filter fails the build instead of
+	// turning into a handler that answers every request with a 500.
+	assertFilterCallback({ getServerSideFilter, receiver: 'getGraphQLRoutes' });
+
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
 

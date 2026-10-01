@@ -1287,6 +1287,26 @@ suite('build_sqon response', () => {
 		assert.equal(output.summary, 'Age at Diagnosis is greater than 70');
 	});
 
+	// YYYY-MM-DD bounds stay mergeable so that narrowing a date across turns reports one filter.
+	test('reports the merge when a date bound narrows one supplied in an existingSqon', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [{ fieldName: 'donor.enrolled_on', operator: 'gte', value: '2021-06-15' }],
+			existingSqon: {
+				op: 'and',
+				content: [{ op: 'gte', content: { fieldName: 'donor.enrolled_on', value: '2020-01-01' } }],
+			},
+		});
+		assert.equal(output.clauseCount, 2);
+		assert.equal(output.filterCount, 1);
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [{ op: 'gte', content: { fieldName: 'donor.enrolled_on', value: '2021-06-15' } }],
+		});
+		assert.ok(Array.isArray(output.notes) && output.notes[0].includes('2 filter clauses reduced to 1'));
+	});
+
 	// clauseCount has to count what was submitted, not what survived the reduction, or the
 	// "reduced to" note goes silent on exactly the case it exists to explain.
 	test('counts clauses submitted inside an existingSqon that reduces on its own', async () => {

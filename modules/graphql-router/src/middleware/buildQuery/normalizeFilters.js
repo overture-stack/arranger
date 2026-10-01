@@ -61,9 +61,9 @@ function normalizeFilters(filter) {
 	const { op, content } = filter;
 
 	if (!op) {
-		throw new Error(`Must specify "op" in filters: ${filter}`);
+		throw new Error('Must specify "op" in filters');
 	} else if (!content) {
-		throw new Error(`Must specify "content" in filters: ${filter}`);
+		throw new Error('Must specify "content" in filters');
 	}
 
 	const { value } = content;

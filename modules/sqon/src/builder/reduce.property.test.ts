@@ -148,7 +148,94 @@ const evaluate = (node: ModeledNode, doc: ModeledDocument): boolean => {
 	return (fieldValue as number) <= bound; // lte
 };
 
+/**
+ * Two same-field range bounds, modelled the way the search engine compares them: `level` is a
+ * numeric field, which reads a quoted number as that number, and `day` is a date field holding
+ * YYYY-MM-DD days. Bounds on `level` mix numbers with quoted numbers, since the reducer sees only
+ * the value and never the field's type.
+ */
+type RangeOp = 'gt' | 'gte' | 'lt' | 'lte';
+type RangeFieldName = 'day' | 'level';
+type RangeLeaf = { op: RangeOp; content: { fieldName: RangeFieldName; value: number | string } };
+type RangeCombination = { op: 'and' | 'or'; content: RangeNode[] };
+type RangeNode = RangeLeaf | RangeCombination;
+type RangeDocument = Record<RangeFieldName, number | string>;
+
+const RANGE_OPS: RangeOp[] = ['gt', 'gte', 'lt', 'lte'];
+
+const levelValue = fastCheck.integer({ min: -12, max: 20 });
+const calendarDay = fastCheck
+	.date({ max: new Date('2020-01-10T00:00:00Z'), min: new Date('2019-12-25T00:00:00Z'), noInvalidDate: true })
+	.map((date) => date.toISOString().slice(0, 10));
+
+const sameFieldRangePair: fastCheck.Arbitrary<RangeNode> = fastCheck
+	.record({
+		combination: fastCheck.constantFrom('and' as const, 'or' as const),
+		fieldName: fastCheck.constantFrom<RangeFieldName>('day', 'level'),
+		op: fastCheck.constantFrom(...RANGE_OPS),
+	})
+	.chain(({ combination, fieldName, op }) => {
+		const bound = fieldName === 'level' ? fastCheck.oneof(levelValue, levelValue.map(String)) : calendarDay;
+		return fastCheck.tuple(bound, bound).map(
+			([first, second]): RangeNode => ({
+				op: combination,
+				content: [
+					{ op, content: { fieldName, value: first } },
+					{ op, content: { fieldName, value: second } },
+				],
+			}),
+		);
+	});
+
+const rangeDocument: fastCheck.Arbitrary<RangeDocument> = fastCheck.record({ day: calendarDay, level: levelValue });
+
+const compareToBound = (fieldName: RangeFieldName, fieldValue: number | string, bound: number | string): number => {
+	if (fieldName === 'level') {
+		return Number(fieldValue) - Number(bound);
+	}
+	return fieldValue < bound ? -1 : fieldValue > bound ? 1 : 0;
+};
+
+const isRangeCombination = (node: RangeNode): node is RangeCombination => node.op === 'and' || node.op === 'or';
+
+const evaluateRange = (node: RangeNode, doc: RangeDocument): boolean => {
+	if (isRangeCombination(node)) {
+		return node.op === 'and'
+			? node.content.every((child) => evaluateRange(child, doc))
+			: node.content.some((child) => evaluateRange(child, doc));
+	}
+
+	const { fieldName, value } = node.content;
+	const difference = compareToBound(fieldName, doc[fieldName], value);
+	if (node.op === 'gt') {
+		return difference > 0;
+	}
+	if (node.op === 'gte') {
+		return difference >= 0;
+	}
+	if (node.op === 'lt') {
+		return difference < 0;
+	}
+	return difference <= 0; // lte
+};
+
 suite('reduceSqon (property-based)', () => {
+	test('merging two same-field range bounds never changes which documents match', () => {
+		fastCheck.assert(
+			fastCheck.property(
+				sameFieldRangePair,
+				fastCheck.array(rangeDocument, { minLength: 1, maxLength: 8 }),
+				(pair, docs) => {
+					const reduced = reduceSqon(pair as unknown as SqonNode) as unknown as RangeNode;
+					for (const doc of docs) {
+						assert.equal(evaluateRange(reduced, doc), evaluateRange(pair, doc));
+					}
+				},
+			),
+			{ numRuns: 1000 },
+		);
+	});
+
 	test('is idempotent: a second pass changes nothing a first pass already reduced', () => {
 		fastCheck.assert(
 			fastCheck.property(sqonTree, (tree) => {

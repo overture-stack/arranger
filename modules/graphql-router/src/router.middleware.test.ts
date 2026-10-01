@@ -3,6 +3,7 @@ import { suite, test } from 'node:test';
 
 import type { RequestHandler } from 'express';
 
+import { createAccessControlRecord } from '#accessControl/accessControlRecord.js';
 import { createRequestPreprocessingMiddleware } from '#router.js';
 
 const runMiddlewareChain = async ({
@@ -12,7 +13,12 @@ const runMiddlewareChain = async ({
 	middlewares: RequestHandler[];
 	req: { body?: unknown; context?: Record<string, unknown>; query?: Record<string, unknown> };
 }) => {
-	const response: { body: unknown; statusCode: number; json(payload: unknown): unknown; status(code: number): unknown } = {
+	const response: {
+		body: unknown;
+		statusCode: number;
+		json(payload: unknown): unknown;
+		status(code: number): unknown;
+	} = {
 		body: undefined,
 		statusCode: 200,
 		json(payload: unknown) {
@@ -63,6 +69,7 @@ const runMiddlewareChain = async ({
 suite('router middleware injection', () => {
 	test('1.applies disableFilters through the router preprocessing stack', async () => {
 		const middlewares = createRequestPreprocessingMiddleware({
+			accessControlRecord: createAccessControlRecord(undefined),
 			configs: {
 				disableFilters: true,
 			},

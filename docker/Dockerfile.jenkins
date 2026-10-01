@@ -44,6 +44,8 @@ ARG ES_HOST
 ARG ES_USER
 ARG ES_PASS
 
+# ENABLE_ACCESS_CONTROL is deliberately not passed through like the variables below: an unset build
+# argument would set it empty, which refuses startup. Left unset, it means no access control.
 ENV ENABLE_LOGS=$ENABLE_LOGS
 ENV ES_HOST=$ES_HOST
 ENV ES_USER=$ES_USER

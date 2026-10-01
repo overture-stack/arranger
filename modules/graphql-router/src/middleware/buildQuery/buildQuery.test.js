@@ -1,10 +1,9 @@
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import buildQuery from '#middleware/buildQuery/index.js';
 
 suite('middleware/buildQuery', () => {
-
 	test('1.buildQuery should handle empty sqon', () => {
 		assert.deepEqual(
 			buildQuery({
@@ -13,7 +12,8 @@ suite('middleware/buildQuery', () => {
 					op: 'and',
 				},
 			}),
-			{ bool: { must: [] } });
+			{ bool: { must: [] } },
+		);
 	});
 
 	test('2.buildQuery "and" and "or" ops', () => {
@@ -525,7 +525,10 @@ suite('middleware/buildQuery', () => {
 				},
 				output: {
 					bool: {
-						should: [{ terms: { program: ['TCGA'], boost: 0 } }, { terms: { status: ['legacy'], boost: 0 } }],
+						should: [
+							{ terms: { program: ['TCGA'], boost: 0 } },
+							{ terms: { status: ['legacy'], boost: 0 } },
+						],
 					},
 				},
 			},
@@ -596,7 +599,10 @@ suite('middleware/buildQuery', () => {
 							{ terms: { project: ['ACC'], boost: 0 } },
 							{
 								bool: {
-									must: [{ terms: { program: ['TCGA'], boost: 0 } }, { terms: { status: ['legacy'], boost: 0 } }],
+									must: [
+										{ terms: { program: ['TCGA'], boost: 0 } },
+										{ terms: { status: ['legacy'], boost: 0 } },
+									],
 								},
 							},
 						],
@@ -1098,7 +1104,7 @@ suite('middleware/buildQuery', () => {
 		assert.deepEqual(buildQuery(input), output);
 	});
 
-	test('11b.buildQuery correctly prefixes a real nested-within-nested field (e.g. treatment.chemotherapy), matching donor.yaml\'s actual structure', () => {
+	test("11b.buildQuery correctly prefixes a real nested-within-nested field (e.g. treatment.chemotherapy), matching donor.yaml's actual structure", () => {
 		const input = {
 			nestingPrefix: 'data',
 			nestedFieldNames: ['treatment', 'treatment.chemotherapy'],
@@ -1119,7 +1125,14 @@ suite('middleware/buildQuery', () => {
 									path: 'data.treatment.chemotherapy',
 									query: {
 										bool: {
-											must: [{ terms: { 'data.treatment.chemotherapy.drug_name': ['Cisplatin'], boost: 0 } }],
+											must: [
+												{
+													terms: {
+														'data.treatment.chemotherapy.drug_name': ['Cisplatin'],
+														boost: 0,
+													},
+												},
+											],
 										},
 									},
 								},
@@ -1168,5 +1181,57 @@ suite('middleware/buildQuery', () => {
 		};
 
 		assert.throws(testFunction);
+	});
+});
+
+// A SQON arrives from the client, and an error's message travels further than the request that
+// caused it: into logs, into GraphQL error payloads, and into whatever an integration chooses to
+// echo back. A refusal therefore has to describe what was wrong without repeating the value.
+suite('buildQuery error messages', () => {
+	const CLIENT_TEXT = 'text-the-client-chose';
+
+	/** Asserts that `action` throws an Error whose message does not contain `clientValue`. */
+	const assertRefusedWithoutQuoting = (action, clientValue) =>
+		assert.throws(action, (error) => {
+			assert.ok(error instanceof Error, 'the refusal should be an Error');
+			assert.ok(
+				!error.message.includes(clientValue),
+				`the message should not quote the client's value, got: ${error.message}`,
+			);
+			return true;
+		});
+
+	const leaf = { content: { fieldName: 'files.kf_id', value: ['GF_JBMG9T1M'] }, op: 'in' };
+
+	test('reports an invalid pivot on a combination without quoting the pivot', () => {
+		// Given a combination whose pivot names no nested field
+		const filters = { content: [leaf], op: 'and', pivot: CLIENT_TEXT };
+
+		// When it is compiled, Then it is still refused, without the pivot in the message
+		assertRefusedWithoutQuoting(() => buildQuery({ filters, nestedFieldNames: ['files'] }), CLIENT_TEXT);
+	});
+
+	test('reports an invalid pivot on a single clause without quoting the pivot', () => {
+		// Given a lone clause whose pivot names no nested field
+		const filters = { ...leaf, pivot: CLIENT_TEXT };
+
+		// When it is compiled, Then it is still refused, without the pivot in the message
+		assertRefusedWithoutQuoting(() => buildQuery({ filters, nestedFieldNames: ['files'] }), CLIENT_TEXT);
+	});
+
+	test('reports an unknown op without quoting the op', () => {
+		// Given a clause whose op is not one the compiler knows
+		const filters = { content: { fieldName: 'study', value: ['A'] }, op: CLIENT_TEXT };
+
+		// When it is compiled, Then it is refused, without the op in the message
+		assertRefusedWithoutQuoting(() => buildQuery({ filters }), CLIENT_TEXT);
+	});
+
+	test('reports a combination entry that is not an object without quoting it', () => {
+		// Given a combination holding a bare string where a clause belongs
+		const filters = { content: [CLIENT_TEXT], op: 'and' };
+
+		// When it is compiled, Then it is refused, without the string in the message
+		assertRefusedWithoutQuoting(() => buildQuery({ filters }), CLIENT_TEXT);
 	});
 });

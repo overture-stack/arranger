@@ -71,31 +71,41 @@ const deduplicateValues = (node: SqonNode): SqonNode => {
 	return { ...node, content: { ...node.content, value: [...new Set(node.content.value)] } } as unknown as SqonNode;
 };
 
+const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * True for a YYYY-MM-DD string naming a real day. Checked by round trip, since `Date.parse` rolls
+ * an impossible day such as 2024-02-30 over into the next month.
+ */
+const isCalendarDate = (value: string): boolean => {
+	if (CALENDAR_DATE_PATTERN.test(value)) {
+		const time = Date.parse(value);
+		return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
+	}
+	return false;
+};
+
 /**
  * Orders two range bounds: negative when `a` sorts before `b`, positive when it sorts after, `0`
- * when they are equivalent, and `undefined` when the two cannot be ordered at all.
+ * when they are equivalent, and `undefined` when merging them is not safe.
  *
- * Two numbers compare numerically. Two strings are the ordinary shape of a date bound, since
- * `gt`/`gte`/`lt`/`lte` apply to `date` fields as well as numeric ones: they compare by parsed
- * timestamp when both parse as dates, and lexicographically otherwise, which is also correct for
- * an ISO 8601 string that `Date.parse` happens to reject.
- *
- * Anything else has no meaningful ordering here: a boolean, an array (which the range schemas
- * permit even though a bound is conceptually scalar), or one bound of each type. Those return
- * `undefined` so the caller keeps both clauses rather than coercing them through `Math.max`/
- * `Math.min`, which yields `NaN` for a non-numeric bound and would serialize it to `null`.
+ * Range ops apply to numeric and date fields, and on those only three pairs have an order the
+ * search engine is certain to share: two identical bounds, two numbers, and two YYYY-MM-DD calendar
+ * dates, whose text order is their date order. Every other pair returns `undefined`, because how a
+ * string bound sorts depends on the field's mapping, which the reducer cannot see: a quoted number,
+ * date math, another date format, a datetime, or one bound of each type. The caller then keeps
+ * both clauses, which is always correct, since the engine applies each one.
  */
 const compareBounds = (a: SqonScalarOrArray, b: SqonScalarOrArray): number | undefined => {
+	if (a === b) {
+		return 0;
+	}
+
 	if (typeof a === 'number' && typeof b === 'number') {
 		return a - b;
 	}
 
-	if (typeof a === 'string' && typeof b === 'string') {
-		const timeA = Date.parse(a);
-		const timeB = Date.parse(b);
-		if (!Number.isNaN(timeA) && !Number.isNaN(timeB)) {
-			return timeA - timeB;
-		}
+	if (typeof a === 'string' && typeof b === 'string' && isCalendarDate(a) && isCalendarDate(b)) {
 		return a < b ? -1 : a > b ? 1 : 0;
 	}
 
@@ -104,7 +114,7 @@ const compareBounds = (a: SqonScalarOrArray, b: SqonScalarOrArray): number | und
 
 /**
  * Returns a new node that merges `incoming` into `existing` per the applicable reduction rule, or
- * `undefined` when the rule cannot be applied because the two range bounds are not orderable. Only
+ * `undefined` when the rule cannot be applied because the two range bounds are not safe to merge. Only
  * the range rules can decline; the value-merge rules concatenate and always apply.
  */
 const mergeIntoExisting = (
@@ -163,11 +173,11 @@ const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
 				const existing = output.content[matchIdx] as SqonFieldFilter;
 				const merged = mergeIntoExisting(existing, reduced, output.op);
 
-				// `undefined` means the two range bounds are not orderable (a boolean, an array, or
-				// a number against a non-parseable string), so both clauses are kept rather than
-				// collapsed into a corrupt one. That is safe under either combination: under `and`
-				// applying both is equivalent to applying the stricter one alone, and under `or`
-				// applying either is equivalent to the looser one.
+				// `undefined` means the two range bounds have no order the search engine is certain
+				// to share (see `compareBounds`), so both clauses are kept rather than merged on a
+				// guess. That is safe under either combination: under `and` applying both is
+				// equivalent to applying the stricter one alone, and under `or` applying either is
+				// equivalent to the looser one.
 				if (merged !== undefined) {
 					// mergeIntoExisting doesn't dedupe its own result, so do it here.
 					output.content[matchIdx] = deduplicateValues(merged);
@@ -207,10 +217,10 @@ const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
  * wins under `or` in both cases); `between` is kept as-is. See the `MERGE_VALUES_*`/`KEEP_*` sets
  * above for the per-op reasoning.
  *
- * The four range ops compare date-string bounds as well as numeric ones, since they apply to
- * `date` fields. Two bounds that cannot be ordered against each other (a boolean, an array, or
- * one bound of each type) are left as two separate clauses rather than merged, which preserves
- * the meaning under every combination type.
+ * The four range ops merge two bounds only when both are numbers, both are YYYY-MM-DD calendar
+ * dates, or the two are identical. Any other pair (a quoted number, date math, another date
+ * format, a datetime, a boolean, an array, or one bound of each type) is left as two separate
+ * clauses rather than merged, which preserves the meaning under every combination type.
  *
  * **Combination-node rules:**
  * - Empty inner combination: removed.
