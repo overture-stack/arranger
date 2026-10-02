@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
+import { SqonSchema } from '@overture-stack/sqon';
+
 import {
+	checkFieldOperator,
 	validateAggregationFields,
 	validateHitsFields,
 	validateSortFields,
 	validateSqon,
+	validateSqonFields,
 	type CatalogueQueryContext,
 } from '#arranger/queryValidation.js';
 
@@ -27,6 +31,43 @@ const context: CatalogueQueryContext = {
 		nested: ['in', 'not-in', 'filter'],
 	},
 };
+
+// The shared half of the field-and-operator rules, used by both `validateSqonFields` (for
+// `execute_query`'s SQON walk and `build_sqon`'s `existingSqon`) and `validateClauses` (for
+// `build_sqon`'s clauses). It reports why a pairing is invalid and leaves the wording to the
+// caller, because the two phrase the same finding differently on purpose.
+suite('checkFieldOperator', () => {
+	test('returns undefined for a field and operator the catalogue accepts', () => {
+		assert.equal(checkFieldOperator('donor.sex', 'in', context), undefined);
+	});
+
+	test('reports a field the catalogue does not have', () => {
+		assert.deepEqual(checkFieldOperator('not.a.field', 'in', context), { kind: 'unknown-field' });
+	});
+
+	test("reports an operator the field's type does not accept, with the type and the alternatives", () => {
+		assert.deepEqual(checkFieldOperator('donor.sex', 'gt', context), {
+			fieldType: 'keyword',
+			kind: 'invalid-operator',
+			validOperators: ['in', 'not-in', 'some-not-in', 'all', 'wildcard'],
+		});
+	});
+
+	test('normalizes the catalogue\'s legacy "filter" name before comparing', () => {
+		assert.equal(checkFieldOperator('donor.sex', 'wildcard', context), undefined);
+	});
+
+	test('deduplicates the operators it offers as alternatives', () => {
+		const problem = checkFieldOperator('donor.sex', 'gt', context);
+		assert.ok(problem?.kind === 'invalid-operator');
+		assert.equal(new Set(problem.validOperators).size, problem.validOperators.length);
+	});
+
+	test('accepts any operator when the catalogue lists none for the field type', () => {
+		const noRules: CatalogueQueryContext = { fields: { a: { type: 'geo_point' } }, operators: {} };
+		assert.equal(checkFieldOperator('a', 'gt', noRules), undefined);
+	});
+});
 
 suite('validateSqon', () => {
 	test('accepts an empty root SQON', () => {
@@ -50,7 +91,10 @@ suite('validateSqon', () => {
 		const sqon = { op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } };
 		const result = validateSqon(sqon, context);
 		assert.equal(result.valid, false);
-		assert.ok(!result.valid && result.errors.some((error) => error.includes('unknown field "not.a.field"')));
+		assert.ok(
+			!result.valid &&
+				result.errors.some((error) => error.includes('SQON references unknown field "not.a.field"')),
+		);
 	});
 
 	test('rejects an operator that is not valid for the field type', () => {
@@ -102,7 +146,9 @@ suite('validateSqon', () => {
 		const sqon = { op: 'wildcard', content: { fieldNames: ['donor.sex', 'bad.field'], value: 'blood' } };
 		const result = validateSqon(sqon, context);
 		assert.equal(result.valid, false);
-		assert.ok(!result.valid && result.errors.some((error) => error.includes('unknown field "bad.field"')));
+		assert.ok(
+			!result.valid && result.errors.some((error) => error.includes('SQON references unknown field "bad.field"')),
+		);
 	});
 
 	test('lists valid operators by canonical name in operator errors', () => {
@@ -115,6 +161,45 @@ suite('validateSqon', () => {
 					error.includes('Valid operators: in, not-in, some-not-in, all, wildcard.'),
 				),
 		);
+	});
+});
+
+suite('validateSqonFields', () => {
+	test('returns no errors for a SQON whose every leaf fits the catalogue', () => {
+		const sqon = { op: 'in', content: { fieldName: 'donor.sex', value: ['Female'] } };
+		assert.deepEqual(validateSqonFields(SqonSchema.parse(sqon), context), []);
+	});
+
+	test('names the SQON generically by default, matching what validateSqon reports', () => {
+		const sqon = { op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } };
+		assert.deepEqual(validateSqonFields(SqonSchema.parse(sqon), context), [
+			'SQON references unknown field "not.a.field". Use get_catalogue_fields to list valid fields.',
+		]);
+	});
+
+	test('names the specific input under validation when given a subject', () => {
+		const sqon = { op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } };
+		assert.deepEqual(validateSqonFields(SqonSchema.parse(sqon), context, { subject: 'existingSqon' }), [
+			'existingSqon references unknown field "not.a.field". Use get_catalogue_fields to list valid fields.',
+		]);
+	});
+
+	test('applies the subject to operator errors as well as unknown fields', () => {
+		const sqon = { op: 'gt', content: { fieldName: 'donor.sex', value: 5 } };
+		const errors = validateSqonFields(SqonSchema.parse(sqon), context, { subject: 'existingSqon' });
+		assert.equal(errors.length, 1);
+		assert.ok(errors[0].startsWith('existingSqon operator "gt" is not valid for field "donor.sex"'));
+	});
+
+	test('reports one error per invalid leaf across nested combinations', () => {
+		const sqon = {
+			op: 'and',
+			content: [
+				{ op: 'in', content: { fieldName: 'not.a.field', value: ['x'] } },
+				{ op: 'or', content: [{ op: 'between', content: { fieldName: 'donor.sex', value: [1, 2] } }] },
+			],
+		};
+		assert.equal(validateSqonFields(SqonSchema.parse(sqon), context).length, 2);
 	});
 });
 

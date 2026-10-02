@@ -51,10 +51,18 @@ suite('summarizeSqon', () => {
 			assert.equal(summary, 'Age at Diagnosis is between 40 and 60');
 		});
 
+		// Joined with "or", not commas: a wildcard clause matches when any one of its fields matches,
+		// so a comma list would read as though every field had to match.
 		test('describes "wildcard" as a pattern match, naming every field it searches', () => {
 			const wildcard = { op: 'wildcard', content: { fieldNames: ['study', 'donor.sex'], value: '*A*' } };
 			const summary = summarizeSqon(wildcard as unknown as SqonNode, fields);
-			assert.equal(summary, 'study, donor.sex matches "*A*"');
+			assert.equal(summary, 'Study or Biological Sex matches "*A*"');
+		});
+
+		test('falls back to the raw field name for a wildcard field the catalogue does not describe', () => {
+			const wildcard = { op: 'wildcard', content: { fieldNames: ['study', 'not.a.field'], value: '*A*' } };
+			const summary = summarizeSqon(wildcard as unknown as SqonNode, fields);
+			assert.equal(summary, 'Study or not.a.field matches "*A*"');
 		});
 
 		test('falls back to a literal rendering for an operator it does not know', () => {

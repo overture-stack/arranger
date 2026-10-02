@@ -3,8 +3,8 @@ import { suite, test } from 'node:test';
 
 import {
 	buildArrangerGraphQLQuery,
-	toAggregationFieldName,
 	toDotNotationFieldName,
+	toGraphqlFieldPath,
 	type BuildArrangerGraphQLQueryInput,
 } from '#arranger/queryBuilder.js';
 
@@ -27,17 +27,15 @@ const baseInput = (overrides: Partial<BuildArrangerGraphQLQueryInput> = {}): Bui
 	...overrides,
 });
 
-suite('aggregation field name conversion', () => {
-	test('converts dot notation to double underscores', () => {
-		assert.equal(toAggregationFieldName('donor.age_at_diagnosis'), 'donor__age_at_diagnosis');
-	});
-
-	test('leaves already-converted names unchanged', () => {
-		assert.equal(toAggregationFieldName('donor__age_at_diagnosis'), 'donor__age_at_diagnosis');
-	});
-
+suite('field name conversion', () => {
 	test('converts double underscores back to dot notation', () => {
 		assert.equal(toDotNotationFieldName('donor__age_at_diagnosis'), 'donor.age_at_diagnosis');
+	});
+
+	test('sanitizes each segment of a dot path while keeping the dots', () => {
+		assert.equal(toGraphqlFieldPath('donor.age_at_diagnosis'), 'donor.age_at_diagnosis');
+		assert.equal(toGraphqlFieldPath('donor-info.ca19-9_level'), 'donor_info.ca19_9_level');
+		assert.equal(toGraphqlFieldPath('donor.2nd_reading'), 'donor._2nd_reading');
 	});
 });
 
@@ -188,29 +186,113 @@ suite('buildArrangerGraphQLQuery for both', () => {
 	});
 });
 
+// Introspection reports raw ES names, so a catalogue field whose name GraphQL disallows reaches
+// the builder unchanged and has to be sanitized into the name the generated schema exposes. The
+// rules mirror `buildGraphqlNameRegistry` in `modules/graphql-router`: `sanitizeGraphqlNameSegment`
+// per segment for the document type and hits selections, `sanitizeGraphqlFlatName` for the
+// aggregation key.
+suite('buildArrangerGraphQLQuery name sanitization', () => {
+	const awkwardFieldTypes = {
+		'ca19-9_level': 'float',
+		'donor-info': 'object',
+		'donor-info.age-at-diagnosis': 'long',
+		'2020_baseline': 'keyword',
+	};
+
+	test('sanitizes a hyphenated field name in the hits selection', () => {
+		const request = buildArrangerGraphQLQuery(
+			baseInput({ fields: ['ca19-9_level'], fieldTypes: awkwardFieldTypes }),
+		);
+
+		assert.match(request.query, /\n\t+ca19_9_level\n/);
+		assert.ok(!request.query.includes('ca19-9_level'));
+	});
+
+	test('sanitizes both the container and the leaf of a hyphenated dot path', () => {
+		const request = buildArrangerGraphQLQuery(
+			baseInput({ fields: ['donor-info.age-at-diagnosis'], fieldTypes: awkwardFieldTypes }),
+		);
+
+		assert.match(request.query, /donor_info {\n\t+age_at_diagnosis\n\t+}/);
+		assert.ok(!request.query.includes('-'));
+	});
+
+	test('prefixes a field name starting with a digit', () => {
+		const request = buildArrangerGraphQLQuery(
+			baseInput({ fields: ['2020_baseline'], fieldTypes: awkwardFieldTypes }),
+		);
+
+		assert.match(request.query, /\n\t+_2020_baseline\n/);
+	});
+
+	test('sanitizes an aggregation key beyond the dot-to-underscore rule', () => {
+		const request = buildArrangerGraphQLQuery(
+			baseInput({
+				queryType: 'aggregations',
+				aggregationFields: ['donor-info.age-at-diagnosis', 'ca19-9_level'],
+				fieldTypes: awkwardFieldTypes,
+			}),
+		);
+
+		// Dots become `__` and every other disallowed character becomes `_`, so the two rules are
+		// visible in one name: `donor-info.age-at-diagnosis` -> `donor_info__age_at_diagnosis`.
+		assert.match(request.query, /donor_info__age_at_diagnosis {\n\t+stats {/);
+		assert.match(request.query, /ca19_9_level {\n\t+stats {/);
+	});
+
+	test('sanitizes the document type and reports it as the root field name', () => {
+		const request = buildArrangerGraphQLQuery(baseInput({ documentType: 'model-A', fields: ['id'] }));
+
+		assert.equal(request.rootFieldName, 'model_A');
+		assert.match(request.query, /\n\tmodel_A {/);
+	});
+
+	test('leaves an already-valid name untouched', () => {
+		const request = buildArrangerGraphQLQuery(baseInput({ fields: ['id', 'donor.sex'] }));
+
+		assert.equal(request.rootFieldName, 'file');
+		assert.match(request.query, /donor {\n\t+sex\n\t+}/);
+	});
+});
+
 suite('buildArrangerGraphQLQuery name guards', () => {
-	test('rejects a document type that is not a valid GraphQL name', () => {
-		assert.throws(
-			() => buildArrangerGraphQLQuery(baseInput({ documentType: 'file { hits }' })),
-			/Document type is not valid/,
-		);
+	// Sanitization is total, so a name carrying GraphQL syntax is neutralized into a harmless
+	// identifier rather than rejected. Either way it cannot alter the query structure, and the
+	// rewritten name simply does not exist in the schema, so Arranger answers with a GraphQL
+	// error that execute_query surfaces.
+	test('neutralizes GraphQL syntax in a document type', () => {
+		const request = buildArrangerGraphQLQuery(baseInput({ documentType: 'file { hits }' }));
+
+		assert.equal(request.rootFieldName, 'file___hits__');
+		assert.equal(request.query.match(/{/g)?.length, request.query.match(/}/g)?.length);
 	});
 
-	test('rejects a hits field name that is not a valid GraphQL name', () => {
-		assert.throws(
-			() => buildArrangerGraphQLQuery(baseInput({ fields: ['id } evil { x'] })),
-			/Field name is not valid/,
-		);
+	test('neutralizes GraphQL syntax in a hits field name', () => {
+		const request = buildArrangerGraphQLQuery(baseInput({ fields: ['id } evil { x'] }));
+
+		assert.match(request.query, /id___evil___x/);
+		assert.ok(!request.query.includes('evil {'));
 	});
 
-	test('rejects an aggregation field name that is not a valid GraphQL name', () => {
-		assert.throws(
-			() =>
-				buildArrangerGraphQLQuery(
-					baseInput({ queryType: 'aggregations', aggregationFields: ['donor__sex } evil'] }),
-				),
-			/Field name is not valid/,
+	test('neutralizes GraphQL syntax in an aggregation field name', () => {
+		const request = buildArrangerGraphQLQuery(
+			baseInput({ queryType: 'aggregations', aggregationFields: ['donor__sex } evil'] }),
 		);
+
+		// The `__` is read as dot notation first, so the name resolves to `donor.sex } evil`
+		// before being flattened back and sanitized.
+		assert.match(request.query, /donor__sex___evil {/);
+		assert.ok(!request.query.includes('} evil'));
+	});
+
+	// An empty segment is the one case sanitization cannot resolve: it yields the empty string,
+	// which is not a valid GraphQL name.
+	test('rejects a field name with an empty path segment', () => {
+		assert.throws(() => buildArrangerGraphQLQuery(baseInput({ fields: ['donor.'] })), /Field name is not valid/);
+	});
+
+	test('rejects a document type that sanitizes to nothing', () => {
+		assert.throws(() => buildArrangerGraphQLQuery(baseInput({ documentType: '' })), /Document type is not valid/);
 	});
 
 	test('rejects an operation name that is not a valid GraphQL name', () => {

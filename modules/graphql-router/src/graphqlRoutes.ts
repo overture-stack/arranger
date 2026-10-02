@@ -17,10 +17,16 @@ import { ApolloServer } from 'apollo-server-express';
 import { Router, type Request, type RequestHandler, type Response } from 'express';
 import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql';
 
+import {
+	ACCESS_CONTROL_FAILURE_MESSAGE,
+	type AccessControlError,
+	isAccessControlError,
+} from '#accessControl/AccessControlError.js';
+import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
-import { addMappingsToTypes, extendFields } from '#mapping/index.js';
+import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
 import { buildGraphqlNameRegistry } from '#mapping/utils/graphqlNameRegistry.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
@@ -79,23 +85,11 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 			}
 
 			// Combines the mapping from ES with the "extended" custom configs
-			const extendedFields = await (async () => {
-				try {
-					const extendedConfigs = configs?.[configRootProperties.EXTENDED];
-					if (!extendedConfigs) {
-						throw new Error('No extended configs were provided.');
-					}
-					return extendFields(fieldsFromMapping, extendedConfigs);
-				} catch (err) {
-					console.log(
-						'    Something happened while extending the ES mappings.\n' +
-							'    Defaulting to "extended" config from files.\n',
-					);
-					enableDebug && console.debug(`  DEBUG: ${err}`);
-
-					return configs?.[configRootProperties.EXTENDED] || [];
-				}
-			})();
+			const extendedFields = resolveExtendedFields({
+				extendedConfigs: configs?.[configRootProperties.EXTENDED],
+				label: label ?? FALLBACK_LABEL,
+				mappingFields: fieldsFromMapping,
+			});
 
 			// Uses the "extended" fields to enhance the "facets" custom configs
 			const extendedFacetsConfigs = await (async () => {
@@ -178,7 +172,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 };
 
 /**
- * Create GQL schema and mockSchema based on type configuration and runtime flags.
+ * Create the GQL schema based on type configuration and runtime flags.
  */
 const createSchema = <Context extends ArrangerBaseContext>({
 	enableDebug = false,
@@ -194,7 +188,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	setsIndex: string;
 	types: SchemaTypesTuple;
-}): { schema: GraphQLSchema; mockSchema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
+}): { schema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
 	const { resolvers, typesWithSets } = createCatalogueResolvers({
 		debug: enableDebug,
 		enableAdmin,
@@ -204,13 +198,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	});
 
 	return {
-		mockSchema: createSchemaForResolvers({
-			mock: true,
-			typesWithSets,
-			resolvers,
-		}),
 		schema: createSchemaForResolvers({
-			mock: false,
 			middleware: graphqlOptions.middleware || [],
 			typesWithSets,
 			resolvers,
@@ -229,6 +217,22 @@ const noSchemaHandler =
 		});
 	};
 
+// Built from scratch rather than spread from `error`, so neither the refusal's own message nor the
+// stack Apollo adds under debug can reach the client.
+const maskAccessControlError = (error: GraphQLError, accessControlError: AccessControlError): GraphQLFormattedError => {
+	console.error('access_control.evaluation_failed', accessControlError.message, {
+		cause: accessControlError.cause,
+		path: error.path,
+	});
+
+	return {
+		...(error.extensions?.code ? { extensions: { code: error.extensions.code } } : {}),
+		locations: error.locations,
+		message: ACCESS_CONTROL_FAILURE_MESSAGE,
+		path: error.path,
+	};
+};
+
 // graphql-js appends "Did you mean ...?" field-name suggestions to validation errors on a
 // separate code path from introspection, so they leak schema structure even when
 // disableGraphQLIntrospection is true.
@@ -239,12 +243,16 @@ const noSchemaHandler =
 // graphql-js's `formatError`/`error.toJSON()`, which assumes a GraphQLError prototype.
 // TODO: evaluate whether this is needed after switching away from Apollo
 const FIELD_SUGGESTION_SUFFIX = / Did you mean .+\?$/i;
-const formatError = (error: GraphQLError): GraphQLFormattedError => ({
-	...error,
-	message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
-});
+const formatError = (error: GraphQLError): GraphQLFormattedError =>
+	isAccessControlError(error.originalError)
+		? maskAccessControlError(error, error.originalError)
+		: {
+				...error,
+				message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
+			};
 
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
+	disableClientFilters = false,
 	disableGraphQLIntrospection,
 	disablePlayground,
 	enableDebug,
@@ -254,9 +262,9 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	label,
 	maxAliases,
 	maxDepth,
-	mockSchema,
 	schema,
 }: {
+	disableClientFilters?: boolean;
 	disableGraphQLIntrospection?: boolean;
 	disablePlayground: boolean;
 	enableDebug?: boolean;
@@ -267,11 +275,9 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	label?: string;
 	maxAliases?: number;
 	maxDepth?: number;
-	mockSchema: GraphQLSchema;
 	schema: GraphQLSchema;
 }) => {
 	const mainPath = '/graphql';
-	const mockPath = '/mock/graphql';
 	const router = Router();
 
 	console.log(`\n${logSeparator(label)}\nStarting GraphQL server${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
@@ -305,6 +311,9 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 					esClient,
 					request,
 					...(externalContext || {}),
+
+					// After the spread: an external context must not be able to switch this off.
+					disableClientFilters,
 				};
 			};
 
@@ -337,31 +346,6 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		} else {
 			router.use(mainPath, noSchemaHandler(mainPath));
 		}
-
-		if (mockSchema) {
-			const apolloMockServer = new ApolloServer({
-				allowBatchedHttpRequests: enableGraphQLBatching,
-				cache: 'bounded',
-				formatError,
-				introspection: !disableGraphQLIntrospection,
-				schema: mockSchema,
-				validationRules,
-				...apolloFeatureFlags,
-			});
-
-			await apolloMockServer.start();
-
-			apolloMockServer.applyMiddleware({
-				app: router,
-				// See the equivalent comment on apolloServer.applyMiddleware above.
-				cors: false,
-				path: '/mock/graphql',
-			});
-
-			console.log(`  - GraphQL mock endpoint running at ...${mockPath}`);
-		} else {
-			router.use(mockPath, noSchemaHandler(mockPath));
-		}
 	} catch (err) {
 		enableDebug && console.debug(`  DEBUG${isFallbackLabel(label) ? '' : ` (${label})`}: ${err}`);
 		throw schemaBuildError('Something went wrong while starting the GraphQL endpoint', err);
@@ -371,7 +355,6 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		'/',
 		addContext({
 			schema,
-			mockSchema,
 		}),
 	);
 
@@ -402,6 +385,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	mappingFromIndex: Record<string, unknown>;
 	setsIndex: string;
 }) => {
+	assertFilterCallback({ getServerSideFilter, receiver: 'createSchemasFromConfigs' });
+
 	try {
 		if (!configs) {
 			throw new Error('  No configs were provided. Please provide a config object.');
@@ -414,7 +399,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			mappingFromIndex,
 		});
 
-		const { mockSchema, schema, resolvers } = await createSchema({
+		const { schema, resolvers } = await createSchema({
 			enableDebug,
 			enableAdmin,
 			getServerSideFilter,
@@ -494,7 +479,6 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		return {
 			fieldsFromMapping,
 			typesWithMappings,
-			mockSchema,
 			schema: fullSchema,
 		};
 	} catch (error: unknown) {
@@ -536,11 +520,15 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	mappingFromIndex,
 	rethrowOnError = false,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
+	// Ahead of the try, so even with rethrowOnError off an unusable filter fails the build instead of
+	// turning into a handler that answers every request with a 500.
+	assertFilterCallback({ getServerSideFilter, receiver: 'getGraphQLRoutes' });
+
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
 
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
+		const { fieldsFromMapping, schema, typesWithMappings } = await createSchemasFromConfigs({
 			configs,
 			enableDebug,
 			enableAdmin,
@@ -553,6 +541,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		});
 
 		const graphQLEndpoints = await createEndpoint({
+			disableClientFilters: configs[configOptionalProperties.DISABLE_FILTERS] ?? false,
 			disableGraphQLIntrospection: configs[configOptionalProperties.DISABLE_GRAPHQL_INTROSPECTION] ?? false,
 			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND] ?? false,
 			enableDebug,
@@ -562,7 +551,6 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			label,
 			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
 			maxDepth: configs[configOptionalProperties.GRAPHQL_MAX_DEPTH],
-			mockSchema,
 			schema,
 		});
 

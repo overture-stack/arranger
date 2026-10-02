@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { type Client } from '@modelcontextprotocol/sdk/client';
+import { type Client } from '@modelcontextprotocol/client';
 
 import { SERVER_INSTRUCTIONS } from '../../../apps/mcp-server/src/mcp/instructions.js';
 
@@ -19,8 +19,11 @@ export type SpinupEnv = {
  * by the server are visible to a client.
  */
 export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
-	test('1.responds to a ping over the MCP transport', async () => {
-		await assert.doesNotReject(getClient().ping());
+	// `ping` was removed by protocol revision 2026-07-28, and the SDK refuses it locally before it
+	// reaches the wire. `server/discover` replaces it as the request every modern client makes at
+	// connect, so it is the reachability probe now.
+	test('1.responds to server/discover over the MCP transport', async () => {
+		await assert.doesNotReject(getClient().discover());
 	});
 
 	test('2.reports server name and version after initialization', async () => {

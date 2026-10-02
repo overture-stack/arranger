@@ -36,4 +36,5 @@ export {
 	SqonScalarOrArrayValueSchema as SqonScalarOrArraySchema,
 } from './schema/constants.js';
 export type { SqonCombination, SqonNode, SqonScalar, SqonScalarOrArray } from './schema/index.js';
+export { checkSqonDepth, SQON_MAX_DEPTH } from './schema/depth.js';
 export { SQON_SCHEMA_VERSION } from './version/index.js';

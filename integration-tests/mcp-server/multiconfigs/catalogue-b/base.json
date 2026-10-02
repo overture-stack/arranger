@@ -22,6 +22,38 @@
 			"primaryKey": false,
 			"quickSearchEnabled": false,
 			"type": "date"
+		},
+		{
+			"displayName": "CA19-9 Level",
+			"displayType": "number",
+			"fieldName": "ca19-9_level",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"type": "float",
+			"unit": "U/mL"
+		},
+		{
+			"displayName": "2020 Baseline",
+			"displayType": "keyword",
+			"fieldName": "2020_baseline",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"type": "keyword"
+		},
+		{
+			"displayName": "Age at Diagnosis",
+			"displayType": "number",
+			"fieldName": "donor-info.age-at-diagnosis",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"type": "long",
+			"unit": "years"
 		}
 	]
 }

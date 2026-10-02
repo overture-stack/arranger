@@ -1,10 +1,22 @@
 import type { ConfigsObject, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
-import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
+import {
+	configFeatureFlagProperties,
+	configOptionalProperties,
+	configRootProperties,
+} from '@overture-stack/arranger-types/configs/constants';
 import { Router, type RequestHandler } from 'express';
 import { merge } from 'lodash-es';
 
-import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
+import {
+	ACCESS_CONTROL_RECORD,
+	type AccessControlRecord,
+	createAccessControlRecord,
+	describeAccessControlRecord,
+} from '#accessControl/accessControlRecord.js';
+import { assertFilterCallback } from '#accessControl/filterCallback.js';
+import enforceAccessControl from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
+import refuseDisabledDownloads from '#download/disableDownloads.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
 import { getIndexMapping } from '#searchClient/index.js';
@@ -29,14 +41,21 @@ export const resolveLabel = ({
 	documentType?: string;
 }): string => catalogueId || documentType || FALLBACK_LABEL;
 
+/**
+ * The middleware every request meets first: it records the router's access-control decision and debug
+ * flag on the request context, then applies the request-level controls `configs` enables.
+ */
 export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
+	accessControlRecord,
 	configs,
 	enableDebug,
 }: {
+	accessControlRecord: AccessControlRecord<Context>;
 	configs: Partial<ConfigsObject<Context>>;
 	enableDebug?: boolean;
 }): RequestHandler[] => [
 	addContext({
+		[ACCESS_CONTROL_RECORD]: accessControlRecord,
 		enableDebug,
 	}),
 	enforceAccessControl({ configs }),
@@ -46,12 +65,19 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
 // i.e. each catalogue may have their own, with no global filters
 // question: should global filters be allowed?
 
+/**
+ * Builds the router serving one catalogue: its GraphQL endpoint, introspection and downloads.
+ *
+ * @param getServerSideFilter the access-control filter callback every read applies, which must be a
+ *   non-async function. Left out, the router applies `includeEverything` and records the choice as
+ *   defaulted rather than configured; any other value makes construction reject.
+ */
 const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	catalogueId,
 	configs: customConfigs = {},
 	configsSource = '',
 	esClient: customEsClient = undefined,
-	getServerSideFilter = getDefaultServerSideFilter,
+	getServerSideFilter,
 	graphqlOptions = {},
 }: {
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. Falls back to `documentType` when not provided. */
@@ -69,6 +95,14 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	console.log(`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
 
 	try {
+		assertFilterCallback({ getServerSideFilter, optional: true, receiver: 'arrangerRouter' });
+
+		const accessControlRecord = createAccessControlRecord(getServerSideFilter);
+
+		console.log('access_control.startup', `access control: ${describeAccessControlRecord(accessControlRecord)}`, {
+			catalogue: label,
+		});
+
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
 			aggregatedConfigs,
 			customEsClient,
@@ -102,7 +136,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		const router = Router();
 
-		router.use(createRequestPreprocessingMiddleware({ configs, enableDebug }));
+		router.use(createRequestPreprocessingMiddleware({ accessControlRecord, configs, enableDebug }));
 
 		const introspectionBody = buildCatalogueIntrospectionBody({
 			catalogId: configs[configOptionalProperties.CATALOG_ID] ?? '',
@@ -118,7 +152,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			enableAdmin,
 			enableDebug,
 			esClient,
-			getServerSideFilter, // TODO: Extend for multicatalogue per-catalogue filters
+			getServerSideFilter: accessControlRecord.getServerSideFilter, // TODO: Extend for multicatalogue per-catalogue filters
 			graphqlOptions,
 			label,
 			mappingFromIndex,
@@ -128,11 +162,8 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		router.use('/', graphQLRoutes);
 		router.use(
 			`/download`,
-			downloadRoutes({
-				enableDebug,
-				getServerSideFilter,
-			}),
-		); // consumes
+			configs[configFeatureFlagProperties.DISABLE_DOWNLOADS] ? refuseDisabledDownloads() : downloadRoutes(),
+		);
 		router.get('/favicon.ico', (req, res) => res.status(204));
 
 		return router;

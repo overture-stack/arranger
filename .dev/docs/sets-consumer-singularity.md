@@ -148,32 +148,75 @@ In the reporting session's own words, which are worth keeping verbatim because t
 answer rather than a hedge: this is the public data portal, so **"the data is open so it never came
 up"** is very close to accurate.
 
-## Open question: does Singularity replay a set's `ids`, or re-run its stored `sqon`?
+## Answered 2026-08-31: Singularity replays the materialized `ids`
 
-**Unresolved, and deliberately not attributed to portal-ui**, who cannot see it: their entire
-contribution is to hand over an opaque `setId` and never look at it again.
+**Confirmed by the Singularity session from its own source**, which supersedes the deployment-config
+lean this section previously carried. `SetQueryArchiveRequest.arrangerSetTermsQuery` builds an
+Elasticsearch `termsLookupQuery("_id", TermsLookup(arrangerSetsIndex, setId, "ids"))`, so the search
+engine dereferences the `ids` array server-side and Singularity never fetches or inspects it. That
+same query object reaches the scroll over the file-centric index. The stored `sqon` is read, but its
+only use is as one component of an archive dedup hash. There is no SQON parser and no translation
+layer in the service.
 
-The question matters because a set document stores both. `ids` is a keyword array materialized at
-creation time, so replaying it yields a fixed document list that outlives any later change to the
-index or to who may see what. `sqon` is the query that produced it, so re-running it re-evaluates
-against the index as it currently stands. The two behave identically on the day a set is made and
-diverge from then on.
+**What that settles for Arranger:** a set's membership is fixed when the set is created, and nothing
+downstream re-evaluates it. Whatever scoping applied at creation is the only scoping that ever
+applies on this path.
 
-**One piece of adjacent evidence, marked as unverified inference and not as a finding.** Drawn from
-Singularity's deployment configuration rather than its source: its container environment carries a
-search-engine host, an authentication toggle, and exactly one index-name variable, with no Arranger
-endpoint variable and nothing resembling SQON-evaluation configuration. Re-running a stored SQON
-would require Singularity to translate SQON into a search query itself, which is a substantial
-capability with no configuration footprint. That leans toward `ids` replay. It is a lean.
+## The set is not the access boundary, and the archive is not scoped to a principal
 
-**The authoritative answer is in the Singularity service repository**, which neither session has
-checked out. One direct look there settles it, and it is worth doing before anything is designed
-around either answer.
+Reported by the Singularity session, who found it while enumerating their own surface to answer a
+narrower question, and who asked that three caveats travel with it: it describes application source,
+a deployed environment may front the service with authentication at a gateway or ingress, and this
+portal's data is substantially public by design, so much of it may be intentional. It is offered as a
+property rather than as a finding.
 
-**Until it is settled, assume the answer is `ids`.** Requested by the reporting session and worth
-following: it is the reading their own deployment-config evidence leans toward, and it is the more
-constraining of the two, so a change to Arranger's sets surface designed against it is safe under
-either answer. They have found the Singularity repository checked out on this machine, outside their
-approved working directories, and have asked their developer for clearance to read it. No live
-session owns that repository. They will send the answer as a follow-up to be amended in here rather
-than holding this document open.
+Two properties of that service, established with them and **deliberately not described here**.
+Together they mean a completed archive is reachable independently of the set that produced it, and
+that the artifact is identified by the query rather than by who asked for it. The mechanisms are
+recorded outside this repository, because they describe another team's surface and this file is
+public; that team has raised them with their own developer.
+
+**The consequence for this repository's access-control design, which is why the section exists:**
+per-principal scoping of sets cannot produce an end-to-end property. Even correct scoping at
+Arranger's read path is undone one hop downstream, because the artifact that survives is keyed on the
+question rather than on the asker. The general form is worth more than the instance:
+**a consumer that materializes a set into a durable artifact creates a new access boundary that
+inherits nothing from ours.** Enforcement placed here governs this repository's read path and makes
+no claim beyond it.
+
+**A boundary condition rather than a defect**, agreed with that session and recorded on both sides:
+keying an artifact on the question rather than the asker is correct for open data, and stops being
+correct the moment the data is not open.
+
+## `path: "name"` works only because the field does not exist
+
+Portal-ui creates sets with `path: "name"`, and Singularity matches the stored values against
+`file_centric._id`. That alignment is accidental.
+
+**Arranger's half.** `resolveSets.js:42` reads `_source.<path>` with the document `_id` as a lodash
+`get` default. That default fires **only when the resolved value is `undefined`**: a `null` or an
+empty string is returned as-is. So the fallback is not a general safety net.
+
+**Portal-ui's half, and their finding rather than this repository's.** They traced the literal to
+commit `1f4aa5c0d5eea763f262f092dbe3bd1facb8c5ce`, "Set download (#85)", 2021-08-25, which introduces
+the whole download feature and never mentions `path` or `name`; it has been carried through five
+later refactors unexamined. They also checked the index rather than reasoning from the call site: on
+`clinical_centric` every name-bearing field is nested (`file.name`, `repositories.name`) and no bare
+top-level `name` exists. Verify against that commit rather than taking this summary for it.
+
+So `_source.name` resolves to nothing on every document, and the `_id` fallback is the only path ever
+exercised. Adding a populated top-level `name` to that index would silently change what sets store,
+and archive builds would return empty with no error in either service.
+
+**A hazard for whoever fixes it**, reported by the Singularity session: changing `path` does not
+change how the downstream service identifies an already-built archive, so rebuilding the same set
+serves the pre-existing one. The fix cannot be verified that way, and a stale archive will look like
+a working one.
+
+## This document is currently the only record of this contract
+
+The Singularity service has no `.dev/` directory and no devctx, so nothing established here is
+written down on that side. Their session has asked their developer whether to bootstrap one and has
+not acted unilaterally. Until that lands this file is the integration contract rather than notes
+about a dependency, and it should be maintained as one. If a record does appear on their side, point
+at it rather than duplicating it.

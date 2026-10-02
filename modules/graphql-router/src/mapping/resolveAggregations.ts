@@ -3,6 +3,7 @@ import { configOptionalProperties } from '@overture-stack/arranger-types/configs
 import { sanitizeGraphqlFlatName } from '@overture-stack/arranger-types/tools';
 import getFields from 'graphql-fields';
 
+import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/index.js';
 import type { SchemaTypesDefinition } from '#schema/types.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
@@ -72,7 +73,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 	getServerSideFilter,
 }: {
 	type: SchemaTypesDefinition;
-	getServerSideFilter?: GetServerSideFilterFn<Context>;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
 }) => {
 	const resolver: AggregationsResolver<Context> = async (
 		root,
@@ -90,7 +91,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		// we are placing this here until the issue is resolved by Elasticsearch in version 6.3
 		const resolvedFilter = await resolveSetsInSqon({ sqon: filters, esClient });
 
-		const serverSideFilter = getServerSideFilter && getServerSideFilter(context);
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
 
 		const query = buildQuery({
 			caller: 'resolveAggregations',
@@ -98,6 +99,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
+				disableClientFilters: context.disableClientFilters,
 				serverSideFilter,
 			}),
 		});

@@ -3,14 +3,24 @@
 		"_id": "b-001",
 		"_source": {
 			"sample_id": "b-001",
-			"createdAt": "2024-01-15T00:00:00.000Z"
+			"createdAt": "2024-01-15T00:00:00.000Z",
+			"ca19-9_level": 12.5,
+			"2020_baseline": "low",
+			"donor-info": {
+				"age-at-diagnosis": 47
+			}
 		}
 	},
 	{
 		"_id": "b-002",
 		"_source": {
 			"sample_id": "b-002",
-			"createdAt": "2025-06-20T00:00:00.000Z"
+			"createdAt": "2025-06-20T00:00:00.000Z",
+			"ca19-9_level": 37.5,
+			"2020_baseline": "high",
+			"donor-info": {
+				"age-at-diagnosis": 61
+			}
 		}
 	}
 ]

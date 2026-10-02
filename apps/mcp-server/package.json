@@ -17,25 +17,27 @@
 	"private": true,
 	"scripts": {
 		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./src/index.ts",
+		"generate-secret": "node ./scripts/generateSecret.mjs",
+		"generate-secret:print": "node ./scripts/generateSecret.mjs --print",
+		"setup-env": "cp -n .env.schema .env; npm run generate-secret",
 		"start": "tsx ./src/index.ts",
 		"test": "tsx --test --experimental-test-module-mocks",
-		"inspect": "npx @modelcontextprotocol/inspector@1 --config ./mcp-inspector.json --server mcp-server"
+		"inspect": "npx @modelcontextprotocol/inspector@2 --config ./mcp-inspector.json --server mcp-server"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.29.0",
+		"@modelcontextprotocol/node": "^2.0.0",
+		"@modelcontextprotocol/server": "^2.0.0",
+		"@overture-stack/arranger-types": "file:../../modules/types",
 		"@overture-stack/sqon": "file:../../modules/sqon",
-		"cors": "^2.8.6",
 		"dotenv": "^16.6.1",
-		"express": "^4.21.2",
 		"pino": "^10.3.1",
 		"pino-pretty": "^13.1.3",
 		"tsx": "^4.21.0",
-		"zod": "^3.25.76"
+		"zod": "^4.2.0"
 	},
 	"devDependencies": {
+		"@modelcontextprotocol/client": "^2.0.0",
 		"@tsconfig/node22": "^22.0.5",
-		"@types/cors": "^2.8.12",
-		"@types/express": "^4.17.14",
 		"@types/node": "^25.6.2",
 		"typescript": "^5.8.3"
 	},

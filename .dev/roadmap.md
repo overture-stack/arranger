@@ -8,9 +8,19 @@ This document covers two categories of planned work: **product and architecture*
 
 ## Architecture
 
+### Request rate limiting
+
+_Priority: high. Not started._
+
+Neither `modules/graphql-router` nor `apps/search-server` has any rate limiting, and no such dependency exists in either package. Every deployed instance serves as many requests as it receives, and the GraphQL endpoint in particular accepts a single small request that can expand into an arbitrarily expensive query.
+
+Belongs in `modules/graphql-router` rather than in `apps/search-server`, so every consumer embedding the router inherits it instead of each one rediscovering the need independently.
+
+Related and separable: `GRAPHQL_MAX_ALIASES` and `GRAPHQL_MAX_DEPTH` already exist and default to unset, so the guards that do exist are off unless a deployment remembers to set them. Whether to give them defaults is a compatibility decision, since a default can reject queries that work today, and it is worth settling in the same pass rather than leaving the protection opt-in.
+
 ### Config plan/preview CLI
 
-_Priority: high. Sequenced at the top: no open design question blocks starting it._
+_Priority: high. The first item here that is neither on hold nor blocked by an open design question._
 
 A CLI that diffs a proposed catalogue configuration against a live ES/OS mapping and reports what would change (facets, columns, missing fields, validation errors) without starting the server or writing to the cluster. Absorbs the config-validation item rather than duplicating its Zod work.
 
@@ -23,6 +33,8 @@ _Priority: low. Research-first, and possibly not a separate implementation at al
 The problem this is aimed at: a catalogue's facets, columns, and searchable fields come from configuration files (`extended.json`, `facets.json`, `table.json`), which are supposed to match the real fields in the live ES/OS index. Nothing currently checks that they still agree. Concrete failure mode: an operator's upstream indexing pipeline (for example Maestro) adds a new field to the index; nobody remembers to add it to the catalogue's configuration; the field is then silently invisible in Arranger, with no error and no warning. The reverse also happens: a field is removed or renamed upstream while a facet still references it, and that facet quietly breaks.
 
 **Scoping note:** this is, mechanically, the same comparison the Config plan/preview CLI item above already has to make (live index mapping versus configuration files). The likely right answer is that this does not need its own tool: running that CLI on a schedule against the currently-deployed configuration, with no proposed change, and alerting if it reports any diff, is a mapping-drift detector. This entry mainly exists to record that use case (scheduled, automatic drift-checking, not just pre-deploy validation) so it isn't lost when the CLI is scoped. Whoever picks up the CLI work should read this and decide whether a "drift-check mode" (for example, a machine-readable exit code or JSON diff suitable for a cron job and an alert) is worth designing in from the start, rather than building a second tool later.
+
+**A second drift the same comparison would catch, and it needs a different trigger.** Arranger reads the mapping once, at catalogue load, and derives `nested_fieldNames`, the extended fields and the GraphQL schema from it. A mapping change takes effect for queries immediately, while that derived state stays as it was read, and Arranger has no mapping-change signal to notice it with. So a check that runs only at boot or before a deploy misses an index that changed under a running server.
 
 **Distinct from the typed client SDK item further below:** despite sounding similar (both are "things that are supposed to match can silently drift apart"), they check different pairs of things for different people. This item is about Arranger's own configuration staying honest about the real data underneath it, an operator's concern. The typed client SDK is about a consumer's code staying honest about Arranger's current API, a downstream developer's concern. Neither substitutes for the other.
 
@@ -66,7 +78,7 @@ _Design work needed: define the interface between core and transport. The config
 
 ### Auth and field/record-level access control
 
-**Subsystem docs:** design, sequencing, and the scoped defect index now live in [`.dev/docs/arranger-auth/`](docs/arranger-auth/index.md). Key decision recorded there: enforcement belongs at the query-building boundary rather than the transport boundary, so the planned Beacon and REST adapters inherit it instead of reimplementing it, and the Usher plugin is a translator only. Three defects block building on the current seam, including a confirmed export-path bypass of `getServerSideFilter`.
+**Subsystem docs:** design, sequencing, and the scoped defect index now live in [`.dev/docs/arranger-auth/`](docs/arranger-auth/index.md). Key decision recorded there: enforcement belongs at the query-building boundary rather than the transport boundary, so the planned Beacon and REST adapters inherit it instead of reimplementing it, and the Usher adapter is a translator only. Three defects block building on the current seam, including a confirmed export-path bypass of `getServerSideFilter`.
 
 _Priority: medium. Blocked on the Overture ABAC design and the core module boundary._
 
@@ -244,7 +256,7 @@ Consumers that build on Arranger (portal frontends, and internally `modules/char
 
 ### MCP integration readiness
 
-_Priority: mixed per sub-item. One of six shipped (`build_sqon`, 2026-08-10); five open._
+_Priority: mixed per sub-item. One of six shipped (`build_sqon`, v1 2026-08-10, v2 2026-08-25); five open._
 
 Six improvements making Arranger a well-behaved upstream for an MCP server layer. Open: schema cache invalidation signal (ETag/schema hash, `high`), SQON documentation in schema descriptions, field descriptions in the generated schema, making invisible query defaults SDL-visible (research), and the accumulated `/docs` gap for the MCP surface.
 
@@ -306,7 +318,9 @@ _Priority: medium. Sequence before the auth/ABAC work above, not after._
 
 The [Observability](#observability-metrics-tracing-and-usage-analytics-research) item above covers metrics and tracing; neither addresses a narrower, more immediate gap: **there is currently no structured per-request log at all** for a query request. Confirmed absent: nothing in the query resolvers (`resolveHits.js`, `resolveAggregations.ts`) or `apps/search-server` emits a structured event per request today. No log line anywhere in the request path includes user identity, request ID, catalogue name, SQON size, or hit count, which is the minimum context needed for anomaly detection and post-incident reconstruction.
 
-Scope: one structured log event per query request with fields `{ catalogId, queryType, sqonSize, hitsReturned, durationMs }`, extendable to include `userId` once auth lands (the field can be established as absent/`null` now and populated later without a schema change). Unlike the full Observability item, this does not need OpenTelemetry or a `/metrics` endpoint: structured JSON to stdout is sufficient.
+Scope: one structured log event per query request with fields `{ catalogId, queryType, sqonSize, hitsReturned, durationMs }`, extendable to include the acting principal once auth lands (the field can be established as absent/`null` now and populated later without a schema change). Unlike the full Observability item, this does not need OpenTelemetry or a `/metrics` endpoint: structured JSON to stdout is sufficient.
+
+The envelope those fields sit in is settled and is CloudEvents, agreed across Overture rather than for Arranger alone, since denial events have to correlate by principal across services. The fields above become `data` contents; the principal is `actorId` rather than `userId`, which is a trust boundary rather than a rename, because `saveSet` already takes a caller-asserted `userId`. Decisions, rejected alternatives, and the two things the shape still owes are in [structured-logging.md](docs/atlas/roadmap/structured-logging.md).
 
 This is a genuine prerequisite, not just adjacent work: access denial events (see [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control)) need somewhere to land once ABAC ships, and that logging shape should exist before enforcement does, not be retrofitted after.
 
@@ -318,7 +332,9 @@ This is a genuine prerequisite, not just adjacent work: access denial events (se
 
 _Priority: medium. Distinct from the `wildcard` operator already implemented._
 
-A `fuzzy` op doing Levenshtein matching via ES/OS `multi_match` with `fuzziness: "AUTO"`, same `fieldNames` shape as `wildcard`. Note `docs/concepts.md` already advertises this operator, so the published contract is fixed rather than free (see tech-debt).
+A `fuzzy` op doing Levenshtein matching via ES/OS `multi_match` with `fuzziness: "AUTO"`, same `fieldNames` shape as `wildcard`.
+
+Now also blocking `build_sqon` v2.1, which is otherwise ready: the tool shipped `wildcard` on 2026-08-25 and `fuzzy` is the one operator it cannot offer. A second `modules/sqon` fix rides with this one: `addFilterClause`'s text branch dispatches on `'fieldNames' in params` and ignores `operator` entirely, so it already returns a `wildcard` clause for a `fuzzy` request with no error (measured). Once both text operators share the plural shape, no caller can distinguish them and the dispatch has to read `operator`.
 
 [Detail: implementation notes, schema shape, and the AND-versus-OR design question](docs/atlas/roadmap/sqon-operators.md#fuzzy-edit-distance-sqon-operator)
 
@@ -391,6 +407,18 @@ The Quicksearch component currently stands alone. It should be integrable as a F
 Design question: a quicksearch-within-TermAggs should filter the displayed buckets without modifying the main SQON until the user makes a selection. Consider whether this replaces or augments the existing TermAggs component, and whether TermAggs should absorb Quicksearch entirely.
 
 _Good TDD candidate once the interaction design is settled._
+
+### Portable SQON encoding for URLs and citations (research)
+
+_Priority: medium. Research-first, and the central question is open: needs discussion before any implementation is scoped._
+
+Portal bookmarks are cited as references in published papers, so a SQON in a URL has to be short enough to print and stable enough to resolve years later. Measurement says those are two problems with different answers, rather than one problem with a single encoding.
+
+A compact syntax and a compressed blob win in opposite regimes: the syntax is roughly three times better than raw JSON on a small query and beats compression there, while compression wins on a heavy bookmark, where the payload is field names and values rather than syntax. Neither is usable at printed length, which points at a resolvable identifier for the citation case whatever is decided about syntax.
+
+Compactness is also not the binding constraint for a citation. A renamed field or a rebuilt index leaves the query parsing and running while quietly meaning something else, and no encoding addresses that. The date range aggregation entry below already contains one instance of this without naming it: a relative date resolved at query time returns a different result set every day the cited URL is opened.
+
+[Detail: measurements for both regimes, what a compact syntax would have to solve, prior art, and the four open questions](docs/atlas/roadmap/sqon-portability.md)
 
 ### SQON editor component
 
@@ -546,6 +574,19 @@ Options: run as a non-blocking report (visibility without blocking), block on cr
 
 _Recommended starting point: add `npm audit --audit-level=critical` as a non-blocking CI report to understand the current baseline before committing to a failure policy._
 
+### Vulnerability disclosure as part of the release workflow
+
+_Priority: medium. Process, no code._
+
+A fix for a vulnerability in a released version follows one sequence, written into `.dev/docs/release-process.md` as a step of every release:
+
+1. `SECURITY.md` at the repository root says how to report a vulnerability privately (GitHub's private vulnerability reporting) and which release lines receive fixes.
+2. Until the fix is released, public text (commits, changelog, `.dev/`, docs) states what the code must do, never how earlier versions fail.
+3. Deployments the team runs are upgraded, or mitigated at their ingress, before anything is published.
+4. A GitHub security advisory is drafted privately in the repository's Security tab and published with the release that fixes it: affected and fixed versions, severity, and a workaround for anyone who cannot upgrade yet. Dependabot and similar tools then notify affected users.
+
+_Recommended starting point: add `SECURITY.md` and enable private vulnerability reporting in the repository settings, then add the advisory step to `release-process.md`'s RC promotion and final release sections. Worth carrying into the agentics release convention that `release-process.md` § 10 is already scoping._
+
 ### Aggregation privacy masking (small count suppression)
 
 _Priority: high for deployments with sensitive data. Needs design before implementation._
@@ -571,6 +612,18 @@ _Priority: medium. Standalone once the approach is agreed._
 `ping-elasticsearch.sh` calls `/_cluster/health` with the application credential, forcing `cluster:monitor/health` onto a role that never uses it. Move the readiness gate into a Kubernetes init container with its own elevated credential, leaving the app with `cluster:monitor/main` only.
 
 [Detail: the full fix, the rejected simpler alternative, and the Vault/Helm work required](docs/atlas/roadmap/health-check-credential.md)
+
+### Per-catalogue recovery in readiness reporting
+
+_Priority: low. Standalone._
+
+`/ready` now reflects live engine reachability: `PING_MS` drives a periodic `indices.exists` probe, and the endpoint reports 503 while the engine is unreachable and recovers on its own when it returns. It answers `{ status, engineReachable }`. That closes the case that recurs in a cluster, an engine going away or coming back under a process that is otherwise fine, and it needs no cluster-level permission, so the application credential stays as narrow as the item above wants it.
+
+What remains is narrower. **Catalogue statuses are still decided once, while routers are built.** A catalogue that failed at startup for a reason of its own, a missing index or a bad mapping, stays `failed` until the pod restarts even after the cause is fixed, and the aggregate keeps reporting it. Recovering that means re-attempting router construction per catalogue on a schedule and swapping in the rebuilt router, which is a different and larger change from probing a connection.
+
+**A second gap, and it is the sharper of the two.** The probe holds a plain boolean, so if the interval stops running the last result stands indefinitely. A stalled refresher that last saw a healthy engine reports healthy forever, which is the fail-open the probe exists to remove, one level up. The fix is for the cached result to carry the time it was taken and for a stale result to count as unreachable, so a refresher that dies takes the pod out of rotation rather than freezing its last good answer.
+
+`PING_MS` is the natural interval for it and is already threaded through config, so the wiring exists. Worth doing when catalogue-level flapping is observed in practice rather than pre-emptively: a rebuild loop that races an in-flight request is a worse failure than the one it fixes.
 
 ### Helm chart update
 
@@ -637,7 +690,6 @@ Done when: one tool owns ordering; `sort-objects`, `sort-interfaces`, `sort-obje
 _Two things to establish before committing to it, neither answerable by reading. Whether perfectionist's `sort-imports` can be configured to emit what `organize-imports` emits, since one runs at lint time and the other at format time and a disagreement makes them ping-pong; the existing `#` pathGroup makes this non-trivial. And whether `sort-objects` covers destructured parameters, which the convention's own text flags as uncertain._
 
 _Blocked on the `dist/` lint scope fix, tracked in `.dev/tech-debt.md`: with build output linted, a new rule lands in a backlog of roughly 17,600 problems that is about 89% `dist/`, so the control would exist and be invisible._
-
 
 ### Context
 
@@ -739,6 +791,8 @@ Replaces manual version bumping and Jenkins git tagging; packages version indepe
 
 Full detail, including the worked config, the API-surface-diff enhancement, and what Changesets does versus what pnpm's publish step does: [atlas: Changesets adoption](docs/atlas/roadmap/changesets-adoption.md).
 
+**Open question, deferred deliberately:** how `SQON_SCHEMA_VERSION` should move when the published SQON contract changes. It is stamped from `modules/sqon`'s own `package.json` version at build time, so on `main` it always reads `0.0.0-dev` and a contract change has no version to attach itself to until a release cuts one. While the package is on release candidates this is not worth solving: whatever the first non-RC publish carries will be correct by construction, since every accumulated contract change ships together under one real version. It becomes a live question once the package is past `1.x` and a consumer can be pinned to a stable version that a later correction invalidates, which is the same problem this section solves for package versions generally.
+
 ### 3.2 Testcontainers for integration test infrastructure
 
 _Replaces hardcoded sidecar containers with test-owned, programmatically managed containers._
@@ -793,7 +847,7 @@ Catches phantom dependencies at install time, faster CI installs, removes `dange
 
 **nx consideration:** nx is an alternative monorepo build system to Turborepo, not a complement. Turbo + pnpm is the current plan. If Turbo proves insufficient (e.g. more complex task orchestration, code generation, or module federation needs arise), nx is worth evaluating. For now, proceed with Turbo.
 
-**Resolved, corrects §3.1's own "Cleanup when this lands" note:** `changeset version` does not rewrite `file:` (or `workspace:`) deps to real version ranges; `workspace:^` means "always use the local version," there's no version number in that string for Changesets to touch. That substitution happens exclusively via pnpm's own publish step, described above. Changesets' `updateInternalDependencies` does something adjacent but different: deciding whether a *dependent* package needs its own cascading version bump when a sibling changes, not rewriting how the dependency is referenced. See [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md) for the full resolution. **Consequence: this section needs to land before §3.1, not after, despite the numbering** (§3.1's cascade-bump detection needs a `workspace:` or real-semver reference to act on, not `file:`).
+**Resolved, corrects §3.1's own "Cleanup when this lands" note:** `changeset version` does not rewrite `file:` (or `workspace:`) deps to real version ranges; `workspace:^` means "always use the local version," there's no version number in that string for Changesets to touch. That substitution happens exclusively via pnpm's own publish step, described above. Changesets' `updateInternalDependencies` does something adjacent but different: deciding whether a _dependent_ package needs its own cascading version bump when a sibling changes, not rewriting how the dependency is referenced. See [atlas: pnpm migration scoping findings](docs/atlas/pnpm-migration.md) for the full resolution. **Consequence: this section needs to land before §3.1, not after, despite the numbering** (§3.1's cascade-bump detection needs a `workspace:` or real-semver reference to act on, not `file:`).
 
 ---
 
@@ -861,4 +915,24 @@ When `sqon` changes, `--filter=[HEAD^1]` includes `types`, `graphql-router`, `se
 
 What the previous diagram got wrong: (1) `components` was marked "independent of server chain" but declares both `arranger-types` and `sqon`, so it is downstream of both; (2) `apps/mcp-server` was absent entirely despite declaring `sqon`; (3) `integration-tests/mcp-server` was absent despite depending on `graphql-router` and `types`; (4) the `components → charts` edge is not backed by a resolvable declaration at all, only a `peerDependencies` entry, which is the §3.3 blocker noted above.
 
-Two consequences for Phase 2: the `integration-tests/server` node was annotated `cache: false` here but `turbo.json` does not actually set it, and §2.2's `--filter=!integration-tests/server` excludes only one of the two ES-dependent suites (and uses a directory path where the package name is `integration-tests-search-server`). Both suites also default `SERVER_PORT` to 5678, which is safe under today's sequential `npm run test --ws` and will race the moment Turbo parallelizes them.
+Two consequences for Phase 2: the `integration-tests/server` node was annotated `cache: false` here but `turbo.json` does not actually set it, and §2.2's `--filter=!integration-tests/server` excludes only one of the two ES-dependent suites (and uses a directory path where the package name is `integration-tests-search-server`).
+
+The port collision named here is resolved: both suites defaulted `SERVER_PORT` to 5678, and `integration-tests/mcp-server` now defaults to 5680, clear of the 5678 and 5679 that `integration-tests/server` uses. Sequential runs were never affected; this removes the race that parallelizing them would have introduced.
+
+### Ephemeral ports for test harnesses
+
+**Low priority.** Distinct hardcoded defaults resolve today's collision but keep a coordination burden: every new harness has to know which ports are taken, and nothing enforces it. Binding port `0` removes the class, since the OS assigns a free port per process and no two suites can contend.
+
+The blocker is structural rather than conceptual. All three harnesses build their base URL at module scope, before any server exists:
+
+```
+const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
+const serverUrl = `http://localhost:${serverPort}`;
+const rootApi = ajax(serverUrl, {});
+```
+
+With port 0 the configured value is not the bound one, so `serverUrl` and every client built from it have to be created after the listener is up. That means each harness returning its bound port from the start step and deferring client construction, across three files where the client is currently a module-level constant used throughout. Mechanical, but not a default swap.
+
+`apps/search-server` is already ready for it: `server.ts` reports the port from `server.address()` rather than from the configured value, so an explicit `SERVER_PORT=0` works and logs a reachable URL today.
+
+**Not proposed for the repo-wide default.** `docker-compose.yml` publishes `5050:5050` and sets no `SERVER_PORT`, both Dockerfiles `EXPOSE 5050`, and `docs/reference/08-Migration/v3.1.md` documents 5050 as the default. Changing it is a breaking change requiring a Helm change in `overture/infra` that Jenkins deploys, and belongs in a release note rather than riding along with a test-harness fix.

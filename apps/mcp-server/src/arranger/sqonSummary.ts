@@ -7,10 +7,20 @@ const formatValue = (value: unknown): string => (typeof value === 'string' ? `"$
 
 const formatValues = (value: unknown): string => (Array.isArray(value) ? value : [value]).map(formatValue).join(' or ');
 
+const describeField = (fieldName: string, fields: SummaryFields): string => fields[fieldName]?.displayName || fieldName;
+
+/**
+ * Labels the fields a text-search clause spans. Joined with "or" rather than commas because that
+ * is what the clause means: Arranger matches the value against each field independently and the
+ * document qualifies when any one of them matches.
+ */
+const describeFields = (fieldNames: string[], fields: SummaryFields): string =>
+	fieldNames.map((fieldName) => describeField(fieldName, fields)).join(' or ');
+
 const describeLeaf = (leaf: SqonNode, fields: SummaryFields): string => {
 	const content = leaf.content as { fieldName?: string; fieldNames?: string[]; value: unknown };
 	const { fieldName, fieldNames, value } = content;
-	const label = (fieldName && fields[fieldName]?.displayName) || fieldName || (fieldNames ?? []).join(', ');
+	const label = fieldName !== undefined ? describeField(fieldName, fields) : describeFields(fieldNames ?? [], fields);
 
 	switch (leaf.op) {
 		case 'in':

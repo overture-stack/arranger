@@ -2,7 +2,14 @@
 	"mappings": {
 		"properties": {
 			"sample_id": { "type": "keyword" },
-			"createdAt": { "type": "date" }
+			"createdAt": { "type": "date" },
+			"ca19-9_level": { "type": "float" },
+			"2020_baseline": { "type": "keyword" },
+			"donor-info": {
+				"properties": {
+					"age-at-diagnosis": { "type": "long" }
+				}
+			}
 		}
 	}
 }

@@ -51,9 +51,9 @@ Every filter clause needs an operator. The table below maps what you want to exp
 | I want to express...                                          | Operator      |
 | ------------------------------------------------------------- | ------------- |
 | Field matches any of these values                             | `in`          |
-| Field does not match any of these values                      | `not-in`      |
+| Field does not match any of these values (on a nested field: at least one nested item's value is outside the list) | `not-in`      |
 | Field contains all of these values (multi-valued field only)  | `all`         |
-| At least one nested item is excluded (multi-valued, per-item) | `some-not-in` |
+| Field does not match any of these values (on a nested field: no nested item's value is in the list) | `some-not-in` |
 
 ```json
 { "op": "in",     "content": { "fieldName": "status",   "value": ["active", "pending"] } }
@@ -64,6 +64,27 @@ Every filter clause needs an operator. The table below maps what you want to exp
 **`in` vs `not-in` vs wrapping in `not`**
 
 `not-in` is the right choice for excluding values: it maps directly to an Elasticsearch `must_not` terms query and expresses the intent clearly. Reserve the combination-level `not` operator for negating a whole sub-SQON or an operator that has no built-in negated form (range operators, for example). Using `not { in: [...] }` where `not-in` would do is technically equivalent but harder to read.
+
+**`not-in` vs `some-not-in`: identical on a flat field, opposite quantifiers on a nested one**
+
+On a field with no nesting, `not-in` and `some-not-in` compile to the same query: there is only one
+value to check, so "at least one" and "none" collapse into the same thing. The distinction only
+exists for a multi-valued field nested under a repeating object (an array of sub-documents), where
+each clause quantifies over the nested items differently:
+
+- `not-in`: **at least one** nested item's value is outside the list (existential). A document with
+  one matching item and one non-matching item still passes.
+- `some-not-in`: **no** nested item's value is in the list (universal exclusion). A document with
+  even one matching item is excluded.
+
+**To express "every nested item's value is in the list"** (universal containment, the opposite of
+`some-not-in`), wrap `not-in` in a combination-level `not`: `not(not-in(field, values))`. This only
+gives that meaning on a nested field; on a flat field the query still emits a double negation
+(`must_not` around `must_not` around the `terms` clause) rather than being rewritten to a plain
+`terms` query, but the two negations cancel and match the same documents as `in` would
+(existential: "matches any of these values"), which is a different, weaker guarantee than universal
+quantification. Do not use this idiom on a flat field expecting universal quantification, since
+there is nothing to quantify over there.
 
 ### Range operators: for numeric and date fields
 
@@ -281,7 +302,7 @@ The function discriminates between `ScalarFilter` (one field, any non-text opera
 - **Merging duplicate field filters.** If two filters target the same field with the same operator under the same combination, they may be reduced to one. Whether they are depends on the combination, because the same merge is correct under one operator and wrong under another. **Nothing is ever merged under `not`**, for any operator.
   - `in`: merged under `or` only: `in: ['A']` OR `in: ['B']` is identical to `in: ['A', 'B']`. Under `and` the two filters are kept separate, because the search engine evaluates them as an intersection (a document must satisfy both) and unioning their values would widen the result instead of narrowing it
   - `not-in`, `some-not-in`, `all`: merged under `and` only: under `or`, these operators have independent semantics and are kept as separate nodes
-  - `gt`, `gte`, `lt`, `lte`: the tighter bound wins under `and`; the looser bound wins under `or`
+  - `gt`, `gte`, `lt`, `lte`: the tighter bound wins under `and`; the looser bound wins under `or`. This applies when both bounds are numbers, both are `YYYY-MM-DD` dates, or the two are identical. Any other pair, such as quoted numbers, date math, other date formats or datetimes, is kept as two separate nodes, because how a string bound sorts depends on the field's mapping, and applying both gives the same result. Merging only saves a clause: a bound in any date format is accepted, and reaches the search engine unchanged
   - `between`: always kept as separate nodes
 
 The output of `.toValue()` reflects these reductions. If you pass a SQON to the builder and chain a condition on the same field, you may get a different node count than you constructed: that is the reducer doing its job. Use the output as the authoritative form.

@@ -1,3 +1,4 @@
+import { sanitizeGraphqlFlatName, sanitizeGraphqlNameSegment } from '@overture-stack/arranger-types/tools';
 import type { SqonNode } from '@overture-stack/sqon';
 
 export type ArrangerSortOrder = 'asc' | 'desc';
@@ -38,6 +39,17 @@ export type ArrangerGraphQLRequest = {
 	query: string;
 	variables: Record<string, unknown>;
 	operationName: string;
+	/**
+	 * The name of the root field this query selects, which is also the key its results come back
+	 * under: `response.data[rootFieldName]`.
+	 *
+	 * Not the same string as the `documentType` input. Introspection reports the raw document type
+	 * from the catalogue's config, but the generated schema names its root field with the sanitized
+	 * form of that (see `sanitizeGraphqlNameSegment`), so the two differ whenever the raw name
+	 * contains a character GraphQL disallows. Read responses by this name, and keep using the raw
+	 * `documentType` when reporting the catalogue back to the caller.
+	 */
+	rootFieldName: string;
 };
 
 /**
@@ -60,44 +72,53 @@ const NUMERIC_AGGREGATION_TYPES = new Set([
 
 /**
  * Valid GraphQL name pattern, applied to every name interpolated into the query document.
- * All values are also validated against catalogue introspection before reaching the builder;
- * this is a final guard so unvalidated input can never alter the query structure.
+ * Sanitization already guarantees this for any non-empty input, so the pattern is a final guard
+ * against a degenerate name (an empty path segment) rather than the primary defence.
  */
 const GRAPHQL_NAME_PATTERN = /^[_A-Za-z][_0-9A-Za-z]*$/;
 
 /**
- * Asserts that every dot- or double-underscore-separated segment of a field name is a valid GraphQL name.
- * @param fieldName - The field name to check (e.g. `donor.age_at_diagnosis` or `donor__age_at_diagnosis`).
- * @throws Error if any segment is not a valid GraphQL name.
+ * Asserts that every dot-separated segment of a field name still yields a valid GraphQL name once
+ * sanitized. Only an empty segment can fail: `sanitizeGraphqlNameSegment` rewrites everything else
+ * into a valid name, which is what lets the builder address fields whose raw ES names GraphQL
+ * disallows (`biomarker.ca19-9_level`) instead of rejecting them.
+ * @param fieldName - The dot-notation field name to check (e.g. `donor.age_at_diagnosis`).
+ * @throws Error if any segment sanitizes to something that is not a valid GraphQL name.
  */
 const assertGraphqlSafeFieldName = (fieldName: string): void => {
-	const segments = fieldName.split(/\.|__/);
-	if (segments.length === 0 || segments.some((segment) => !GRAPHQL_NAME_PATTERN.test(segment))) {
+	const segments = fieldName.split('.');
+	if (segments.some((segment) => !GRAPHQL_NAME_PATTERN.test(sanitizeGraphqlNameSegment(segment)))) {
 		throw new Error(`Field name is not valid for use in a GraphQL query: "${fieldName}"`);
 	}
 };
 
 /**
- * Converts a field name to its GraphQL aggregations key by replacing `.` with `__`.
- * Arranger's generated schema cannot use `.` in field names, so nested aggregation
- * fields use double underscores instead.
- * @example
- * ```ts
- * toAggregationFieldName('donor.age_at_diagnosis') // returns 'donor__age_at_diagnosis'
- * toAggregationFieldName('donor__age_at_diagnosis') // returns 'donor__age_at_diagnosis' (already converted)
- * ```
- */
-export const toAggregationFieldName = (fieldName: string): string => fieldName.split('.').join('__');
-
-/**
  * Converts a GraphQL aggregations key back to the dot-notation field name used by
  * catalogue introspection and SQON filters.
+ *
+ * @remarks
+ * This is not the inverse of `sanitizeGraphqlFlatName`, and cannot be: sanitization is lossy, so
+ * a field whose raw name needed more than the dot-to-`__` rule does not round-trip. It exists only
+ * to accept the double-underscore notation callers may pass for aggregation fields, which is
+ * resolved against introspection's dot-notation keys before any name reaches the query document.
  * @example
  * ```ts
  * toDotNotationFieldName('donor__age_at_diagnosis') // returns 'donor.age_at_diagnosis'
  * ```
  */
 export const toDotNotationFieldName = (fieldName: string): string => fieldName.split('__').join('.');
+
+/**
+ * Rewrites a dot-notation field path into the segment names the generated schema exposes, keeping
+ * the dots as separators. Hits responses are keyed by those sanitized segments, so this is how a
+ * map keyed on raw introspection paths (such as `fieldTypes`) is re-keyed to match a response.
+ * @example
+ * ```ts
+ * toGraphqlFieldPath('donor-info.ca19-9_level') // returns 'donor_info.ca19_9_level'
+ * ```
+ */
+export const toGraphqlFieldPath = (fieldName: string): string =>
+	fieldName.split('.').map(sanitizeGraphqlNameSegment).join('.');
 
 type SelectionTree = { [segment: string]: SelectionTree };
 
@@ -125,6 +146,11 @@ const buildSelectionTree = (fields: string[]): SelectionTree => {
  * Renders a selection tree as a GraphQL selection set body. Arranger's generated schema
  * gives every `nested` field its own connection type, so children of a `nested` field are
  * wrapped in `hits { edges { node { ... } } }`; `object` fields are plain selections.
+ *
+ * @remarks
+ * Every segment is sanitized on the way into the document, matching how the schema names its
+ * fields. `parentPath` accumulates the *raw* segments, because `fieldTypes` is keyed on the raw
+ * dotted paths introspection reports.
  * @example
  * ```ts
  * renderSelectionTree({ tree: { id: {}, donor: { age: {} } }, depth: 0, fieldTypes: {} })
@@ -147,8 +173,10 @@ const renderSelectionTree = ({
 	const indent = '\t'.repeat(depth);
 	return Object.entries(tree)
 		.map(([segment, children]) => {
+			const graphqlName = sanitizeGraphqlNameSegment(segment);
+
 			if (Object.keys(children).length === 0) {
-				return `${indent}${segment}`;
+				return `${indent}${graphqlName}`;
 			}
 
 			const path = parentPath ? `${parentPath}.${segment}` : segment;
@@ -163,7 +191,7 @@ const renderSelectionTree = ({
 					fieldTypes,
 					parentPath: path,
 				});
-				return `${indent}${segment} {\n${hitsIndent}hits {\n${edgesIndent}edges {\n${nodeIndent}node {\n${childSelection}\n${nodeIndent}}\n${edgesIndent}}\n${hitsIndent}}\n${indent}}`;
+				return `${indent}${graphqlName} {\n${hitsIndent}hits {\n${edgesIndent}edges {\n${nodeIndent}node {\n${childSelection}\n${nodeIndent}}\n${edgesIndent}}\n${hitsIndent}}\n${indent}}`;
 			}
 
 			const childSelection = renderSelectionTree({
@@ -172,7 +200,7 @@ const renderSelectionTree = ({
 				fieldTypes,
 				parentPath: path,
 			});
-			return `${indent}${segment} {\n${childSelection}\n${indent}}`;
+			return `${indent}${graphqlName} {\n${childSelection}\n${indent}}`;
 		})
 		.join('\n');
 };
@@ -195,7 +223,7 @@ const buildAggregationSelection = ({
 	const inner = '\t'.repeat(depth + 1);
 	const innerMost = '\t'.repeat(depth + 2);
 
-	const aggregationKey = toAggregationFieldName(fieldName);
+	const aggregationKey = sanitizeGraphqlFlatName(fieldName);
 
 	if (NUMERIC_AGGREGATION_TYPES.has(fieldType)) {
 		return `${indent}${aggregationKey} {\n${inner}stats {\n${innerMost}min\n${innerMost}max\n${innerMost}avg\n${innerMost}sum\n${innerMost}count\n${inner}}\n${indent}}`;
@@ -214,12 +242,17 @@ const buildAggregationSelection = ({
  * into the query document.
  *
  * Inputs are expected to be pre-validated against catalogue introspection (see
- * `queryValidation.ts`); the builder additionally rejects any name that is not a valid
- * GraphQL identifier.
+ * `queryValidation.ts`). Introspection reports raw ES names, so the builder sanitizes the
+ * document type and every field name into the identifiers the generated schema actually
+ * exposes, applying the same rules the server used to build that schema. Sanitization is total,
+ * which is also what keeps an unvalidated name from altering the query structure: it is rewritten
+ * into a harmless identifier rather than escaping into the document.
  *
  * @param input - The validated query parameters, catalogue document type, and field types.
- * @returns The GraphQL request: query document, variables, and operation name.
- * @throws Error if any field name, document type, or operation name is not a valid GraphQL name.
+ * @returns The GraphQL request: query document, variables, operation name, and the sanitized
+ * root field name to read the response by.
+ * @throws Error if a field name or document type has an empty segment (the one case sanitization
+ * cannot resolve), or if the operation name is not a valid GraphQL name.
  * @example
  * ```ts
  * buildArrangerGraphQLQuery({
@@ -253,9 +286,13 @@ export const buildArrangerGraphQLQuery = (input: BuildArrangerGraphQLQueryInput)
 		operationName,
 	} = input;
 
-	if (!GRAPHQL_NAME_PATTERN.test(documentType)) {
+	const rootFieldName = sanitizeGraphqlNameSegment(documentType);
+	if (!GRAPHQL_NAME_PATTERN.test(rootFieldName)) {
 		throw new Error(`Document type is not valid for use in a GraphQL query: "${documentType}"`);
 	}
+	// Unlike field names and the document type, the operation name is not catalogue data: it is a
+	// constant this server chooses, so a bad one is a programming error and stays a hard failure
+	// rather than being quietly sanitized into something else.
 	if (!GRAPHQL_NAME_PATTERN.test(operationName)) {
 		throw new Error(`Operation name is not valid for use in a GraphQL query: "${operationName}"`);
 	}
@@ -291,8 +328,6 @@ export const buildArrangerGraphQLQuery = (input: BuildArrangerGraphQLQueryInput)
 	}
 
 	if (includeAggregations) {
-		aggregationFields.forEach(assertGraphqlSafeFieldName);
-
 		variableDefinitions.push('$includeMissing: Boolean', '$aggregationsFilterThemselves: Boolean');
 		variables.includeMissing = includeMissing;
 		variables.aggregationsFilterThemselves = aggregationsFilterThemselves;
@@ -300,6 +335,7 @@ export const buildArrangerGraphQLQuery = (input: BuildArrangerGraphQLQueryInput)
 		const aggregationSelections = aggregationFields
 			.map((fieldName) => {
 				const dotName = toDotNotationFieldName(fieldName);
+				assertGraphqlSafeFieldName(dotName);
 				return buildAggregationSelection({
 					fieldName: dotName,
 					fieldType: fieldTypes[dotName] ?? 'keyword',
@@ -313,7 +349,7 @@ export const buildArrangerGraphQLQuery = (input: BuildArrangerGraphQLQueryInput)
 		);
 	}
 
-	const query = `query ${operationName}(${variableDefinitions.join(', ')}) {\n\t${documentType} {\n${selections.join('\n')}\n\t}\n}`;
+	const query = `query ${operationName}(${variableDefinitions.join(', ')}) {\n\t${rootFieldName} {\n${selections.join('\n')}\n\t}\n}`;
 
-	return { query, variables, operationName };
+	return { query, variables, operationName, rootFieldName };
 };

@@ -2,6 +2,7 @@ import { configOptionalProperties } from '@overture-stack/arranger-types/configs
 import { get, isEmpty, uniq } from 'lodash-es';
 import { v4 as uuid } from 'uuid';
 
+import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
@@ -76,7 +77,8 @@ export const saveSet =
 			nestingPrefix,
 			filters: compileFilter({
 				clientSideFilter: sqon,
-				serverSideFilter: getServerSideFilter(context),
+				disableClientFilters: context.disableClientFilters,
+				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
 			}),
 		});
 

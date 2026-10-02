@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { type Client } from '@modelcontextprotocol/sdk/client';
+import { type Client } from '@modelcontextprotocol/client';
 
 export type ToolEnv = {
 	getClient: () => Client;

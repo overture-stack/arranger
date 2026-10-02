@@ -149,7 +149,7 @@ build_sqon(input: {
   existingSqon?: SqonNode,
   clauses: Array<{
     fieldName?: string,          // for scalar operators
-    fieldNames?: string[],       // for text operators (wildcard, fuzzy); mutually exclusive with fieldName
+    fieldNames?: string[],       // for wildcard text search; mutually exclusive with fieldName
     operator: ScalarOperator | TextOperator,
     value: SqonScalar | SqonScalar[] | string,
     negate?: boolean,
@@ -190,6 +190,8 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 
 **What batching requires the tool to do in return:** check every clause before responding, and report every invalid one in the same error message, not just the first. If the tool stopped at the first bad clause, the LLM would fix it, resubmit, and only then discover a second problem, costing the exact round trip batching was meant to remove.
 
+**This obligation covers the whole input, not only `clauses`** (corrected 2026-08-12, after review of #1091). The shipped tool originally validated `existingSqon` in two places that both sat outside the clause batch: a structural check that returned before `validateClauses` ran, and a catalogue check on the folded SQON that ran only after `validateClauses` had passed. A call carrying both an invalid clause and an `existingSqon` this catalogue cannot run therefore reported only the clauses, and the mismatch surfaced on the next call, which is the round trip this section exists to prevent. `existingSqon` is now validated against the catalogue independently of the fold and its errors join the same list, so one response carries every problem with the call. See [Error handling](#error-handling).
+
 ### Why `build_sqon` needs a `catalogueId`
 
 **The choice:** whether `build_sqon` takes a `catalogueId` at all, or builds purely from what's in the `clauses` array.
@@ -204,23 +206,54 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 
 ### Operator reference
 
-| Operator      | v1 scope | sqon ready | Shape  | Field property | Value type                        | ES/OS translation                     |
-| ------------- | -------- | ---------- | ------ | -------------- | --------------------------------- | ------------------------------------- |
-| `in`          | yes      | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `terms` query                         |
-| `not-in`      | yes      | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must_not.terms`                 |
-| `gt`          | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.gt`                            |
-| `gte`         | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.gte`                           |
-| `lt`          | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.lt`                            |
-| `lte`         | yes      | yes        | Scalar | `fieldName`    | `number`                          | `range.lte`                           |
-| `between`     | yes      | yes        | Scalar | `fieldName`    | `[number, number]`                | `range.gte` + `range.lte`             |
-| `some-not-in` | no       | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | nested `bool.must_not` per value      |
-| `all`         | no       | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must` per value (all required)  |
-| `wildcard`    | no       | yes        | Text   | `fieldNames`   | `string`                          | `multi_match` with wildcard           |
-| `fuzzy`       | no       | **no**     | Text   | `fieldNames`   | `string`                          | `multi_match` with `fuzziness:"AUTO"` |
+| Operator      | tool scope | sqon ready | Shape  | Field property | Value type                        | ES/OS translation                     |
+| ------------- | ---------- | ---------- | ------ | -------------- | --------------------------------- | ------------------------------------- |
+| `in`          | v1         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `terms` query                         |
+| `not-in`      | v1         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must_not.terms`                 |
+| `gt`          | v1         | yes        | Scalar | `fieldName`    | `number`                          | `range.gt`                            |
+| `gte`         | v1         | yes        | Scalar | `fieldName`    | `number`                          | `range.gte`                           |
+| `lt`          | v1         | yes        | Scalar | `fieldName`    | `number`                          | `range.lt`                            |
+| `lte`         | v1         | yes        | Scalar | `fieldName`    | `number`                          | `range.lte`                           |
+| `between`     | v1         | yes        | Scalar | `fieldName`    | `[number, number]`                | `range.gte` + `range.lte`             |
+| `some-not-in` | v2         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must_not` around one `nested.terms` (universal exclusion, differs from `not-in` only when nested; see tech-debt) |
+| `all`         | v2         | yes        | Scalar | `fieldName`    | `(string \| number \| boolean)[]` | `bool.must` per value (all required)  |
+| `wildcard`    | v2         | yes        | Text   | `fieldNames`   | `string`                          | one `wildcard` query per field, OR'd  |
+| `fuzzy`       | v2.1       | **no**     | Text   | `fieldNames`   | `string`                          | `multi_match` with `fuzziness:"AUTO"` |
 
-- `some-not-in` and `all` already work in `modules/sqon`, but are out of scope for v1. Add them alongside v2, or as a separate v1.x.
-- `wildcard` already works too. It waits for v2 only because v2 is what introduces the `fieldNames` shape.
-- `fuzzy` has no implementation yet. See the fuzzy operator roadmap item. Do not add it here until that is done.
+- `some-not-in`, `all`, and `wildcard` shipped with v2 (2026-08-25). `wildcard` waited only because v2 is what introduces the `fieldNames` shape.
+- `all`'s same-field union-vs-intersection ambiguity, and the `isArray` signal used to resolve it, are covered in [Same-field values: union by default, intersection needs `all`](#same-field-values-union-by-default-intersection-needs-all) below.
+- **`wildcard`'s ES translation is not a `multi_match`**, as an earlier revision of this table claimed. `getWildcardFilter` in `graphql-router` emits one ES `wildcard` query per field name, with `case_insensitive: true`, grouped by nesting level and combined under a `should`. So a clause matches when any one of its fields matches, and the value is compared against the whole field value: a value carrying no `*` finds an exact term rather than a substring. `build_sqon` returns a `notes` entry when that happens, since the difference is invisible in the result.
+- `fuzzy` has no implementation yet. See the fuzzy operator roadmap item and § v2.1 below. Do not add it here until that is done.
+
+### Why the operator description cannot name field types
+
+`getSqonFieldOperatorDetails()` reports `applicableTo: 'all'` for `in`, `not-in`, `some-not-in`, `all`, and `wildcard`. A catalogue disagrees: `getValidFieldOperators` in `buildCatalogueIntrospection.ts` gives range-typed fields `['in','not-in','gt','gte','lt','lte','between']`, enum-like fields `['in','not-in','some-not-in','all','filter']`, and everything else `['in','not-in','filter']`. So `wildcard` is withheld from numeric and date fields, and `all` and `some-not-in` from those plus text fields.
+
+The catalogue is the authority, because `validateClauses` enforces it. Rendering `applicableTo: 'all'` as "any field type" would therefore advertise a clause the tool then rejects. `describeOperators` says nothing about field types for such an operator instead, and the `clauses` array description names `get_catalogue_fields` as the authority once. Copying graphql-router's type classification into `apps/mcp-server` was rejected: the repo already carries tech debt for duplicated transforms, and one more copy to drift is worse than a pointer. The `applicableTo` inaccuracy in `modules/sqon` is tracked separately, since correcting it changes the published `get_sqon_schema` contract.
+
+### Same-field values: union by default, intersection needs `all`
+
+**The problem this section resolves.** A researcher listing multiple values for one field, "studies A and B," "biomarkers X and Y," almost always means union: match a record with _any_ of the listed values. But natural-language "and" is not reliable evidence of that: for a multi-valued field, "and" can just as plausibly mean a record must carry _every_ listed value, and there is no way to tell which the researcher meant from the phrasing alone.
+
+**The decision.** Multiple values on one field default to union (`in`, one clause, every value in the array), matching how the worked example earlier in this document already builds `study_id in ["A", "B"]` from "studies A and B." Genuine intersection needs the `all` operator, and needs to be confirmed before `execute_query` runs, not inferred silently.
+
+**What was tried and rejected: guessing from the field's name or type.** An early version of this design proposed inferring intersection-ambiguity from whether a field "sounds" categorical (`study_id`, `gender`) versus tag-like (`keywords`, `biomarkers`). Rejected directly: a field's name is not evidence about what a specific dataset's _content_ actually looks like. Two concrete cases that break the heuristic: a person can genuinely belong to more than one study cohort (lung cancer and respiratory disease overlap), and gender and biological sex are not binary or mutually exclusive for everyone. Building a silent inference on top of that guess would mean the tool sometimes decides, without telling anyone, that a researcher's data doesn't include people who don't fit the assumption. That is not a technical shortcut worth taking for a token savings.
+
+**What was tried and rejected: `all` as the fix on its own.** Exposing `all` doesn't, by itself, close the ambiguity: if `all` is used on a field that turns out to be single-valued in a given dataset, "must have every value" is unsatisfiable for more than one value, the exact same silent-empty-result failure this section exists to prevent, just moved to a different operator.
+
+**The actual signal: `isArray` from catalogue introspection.** `get_catalogue_fields` reports `isArray` per field: a real, operator-declared fact (the dataset owner is the only party who actually knows whether their field holds one value or several), not a guess from a name or a type. It has three states, and the third is the one with no safe default:
+
+- `isArray: false`: the operator has declared this field single-valued. "A and B" can only mean union; `all` would be unsatisfiable and there's nothing to confirm.
+- `isArray: true`: the field can genuinely hold more than one value. "A and B" is now a real fork between union and intersection, and needs confirming before the expensive part (`execute_query`) runs, not silently resolved either way.
+- `isArray: null`: nobody declared it. This is not the same as `false`: treat it with the same caution as `true` (confirm rather than guess), since undeclared genuinely could be either.
+
+A current server never sends anything but one of those three, per [docs/reference/05-introspection.md](docs/reference/05-introspection.md#get-introspectioncatalogueid). `types.ts`'s schema also accepts `undefined`, since a server that predates the field omits it entirely rather than sending `null`; every gate treats that identically to `null`, for the same undeclared-could-be-either reason.
+
+**Worked contrast**, the "unironic" example: "Donors from study A and study B" (`study_id`, `isArray: false`) builds `study_id in ["A", "B"]`, no confirmation needed beyond the tool's normal summary. "Records tagged with both BRCA1 and BRCA2" (`biomarkers`, `isArray: true`, and the researcher's own "both" is the explicit signal) builds `biomarkers all ["BRCA1", "BRCA2"]`.
+
+**Resolved: the tool-facing wording is a refusal, not a proactive confirmation prompt.** `build_sqon` does not ask the model to confirm before running; it refuses the ambiguous call outright, naming both readings and the fix for each, and lets the model resubmit once the researcher's intent is clarified. `findInClauseCardinalityConflicts` and `findAllClauseCardinalityConflicts` in `buildSqonTool.ts` carry the actual message text: a same-field `in` collision on `isArray: true` names `all` as the fix; on `isArray: null` it withholds that recommendation, since `all` could fail the same way there. `all` carrying more than one value is refused the mirror way, requiring `isArray: true`.
+
+**Deliberate boundary: same-operator collisions only, not general satisfiability.** `all:a['X']` alongside `in:a['Y']` (`X != Y`) on a single-valued field is unsatisfiable the same way two colliding `in` clauses are: one value cannot equal `X` and also be `Y`. Neither gate catches it, since `findAllClauseCardinalityConflicts` only accumulates `all` clauses and `findInClauseCardinalityConflicts` only accumulates `in` clauses, and this is intentional rather than a gap to close. The general form, any two clauses requiring different exact values of a single-valued field, includes `in`+`between`, `all`+`between`, and further combinations; catching all of them is a satisfiability checker, not a clause validator, and is out of scope here. Same-operator collisions are the ones a caller is actually likely to construct by accident (enumerating several values for one field), which is why the line is drawn there rather than nowhere or everywhere.
 
 The tool's operator descriptions are generated from `getSqonFieldOperatorDetails()` at server startup, not hand-written. Adding an operator to `modules/sqon` updates the tool's description automatically.
 
@@ -239,7 +272,7 @@ If any clause is invalid (wrong operator for its shape, wrong value type, double
 
 ```
 clauses[1]: invalid operator "gt" for a text-search item (fieldNames provided).
-Text-search operators: wildcard, fuzzy. Use fieldName (singular) for a scalar
+Text-search operators: wildcard. Use fieldName (singular) for a scalar
 operator instead.
 
 clauses[3]: "not-in" already means "not equal to." Combining it with negate: true
@@ -248,6 +281,17 @@ the value instead of excluding it.
 ```
 
 Nothing is applied until every clause passes. Partial success is not a state this tool has to handle.
+
+**`existingSqon` is checked in the same pass, and reported in the same message.** Both ways it can be unusable, a value that is not a SQON at all and a SQON naming fields the target catalogue does not have, produce entries in the same list as the clause errors, ahead of them:
+
+```
+No SQON was built. Fix everything listed, then resubmit the whole batch:
+existingSqon references unknown field "file.size". Use get_catalogue_fields to list valid fields.
+clauses[0]: operator "gt" is not valid for field "donor.sex" (type "keyword"). ...
+If existingSqon came from a different catalogue, drop it and rebuild the query for "participants".
+```
+
+`existingSqon` leads because a base query built for another catalogue has to be dropped before the clause fixes are worth making. The rebuild advice is appended only for the catalogue-mismatch case: an `existingSqon` that is not a SQON at all carries its own remedy in its own message, and asking which catalogue it came from would point at the wrong thing. The catalogue check runs on `existingSqon` directly rather than on the folded result, which it can do because a fold never invents a field name or rewrites a leaf's operator: every leaf of the output comes from either `existingSqon` or a clause, so validating the two inputs separately catches everything validating the output would, one round trip earlier. The post-fold `validateSqon` call remains as a failsafe for a fold that mangles valid inputs, and says so: reaching it is a defect in the tool, not a fixable request.
 
 ---
 
@@ -259,10 +303,25 @@ Nothing is applied until every clause passes. Partial success is not a state thi
 - Each clause: `fieldName`, `operator`, `value`, optional `negate`
 - One `combination` (`and` or `or`) for the whole batch, not mixed
 
-### v2: text search
+### v2: text search and the remaining set-membership operators (shipped 2026-08-25)
 
-- Add `fieldNames` as an alternative to `fieldName`, for `wildcard` and `fuzzy`
-- Needs the fuzzy operator to exist in `modules/sqon` first; `wildcard` is ready now
+**Split from what this section originally planned.** It read "add `fieldNames` as an alternative to `fieldName`, for `wildcard` and `fuzzy`," then noted that this "needs the fuzzy operator to exist in `modules/sqon` first." Those two sentences contradict each other: they block the half that was ready behind the half that has no implementation and an unresolved design question. `wildcard` shipped on its own instead, and `fuzzy` became v2.1 below.
+
+- `fieldNames` (plural) added as a fourth clause shape, for `wildcard`
+- `some-not-in` and `all` added, closing the gap between what `modules/sqon` implements and what the tool exposes. `all` needs its own union branch: `AllFilterSchema` requires an array, and `addFilterClause` builds an `all` clause from a bare scalar without complaint while `SqonSchema` then rejects the result
+- An asterisk inside an `in`, `not-in`, `some-not-in`, or `all` value is now rejected and redirected to `wildcard`, which resolves the open question this document previously carried about `*` in in-like values
+
+**No mutual-exclusion refinement was needed**, contrary to what § Implementation guidance predicted. The shipped input schema is a `discriminatedUnion` on `operator`, so the `wildcard` branch simply has no `fieldName` key and every other branch has no `fieldNames` key. The split is structural, and a clause sending the wrong one for its operator fails to match any branch.
+
+### v2.1: fuzzy text search
+
+Blocked on three things, not one. Worth listing, because the first is the only one this document previously named:
+
+1. **The operator does not exist in `modules/sqon`.** No `FuzzyFilterSchema`, no `SqonBuilder.fuzzy()`, and `opSwitch` in `graphql-router` throws `unknown op` for it.
+2. **An unresolved design question.** Whether `fuzzy` should tolerate leading-term fuzziness only (`operator: "AND"`) or any-term matching (`operator: "OR"`). See the fuzzy operator roadmap item.
+3. **`addFilterClause`'s text branch ignores `operator` entirely** (`filter.ts`: `'fieldNames' in params ? SqonBuilder.wildcard(...) : buildScalarClause(...)`). Measured: `addFilterClause({fieldNames: ['a','b'], operator: 'fuzzy', value: 'jon'})` returns a **`wildcard`** clause with no error. Once `fuzzy` exists, both text operators share the plural shape, so no dispatch in `apps/mcp-server` can separate them and the fix has to happen in `modules/sqon`. This also means the `undefined` guard in `foldClauses` was never "the tripwire for v2's text operators" that this document and the implementation plan both called it: that guard only fires when a text operator arrives with a singular `fieldName` and falls off the scalar switch, which the plural shape never does. Corrected in both documents and in the code comment.
+
+Nothing in v2 depends on any of this, which is the point of the split.
 
 ### v3: nested combinations (AND and OR mixed in one query)
 
@@ -283,18 +342,21 @@ SQON already supports this structurally: a combination node's children can be le
 `reduceSqon` runs automatically inside `SqonBuilder`, and therefore inside `build_sqon`/`combine_sqons`. It does not run on a raw SQON sent straight to `execute_query`.
 
 - **`not` wraps one item in an array; it does not rewrite the operator.** A negated clause is `{"op":"not","content":[<leaf>]}`, never something like `{"op":"not-gt", ...}`.
-- **Two clauses on the same field and operator get merged, not kept separate.** The merge rule depends on the combinator:
-    - `in` merges under any combinator.
-    - `not-in`/`some-not-in`/`all` merge under `and`/`not`, but stay separate under `or` (merging would change the meaning).
-    - `gt`/`gte` keeps the larger value under `and`/`not`, the smaller under `or`.
+- **Two clauses on the same field and operator may be merged into one.** The merge rule depends on the combinator:
+    - `in` merges under `or` only. Under `and` the two clauses mean an intersection, so they stay separate.
+    - `not-in`/`some-not-in`/`all` merge under `and` only, and stay separate under `or` (merging would change the meaning).
+    - `gt`/`gte` keeps the larger value under `and`, the smaller under `or`.
     - `lt`/`lte` is the mirror image.
+    - Nothing merges under `not`, since a `not`'s children are each negated independently.
     - `between` never merges.
+    - `wildcard` never merges either, so two text searches on the same fields stay as two clauses.
+    - Range bounds merge only when both are numbers, both are `YYYY-MM-DD` dates, or the two are identical. Any other pair is kept as two clauses: quoted numbers, date math, other date formats, datetimes, a boolean, an array, or one bound of each type, since how a string bound sorts depends on the field's mapping. A datetime narrowing therefore reports one more filter than a `YYYY-MM-DD` one. Fixed 2026-08-25: date bounds previously went through `Math.max`/`Math.min`, yielding `NaN` and serializing to `null`, so an ordinary date narrowing produced a filter with no bound.
     - Example: two clauses for "age > 50" and "age > 70" under `and` come back as one `gt: 70` clause, not two. Only the `summary` string shows this happened.
 - **A group with one item gets unwrapped**, and an empty group gets dropped, unless it carries a `pivot`.
 - **`not` groups never get flattened into a parent group.**
 - **`pivot`**, an optional field on every node, blocks the two rules above. It already exists in the schema. No tool sets it yet; v3 needs to decide whether `build_sqon`/`combine_sqons` ever should.
 - **Only `and`/`or`/`not` exist as combinators.** There is no `xor`.
-- **Symbol aliases exist** (`=`, `>=`, and similar) and get normalized before validation, but **only by `SqonBuilder.from()`, not by `addFilterClause`** (corrected 2026-08-10, measured). `addFilterClause` dispatches on the literal operator string through a switch with no default, so `{operator: '>='}` returns `undefined`: an alias does not build an equivalent clause, it drops the clause entirely. **The choice for `build_sqon`'s input schema, resolved:** canonical operator names only (`in`, `not-in`, `gt`, ...); the `operator` enum does not list `=`, `>=`, or any other alias. **The alternative considered:** also listing aliases as valid enum values, on the theory that a model biased by training data toward symbol operators would otherwise get rejected and need a retry. **Why canonical-only was chosen instead:** offering two spellings for the same operator reintroduces the exact ambiguity this tool exists to remove. The correction above makes the case stronger than it originally read here: an alias reaching the fold would silently produce a SQON missing that condition, not an equivalent one, so the enum is load-bearing rather than merely tidy. `foldClauses` keeps an `undefined` guard behind it as a failsafe for v2. Aliases stay relevant only for the raw-SQON paths (`execute_query`'s `sqon` parameter, `SqonSchema.parse()` called directly), which are different consumers with different constraints; `existingSqon` is normalized on the way in for the same reason, since it arrives through `SqonBuilder.from()`.
+- **Symbol aliases exist** (`=`, `>=`, and similar) and get normalized before validation, but **only by `SqonBuilder.from()`, not by `addFilterClause`** (corrected 2026-08-10, measured). `addFilterClause` dispatches on the literal operator string through a switch with no default, so `{operator: '>='}` returns `undefined`: an alias does not build an equivalent clause, it drops the clause entirely. **The choice for `build_sqon`'s input schema, resolved:** canonical operator names only (`in`, `not-in`, `gt`, ...); the `operator` enum does not list `=`, `>=`, or any other alias. **The alternative considered:** also listing aliases as valid enum values, on the theory that a model biased by training data toward symbol operators would otherwise get rejected and need a retry. **Why canonical-only was chosen instead:** offering two spellings for the same operator reintroduces the exact ambiguity this tool exists to remove. The correction above makes the case stronger than it originally read here: an alias reaching the fold would silently produce a SQON missing that condition, not an equivalent one, so the enum is load-bearing rather than merely tidy. `foldClauses` keeps an `undefined` guard behind it, but **not as a text-operator tripwire**, which is what an earlier revision claimed: the guard fires only when an operator falls off the scalar switch, and `addFilterClause`'s text branch never reaches that switch. See § v2.1 for what actually needs fixing there. Aliases stay relevant only for the raw-SQON paths (`execute_query`'s `sqon` parameter, `SqonSchema.parse()` called directly), which are different consumers with different constraints; `existingSqon` is normalized on the way in for the same reason, since it arrives through `SqonBuilder.from()`.
 - **Extra properties on a node are silently kept, not rejected**, because every SQON schema uses Zod's `.passthrough()`. A typo in a required key (like `field` for `fieldName`) fails validation; a typo in an extra key does not.
 
 ---
@@ -353,7 +415,9 @@ Note the schemas are factory functions rather than shared constants. Reusing one
 
 ## Progress to date
 
-**v1 shipped 2026-08-10 (#1080).** This document remains the design record: read it for why the tool has the shape it does. For what was built, and the step-by-step plan it was built from, see `.dev/docs/build-sqon-implementation.md`, which also carries the measured behaviour table this document's corrections came from. v2 (text operators) and v3 (mixed combinators) are still open, and § Phasing above is still the plan for them.
+**v1 shipped 2026-08-10 (#1080). v2 shipped 2026-08-25**, covering `wildcard` text search plus `some-not-in` and `all`. This document remains the design record: read it for why the tool has the shape it does. For what was built, and the step-by-step plan it was built from, see `.dev/docs/build-sqon-implementation.md`, which also carries the measured behaviour table this document's corrections came from. v2.1 (fuzzy) and v3 (mixed combinators) are still open, and § Phasing above is still the plan for them.
+
+v2 needed no change in `modules/sqon`, which is what the split described above bought. One `modules/sqon` fix did land immediately before it, separately: `reduceSqon` corrupted a merged date range bound to `null`, which `build_sqon`'s post-fold failsafe reported as a tool defect and which `graphql-router`'s network search path passed to remote nodes with no error at all.
 
 | Component                                      | Location                                           |
 | ---------------------------------------------- | -------------------------------------------------- |
@@ -368,5 +432,6 @@ Note the schemas are factory functions rather than shared constants. Reusing one
 | MCP tool registration pattern                  | `apps/mcp-server/src/mcp/tools.ts`                 |
 | `build_sqon` tool, schemas, fold, and handler  | `apps/mcp-server/src/mcp/buildSqonTool.ts`         |
 | per-clause validation against a catalogue      | `apps/mcp-server/src/arranger/clauseValidation.ts` |
+| shared field-and-operator check                | `apps/mcp-server/src/arranger/queryValidation.ts`  |
 | plain-English summary and leaf counter         | `apps/mcp-server/src/arranger/sqonSummary.ts`      |
 | user-facing documentation                      | `docs/mcp-server.md`, `apps/mcp-server/README.md`  |

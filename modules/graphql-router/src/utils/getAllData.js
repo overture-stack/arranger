@@ -1,164 +1,222 @@
-import { PassThrough } from 'node:stream';
+import { Readable } from 'node:stream';
 
-import { configOptionalProperties, configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
+import {
+	configOptionalProperties,
+	configRootProperties,
+	downloadProperties,
+} from '@overture-stack/arranger-types/configs/constants';
 
+import { resolveServerSideFilter } from '#accessControl/resolveServerSideFilter.js';
 import fallbackConfigs from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
 
-import runQuery from './runQuery.js';
+/**
+ * An export refused for what its caller sent rather than for a fault on the server. The message names
+ * what was wrong without repeating the value, since the value may have come from a client. The
+ * `./download` entry point exports it so an integration can tell the outcomes apart as the router's
+ * own `/download` does: this error is a bad request, answered with a 400, while an
+ * `AccessControlError` is a refusal and any other error a server fault, both answered with a 500.
+ */
+export class InvalidExportRequestError extends Error {
+	name = 'InvalidExportRequestError';
+}
+
+const requirePageSize = (chunkSize) => {
+	if (Number.isInteger(chunkSize) && chunkSize > 0) {
+		return chunkSize;
+	}
+
+	throw new InvalidExportRequestError('chunkSize must be a positive integer.');
+};
+
+const SORT_ORDERS = ['asc', 'desc'];
+
+const isSortEntry = (entry) =>
+	typeof entry === 'object' &&
+	entry !== null &&
+	typeof entry.fieldName === 'string' &&
+	entry.fieldName.length > 0 &&
+	typeof entry.order === 'string' &&
+	SORT_ORDERS.includes(entry.order.toLowerCase());
 
 /**
- * @param maxRows (Optional. Default: null) Limits the maximum number of rows to include in the results.
+ * Whether `sort` can order an export: an array, empty for the default order, of objects each naming a
+ * non-empty `fieldName` and an `order` of `asc` or `desc` in any case. A hole in the array counts as
+ * an entry, and is refused as one.
  *
- * If zero (0) is given, it will include up to Server's own limit (Default: 100).
- * This props may be ignored depending on Server configs.
+ * @param {unknown} sort the value to check, as a caller or a client sent it.
+ * @returns {boolean}
+ */
+export const isExportSort = (sort) => Array.isArray(sort) && Array.from(sort).every(isSortEntry);
+
+const requireSort = (sort) => {
+	if (isExportSort(sort)) {
+		return sort.map(({ fieldName, order }) => ({ fieldName, order: order.toLowerCase() }));
+	}
+
+	throw new InvalidExportRequestError(
+		'sort must be an array of entries, each with a non-empty fieldName and an order of asc or desc.',
+	);
+};
+
+const compileQuery = (queryArguments) => {
+	try {
+		return buildQuery({ caller: 'getAllData', ...queryArguments });
+	} catch (cause) {
+		// A deployment's own filter compiles on every read path, so one that fails only here is the caller's.
+		throw new InvalidExportRequestError('The export filter could not be compiled.', { cause });
+	}
+};
+
+// A caller's 0 asks for the configured limit, and a configured 0 means no limit at all.
+const rowLimitFor = ({ downloads, maxRows }) => {
+	const limit =
+		downloads[downloadProperties.ALLOW_CUSTOM_MAX_ROWS] && maxRows
+			? maxRows
+			: downloads[downloadProperties.MAX_ROWS];
+
+	return limit > 0 ? limit : Infinity;
+};
+
+const searchAfterLastOf = (hits) => {
+	const sortValues = hits.at(-1)?.sort;
+
+	if (Array.isArray(sortValues)) {
+		return sortValues.map(isESValueSafeJSInt);
+	}
+
+	throw new Error('A page of the export carried no sort values to continue after.');
+};
+
+// The engine's own failures are kept as the cause, for the server log: they can quote the caller's
+// sort fields or filter values, so they never become the message. `query` is sent even if it compiled
+// empty, which the engine refuses, where leaving it out would match every document.
+const pageSearcher =
+	({ esClient, index, query, sort }) =>
+	async ({ searchAfter, size, trackTotalHits }) => {
+		const { body } = await esClient
+			.search({
+				body: {
+					query,
+					...(searchAfter ? { search_after: searchAfter } : {}),
+					sort,
+					track_total_hits: trackTotalHits,
+				},
+				index,
+				size,
+			})
+			.catch((cause) => {
+				throw new Error('The search engine failed to return a page of the export.', { cause });
+			});
+
+		if ((body._shards?.failed ?? 0) === 0) {
+			return { hits: body.hits.hits, total: body.hits.total?.value ?? body.hits.total };
+		}
+
+		throw new Error('A page of the export failed on some shards, so the export would be incomplete.', {
+			cause: body._shards,
+		});
+	};
+
+// Pulled one page at a time as the stream is read, so a consumer that stops reading stops the
+// searches, and one that destroys the stream ends them after the page already requested.
+async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage }) {
+	const firstSize = Math.min(chunkSize, rowLimit);
+	const firstPage = await searchPage({ size: firstSize, trackTotalHits: true });
+	const total = typeof firstPage.total === 'number' ? Math.min(firstPage.total, rowLimit) : firstPage.total;
+
+	let delivered = 0;
+	let hits = firstPage.hits;
+	let size = firstSize;
+
+	while (hits.length > 0) {
+		yield { hits: hits.map((hit) => unwrapSource(hit?._source, nestingPrefix)), total };
+
+		delivered += hits.length;
+		const hasMore = hits.length >= size && delivered < rowLimit;
+		const searchAfter = hasMore ? searchAfterLastOf(hits) : undefined;
+		size = Math.min(chunkSize, rowLimit - delivered);
+		hits = hasMore ? (await searchPage({ searchAfter, size, trackTotalHits: false })).hits : [];
+	}
+}
+
+/**
+ * Streams the documents an export selects as `{ hits, total }` chunks, one per search page, under the
+ * filter resolved from the context's access-control record and the caller's own callback. Every
+ * refusal rejects the call before any search, and a failed search or shard errors the stream.
+ *
+ * @template Context
+ * @param {object} args
+ * @param {number} [args.chunkSize] how many documents each page asks for, a positive integer.
+ * @param {Context} [args.ctx] the request context, normally the one a router built.
+ * @param {import('@overture-stack/arranger-types/configs').GetServerSideFilterFn<Context>} [args.getServerSideFilter]
+ *   a filter of the caller's own, which can only narrow the one the router recorded.
+ * @param {number | null} [args.maxRows] the caller's row limit, honoured only when the catalogue allows
+ *   custom row limits, where 0 asks for the configured one.
+ * @param {{ fieldName: string, order: 'asc' | 'desc' }[]} [args.sort] the export's order, ahead of the
+ *   `_id` tiebreaker: entries each naming a non-empty `fieldName` and an `order` of `asc` or `desc` in
+ *   any case, where leaving it out or passing an empty array keeps the default order.
+ * @param {unknown} [args.sqon] the caller's filter.
+ * @returns {Promise<import('node:stream').Readable>}
+ * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
+ * @throws {InvalidExportRequestError} when `chunkSize` is not a positive integer, `sort` is not an array
+ *   of such entries, or the filter cannot be compiled.
  */
 export default async ({
 	chunkSize = fallbackConfigs.downloads.chunkSize,
-	columns = [],
 	ctx = {},
 	getServerSideFilter,
 	maxRows = null,
-	mock,
 	sort = [],
 	sqon,
-	...rest
 }) => {
-	const { configs, enableDebug, esClient, mockSchema, schema } = ctx;
+	const serverSideFilter = resolveServerSideFilter({ context: ctx, getServerSideFilter });
+	const pageSize = requirePageSize(chunkSize);
+	const exportSort = requireSort(sort);
+	const { configs, esClient } = ctx;
 	const nestingPrefix = configs.config?.[configOptionalProperties.NESTING_PREFIX];
 
-	// TODO: review what "configs" come in here, trim down to what's relevant in this context
-
-	const stream = new PassThrough({ objectMode: true });
-
-	if (enableDebug) {
-		stream.on('error', (err) => console.error('STREAM ERROR:', err));
-		stream.on('close', () => console.log('STREAM CLOSED'));
-		stream.on('finish', () => console.log('STREAM FINISHED'));
-		stream.on('end', () => console.log('STREAM ENDED'));
-		stream.on('pipe', () => console.log('STREAM PIPED'));
-		stream.on('unpipe', () => console.log('STREAM UNPIPED'));
+	// From the mapping, like every other call site, rather than from `extendedFields`: nesting is an
+	// index-mapping fact, and `extendedFields` falls back to raw file config whenever extending the
+	// mapping throws, including when a catalogue simply has no `extended.json`. Every nested field has
+	// to be listed here for its filters to compile as nested queries.
+	//
+	// Guarded rather than defaulted, because `buildQuery` defaults this argument to `[]`: a `configs`
+	// that never went through `addMappingsToTypes` would otherwise reach the compiler with no nested
+	// field listed, and nothing raised. Absent is a wiring fault, not "nothing nested".
+	if (!Array.isArray(configs.nested_fieldNames)) {
+		throw new Error(
+			`Cannot build a download query for "${configs.name}": its configs carry no \`nested_fieldNames\`. ` +
+				'That list comes from the index mapping via `addMappingsToTypes`, and every filter on a nested field ' +
+				'needs it to compile as a nested query.',
+		);
 	}
-
-	const esSort = sort
-		.map(({ fieldName, order }) => ({ [applyNestingPrefix(fieldName, nestingPrefix)]: order }))
-		.concat({ _id: 'asc' });
-
-	const nestedFieldNames = configs.extendedFields
-		.filter(({ type }) => type === 'nested')
-		.map(({ fieldName }) => fieldName);
 
 	// Export is a read path like any other, so the access-control filter has to be composed here
 	// too. Without this the caller's SQON reaches Elasticsearch alone and the export returns every
 	// document the query matches, whatever the deployment's filter says.
-	const query = buildQuery({
-		caller: 'getAllData',
+	const query = compileQuery({
 		filters: compileFilter({
 			clientSideFilter: sqon,
-			serverSideFilter: getServerSideFilter?.(ctx),
+			disableClientFilters: configs.config?.[configOptionalProperties.DISABLE_FILTERS] ?? false,
+			serverSideFilter,
 		}),
-		nestedFieldNames,
+		nestedFieldNames: configs.nested_fieldNames,
 		nestingPrefix,
 	});
 
-	runQuery({
-		esClient,
-		query: `
-        query ($sqon: JSON) {
-          ${configs.name} {
-            hits(filters: $sqon) {
-              total
-            }
-          }
-        }
-      `,
-		schema: mock ? mockSchema : schema,
-		variables: { sqon },
-	})
-		.then(({ data }) => {
-			enableDebug && console.debug('  DEBUG: runQuery completed, processing data...');
+	const esSort = exportSort
+		.map(({ fieldName, order }) => ({ [applyNestingPrefix(fieldName, nestingPrefix)]: order }))
+		.concat({ _id: 'asc' });
 
-			const allowCustomMaxRows =
-				configs.config[configRootProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_ROWS];
-			const maxHits = allowCustomMaxRows
-				? maxRows || configs.config[configRootProperties.DOWNLOADS][downloadProperties.MAX_ROWS]
-				: configs.config[configRootProperties.DOWNLOADS][downloadProperties.MAX_ROWS];
-
-			const hitsCount = data?.[configs.name]?.hits?.total || 0;
-			const total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount; // i.e. 'maxHits == 0' => hitCounts
-			const steps = Array(Math.ceil(total / chunkSize)).fill(null);
-
-			enableDebug &&
-				console.debug(
-					`  DEBUG: Total hits: ${hitsCount}, Max hits: ${maxHits}, Total to fetch: ${total}, Steps: ${steps.length}`,
-				);
-
-			// async reduce because each cycle is dependent on result of the previous
-			return steps.reduce(async (previous, next, stepNumber) => {
-				const previousHits = await previous;
-				const timerLabel = `EsQuery, step ${stepNumber + 1}/${steps.length}`;
-
-				if (enableDebug) {
-					console.log(`\n=== STEP ${stepNumber + 1}/${steps.length} ===`);
-					console.time(timerLabel);
-				}
-
-				const hits = await esClient
-					.search({
-						index: configs.index,
-						size: maxHits ? Math.min(maxHits, chunkSize) : chunkSize,
-						body: {
-							sort: esSort,
-							...(previousHits
-								? {
-										search_after:
-											previousHits[previousHits.length - 1]?.sort?.map(isESValueSafeJSInt),
-									}
-								: {}),
-							...(Object.entries(query).length ? { query } : {}),
-						},
-					})
-					.then(({ body }) => body.hits.hits);
-
-				if (enableDebug) {
-					console.timeEnd(timerLabel);
-					console.log(`Fetched ${hits.length} hits in step ${stepNumber + 1}`);
-					console.log(`Stream writable: ${stream.writable}, destroyed: ${stream.destroyed}`);
-				}
-
-				const writeResult = stream.write(
-					{ hits: hits.map((hit) => unwrapSource(hit?._source, nestingPrefix)), total },
-					(err) => {
-						if (err) {
-							console.error(`Write callback error in step ${stepNumber + 1}:`, err);
-						} else {
-							enableDebug && console.debug(`  DEBUG: Write callback completed for step ${stepNumber + 1}`);
-						}
-					},
-				);
-
-				enableDebug && console.debug(`  DEBUG: Write returned: ${writeResult} (false = backpressure)`);
-
-				return hits;
-			}, Promise.resolve());
-		})
-		.then((finalHits) => {
-			console.log('\n=== REDUCE COMPLETE ===');
-			console.log('Final hits length:', finalHits?.length);
-			console.log('Stream writable before end:', stream.writable);
-			console.log('Stream destroyed before end:', stream.destroyed);
-
-			stream.end();
-			console.log('stream.end() called');
-		})
-		.catch((err) => {
-			console.error('ERROR in getAllData:', err);
-			stream.destroy(err);
-		});
-
-	enableDebug && console.debug('  DEBUG: getAllData: Returning stream');
-
-	return stream;
+	return Readable.from(
+		exportChunks({
+			chunkSize: pageSize,
+			nestingPrefix,
+			rowLimit: rowLimitFor({ downloads: configs.config[configRootProperties.DOWNLOADS], maxRows }),
+			searchPage: pageSearcher({ esClient, index: configs.index, query, sort: esSort }),
+		}),
+	);
 };

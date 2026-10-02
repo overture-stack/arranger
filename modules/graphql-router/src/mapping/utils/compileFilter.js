@@ -1,57 +1,40 @@
+import { requireServerSideFilter } from '#accessControl/requireServerSideFilter.js';
+
 const isProperSqon = (sqon) => !!(sqon && sqon.op);
 
-/**
- * True when a SQON node contains no leaf clause at any depth.
- *
- * Such a node compiles to a `bool` with an empty clause array, which Elasticsearch treats as
- * match-all. The check has to recurse: `{op:'and', content:[{op:'and', content:[]}]}` has a
- * non-empty top level and still compiles to match-all.
- *
- * `Array.isArray` distinguishes a combination (content is an array of children) from a leaf
- * (content is an object carrying `fieldName`), and `every` on an empty array is true, which is
- * the empty-combination base case.
- */
-const hasNoLeafClause = (sqon) => Array.isArray(sqon?.content) && sqon.content.every(hasNoLeafClause);
+// TODO: when filtering separates from the GraphQL layer, move to its vocabulary; see
+// `.dev/docs/atlas/layers-and-vocabulary.md`. `serverSideFilter` becomes `constraint`, and
+// `clientSideFilter` and `disableClientFilters` take the requested filter's name once that is
+// settled. The TSDoc below then has to define a constraint outright, since the one used when nothing
+// is configured matches every document and reads as permissive. The error messages keep the router's
+// names on purpose: a deployment author can only act through `getServerSideFilter`, so translate there.
 
 /**
  * Composes the caller's filter with the deployment's access-control filter.
  *
- * The server-side filter is validated and the client's is not, deliberately: a client filter that
- * restricts nothing is an ordinary unfiltered query, while a server-side filter that restricts
- * nothing is an access-control failure wearing the same shape. Rejecting is louder than falling
- * back to a deny, because a silent deny is indistinguishable from a query that legitimately
- * matched nothing, and every defect on this path so far has been one that failed silently.
+ * Only the server-side filter is validated: a client filter restricting nothing is an ordinary
+ * unfiltered query, while a server-side one restricting nothing is an access-control failure of
+ * the same shape. Throwing beats denying, which would look like a query that matched nothing.
  *
- * @throws {Error} when the server-side filter is absent, or has no clauses to apply.
+ * `disableClientFilters` drops the caller's filter here rather than at the request handler, which
+ * can only guess which variable holds one. By this point it is a parsed SQON however it arrived.
+ *
+ * @throws {AccessControlError} when the server-side filter is absent, or has no clauses to apply.
  */
-export default ({ clientSideFilter, serverSideFilter }) => {
-	if (!isProperSqon(serverSideFilter)) {
-		throw new Error(
-			'compileFilter: a server-side filter is required. A `getServerSideFilter` callback must ' +
-				'return a SQON node for every request, including unauthenticated ones. To apply no ' +
-				'access control, return `getDefaultServerSideFilter()` explicitly.',
-		);
-	}
-
-	if (hasNoLeafClause(serverSideFilter)) {
-		throw new Error(
-			`compileFilter: the server-side filter is an empty '${serverSideFilter.op}' combination, ` +
-				'which matches every document. To deny a request, return a filter that matches nothing ' +
-				'(an `in` with an empty value list). To apply no access control, return ' +
-				'`getDefaultServerSideFilter()`.',
-		);
-	}
+export default ({ clientSideFilter, disableClientFilters = false, serverSideFilter }) => {
+	const checkedServerSideFilter = requireServerSideFilter(serverSideFilter);
+	const applicableClientFilter = !disableClientFilters && isProperSqon(clientSideFilter);
 
 	return {
-		op: 'and',
 		content: [
-			isProperSqon(clientSideFilter)
+			applicableClientFilter
 				? clientSideFilter
 				: {
-						op: 'and',
 						content: [],
+						op: 'and',
 					},
-			serverSideFilter,
+			checkedServerSideFilter,
 		],
+		op: 'and',
 	};
 };

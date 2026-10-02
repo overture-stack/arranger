@@ -37,9 +37,9 @@ suite('computeAggregateServerStatus', () => {
 		assert.equal(result, serverAggregateStatuses.UNHEALTHY);
 	});
 
-	test('is healthy for an empty set of catalogues (nothing has failed)', () => {
+	test('is unhealthy for an empty set of catalogues, since knowing nothing is not knowing they are fine', () => {
 		const result = computeAggregateServerStatus({});
 
-		assert.equal(result, serverAggregateStatuses.HEALTHY);
+		assert.equal(result, serverAggregateStatuses.UNHEALTHY);
 	});
 });

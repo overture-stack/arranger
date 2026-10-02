@@ -4,6 +4,7 @@ import type {
 	RemoteNodeConfig,
 } from '@overture-stack/arranger-types/configs';
 
+import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
 import {
@@ -36,7 +37,7 @@ export type NetworkQueryVariables = AggregationsQueryVariables & { nodesFilter?:
  * @returns
  */
 export const createResolvers = <Context extends ArrangerBaseContext>(params: {
-	getServerSideFilter?: GetServerSideFilterFn<Context>;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
 	remoteNodes: {
 		customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 		connected: NetworkRemoteNode[];
@@ -111,7 +112,8 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 			...remainingArgs,
 			filters: compileFilter({
 				clientSideFilter: remainingArgs.filters,
-				serverSideFilter: getServerSideFilter?.(context),
+				disableClientFilters: context.disableClientFilters,
+				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
 			}),
 		};
 

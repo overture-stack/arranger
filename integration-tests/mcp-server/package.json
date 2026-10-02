@@ -2,7 +2,7 @@
 	"name": "integration-tests-mcp-server",
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.14",
-		"@modelcontextprotocol/sdk": "^1.29.0",
+		"@modelcontextprotocol/client": "^2.0.0",
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
 		"@overture-stack/arranger-types": "file:../../modules/types",
 		"dotenv": "^16.6.1"

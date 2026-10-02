@@ -23,17 +23,22 @@ const buildServerDetails = ({
 	const catalogueEntries = Object.entries(catalogs);
 	const catalogCount = catalogueEntries.length;
 
+	// The aggregate reads the same defaulted statuses as the per-catalogue entries; off the raw map it
+	// would report every catalogue available under an unhealthy server.
+	const resolvedStatuses: Record<string, CatalogueStatusDetail> = Object.fromEntries(
+		catalogueEntries.map(([catalogueId]) => [
+			catalogueId,
+			catalogueStatuses[catalogueId] ?? { status: CATALOGUE_STATUS.AVAILABLE },
+		]),
+	);
+
 	return {
 		catalogCount,
 		catalogs: Object.fromEntries(
 			catalogueEntries.map(([catalogueId, catalogueConfigs]) => {
 				const typedConfigs = catalogueConfigs as Partial<ConfigsObject<ArrangerBaseContext>>;
-				// A catalogue with no recorded status hasn't gone through arrangerRoutes' status
-				// tracking (e.g. a caller that only loaded config, not routers); treat as available
-				// rather than requiring every caller to pass a status for every catalogue.
-				const statusDetail: CatalogueStatusDetail = catalogueStatuses[catalogueId] ?? {
-					status: CATALOGUE_STATUS.AVAILABLE,
-				};
+				// Absent status means the caller loaded config without routers, not that it failed.
+				const statusDetail = resolvedStatuses[catalogueId] ?? { status: CATALOGUE_STATUS.AVAILABLE };
 
 				return [
 					catalogueId,
@@ -53,7 +58,7 @@ const buildServerDetails = ({
 		),
 		mode: catalogCount > 1 ? 'multiple' : 'single',
 		sqonSchemaPath: '/introspection/sqon',
-		status: computeAggregateServerStatus(catalogueStatuses),
+		status: computeAggregateServerStatus(resolvedStatuses),
 	};
 };
 

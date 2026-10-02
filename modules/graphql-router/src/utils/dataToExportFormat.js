@@ -158,10 +158,12 @@ const pushToStream = (line, stream) => {
 	stream.push(`${line}\n`);
 };
 
-const transformData = ({ data: { hits }, enableDebug, uniqueBy, columns, valueWhenEmpty, dataTransformer, pipe }) =>
-	hits
-		.map((row) => dataTransformer({ enableDebug, row, uniqueBy, columns, valueWhenEmpty }))
-		.forEach((transformedRow) => pushToStream(transformedRow, pipe));
+// A chunk's lines are all formatted before the first is pushed, so a chunk that cannot be formatted
+// pushes nothing, and a failure on the first chunk reaches the consumer before any output does.
+const pushLinesToStream = (lines, stream) => lines.forEach((line) => pushToStream(line, stream));
+
+const transformData = ({ data: { hits }, enableDebug, uniqueBy, columns, valueWhenEmpty, dataTransformer }) =>
+	hits.map((row) => dataTransformer({ enableDebug, row, uniqueBy, columns, valueWhenEmpty }));
 
 export const columnsToHeader = ({ columns, extendedFieldsDict, fileType = 'tsv' }) => {
 	const columnHeaders = columns.reduce((output, { accessor, displayName, fieldName, Header }) => {
@@ -200,20 +202,18 @@ const transformDataToTSV = ({ row, uniqueBy = '', columns, valueWhenEmpty }) => 
 	return tsvRows;
 };
 
-export const dataToTSV = ({ columns, extendedFieldsDict, isFirst, pipe, ...args }) => {
-	if (isFirst) {
-		const headerRow = columnsToHeader({ columns, extendedFieldsDict, fileType: 'tsv' });
-		pushToStream(headerRow, pipe);
-	}
-
-	transformData({
-		isFirst,
+export const dataToTSV = ({ columns, extendedFieldsDict, isFirst, pipe, ...args }) =>
+	pushLinesToStream(
+		[
+			...(isFirst ? [columnsToHeader({ columns, extendedFieldsDict, fileType: 'tsv' })] : []),
+			...transformData({
+				columns,
+				...args,
+				dataTransformer: transformDataToTSV,
+			}),
+		],
 		pipe,
-		columns,
-		...args,
-		dataTransformer: transformDataToTSV,
-	});
-};
+	);
 
 /*
 example args:
@@ -286,20 +286,18 @@ const transformDataToJSON = ({ enableDebug, row, uniqueBy, columns, valueWhenEmp
  * See https://github.com/nci-hcmi-catalog/portal/tree/master/api/src/dataExport.js for an example consumer
  * @param {*} param0
  */
-export const dataToJSON = ({ isFirst, pipe, columns, ...args }) => {
-	if (isFirst) {
-		const headerRow = columnsToHeader({ columns, fileType: 'json' });
-		pushToStream(JSON.stringify(headerRow), pipe);
-	}
-
-	transformData({
-		isFirst,
+export const dataToJSON = ({ isFirst, pipe, columns, ...args }) =>
+	pushLinesToStream(
+		[
+			...(isFirst ? [JSON.stringify(columnsToHeader({ columns, fileType: 'json' }))] : []),
+			...transformData({
+				columns,
+				...args,
+				dataTransformer: transformDataToJSON,
+			}),
+		],
 		pipe,
-		columns,
-		...args,
-		dataTransformer: transformDataToJSON,
-	});
-};
+	);
 
 const dataToStream = ({ fileType = 'tsv', ...args }) => {
 	switch (fileType) {
@@ -357,7 +355,12 @@ export default ({
 				valueWhenEmpty,
 			};
 
-			dataToStream(args);
+			try {
+				dataToStream(args);
+			} catch (error) {
+				callback(error);
+				return;
+			}
 
 			if (isFirst) {
 				isFirst = false;

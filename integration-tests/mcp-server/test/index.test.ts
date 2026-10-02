@@ -1,8 +1,7 @@
 import { after, before, suite } from 'node:test';
 import path from 'path';
 
-import { Client } from '@modelcontextprotocol/sdk/client';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
+import { type Client } from '@modelcontextprotocol/client';
 import { stringToNumber } from '@overture-stack/arranger-types/tools';
 import dotenv from 'dotenv';
 
@@ -17,6 +16,7 @@ import catalogueBData from './assets/catalogue_b.data.json' with { type: 'json' 
 import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
 import buildSqon from './buildSqon.js';
 import executeQuery from './executeQuery.js';
+import { connectApprovingClient } from './mcpClient.js';
 import readPrompts from './readPrompts.js';
 import readResources from './readResources.js';
 import readTools from './readTools.js';
@@ -31,10 +31,29 @@ const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-mcp-testing';
 const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-mcp-testing';
 const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
-const arrangerPort = stringToNumber(process.env.SERVER_PORT, 5678);
+// Distinct from integration-tests/server, which defaults to 5678 and 5679, so the two suites can run
+// concurrently. They are sequential under `npm run test --ws` today and would collide the moment
+// Turbo parallelizes them. A port of 0 would remove the coordination entirely; see `.dev/roadmap.md`
+// § Ephemeral ports for test harnesses.
+const arrangerPort = stringToNumber(process.env.SERVER_PORT, 5680);
 const mcpPort = stringToNumber(process.env.MCP_TEST_PORT, 3199);
 
 const arrangerBaseUrl = `http://127.0.0.1:${arrangerPort}`;
+
+/**
+ * Expands a catalogue's configured field names into the full set introspection reports. A config
+ * lists only leaves, but Arranger also reports a container entry for every parent of a dotted path
+ * (`donor-info` alongside `donor-info.age-at-diagnosis`), so deriving them here keeps the expected
+ * field lists in step with the configs rather than hardcoding the containers.
+ */
+const withContainerFields = (fieldNames: string[]): string[] => [
+	...new Set(
+		fieldNames.flatMap((fieldName) => {
+			const segments = fieldName.split('.');
+			return segments.map((_, index) => segments.slice(0, index + 1).join('.'));
+		}),
+	),
+];
 
 const catalogueConfigs = [
 	{
@@ -43,7 +62,7 @@ const catalogueConfigs = [
 		esIndex: catalogueABase.esIndex,
 		mappings: catalogueAMappings,
 		data: catalogueAData,
-		extendedFieldNames: catalogueABase.extended.map((field) => field.fieldName),
+		extendedFieldNames: withContainerFields(catalogueABase.extended.map((field) => field.fieldName)),
 	},
 	{
 		catalogId: catalogueBBase.catalogId,
@@ -51,7 +70,7 @@ const catalogueConfigs = [
 		esIndex: catalogueBBase.esIndex,
 		mappings: catalogueBMappings,
 		data: catalogueBData,
-		extendedFieldNames: catalogueBBase.extended.map((field) => field.fieldName),
+		extendedFieldNames: withContainerFields(catalogueBBase.extended.map((field) => field.fieldName)),
 	},
 ];
 
@@ -195,6 +214,14 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 					host: '127.0.0.1',
 					port: mcpPort,
 					path: '/mcp',
+					// Spelled out rather than derived: these are what a loopback bind resolves to,
+					// and stating them keeps the suite honest if that defaulting ever changes.
+					allowedHosts: ['localhost', '127.0.0.1', '[::1]'],
+					allowedOrigins: ['localhost', '127.0.0.1', '[::1]'],
+					// Left unset, which is the single-replica default: the suite runs one server, and
+					// exercising the per-process key is exercising what an operator gets by default.
+					requestStateSecret: undefined,
+					maxBodyBytes: 102_400,
 				},
 			});
 		} catch (err) {
@@ -209,9 +236,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			console.error('\n------------------------------------');
 			console.log('Connecting MCP Client over Streamable HTTP\n');
 
-			const mcpClient = new Client({ name: 'arranger-mcp-server-integration-tests', version: '0.0.0-test' });
-			const transport = new StreamableHTTPClientTransport(new URL(mcpServer.url));
-			await mcpClient.connect(transport);
+			const mcpClient = await connectApprovingClient(mcpServer.url, 'arranger-mcp-server-integration-tests');
 			context.mcpClient = mcpClient;
 			context.mcpServerUrl = mcpServer.url;
 		} catch (err) {

@@ -1,18 +1,19 @@
 /**
- * Server-level instructions returned in the MCP `initialize` response. Clients typically fold this
- * text into the model's system prompt, so it is the only guidance that reaches the model before it
- * decides which tool to call first. Tool descriptions arrive with the tool list and are read once a
- * tool is already under consideration; this text is what establishes the discovery-before-query
+ * Server-level instructions returned in the MCP `server/discover` result. Clients typically fold
+ * this text into the model's system prompt, so it is the only guidance that reaches the model before
+ * it decides which tool to call first. Tool descriptions arrive with the tool list and are read once
+ * a tool is already under consideration; this text is what establishes the discovery-before-query
  * rule in the first place.
  *
- * It is deliberately static. Instructions are fixed at construction time (`createMcpServer` is
- * synchronous, one call per session in `createHttpApp`), so naming the live catalogues here would
- * mean an Arranger round trip per session, and would undercut the rule it exists to state: the
- * model should read catalogue names from `list_catalogues`, not from a prefix that may be stale.
+ * It is deliberately static. Instructions are fixed at construction time and `createMcpServer` is
+ * synchronous, so naming the live catalogues here would mean an Arranger round trip every time the
+ * server is constructed. Protocol revision `2026-07-28` has no sessions and the handler builds one
+ * instance per request, so that is a round trip per request rather than per connection. It would
+ * also undercut the rule this text exists to state: the model should read catalogue names from
+ * `list_catalogues`, not from a prefix that may be stale.
  *
- * Keep it short. It is billed on every session, and it competes for attention with the host's own
- * system prompt. Anything longer or more procedural belongs in the `query_arranger` prompt, which
- * is opt-in per turn.
+ * Keep it short. It competes for attention with the host's own system prompt. Anything longer or
+ * more procedural belongs in the `query_arranger` prompt, which is opt-in per turn.
  */
 export const SERVER_INSTRUCTIONS = `This server exposes the data catalogues of one Overture Arranger instance, so you can search and summarize the records in them: filtered document searches (hits), per-field summaries (aggregations), or both.
 
@@ -38,4 +39,5 @@ If the goal maps to more than one plausible query, ask which was meant instead o
 ## Notes
 
 - \`execute_query\` validates the SQON, every field name, and every operator against the catalogue before anything reaches Arranger, and reports the specific problem when it rejects a call. Treat a rejection as a signal to re-read the field metadata, not to resend the same shape.
-- Where the client supports elicitation, the user is shown the generated GraphQL query and asked to confirm before it runs. Where it does not, nothing prompts them, so confirm intent in conversation before executing.`;
+- \`execute_query\` always shows the user the generated GraphQL query and asks them to confirm before it runs. A client that cannot present that request is refused rather than served unconfirmed, so there is no path on which the query runs unseen.
+- An approval covers one exact query. Answering the confirmation re-invokes \`execute_query\` with the same arguments; changing them between the question and the answer produces a different query than the one approved, and the call is refused.`;

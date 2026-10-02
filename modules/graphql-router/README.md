@@ -54,7 +54,7 @@ const router = await arrangerRouter(options);
 | --------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                       |
 | `esClient`            | `SearchClient`           | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
-| `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: callback invoked per request to inject a SQON filter for access control. See [Server-side filters](#server-side-filters). |
+| `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter each read is limited to, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
 | `configsSource`       | `string`                 | **Deprecated**: will be removed in v3.2. Pass `configs` directly instead.                                                           |
 
 ---
@@ -83,8 +83,8 @@ const router = await arrangerRouter(options);
 
 | Property                      | Type      | Default                                     | Description                                                                                                                                                                                                                                                                                              |
 | ----------------------------- | --------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `disableDownloads`            | `boolean` | `false`                                     | Disable the TSV/file download endpoint.                                                                                                                                                                                                                                                                  |
-| `disableFilters`              | `boolean` | `false`                                     | Disable SQON filter support on queries.                                                                                                                                                                                                                                                                  |
+| `disableDownloads`            | `boolean` | `false`                                     | Disable the router's `/download` route, which then answers `404` for every method and path beneath it. An integration's own export route applies the flag itself; see [Export routes](#export-routes).                                                                                                    |
+| `disableFilters`              | `boolean` | `false`                                     | Drop the client's filter. A request whose GraphQL variables carry `filters` or `sqon` is refused with `400`, which for a POST needs its JSON body parsed before the router. Any client filter that still arrives, written inline in the query or sent as an export's `sqon`, is left out of the search query, though aggregations on nested fields can still apply it to their buckets. The server-side filter still applies. |
 | `disableGraphQLIntrospection` | `boolean` | `false` (`true` when `NODE_ENV=production`) | Disable GraphQL's built-in `__schema`/`__type` introspection system. Recommended in production. **Caveat:** remote nodes used in a [network aggregation](#network-search) deployment must keep this disabled; see that section for details.                                                              |
 | `disablePlayground`           | `boolean` | `false`                                     | Disable the GraphQL Playground UI.                                                                                                                                                                                                                                                                       |
 | `enableGraphQLBatching`       | `boolean` | `false`                                     | Enable array-based GraphQL query batching (sending multiple operations in a single HTTP request). Disabled by default: unrestricted batching can be used to bypass request-level rate limiting and amplify the cost of a single request. Only enable if a consumer genuinely relies on batched requests. |
@@ -101,8 +101,8 @@ const router = await arrangerRouter(options);
 
 | Property     | Type     | Default   | Description                        |
 | ------------ | -------- | --------- | ---------------------------------- |
-| `maxAliases` | `number` | unlimited | Maximum aliases per GraphQL query. |
-| `maxDepth`   | `number` | unlimited | Maximum depth of a GraphQL query.  |
+| `maxAliases` | `number` | `15`      | Maximum aliases per GraphQL query. |
+| `maxDepth`   | `number` | `7`       | Maximum depth of a GraphQL query.  |
 
 ---
 
@@ -191,32 +191,57 @@ For the query shape, per-node status reporting, failure behaviour, and full limi
 
 ## Server-side filters
 
-`getServerSideFilter` injects a SQON filter on every query: typically used for access control. Configuring it is optional; a router without one applies no access control and serves every document.
+`getServerSideFilter` is how a deployment applies access control. The router calls it on every read, whether a record query, an aggregation, saving a set, a network search or an export, and limits that read to the filter it returns.
 
-**The callback must return a `SqonNode` for every request it receives, including unauthenticated ones.** There is no "no filter" return value: an absent filter, or one with no clauses, would match every document, so it is rejected rather than applied. Both outcomes a caller might mean by "nothing to apply here" have their own explicit value:
+### A deployment with no access control passes nothing
+
+Leave `getServerSideFilter` out of `arrangerRouter`'s options. The router then applies `includeEverything`, the filter that keeps every document, records that it chose it because nothing was passed, and logs `access control: none (defaulted)` at startup.
+
+Every read still carries a filter, because the code has to tell two situations apart that would otherwise look identical:
+
+| Situation | What the read receives | Outcome |
+| --- | --- | --- |
+| The deployment decided nothing is restricted | `includeEverything`'s filter, recorded by the router | Every document is served |
+| Code forgot to pass the restriction | No filter | The read is refused |
+
+So a deployment with no access control writes nothing, and a read path that loses the filter fails loudly instead of serving everything.
+
+### Where `includeEverything` is written
+
+| Where | When |
+| --- | --- |
+| Returned from a callback: `return includeEverything(context);` | The callback allows this request without restricting it |
+| Passed to the router: `getServerSideFilter: includeEverything` | Optionally, to state that the deployment applies no access control. The startup log then reads `access control: none (explicit)` |
+| Passed to `getAllData` or `dataStream` as `getServerSideFilter` | In code that builds its own context without the router, for a deployment with no access control. See [Export routes](#export-routes) |
+
+`getDefaultServerSideFilter` is a deprecated alias for `includeEverything`, the same function. Both take the request context, so call them with it, or pass the function itself.
+
+### Writing a callback
+
+**The callback must be synchronous, and must return a filter for every request it receives, including unauthenticated ones.** There is no "no filter" return value: an absent filter, or a combination with no clauses, would match every document, so it is refused rather than applied. Each intent has its own value:
 
 | Intent | Return |
 | --- | --- |
-| This request may see everything | `getDefaultServerSideFilter()` |
+| This request may see everything | `includeEverything(context)` |
 | This request may see nothing | an `in` clause with an empty `value` list |
+| This request may see some documents | a filter selecting those documents |
 
 ```ts
-import arrangerRouter, { getDefaultServerSideFilter } from '@overture-stack/arranger-graphql-router';
+import arrangerRouter, { type ArrangerBaseContext, includeEverything } from '@overture-stack/arranger-graphql-router';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 
-const getServerSideFilter: GetServerSideFilterFn = (context) => {
-	const userId = context.req.headers['x-user-id'];
+type AppContext = ArrangerBaseContext & { user?: { id: string; isAdministrator: boolean } };
 
-	// Decide deliberately what an unidentified caller may see. Returning the default below grants
-	// them everything; the commented alternative grants them nothing.
-	if (!userId) {
-		return getDefaultServerSideFilter();
-		// return { op: 'in', content: { fieldName: 'acl', value: [] } };
+const getServerSideFilter: GetServerSideFilterFn<AppContext> = (context) => {
+	const { user } = context;
+
+	if (user?.isAdministrator) {
+		return includeEverything(context);
 	}
 
 	return {
-		op: 'and',
-		content: [{ op: 'in', content: { fieldName: 'acl', value: [String(userId)] } }],
+		content: { fieldName: 'acl', value: user ? [user.id] : [] },
+		op: 'in',
 	};
 };
 
@@ -225,11 +250,102 @@ const router = await arrangerRouter({ configs, getServerSideFilter });
 
 Note `fieldName`, not `field`. A content clause using any other key does not describe a field, and the resulting filter restricts nothing.
 
-The returned filter is composed with any SQON the client provides, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, and set queries.
+`user` stands for whatever the deployment's own authentication established. The callback receives the GraphQL context on GraphQL reads and the router's request context, `req.context`, on exports, so whatever it reads to identify the caller must be in both: set it on `req.context` in middleware mounted before the router, and add it to the GraphQL context through the router's `graphqlOptions.context`, a function given the Express request.
+
+The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "Access control could not be evaluated for this request.", while the full message and its cause are logged on the server under `access_control.evaluation_failed`.
+
+### How the filter applies
+
+The returned filter is composed with any SQON the client provides, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, set, network search and export queries.
 
 Aggregations are worth one note, because they are the case where "the filter is applied" is easy to assume and hard to see. A facet does not apply the caller's own filter on the field it is aggregating, so that selecting a value does not collapse that facet to the single value chosen. That exemption is for the caller's filter only; the server-side filter is re-applied to every aggregation, including one on the same field it restricts. So a facet on an access-controlled field shows only the values that caller may see.
 
 In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
+
+---
+
+## Export routes
+
+The router serves exports at `POST /download`. An integration building its own export route uses the same two functions, which are public API:
+
+| Function | Import | Resolves to |
+| --- | --- | --- |
+| `getAllData` | `utils.getAllData` from the package root, or `getAllData` from `@overture-stack/arranger-graphql-router/utils` | A stream of `{ hits, total }` chunks, one per search page |
+| `dataStream` | `@overture-stack/arranger-graphql-router/download` | `{ contentType, output, responseFileName }`, where `output` streams TSV rows, header row first, or JSON lines |
+
+### Input is validated by the functions themselves
+
+`dataStream` checks `params`, and `getAllData` checks its `chunkSize`, `sort` and `sqon`, so an integration can hand `dataStream` the client's object whole. A broken rule rejects the call with an `InvalidExportRequestError` before any output:
+
+- `params.files` is an array holding exactly one file object: one file per request.
+- The file's fields are read by name, `sqon`, `columns`, `sort`, `fileName`, `fileType`, `maxRows`, `chunkSize`, `uniqueBy` and `valueWhenEmpty`. Anything else in the file, or at the top level of `params`, is ignored and never used.
+- `chunkSize` is a positive integer and `maxRows` a non-negative integer, both as JSON numbers. `fileType` is `tsv` or `json`, where absent, `null` or empty names none, and `tsv` applies when nothing names one. `columns` is a non-empty array of column objects. `fileName` is a well-formed string, and `uniqueBy` and `valueWhenEmpty` are strings. A top-level `chunkSize`, `fileName` or `fileType` follows the same rule, and applies where the file names none.
+- `sort`, for `dataStream` and `getAllData` alike, is an array of entries, each naming a non-empty `fieldName` and an `order` of `asc` or `desc`, in any case. Empty or absent keeps the default order, and an `_id` tiebreaker always follows.
+- A `sqon` that cannot be compiled into a query is refused.
+- A `maxRows` applies only when the catalogue allows custom row limits, and `0` asks for the configured limit.
+
+### The filter comes from the router
+
+Mount the router at the application's root and the export route after it, so every request has passed through the router's middleware, and pass the context it built as `ctx: req.context`. The export then applies the filter the router recorded:
+
+| Context | `getServerSideFilter` left out | `getServerSideFilter` passed |
+| --- | --- | --- |
+| Built by the router | The router's filter | The router's filter and the caller's together, so a caller can only narrow it |
+| Built some other way | Refused, before any output | The caller's filter |
+
+On a context built some other way, pass the filter function this deployment's router is configured with, or `includeEverything` if the deployment applies no access control. Each callback is evaluated once per export, under the same rules as the router's.
+
+### Errors
+
+| Error | Means | Answer |
+| --- | --- | --- |
+| `InvalidExportRequestError`, from `./download` | The request broke a rule | `400` |
+| `AccessControlError`, from the package root | Access control could not be evaluated for the request | `500` |
+| Anything else | A server fault, such as a failed search | `500` |
+
+Answer each as plain text with fixed wording, and log the error itself on the server: its message is written for the log, not for the client.
+
+### Joining the output to the response
+
+Join `output` to the response with `stream.pipeline`, which aborts the response when the export fails partway and stops the export when the client disconnects. `output` emits `'error'` on any failure after the call resolves.
+
+The package does not declare `req.context` on Express's `Request` type, so a TypeScript version of this example declares that property itself.
+
+```js
+import { pipeline } from 'node:stream';
+
+import arrangerRouter from '@overture-stack/arranger-graphql-router';
+import { dataStream, InvalidExportRequestError } from '@overture-stack/arranger-graphql-router/download';
+import express from 'express';
+
+const app = express();
+
+app.use(await arrangerRouter({ configs }));
+
+app.post('/export', express.json(), async (req, res) => {
+	try {
+		const { contentType, output, responseFileName } = await dataStream({ ctx: req.context, params: req.body });
+
+		res.attachment(responseFileName).set('Content-Type', contentType);
+		pipeline(output, res, (error) => {
+			if (error) {
+				console.error('export.stream_failed', error);
+			}
+		});
+	} catch (error) {
+		const isInvalidRequest = error instanceof InvalidExportRequestError;
+
+		console.error('export.failed', error);
+		res
+			.status(isInvalidRequest ? 400 : 500)
+			.type('text/plain')
+			.set('X-Content-Type-Options', 'nosniff')
+			.send(isInvalidRequest ? 'The export request is invalid.' : 'The export could not be completed.');
+	}
+});
+```
+
+The router's own `/download` goes further: it holds its response headers until the first row is formatted, so a failure on the first search, or on formatting the first row, still answers with an error status.
 
 ---
 
@@ -249,6 +365,14 @@ const client = await buildSearchClient({
 	password: 'secret',
 });
 ```
+
+### `includeEverything`, `getDefaultServerSideFilter`
+
+The filter callback that keeps every document, and its deprecated alias. See [Server-side filters](#server-side-filters).
+
+### `AccessControlError`
+
+What a read fails with when access control cannot be evaluated for it. See [Export routes](#export-routes).
 
 ### `resolveCatalogueFields(mapping, extendedFields)`
 
@@ -270,5 +394,5 @@ import type { SearchClient, SupportedClientTypes } from '@overture-stack/arrange
 
 | Import path                                        | Contents                                                                    |
 | -------------------------------------------------- | --------------------------------------------------------------------------- |
-| `@overture-stack/arranger-graphql-router/utils`    | Internal utilities (`ajax`, `runGraphQLQuery`). Not part of the stable API. |
-| `@overture-stack/arranger-graphql-router/download` | Download route helpers. Consumed internally by `arrangerRouter`.            |
+| `@overture-stack/arranger-graphql-router/utils`    | `getAllData`, public API for an integration's own export route; see [Export routes](#export-routes). The other utilities, such as `ajax` and `runGraphQLQuery`, are internal and not part of the stable API. |
+| `@overture-stack/arranger-graphql-router/download` | `dataStream` and `InvalidExportRequestError`, public API for an integration's own export route; see [Export routes](#export-routes). The default export is the router's own `/download` routes. |

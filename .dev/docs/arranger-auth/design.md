@@ -2,7 +2,7 @@
 
 Where access-control enforcement belongs in Arranger, and why. This is the design substance; sequencing lives in [`roadmap.md`](roadmap.md), known defects in [`debt.md`](debt.md).
 
-Written 2026-08-18 from a design exchange with the Usher session plus direct verification against the current code. Every code claim below was checked, not inferred.
+Written in accordance with Usher's model design, plus direct verification against the current code. Every code claim below was checked, not inferred.
 
 ---
 
@@ -18,17 +18,17 @@ Identity reaches Arranger through exactly one door: `addContext(patch)`, an Expr
 
 So Arranger is authorization-only and identity-agnostic by construction. Three consequences:
 
-1. **Authentication is the host application's job, permanently.** This is not a gap to close. It is what lets one Arranger serve deployments on different identity providers, and it is why the Usher plugin is a callback factory reading an already-resolved context rather than something that talks to an IdP.
+1. **Authentication is the host application's job, permanently.** This is not a gap to close. It is what lets one Arranger serve deployments on different identity providers, and it is why the Usher adapter is a callback factory reading an already-resolved context rather than something that talks to an IdP.
 2. **Arranger is out of scope for the EGO to Keycloak migration.** Nothing to repoint, no token format to change. The migration surface belongs to the host applications that build `context`: Stage, the iMS portal, OHCRN researcher-ui, and bespoke `search-server` deployments.
-3. **"No auth" does not mean "clean slate."** The authorization half that *does* exist is defective in the ways [`phase-0-audit.md`](phase-0-audit.md) records, so a correct token and a correct claim mapping still would not produce correct enforcement on today's code.
+3. **"No auth" does not mean "clean slate."** The authorization half that *does* exist is defective in the ways `.dev/tech-debt.md` records, so a correct token and a correct claim mapping still would not produce correct enforcement on today's code.
 
 ## The core decision: enforce at the query-building boundary, not the transport boundary
 
-**Recommendation: enforcement lives on the code path that builds the ES/OS query, and travels with that code into `arranger-core` when it is extracted. The Usher plugin is a translator only, never the enforcement point.**
+**Recommendation: enforcement lives on the code path that builds the ES/OS query, and travels with that code into `arranger-core` when it is extracted. The Usher adapter is a translator only, never the enforcement point.**
 
-### Why not in the plugin
+### Why not in the Usher adapter
 
-If `usher-arranger` owns enforcement, every future plugin re-owns it. Worse, so does every future transport.
+If the Usher adapter owns enforcement, every future Usher adapter re-owns it. Worse, so does every future transport.
 
 **Beacon is the decisive case, and it is already planned.** The roadmap's [GA4GH Beacon v2 module](../atlas/roadmap/ga4gh-beacon-v2.md) is a non-GraphQL transport adapter whose record-level granularity is explicitly "gated on Usher integration." If enforcement is Express middleware on `graphql-router`, Beacon gets none of it and needs a second, independent implementation. So does the planned REST adapter under [Transport layer abstraction](../../roadmap.md).
 
@@ -36,7 +36,7 @@ This repo already demonstrates where that leads. Five independent copies of the 
 
 ### Independent confirmation from another codebase
 
-Added 2026-08-18 from the iMicroSeq submission service's own current-state writeup, and worth
+From the iMicroSeq submission service's own current-state writeup, and worth
 recording because it is evidence rather than argument.
 
 That service authorizes writes by calling `hasUserWriteAccess` **in each controller**:
@@ -97,9 +97,9 @@ Revisit once `arranger-core` exists: at that point the seam is already in the ri
 
 | Concern | Owner | Why |
 |---|---|---|
-| Grants token to SQON translation | `usher-arranger` plugin | Usher-specific. Knows grant tokens, category-to-field mapping, the deployment's vocabulary. Small and testable in isolation. |
+| Grants token to SQON translation | the Usher adapter | Usher-specific. Knows grant tokens, category-to-field mapping, the deployment's vocabulary. Small and testable in isolation. |
 | Guaranteeing filters reach every read path | Arranger, at the query-building seam | Generic. Serves Usher, any future ABAC, and today's `getServerSideFilter` consumers identically. |
-| Deciding catalogue-absent versus record-filtered | Arranger, at the seam | Otherwise every transport reinvents it, and gets the disclosure question wrong differently each time. |
+| Deciding denied versus narrowed | Arranger, at the seam | Otherwise every transport reinvents it, and gets the disclosure question wrong differently each time. Previously written as "catalogue-absent versus record-filtered", which read the decision as routing; denial is a filter outcome, not a missing route. |
 
 ---
 
@@ -118,7 +118,7 @@ It is weak in three specific ways, all of which the design above has to fix rath
 
 ### 1. It does not cover export, which is a live bypass
 
-See [`debt.md`](debt.md). This is exploitable today, with no plugin involved, and it is the single most important thing to fix before any Usher enforcement is built on this hook: a grant-restricted user could export the unrestricted dataset.
+See [`debt.md`](debt.md). This is exploitable today, with no Usher adapter involved, and it is the single most important thing to fix before any Usher enforcement is built on this hook: a grant-restricted user could export the unrestricted dataset.
 
 ### 2. The guarantee is by-convention, not enforced
 
@@ -126,11 +126,11 @@ Four read paths each have to remember to compose the filter. Three do; one does 
 
 The fix is to make omission impossible: have `buildQuery`/`buildAggregations` require the resolved filter as a parameter, or take the context and resolve it themselves. Then the next read path added cannot repeat `getAllData`'s omission.
 
-### 3. `(context) => SqonNode` cannot express "deny"
+### 3. `(context) => SqonNode` cannot express *which* deny
 
-There is no way to distinguish "no additional filter needed" from "deny this request entirely." Both collapse to a filter or its absence, which pushes the catalogue-absent decision up into transport code, where it gets reinvented per transport.
+Deny itself is expressible: `SqonBuilder.matchNothing(fieldName).toValue()` is a leaf that survives pruning, and the seam now rejects an allow-shaped filter with no leaf clause, so "no additional filter needed" and "deny" are no longer the same value. What the signature still cannot carry is the **difference between two denials**: a requester with no relationship to a resource and one holding a lapsed or insufficient grant get the identical response, and only the first of those is owed ambiguity.
 
-This matters concretely: an absent catalogue must **not** be expressed as a filter matching nothing. That returns `200` with zero hits and zero buckets, which discloses that the catalogue exists. It has to be a `404` carrying the same body shape as a failed catalogue (`{ catalogueId, status, error: { code, message } }`), which Arranger already returns and clients already handle.
+An earlier version of this section said an absent catalogue must be a `404` rather than a filter matching nothing, on the grounds that a zero-hit `200` discloses the catalogue exists. That argument does not survive the correction that a resource is a field value rather than a catalogue: a nonexistent resource and a denied one both compile to a query matching nothing and return the same body after the same work, which is the indistinguishability the denial path now relies on rather than a leak. Catalogue existence is separately published unauthenticated by `GET /introspection`, so it was never the secret being protected. See [`usher-adapter.md`](usher-adapter.md) § The denial path and `roadmap.md` Phase 1 item 5.
 
 ---
 
@@ -142,7 +142,7 @@ This is worth stating precisely because it is easy to assume otherwise: **per-ca
 
 **The caveat that matters for access control.** The guarantee is a property of *how* `arrangerRouter` is called, not something it enforces. A custom-server author can call it once and mount the result for every catalogue, or pass a single shared closure that does not discriminate by catalogue, and nothing objects. For a convenience feature that is acceptable; for an access-control mechanism, "correct if wired correctly" is too weak, and the export bypass is the same failure already realised in this repo's own code.
 
-Practical consequence for the plugin: build one plugin instance per catalogue at startup, each closed over exactly one resource-to-field mapping, and register it only on that catalogue's router. A clinical grant is then unable to leak into an environmental query because the environmental router holds no object containing clinical mappings. That converts the guarantee from "the injection step checks the target catalogue" into "the wrong filter is not reachable from here." A merged `catalogues: {...}` map remains the right *authoring* surface; it should be destructured at startup and not survive into request handling.
+Practical consequence for the Usher adapter: build one Usher adapter instance per catalogue at startup, each closed over exactly one resource-to-field mapping, and register it only on that catalogue's router. A clinical grant is then unable to leak into an environmental query because the environmental router holds no object containing clinical mappings. That converts the guarantee from "the injection step checks the target catalogue" into "the wrong filter is not reachable from here." A merged `catalogues: {...}` map remains the right *authoring* surface; it should be destructured at startup and not survive into request handling.
 
 ---
 
@@ -162,7 +162,7 @@ Note the asymmetry with the aggregation defect in [`debt.md`](debt.md): there, t
 
 ## Platform admin bypass
 
-Usher's `admin-model.md` has the plugin detecting a `usher-platform-admin` role and skipping filter injection. Two Arranger-side requirements:
+Usher's `admin-model.md` has the Usher adapter detecting a `usher-platform-admin` role and skipping filter injection. Two Arranger-side requirements:
 
 - **Skip means skip, not inject-empty.** An empty filter is a filter; it goes through composition and can interact with a global filter. Skipping must bypass injection entirely.
 - **It must skip both pipelines, and the export path.** Which is only checkable once the export path composes filters at all.
@@ -180,4 +180,4 @@ Activation belongs inside `DataProvider` rather than a wrapping component, becau
 Two open problems, both of which exist independently of Usher and are worth fixing generally:
 
 - **Denial has no distinguishable client state.** `DataProvider`'s config fetch logs a console warning and resolves to empty. There is no way for a consuming app to render "access denied" as distinct from "no results." Related and worse: `modules/components` never inspects GraphQL `errors` at all, so any server-side failure already renders as empty UI (see the tech-debt entry on that).
-- **Plugin detection.** Whether a catalogue has enforcement active should come from a capability flag on that catalogue's introspection response rather than a prop the consuming app sets, for the same reason the roadmap's [capability-aware `DataContext`](../../roadmap.md) item prefers capability flags over version numbers.
+- **Usher adapter detection.** Whether a catalogue has enforcement active should come from a capability flag on that catalogue's introspection response rather than a prop the consuming app sets, for the same reason the roadmap's [capability-aware `DataContext`](../../roadmap.md) item prefers capability flags over version numbers.

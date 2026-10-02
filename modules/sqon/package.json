@@ -37,8 +37,7 @@
 		"watch": "WIREIT_WATCH=true npm run build"
 	},
 	"dependencies": {
-		"zod": "^3.24.2",
-		"zod-to-json-schema": "^3.24.1"
+		"zod": "^4.2.0"
 	},
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.0",

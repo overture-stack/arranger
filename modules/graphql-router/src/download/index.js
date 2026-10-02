@@ -1,153 +1,220 @@
-import zlib from 'node:zlib';
+import { finished, pipeline } from 'node:stream';
 
 import { Router, urlencoded } from 'express';
-import { defaults } from 'lodash-es';
-import { pack as tarPack } from 'tar-stream';
 
 import dataToExportFormat from '#utils/dataToExportFormat.js';
-import getAllData from '#utils/getAllData.js';
+import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
+import noopFn from '#utils/noops.js';
 
-const convertDataToExportFormat =
-	({ ctx, fileType, getServerSideFilter }) =>
-	async (args) =>
-		(
-			await getAllData({
-				ctx,
-				getServerSideFilter,
-				...args,
-			})
-		)
-			.on('error', (err) => {
-				console.error('Stream error:', err);
-			})
-			.pipe(dataToExportFormat({ ...args, ctx, fileType }));
+export { InvalidExportRequestError };
 
-const getFileStream = async ({ chunkSize, ctx, file, fileType, getServerSideFilter, mock }) => {
-	const exportArgs = defaults(file, { chunkSize, fileType, mock });
+const INVALID_REQUEST_TEXT = 'The download request is invalid.';
+const SERVER_FAULT_TEXT = 'The download could not be completed.';
 
-	return convertDataToExportFormat({ ctx, fileType, getServerSideFilter })({
-		...exportArgs,
-		mock,
-	});
-};
+const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const multipleFiles = async ({ chunkSize, ctx, files, getServerSideFilter, mock }) => {
-	const pack = tarPack();
+const isAbsentOr = (isValid) => (value) => value === undefined || isValid(value);
 
-	Promise.all(
-		files.map((file, i) => {
-			// TODO: this async as the executor of a Promise is smelly
-			// eslint.org/docs/latest/rules/no-async-promise-executor
-			return new Promise(async (resolve, reject) => {
-				// pack needs the size of the stream. We don't know that until we get all the data.
-				// This collects all the data before adding it.
-				let data = '';
-				const fileStream = await getFileStream({
-					chunkSize,
-					ctx,
-					file,
-					fileType: file.fileType,
-					mock,
-				});
+const isPositiveInteger = (value) => Number.isInteger(value) && value > 0;
 
-				fileStream.on('data', (chunk) => (data += chunk));
-				fileStream.on('end', () => {
-					pack.entry({ name: file.fileName || `file-${i + 1}.tsv` }, data, function (err) {
-						if (err) {
-							reject(err);
-						} else {
-							resolve(null);
-						}
-					});
-				});
-			});
-		}),
-	).then(() => pack.finalize());
+const isNonNegativeInteger = (value) => Number.isInteger(value) && value >= 0;
 
-	return pack.pipe(zlib.createGzip());
-};
+const isString = (value) => typeof value === 'string';
 
-export const dataStream = async ({ ctx, getServerSideFilter, params }) => {
-	const { chunkSize, files, fileName = 'file.tar.gz', fileType = 'tsv', mock } = params;
+// A lone surrogate has no UTF-8 form, so no Content-Disposition encoding can carry it.
+const isWellFormedString = (value) => isString(value) && value.isWellFormed();
 
-	if (files?.length > 0) {
-		return files.length === 1
-			? {
-					contentType: 'text/plain',
-					output: await getFileStream({
-						chunkSize,
-						ctx,
-						file: files[0],
-						fileType: files[0].fileType || fileType,
-						mock,
-					}),
-					responseFileName: files[0].fileName || fileName,
-				}
-			: {
-					contentType: 'application/gzip',
-					output: multipleFiles({ chunkSize, ctx, files, mock }),
-					responseFileName: fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'), // make sure file ends with '.tar.gz'
-				};
+const isFileType = (value) => [null, '', 'json', 'tsv'].includes(value);
+
+const isColumnList = (value) => Array.isArray(value) && value.length > 0 && value.every(isPlainObject);
+
+// In order, so each rule can rely on the ones before it. Messages name the field and never its value,
+// since params arrive from the client.
+const PARAMS_RULES = [
+	{ isMet: isPlainObject, message: 'params must be an object.' },
+	{
+		isMet: ({ files }) => Array.isArray(files) && files.length === 1 && isPlainObject(files[0]),
+		message: 'files must be an array holding exactly one file object.',
+	},
+	{
+		isMet: ({ chunkSize, files: [file] }) => [chunkSize, file.chunkSize].every(isAbsentOr(isPositiveInteger)),
+		message: 'chunkSize must be a positive integer.',
+	},
+	{
+		isMet: ({ files: [file] }) => isAbsentOr(isNonNegativeInteger)(file.maxRows),
+		message: 'maxRows must be a non-negative integer.',
+	},
+	{
+		isMet: ({ fileType, files: [file] }) => [fileType, file.fileType].every(isAbsentOr(isFileType)),
+		message: 'fileType must be tsv or json.',
+	},
+	{
+		isMet: ({ files: [file] }) => isColumnList(file.columns),
+		message: 'columns must be a non-empty array of column objects.',
+	},
+	{
+		isMet: ({ files: [file] }) => isAbsentOr(isExportSort)(file.sort),
+		message: 'sort must be an array of entries, each with a non-empty fieldName and an order of asc or desc.',
+	},
+	{
+		isMet: ({ fileName, files: [file] }) => [fileName, file.fileName].every(isAbsentOr(isWellFormedString)),
+		message: 'fileName must be a well-formed string.',
+	},
+	{
+		isMet: ({ files: [file] }) => isAbsentOr(isString)(file.uniqueBy),
+		message: 'uniqueBy must be a string.',
+	},
+	{
+		isMet: ({ files: [file] }) => isAbsentOr(isString)(file.valueWhenEmpty),
+		message: 'valueWhenEmpty must be a string.',
+	},
+];
+
+const requireValidParams = (params) => {
+	const brokenRule = PARAMS_RULES.find(({ isMet }) => !isMet(params));
+
+	if (brokenRule === undefined) {
+		return params;
 	}
 
-	console.warn('no files defined to download');
-	throw new Error('files array was missing or empty');
+	throw new InvalidExportRequestError(brokenRule.message);
 };
 
-const download = ({ enableAdmin = false, enableDebug = false, getServerSideFilter }) => {
+/**
+ * Streams one file of an export, formatted as TSV or JSON lines, for an integration route to send.
+ * `params` is validated here, so the client's object can be passed whole: only the file's export
+ * fields are read, and anything else it carries is ignored.
+ *
+ * @template Context
+ * @param {object} args
+ * @param {Context} args.ctx the request context, normally the one a router built.
+ * @param {import('@overture-stack/arranger-types/configs').GetServerSideFilterFn<Context>} [args.getServerSideFilter]
+ *   a filter of the caller's own, which can only narrow the one the router recorded.
+ * @param {unknown} args.params the download params as the client sent them, holding exactly one file.
+ * @returns {Promise<{ contentType: string, output: import('node:stream').Readable, responseFileName: string }>}
+ *   `output` emits `'error'` when the export fails after it starts.
+ * @throws {InvalidExportRequestError} when `params` breaks a rule or its filter cannot be compiled.
+ * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
+ */
+export const dataStream = async ({ ctx, getServerSideFilter, params }) => {
+	const {
+		chunkSize: defaultChunkSize,
+		fileName: defaultFileName,
+		fileType: defaultFileType,
+		files: [{ chunkSize, columns, fileName, fileType, maxRows, sort, sqon, uniqueBy, valueWhenEmpty }],
+	} = requireValidParams(params);
+	const outputFileType = fileType || defaultFileType || 'tsv';
+
+	const source = await getAllData({
+		chunkSize: chunkSize ?? defaultChunkSize,
+		ctx,
+		getServerSideFilter,
+		maxRows,
+		sort,
+		sqon,
+	});
+	const output = dataToExportFormat({ columns, ctx, fileType: outputFileType, uniqueBy, valueWhenEmpty });
+
+	// Every failure reaches the consumer as an 'error' on `output`, which pipeline destroys with it.
+	pipeline(source, output, noopFn);
+
+	return {
+		contentType: 'text/plain',
+		output,
+		responseFileName: fileName || defaultFileName || `file.${outputFileType}`,
+	};
+};
+
+const paramsFrom = (body) => {
+	if (typeof body?.params === 'string') {
+		try {
+			return JSON.parse(body.params);
+		} catch (cause) {
+			throw new InvalidExportRequestError('params must be JSON.', { cause });
+		}
+	}
+
+	throw new InvalidExportRequestError('params must be sent as one form field holding JSON.');
+};
+
+const failureResponseFor = (error) =>
+	error instanceof InvalidExportRequestError
+		? { event: 'download.invalid_request', log: console.warn, status: 400, text: INVALID_REQUEST_TEXT }
+		: { event: 'download.failed', log: console.error, status: 500, text: SERVER_FAULT_TEXT };
+
+const sendFailure = ({ error, res }) => {
+	const { event, log, status, text } = failureResponseFor(error);
+
+	log(event, error);
+	res.status(status).type('text/plain').set('X-Content-Type-Options', 'nosniff').send(text);
+};
+
+const logStreamFailure = (error) => {
+	if (error) {
+		console.error('download.stream_failed', error);
+	}
+};
+
+// Piped from inside the event announcing the first formatted chunk, or an empty end, rather than after
+// awaiting it: a failure already queued would otherwise be emitted in between, reaching neither. A
+// response closed before then is never piped, since pipeline throws on a closed destination; the
+// export is stopped instead.
+const pipeFromFirstChunk = ({ output, res, setHeaders }) =>
+	new Promise((resolve, reject) => {
+		const stopWaiting = () => {
+			output.off('error', failBeforeOutput);
+			output.off('readable', startResponse);
+			stopWatchingResponse();
+		};
+		const failBeforeOutput = (error) => {
+			stopWaiting();
+			reject(error);
+		};
+		const startResponse = () => {
+			stopWaiting();
+			setHeaders();
+			pipeline(output, res, logStreamFailure);
+			resolve();
+		};
+		const stopExport = () => {
+			stopWaiting();
+			output.destroy();
+			resolve();
+		};
+		const stopWatchingResponse = finished(res, stopExport);
+
+		output.once('error', failBeforeOutput);
+		output.once('readable', startResponse);
+	});
+
+/**
+ * The router's `/download` routes: `POST /` exports one file of the catalogue under the filter the
+ * router recorded on the request context. Headers wait until the first chunk is formatted, so a
+ * failure before any output answers with an error status and fixed text, the detail going to the
+ * server log only.
+ *
+ * @param {object} [args]
+ * @param {boolean} [args.enableAdmin] also serves `GET /fields`, the fields flattened from the mapping.
+ */
+const download = ({ enableAdmin = false } = {}) => {
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));
 
-	router.post('/', async function (req, res) {
+	router.post('/', async (req, res) => {
 		try {
-			const ctx = req.context;
-			console.time('download');
-
-			const { params } = req.body;
-
-			const { output, responseFileName, contentType } = await dataStream({
-				ctx,
-				getServerSideFilter,
-				params: JSON.parse(params),
+			const { contentType, output, responseFileName } = await dataStream({
+				ctx: req.context,
+				params: paramsFrom(req.body),
 			});
 
-			ctx.enableDebug && console.debug('  DEBUG: === SETTING UP RESPONSE ===');
-
-			res.set('Content-Type', contentType);
-			res.set('Content-disposition', `attachment; filename=${responseFileName}`);
-
-			if (ctx.enableDebug) {
-				let bytesWritten = 0;
-				let chunksReceived = 0;
-
-				output.on('data', (chunk) => {
-					chunksReceived++;
-					bytesWritten += chunk.length || 0;
-					// console.log(
-					// 	`OUTPUT data chunk ${chunksReceived}, size: ${chunk.length}, total bytes: ${bytesWritten}`,
-					// );
-				});
-
-				output.on('end', () =>
-					console.log(`OUTPUT ENDED after ${chunksReceived} chunks, ${bytesWritten} bytes`),
-				);
-				output.on('close', () => console.log('OUTPUT CLOSED'));
-				output.on('error', (err) => console.error('OUTPUT ERROR:', err));
-
-				res.on('finish', () => console.log('RESPONSE FINISHED'));
-				res.on('close', () => console.log('RESPONSE CLOSED (client may have disconnected)'));
-				res.on('error', (err) => console.error('RESPONSE ERROR:', err));
-			}
-
-			output.pipe(res).on('finish', () => {
-				console.timeEnd('download');
+			await pipeFromFirstChunk({
+				output,
+				res,
+				setHeaders: () => res.attachment(responseFileName).set('Content-Type', contentType),
 			});
-		} catch (err) {
-			console.error(err);
-			console.timeEnd('download');
-
-			res.status(400).send(err?.message || err?.details || 'An unknown error occurred.');
+		} catch (error) {
+			sendFailure({ error, res });
 		}
 	});
 

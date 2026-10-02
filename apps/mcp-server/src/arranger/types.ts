@@ -31,6 +31,7 @@ export type ArrangerGraphQLResponse = {
 // these types should be replaced with exports from the search-server's Zod schemas once that work is done.
 
 export const cataloguesSchema = zod.record(
+	zod.string(),
 	zod.object({
 		description: zod.string().optional(),
 		documentType: zod.string(),
@@ -57,19 +58,20 @@ const sqonOperatorDetailSchema = zod.object({
 
 export const sqonIntrospectionSchema = zod.object({
 	$schema: zod.string(),
-	aliases: zod.record(zod.string()),
+	aliases: zod.record(zod.string(), zod.string()),
 	description: zod.string(),
 	operators: zod.object({
 		combination: zod.array(zod.string()),
 		field: zod.array(sqonOperatorDetailSchema),
 	}),
-	schema: zod.record(zod.unknown()),
+	schema: zod.record(zod.string(), zod.unknown()),
 	title: zod.string(),
 	version: zod.string(),
 });
 
 const fieldSchema = zod.object({
 	displayName: zod.string(),
+	isArray: zod.boolean().nullable().optional(), // true is many, false is single, null is we don't know, undefined is an old server
 	type: zod.string(),
 	unit: zod.string().nullable().optional(),
 });
@@ -82,6 +84,6 @@ export const catalogueIntrospectionSchema = zod.object({
 	meta: zod.object({
 		authFiltered: zod.boolean(),
 	}),
-	operators: zod.record(zod.array(zod.string())),
-	fields: zod.record(fieldSchema),
+	operators: zod.record(zod.string(), zod.array(zod.string())),
+	fields: zod.record(zod.string(), fieldSchema),
 });
