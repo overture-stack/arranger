@@ -253,7 +253,7 @@ const READ_PATH_QUERIES = {
 const STUDY_A = restrictingFilter({ fieldName: 'study', values: ['A'] });
 
 /** Records every uncaught exception and unhandled rejection until stopped. */
-const watchProcessFaults = () => {
+const recordProcessErrors = () => {
 	const faults: unknown[] = [];
 	const record = (fault: unknown) => {
 		faults.push(fault);
@@ -406,10 +406,10 @@ suite("formatError masks filter callback failures on the router's read paths", (
 			assertMasked(graphQLErrorsOf(response), 'compileFilter');
 		});
 
-		test(`keeps serving after a callback's promise rejects, on ${readPath}, with no unhandled rejection`, async () => {
-			// Given a router whose callback returns a promise that rejects, and a watch on process faults
+		test(`answers ${readPath} with the fixed text when a callback's promise rejects, and the router answers the next request`, async () => {
+			// Given a router whose callback returns a promise that rejects, and a record of process error events
 			const app = await buildRouterApp({ getServerSideFilter: () => Promise.reject(new Error(SECRET_DETAIL)) });
-			const watcher = watchProcessFaults();
+			const watcher = recordProcessErrors();
 
 			try {
 				// When the read path is queried, and the router is asked something else afterwards
@@ -417,7 +417,7 @@ suite("formatError masks filter callback failures on the router's read paths", (
 				await afterPendingRejections();
 				const followUp = await request(app).get('/introspection');
 
-				// Then the query was masked, nothing escaped to the process, and the router still answers
+				// Then the query was masked, the process recorded no error event, and the router answers the next request
 				assertMasked(graphQLErrorsOf(response), SECRET_DETAIL);
 				assert.deepEqual(watcher.faults, []);
 				assert.equal(followUp.status, 200);

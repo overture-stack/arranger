@@ -289,7 +289,7 @@ const countingCallback = (filter: (context: unknown) => unknown) => {
 };
 
 /** Records every uncaught exception and unhandled rejection until stopped. */
-const watchProcessFaults = () => {
+const recordProcessErrors = () => {
 	const faults: unknown[] = [];
 	const record = (fault: unknown) => {
 		faults.push(fault);
@@ -900,11 +900,11 @@ suite('evaluating a filter callback for an export', () => {
 		assert.equal(engine.searches.length, 0);
 	});
 
-	test("keeps the process alive when a caller callback's promise rejects", async () => {
-		// Given a hand-built context, a caller callback returning a promise that rejects, and a watch on process faults
+	test("refuses a caller callback whose promise rejects, and the next export succeeds", async () => {
+		// Given a hand-built context, a caller callback returning a promise that rejects, and a record of process error events
 		const { context } = await routerContext();
 		const handBuilt = contextWithoutRecord(context);
-		const watcher = watchProcessFaults();
+		const watcher = recordProcessErrors();
 
 		try {
 			// When getAllData is given that callback, and then an ordinary export follows
@@ -918,7 +918,7 @@ suite('evaluating a filter callback for an export', () => {
 			await afterPendingRejections();
 			const followUp = await exportedIds({ ctx: handBuilt, getServerSideFilter: FIRST_TWO });
 
-			// Then the call was refused, nothing escaped to the process, and exports still work
+			// Then the call was refused, the process recorded no error event, and the next export succeeds
 			assert.equal(refusal.name, 'AccessControlError');
 			assert.deepEqual(watcher.faults, []);
 			assert.deepEqual(followUp, ['DO_01', 'DO_02']);
@@ -927,11 +927,11 @@ suite('evaluating a filter callback for an export', () => {
 		}
 	});
 
-	test("keeps the process alive when the router callback's promise rejects during a download", async () => {
-		// Given a router whose callback returns a promise that rejects, and a watch on process faults
+	test("answers a download with 500 when the router callback's promise rejects, and the app answers the next request", async () => {
+		// Given a router whose callback returns a promise that rejects, and a record of process error events
 		const routerCallback = countingCallback(() => Promise.reject(new Error(SECRET_DETAIL)));
 		const { app } = await routerContext({ getServerSideFilter: routerCallback.callback });
-		const watcher = watchProcessFaults();
+		const watcher = recordProcessErrors();
 
 		try {
 			// When a download is requested, and the app is asked something else afterwards
@@ -939,7 +939,7 @@ suite('evaluating a filter callback for an export', () => {
 			await afterPendingRejections();
 			const followUp = await request(app).get('/context');
 
-			// Then the callback was evaluated and refused with a server error, nothing escaped, and the app still answers
+			// Then the callback was evaluated and refused with a server error, the process recorded no error event, and the app answers the next request
 			assert.equal(routerCallback.calls.length, 1);
 			assert.equal(response.status, 500);
 			assert.ok(!response.text.includes(SECRET_DETAIL), `the response carried the detail: ${response.text}`);

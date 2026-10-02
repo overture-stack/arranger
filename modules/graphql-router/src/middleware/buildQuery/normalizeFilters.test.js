@@ -187,8 +187,8 @@ suite('middleware/normalizeFilter', () => {
 });
 
 // A SQON arrives from the client, so whatever it holds is client input, including the entries a
-// combination wraps. The refusal has to say what was wrong without repeating the value: the message
-// reaches logs, GraphQL error payloads, and any response an integration builds from it.
+// combination wraps. Its refusals name the field or shape at fault and never include the value the
+// client sent.
 suite('normalizeFilters error messages', () => {
 	const CLIENT_TEXT = 'text-the-client-chose';
 	const CLIENT_NUMBER = 987654321;

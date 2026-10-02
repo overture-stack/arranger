@@ -1184,9 +1184,8 @@ suite('middleware/buildQuery', () => {
 	});
 });
 
-// A SQON arrives from the client, and an error's message travels further than the request that
-// caused it: into logs, into GraphQL error payloads, and into whatever an integration chooses to
-// echo back. A refusal therefore has to describe what was wrong without repeating the value.
+// A SQON arrives from the client, so its refusals name the field or shape at fault and never include
+// the value the client sent.
 suite('buildQuery error messages', () => {
 	const CLIENT_TEXT = 'text-the-client-chose';
 

@@ -348,23 +348,23 @@ const postForm = (server, form) => request(server).post('/download').type('form'
 const postDownload = (server, params) =>
 	postForm(server, { downloadKey: 'download-key', httpHeaders: '{}', params: JSON.stringify(params) });
 
-/** Settles a request either way, telling a hang apart from an aborted transfer. */
+/** Settles a request as a response, an error, or a timeout after `SETTLE_TIMEOUT`. */
 const settle = (pendingRequest) => {
 	let timer;
-	const hung = new Promise((resolve) => {
-		timer = setTimeout(() => resolve({ outcome: 'hung' }), SETTLE_TIMEOUT);
+	const timedOut = new Promise((resolve) => {
+		timer = setTimeout(() => resolve({ outcome: 'timeout' }), SETTLE_TIMEOUT);
 	});
 	const settled = Promise.resolve(pendingRequest).then(
 		(response) => ({ outcome: 'response', response }),
 		(error) => ({ error, outcome: 'error' }),
 	);
 
-	return Promise.race([settled, hung]).finally(() => clearTimeout(timer));
+	return Promise.race([settled, timedOut]).finally(() => clearTimeout(timer));
 };
 
-/** A failed download either answers an error status or aborts; it never hangs, and never completes as a 200. */
-const assertNotACompleteSuccess = (result, forbiddenTexts = []) => {
-	assert.notEqual(result.outcome, 'hung', `the request should settle within ${SETTLE_TIMEOUT} ms`);
+/** A failed download settles within `SETTLE_TIMEOUT` as an error status or an aborted transfer. */
+const assertFailureReported = (result, forbiddenTexts = []) => {
+	assert.notEqual(result.outcome, 'timeout', `the request should settle within ${SETTLE_TIMEOUT} ms`);
 
 	if (result.outcome === 'response') {
 		assert.ok(
@@ -388,7 +388,7 @@ const assertPlainTextError = (response, expectedStatus, forbiddenTexts = []) => 
 	}
 };
 
-const assertStillServing = async (arranger) => {
+const assertAnswersLaterRequests = async (arranger) => {
 	assert.equal((await request(arranger.server).get('/alive')).status, 200);
 
 	const download = await postDownload(arranger.server, paramsWithFile());
@@ -396,7 +396,7 @@ const assertStillServing = async (arranger) => {
 };
 
 /** Runs `action`, then fails if it raised an uncaught exception or an unhandled rejection anywhere in the process. */
-const runWatchingForProcessFaults = async (action) => {
+const runRecordingProcessErrors = async (action) => {
 	const faults = [];
 	const record = (fault) => faults.push(fault);
 	process.on('uncaughtException', record);
@@ -443,11 +443,11 @@ const captureConsole = () => {
 	};
 };
 
-/** Reads a dataStream output to its end: `{ chunks, outcome: 'ended' | 'errored' | 'hung', error? }`. */
+/** Reads a dataStream output to its end: `{ chunks, outcome: 'ended' | 'errored' | 'timeout', error? }`. */
 const settleOutput = (output) =>
 	new Promise((resolve) => {
 		const chunks = [];
-		const timer = setTimeout(() => resolve({ chunks, outcome: 'hung' }), SETTLE_TIMEOUT);
+		const timer = setTimeout(() => resolve({ chunks, outcome: 'timeout' }), SETTLE_TIMEOUT);
 
 		output.on('data', (chunk) => chunks.push(chunk));
 		output.once('end', () => {
@@ -1134,7 +1134,7 @@ suite('download', () => {
 		after(() => arranger.close());
 
 		const assertRefusedWhereTheStockDownloadSucceeds = (sendInvalid) =>
-			runWatchingForProcessFaults(async () => {
+			runRecordingProcessErrors(async () => {
 				// Given a router where the stock download succeeds
 				const control = await postDownload(arranger.server, paramsWithFile());
 				assert.equal(control.status, 200, 'the stock download should succeed');
@@ -1143,7 +1143,7 @@ suite('download', () => {
 				// When the invalid request is sent
 				const response = await sendInvalid();
 
-				// Then it is refused with fixed plain text before any engine request, and the server keeps serving
+				// Then it is refused with fixed plain text before any engine request, and the server answers later requests
 				assertPlainTextError(response, 400);
 				assert.equal(arranger.engine.requests.length, requestsBefore, 'no engine request should be made');
 				assert.equal((await request(arranger.server).get('/alive')).status, 200);
@@ -1197,7 +1197,7 @@ suite('download', () => {
 
 		for (const { name, params } of INVALID_PARAMS) {
 			test(`rejects ${name} before any output or engine request`, () =>
-				runWatchingForProcessFaults(async () => {
+				runRecordingProcessErrors(async () => {
 					// Given a request context where dataStream with the stock params yields rows
 					const control = await dataStream({ ctx, params: paramsWithFile() });
 					assert.ok((await readOutput(control.output)).length > 1, 'the stock params should yield rows');
@@ -1310,16 +1310,16 @@ suite('download', () => {
 		]) {
 			test(`ends the response with an error when the engine ${description}`, async () => {
 				await withArranger(engineOptions, async (arranger) => {
-					await runWatchingForProcessFaults(async () => {
+					await runRecordingProcessErrors(async () => {
 						// Given an engine that fails as named, after two healthy pages
 						// When the stock form asks for pages of two
 						const result = await settle(postDownload(arranger.server, paramsWithFile({ chunkSize: 2 })));
 						await waitForEngineToSettle(arranger.engine.requests);
 
-						// Then the response is aborted or an error, no request follows the failed one, and the server keeps serving
-						assertNotACompleteSuccess(result);
+						// Then the response is aborted or an error, no request follows the failed one, and the server answers later requests
+						assertFailureReported(result);
 						assert.equal(arranger.engine.requests.length, 3);
-						await assertStillServing(arranger);
+						await assertAnswersLaterRequests(arranger);
 					});
 				});
 			});
@@ -1335,7 +1335,7 @@ suite('download', () => {
 			);
 
 			await withArranger({ documents, holdFromRequest: 4 }, async (arranger) => {
-				await runWatchingForProcessFaults(async () => {
+				await runRecordingProcessErrors(async () => {
 					// When the date column is exported in pages of two, and the engine is released once the response has ended
 					const params = paramsWithFile({ chunkSize: 2, columns: [...STOCK_COLUMNS, dateColumn()] });
 					const result = await settle(postDownload(arranger.server, params));
@@ -1344,21 +1344,21 @@ suite('download', () => {
 					arranger.engine.release();
 					await waitForEngineToSettle(arranger.engine.requests);
 
-					// Then the response is aborted or an error, no search starts after it, and the server keeps serving
-					assertNotACompleteSuccess(result, ['Invalid time value']);
+					// Then the response is aborted or an error, no search starts after it, and the server answers later requests
+					assertFailureReported(result, ['Invalid time value']);
 					assert.equal(
 						arranger.engine.requests.length,
 						requestedBeforeRelease,
 						'no page should be requested once the response has failed',
 					);
-					await assertStillServing(arranger);
+					await assertAnswersLaterRequests(arranger);
 				});
 			});
 		});
 
 		test('answers 500 with fixed text when the first row cannot be formatted', async () => {
 			await withArranger({}, async (arranger) => {
-				await runWatchingForProcessFaults(async () => {
+				await runRecordingProcessErrors(async () => {
 					// Given a date column whose display format the formatter cannot apply
 					const params = paramsWithFile({
 						columns: [...STOCK_COLUMNS, dateColumn({ displayFormat: 'ffff' })],
@@ -1376,12 +1376,12 @@ suite('download', () => {
 						consoleCapture.restore();
 					}
 
-					await assertStillServing(arranger);
+					await assertAnswersLaterRequests(arranger);
 				});
 			});
 		});
 
-		// Properties the contract sets no rule for. Whatever the answer, the server keeps serving.
+		// Properties the contract sets no rule for. Whatever the answer, the server answers later requests.
 		for (const [description, fileOverrides] of [
 			['a column whose jsonPath is a number', { columns: [{ ...STOCK_COLUMNS[0], jsonPath: 5 }] }],
 			[
@@ -1394,7 +1394,7 @@ suite('download', () => {
 		]) {
 			test(`answers the request when the file carries ${description}`, async () => {
 				await withArranger({}, async (arranger) => {
-					await runWatchingForProcessFaults(async () => {
+					await runRecordingProcessErrors(async () => {
 						// Given a file carrying a property of the wrong type
 						const params = paramsWithFile(fileOverrides);
 						const consoleCapture = captureConsole();
@@ -1406,7 +1406,7 @@ suite('download', () => {
 							// Then the request settles, and any error it answers is fixed plain text that does not carry the fault
 							assert.notEqual(
 								result.outcome,
-								'hung',
+								'timeout',
 								`the request should settle within ${SETTLE_TIMEOUT} ms`,
 							);
 							if (result.outcome === 'response' && result.response.status >= 400) {
@@ -1420,8 +1420,8 @@ suite('download', () => {
 							consoleCapture.restore();
 						}
 
-						// And the server keeps serving
-						await assertStillServing(arranger);
+						// And the server answers later requests
+						await assertAnswersLaterRequests(arranger);
 					});
 				});
 			});
@@ -1432,7 +1432,7 @@ suite('download', () => {
 			await withArranger(
 				{ documents: generatedDocuments(20), holdFromRequest: 2 },
 				async ({ engine, server }) => {
-					await runWatchingForProcessFaults(async () => {
+					await runRecordingProcessErrors(async () => {
 						// When the client disconnects once the first row has arrived, and the engine is released
 						// after the server has had time to see the connection close
 						const firstRows = await disconnectAfterFirstRow(server, paramsWithFile({ chunkSize: 1 }));
@@ -1590,7 +1590,7 @@ suite('download', () => {
 		]) {
 			test(`emits an error from its output when the engine ${description}`, async () => {
 				await withArranger(engineOptions, async (arranger) => {
-					await runWatchingForProcessFaults(async () => {
+					await runRecordingProcessErrors(async () => {
 						// Given an engine that fails as named, after one healthy page
 						const ctx = await arranger.captureContext();
 
@@ -1611,7 +1611,7 @@ suite('download', () => {
 		]) {
 			test(`reports a failure when the engine ${description} on the first page, never ending normally`, async () => {
 				await withArranger(engineOptions, async (arranger) => {
-					await runWatchingForProcessFaults(async () => {
+					await runRecordingProcessErrors(async () => {
 						// Given a context where one single-page export succeeds, and an engine failing as named on the next search
 						const ctx = await arranger.captureContext();
 						assert.equal(
@@ -1637,7 +1637,7 @@ suite('download', () => {
 		test('requests nothing further once the integration destroys its output', async () => {
 			// Given twenty documents exported one per page, with the engine holding every search after the first
 			await withArranger({ documents: generatedDocuments(20), holdFromRequest: 2 }, async (arranger) => {
-				await runWatchingForProcessFaults(async () => {
+				await runRecordingProcessErrors(async () => {
 					const ctx = await arranger.captureContext();
 					const { output } = await dataStream({ ctx, params: paramsWithFile({ chunkSize: 1 }) });
 					output.on('error', () => {});
@@ -1677,7 +1677,7 @@ suite('download', () => {
 			);
 
 			await withArranger({ documents }, async (arranger) => {
-				await runWatchingForProcessFaults(async () => {
+				await runRecordingProcessErrors(async () => {
 					// Given DO_05's date cannot be formatted
 					const ctx = await arranger.captureContext();
 					const columns = [
@@ -1697,7 +1697,7 @@ suite('download', () => {
 
 		test('reports a failure when the first row cannot be formatted, never ending normally', async () => {
 			await withArranger({}, async (arranger) => {
-				await runWatchingForProcessFaults(async () => {
+				await runRecordingProcessErrors(async () => {
 					// Given a context where the stock params export, and a date column whose display format the formatter cannot apply
 					const ctx = await arranger.captureContext();
 					assert.ok(

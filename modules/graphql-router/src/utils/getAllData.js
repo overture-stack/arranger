@@ -180,18 +180,17 @@ export default async ({
 
 	// From the mapping, like every other call site, rather than from `extendedFields`: nesting is an
 	// index-mapping fact, and `extendedFields` falls back to raw file config whenever extending the
-	// mapping throws, including when a catalogue simply has no `extended.json`. A missing entry here
-	// compiles a nested filter flat, which matches nothing: no rows for a positive clause, and every
-	// document for a negated one.
+	// mapping throws, including when a catalogue simply has no `extended.json`. Every nested field has
+	// to be listed here for its filters to compile as nested queries.
 	//
 	// Guarded rather than defaulted, because `buildQuery` defaults this argument to `[]`: a `configs`
-	// that never went through `addMappingsToTypes` would otherwise reach the compiler and emit exactly
-	// the filter this fix removes, with nothing raised. Absent is a wiring fault, not "nothing nested".
+	// that never went through `addMappingsToTypes` would otherwise reach the compiler with no nested
+	// field listed, and nothing raised. Absent is a wiring fault, not "nothing nested".
 	if (!Array.isArray(configs.nested_fieldNames)) {
 		throw new Error(
 			`Cannot build a download query for "${configs.name}": its configs carry no \`nested_fieldNames\`. ` +
-				'That list comes from the index mapping via `addMappingsToTypes`, and without it every filter on a ' +
-				'nested field compiles flat, returning no rows for a positive clause and every row for a negated one.',
+				'That list comes from the index mapping via `addMappingsToTypes`, and every filter on a nested field ' +
+				'needs it to compile as a nested query.',
 		);
 	}
 

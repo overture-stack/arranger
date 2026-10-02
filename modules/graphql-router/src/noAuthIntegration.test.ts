@@ -472,7 +472,7 @@ const attachmentFileName = (contentDisposition: string | undefined) => {
 };
 
 /** Fails the suite if the process sees an uncaught exception or unhandled rejection while it runs. */
-const watchForProcessFaults = () => {
+const requireNoProcessErrors = () => {
 	const faults: unknown[] = [];
 	const recordFault = (fault: unknown) => faults.push(fault);
 
@@ -492,7 +492,7 @@ suite(
 	'no-auth integration pattern A: the router serves its own download with no filter configured',
 	{ timeout: 20000 },
 	() => {
-		watchForProcessFaults();
+		requireNoProcessErrors();
 
 		test('serves every document as a TSV attachment, header first, one newline-terminated row per document', async () => {
 			// Given a router built with nothing about access control, over three stored documents
@@ -592,7 +592,7 @@ suite(
 	'no-auth integration pattern B: an application export route after the router, given req.context whole',
 	{ timeout: 20000 },
 	() => {
-		watchForProcessFaults();
+		requireNoProcessErrors();
 
 		test('getAllData yields every document as { hits, total } chunks when nothing is passed anywhere', async () => {
 			// Given an application whose route calls getAllData({ sqon, maxRows, ctx: req.context })
@@ -748,7 +748,7 @@ suite(
 	'no-auth integration pattern B: a field the application sets on req.context before the router',
 	{ timeout: 20000 },
 	() => {
-		watchForProcessFaults();
+		requireNoProcessErrors();
 
 		test("survives beside the router's own context for routes mounted after it", async () => {
 			// Given an application that sets req.context.tenant before mounting the router
@@ -791,7 +791,7 @@ suite(
 );
 
 suite('the same integration wiring with a restricting filter configured on the router', { timeout: 20000 }, () => {
-	watchForProcessFaults();
+	requireNoProcessErrors();
 
 	test("pattern A's download serves only the documents the router's filter permits", async () => {
 		// Given the Pattern A application, its router built with a filter permitting study A only
