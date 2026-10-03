@@ -499,16 +499,26 @@ const composeValidationError = ({
 };
 
 /**
- * Unions `value` into an existing unpivoted, non-negated "in" leaf on `fieldName`, if one exists
- * at the top level of `sqon`. Returns `undefined` otherwise, so the caller folds normally.
+ * Unions `value` into an existing unpivoted, non-negated "in" leaf on `fieldName`, if `sqon` is that
+ * leaf, or holds it at the top level of a group combining its children with `combination`. Returns
+ * `undefined` otherwise, so the caller folds normally.
  *
  * `reduceSqon` deliberately doesn't merge "in" under "and" (that would intersect, not widen), so
- * "same field, and, means either" is a caller-intent decision made here instead.
+ * "same field, and, means either" is a caller-intent decision made here instead. A group combining
+ * its children another way is left whole, since the new clause applies to all of it: widening one
+ * branch of an "or" for an "and" call would widen the filter instead of narrowing it.
+ *
+ * @param sqon - The SQON built so far.
+ * @param fieldName - The incoming clause's field.
+ * @param value - The incoming clause's value.
+ * @param combination - How this call combines its clauses with `sqon`.
+ * @returns The merged SQON, or `undefined` when no leaf can take the value.
  */
 const mergeIntoExistingInClause = (
 	sqon: SqonNode,
 	fieldName: string,
 	value: BuildSqonClause['value'],
+	combination: 'and' | 'or',
 ): SqonNode | undefined => {
 	const isMergeTarget = (node: SqonNode): node is SqonFieldFilter =>
 		isFieldFilter(node) &&
@@ -524,7 +534,7 @@ const mergeIntoExistingInClause = (
 		return { ...sqon, content: { ...sqon.content, value: union(sqon.content.value) } } as unknown as SqonNode;
 	}
 
-	if (isGroupNode(sqon) && sqon.op !== 'not') {
+	if (isGroupNode(sqon) && sqon.op === combination) {
 		const matched = sqon.content.find(isMergeTarget);
 		if (matched !== undefined) {
 			const updated = {
@@ -560,7 +570,7 @@ const foldClauses = ({
 
 	for (const [index, clause] of clauses.entries()) {
 		if (clause.operator === 'in' && !clause.negate && sqon !== undefined) {
-			const merged = mergeIntoExistingInClause(sqon, clause.fieldName, clause.value);
+			const merged = mergeIntoExistingInClause(sqon, clause.fieldName, clause.value, combination);
 			if (merged !== undefined) {
 				sqon = merged;
 				continue;

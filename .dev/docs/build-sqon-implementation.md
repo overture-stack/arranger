@@ -213,6 +213,15 @@ const validateClause = (clause: SqonClauseInput, context: CatalogueQueryContext)
 		}
 	}
 
+	// An empty string bounds nothing, and the SQON builder refuses it, so it is reported here with the
+	// clause it belongs to.
+	if (RANGE_OPERATORS.has(canonicalOperator) && field.type === 'date') {
+		const bounds = Array.isArray(value) ? value : [value];
+		if (bounds.some((bound) => bound === '')) {
+			return `operator "${operator}" on field "${fieldName}" (type "date") needs a date for every bound, not an empty string.`;
+		}
+	}
+
 	if (canonicalOperator === 'between' && Array.isArray(value)) {
 		const [min, max] = value;
 		if (typeof min === 'number' && typeof max === 'number' && min > max) {
@@ -301,14 +310,17 @@ const describeNode = (node: SqonNode, fields: SummaryFields, depth: number): str
 		return describeLeaf(node, fields);
 	}
 
+	// An empty group means every document; only at the root does it mean no filter at all.
 	if (node.content.length === 0) {
-		return 'no filters (matches every document)';
+		return depth === 0 ? 'no filters (matches every document)' : 'every document';
 	}
 
 	const parts = node.content.map((child) => describeNode(child, fields, depth + 1));
 
+	// A `not` negates each child, so without a pivot it excludes a document matching any of them; a
+	// pivoted one excludes a document where one nested object meets them all.
 	if (node.op === 'not') {
-		return `NOT (${parts.join(' AND ')})`;
+		return `NOT (${parts.join(node.pivot ? ' AND ' : ' OR ')})`;
 	}
 
 	const joined = parts.join(node.op === 'or' ? ' OR ' : ' AND ');
