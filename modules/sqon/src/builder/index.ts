@@ -35,11 +35,44 @@ export type SqonFieldFilterKey = keyof SqonFieldFilterTypeMap;
 
 const ARRAY_VALUE_OPS = new Set<string>(['all', 'in', 'not-in', 'some-not-in']);
 
-const makeFieldLeaf = (op: string, fieldName: string, value: unknown): SqonNode =>
-	({ op, content: { fieldName, value } }) as unknown as SqonNode;
+const RANGE_BOUND_OPS = new Set<string>(['between', 'gt', 'gte', 'lt', 'lte']);
+
+/** Whether `value` can bound a range: a finite number, a non-empty string such as a date, or a valid `Date`. */
+const isBound = (value: unknown): boolean =>
+	(typeof value === 'number' && Number.isFinite(value)) ||
+	(typeof value === 'string' && value.length > 0) ||
+	(value instanceof Date && !Number.isNaN(value.getTime()));
+
+/** Whether a range clause's value is buildable: `between` takes exactly two bounds, the others a bound or a non-empty list of them. */
+const isBuildableRange = (op: string, value: unknown): boolean => {
+	if (op === 'between') {
+		return Array.isArray(value) && value.length === 2 && value.every(isBound);
+	}
+
+	return Array.isArray(value) ? value.length > 0 && value.every(isBound) : isBound(value);
+};
+
+/** @throws {RangeError} when a range operator's value is not a bound, or `between` is not given exactly two. */
+const makeFieldLeaf = (op: string, fieldName: string, value: unknown): SqonNode => {
+	if (RANGE_BOUND_OPS.has(op) && !isBuildableRange(op, value)) {
+		throw new RangeError(
+			op === 'between'
+				? 'between takes exactly two bounds, each a finite number or a non-empty string such as a date.'
+				: `A ${op} bound must be a finite number or a non-empty string, such as a date.`,
+		);
+	}
+
+	return { op, content: { fieldName, value } } as unknown as SqonNode;
+};
 
 const makeWildcardLeaf = (fieldNames: string | string[], value: string): SqonNode =>
 	({ op: 'wildcard', content: { fieldNames: asArray(fieldNames), value } }) as unknown as SqonNode;
+
+/**
+ * True when the builder holds no clause yet: its empty start, or a group whose last clause a removal
+ * took. Whatever its op or pivot, combining with it yields just the incoming content.
+ */
+const holdsNoClause = (node: SqonNode): boolean => isGroupNode(node) && node.content.length === 0;
 
 const combine = (
 	op: 'and' | 'not' | 'or',
@@ -49,6 +82,10 @@ const combine = (
 ): SqonCombination => {
 	const items = asArray(incoming);
 	const pivotProp = pivot !== undefined ? { pivot } : {};
+
+	if (holdsNoClause(current)) {
+		return { op, content: items, ...pivotProp };
+	}
 
 	if (isGroupNode(current) && current.op === op && current.pivot === pivot) {
 		return { op, content: [...current.content, ...items], ...pivotProp };
@@ -74,17 +111,35 @@ export type SqonBuilderHandle = {
 	/**
 	 * Add a `between` filter on `fieldName` with an inclusive `[min, max]` range.
 	 * Multiple `between` filters on the same field are kept as separate clauses (non-reducible).
+	 *
+	 * @throws {RangeError} unless `value` is a pair of bounds; a boolean, an empty string, or a number that is not finite cannot bound a range.
 	 */
 	between: (fieldName: string, value: [SqonScalar, SqonScalar]) => SqonBuilderHandle;
-	/** Add a `gt` (greater-than) filter on `fieldName`. */
+	/**
+	 * Add a `gt` (greater-than) filter on `fieldName`.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	gt: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
-	/** Add a `gte` (greater-than-or-equal) filter on `fieldName`. */
+	/**
+	 * Add a `gte` (greater-than-or-equal) filter on `fieldName`.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	gte: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
 	/** Add an `in` filter for `fieldName` with the given value(s). */
 	in: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
-	/** Add an `lt` (less-than) filter on `fieldName`. */
+	/**
+	 * Add an `lt` (less-than) filter on `fieldName`.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	lt: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
-	/** Add an `lte` (less-than-or-equal) filter on `fieldName`. */
+	/**
+	 * Add an `lte` (less-than-or-equal) filter on `fieldName`.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	lte: (fieldName: string, value: SqonScalar) => SqonBuilderHandle;
 	/** Add a `not-in` filter for `fieldName` with the given value(s). */
 	notIn: (fieldName: string, value: SqonScalarOrArray) => SqonBuilderHandle;
@@ -125,6 +180,9 @@ export type SqonBuilderHandle = {
 	 * independently negated, so replacing or adding a child there would silently assert the opposite
 	 * of the requested condition instead of setting it. Reconstruct the SQON without a top-level `not`
 	 * before calling `setFilter`.
+	 *
+	 * @throws {RangeError} when `op` is `gt`, `gte`, `lt`, `lte` or `between` and `value` cannot bound
+	 *   it: a boolean, an empty string, or a number that is not finite, or for `between` anything but a pair of bounds.
 	 */
 	setFilter: <K extends SqonFieldFilterKey>(
 		fieldName: string,
@@ -361,13 +419,17 @@ export const SqonBuilder = {
 		return createBuilder(normalizeSqonNode(SqonSchema.parse(parsed)));
 	},
 
-	/** Start a builder from an empty and-combination. */
+	/**
+	 * Start a builder from an empty and-combination, which is no filter yet: the first clause or
+	 * combination added becomes the whole value, whichever of `and`, `or` or `not` adds it. The same
+	 * holds for a builder whose last filter was removed, and for one that `from()` built from an empty group.
+	 */
 	empty: (): SqonBuilderHandle => createBuilder(emptySqon()),
 
 	/**
 	 * Start a builder with a match-none filter: an `in` filter on `fieldName` with an empty value
-	 * list. This is a leaf, and `reduceSqon` only ever prunes empty combinations, never a leaf, so
-	 * this value is stable under composition and reduction.
+	 * list. This is a leaf, and the builder's reduction never drops a leaf, so this value is stable
+	 * under composition and reduction.
 	 *
 	 * `fieldName` has no effect on the result: an empty `in` matches nothing regardless of which
 	 * field it names, including one absent from the mapping. A field name is still required, since
@@ -406,19 +468,39 @@ export const SqonBuilder = {
 	all: (fieldName: string, value: SqonScalar[]): SqonBuilderHandle =>
 		createBuilder(emptySqon()).all(fieldName, value),
 
-	/** Start a builder with a `gt` filter. */
+	/**
+	 * Start a builder with a `gt` filter.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	gt: (fieldName: string, value: SqonScalar): SqonBuilderHandle => createBuilder(emptySqon()).gt(fieldName, value),
 
-	/** Start a builder with a `gte` filter. */
+	/**
+	 * Start a builder with a `gte` filter.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	gte: (fieldName: string, value: SqonScalar): SqonBuilderHandle => createBuilder(emptySqon()).gte(fieldName, value),
 
-	/** Start a builder with an `lt` filter. */
+	/**
+	 * Start a builder with an `lt` filter.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	lt: (fieldName: string, value: SqonScalar): SqonBuilderHandle => createBuilder(emptySqon()).lt(fieldName, value),
 
-	/** Start a builder with an `lte` filter. */
+	/**
+	 * Start a builder with an `lte` filter.
+	 *
+	 * @throws {RangeError} when `value` cannot bound a range: a boolean, an empty string, or a number that is not finite.
+	 */
 	lte: (fieldName: string, value: SqonScalar): SqonBuilderHandle => createBuilder(emptySqon()).lte(fieldName, value),
 
-	/** Start a builder with a `between` filter. */
+	/**
+	 * Start a builder with a `between` filter.
+	 *
+	 * @throws {RangeError} unless `value` is a pair of bounds; a boolean, an empty string, or a number that is not finite cannot bound a range.
+	 */
 	between: (fieldName: string, value: [SqonScalar, SqonScalar]): SqonBuilderHandle =>
 		createBuilder(emptySqon()).between(fieldName, value),
 
@@ -430,7 +512,12 @@ export const SqonBuilder = {
 	wildcard: (fieldNames: string | string[], value: string): SqonBuilderHandle =>
 		createBuilder(emptySqon()).wildcard(fieldNames, value),
 
-	/** Start a builder from an empty state and apply `setFilter`. */
+	/**
+	 * Start a builder from an empty state and apply `setFilter`.
+	 *
+	 * @throws {RangeError} when `op` is `gt`, `gte`, `lt`, `lte` or `between` and `value` cannot bound
+	 *   it: a boolean, an empty string, or a number that is not finite, or for `between` anything but a pair of bounds.
+	 */
 	setFilter: <K extends SqonFieldFilterKey>(
 		fieldName: string,
 		op: K,

@@ -54,7 +54,9 @@ Extraction is explicit: call `.toValue()` to get the underlying `SqonNode`.
 
 `reduceSQON` from `sqon-builder` was ported as `reduceSqon` in `src/builder/reduce.ts`. The
 algorithm merges duplicate filters under the same combination (e.g. two `gt` on `and` collapses to
-the larger value), unwraps single-item wrappers, and removes empty combinations.
+the larger value), unwraps single-item wrappers, and removes an empty `and` directly under an `and`,
+where it changes nothing. Every other empty group stays where it is, since an empty group matches
+every document.
 
 The ported version operates on `SqonNode` types from this package's Zod schema, not `sqon-builder`'s
 internal types.

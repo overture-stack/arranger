@@ -60,7 +60,7 @@ Visualize a SQON as a "tree" of nested operations, that may contain one of two k
 A SQON may start at either level:
 
 - a single leaf node
-- a group node containing one or more child nodes
+- a group node, whose `content` holds other nodes, or none at all, in which case it is match-all (see [An empty group is match-all](#an-empty-group-is-match-all))
 
 ## Group Nodes
 
@@ -111,6 +111,40 @@ This results in:
 
 </details>
 
+### What each group operator means
+
+Whether a document matches a group depends on how many of the nodes in the group's `content` it matches:
+
+- `and`: all of them
+- `or`: at least one
+- `not`: none of them, so a document that matches any one of them is excluded (with a `pivot`, only when one nested object meets all of them; see [Pivot](#pivot))
+
+### An empty group is match-all
+
+This page uses two terms for the two extremes a filter can reach:
+
+- **match-all**: places no condition, so every document the query searches satisfies it
+- **match-none**: no document satisfies it
+
+Where a deployment applies access control, the server combines its own filter with every query, so a match-all query still returns only the documents the person may see.
+
+A group whose `content` is `[]`, whether `and`, `or` or `not`, is match-all wherever it appears, and a valid `pivot` on it has no effect. A pivot that names no nested field is refused wherever it sits, on an empty group as on any other node. A root empty `and` is the one canonical way for a query to say "no filter", and every Arranger read path accepts it, network search included. An access filter never takes this form: one that allows everything is a `not` around a `matchNothing` leaf, which is what the GraphQL router's `includeEverything` returns (see [Filters that restrict access](#filters-that-restrict-access)).
+
+
+```json
+{ "op": "and", "content": [] }
+```
+
+Inside a larger query, what a match-all node does depends on the group that contains it. Written compactly, with `X` standing for any other filter:
+
+| SQON | Result |
+| --- | --- |
+| `and[X, or[]]` | whatever `X` matches: inside an `and`, a match-all node adds no condition |
+| `or[X, or[]]` | match-all: inside an `or`, one match-all node satisfies the whole group |
+| `not[X, or[]]` | match-none: `not` keeps only documents that match none of its nodes, and every document matches the match-all one |
+
+**Don't rely on a nested empty group reaching every backend.** A backend may refuse a query containing an empty group rather than read it, and refuses the whole query when it does. It may accept a root empty `and` while refusing nested ones. So generated SQON should never contain a nested empty group: write match-none with `matchNothing`, match-all as a `not` around a `matchNothing` leaf, and a set of values as one leaf's value list (see [Filters that restrict access](#filters-that-restrict-access)).
+
 ## Leaf Nodes
 
 <details>
@@ -135,7 +169,9 @@ Most leaf nodes use:
 - `fieldName`
 - `value`
 
-The `wildcard` operator is the exception and instead uses `fieldNames` (plural).
+`fieldName` is the dotted path of the field the clause tests, such as `donor.age`. The key must be `fieldName`: a clause that uses the key `field` instead names no field.
+
+The `wildcard` operator is the exception and instead uses `fieldNames` (plural): a document matches if any one of those fields matches the pattern.
 
 </details>
 
@@ -153,6 +189,8 @@ SQONs can apply several kinds of filtering to fields and values:
 - `not-in`
 - `some-not-in`
 - `all`
+
+`in`, `not-in` and `some-not-in` take a value, or a list of values, that the field is tested against. `all` takes the values the field must all hold, at least one. For what each does with an empty list, see [An empty value list is not an empty group](#an-empty-value-list-is-not-an-empty-group).
 
 <details>
 <summary><b>Example:</b></summary>
@@ -180,6 +218,8 @@ This results in:
 - `lt`
 - `lte`
 - `between`
+
+`gt`, `gte`, `lt` and `lte` take one bound: a number, or a date string for a date field. Given a list, every bound applies, so the strictest one decides: the largest for `gt` and `gte`, the smallest for `lt` and `lte`. `between` takes `[min, max]`, both inclusive.
 
 <details>
 <summary><b>Example:</b></summary>
@@ -246,7 +286,13 @@ For interoperability, the canonical operator names are always preferred when gen
 
 ## Pivot
 
-A SQON node may also include `pivot`.
+A SQON node may also include `pivot`: the path of a nested field that scopes the node. Conditions under it on fields within that path are tested against one nested object at a time:
+
+- an `and` matches a document when one of its nested objects meets every condition;
+- an `or` matches when one of its nested objects meets any of them;
+- a `not` matches when none of its nested objects meets all of them, so it excludes a document only when a single nested object meets every condition. Without a pivot, a `not` excludes a document that matches any one of its conditions. A condition under a pivoted `not` on a field outside its path is negated on its own, as it would be without a pivot.
+
+Without a pivot, conditions on a nested field may each be met by a different nested object. A pivot must name a nested field of the catalogue being queried.
 
 Consider a set of records shaped like this:
 
@@ -353,6 +399,7 @@ In practice:
 - most simple SQONs omit `pivot`
 - nested aggregations and nested field filtering are where `pivot` becomes important
 - `pivot` may appear on either leaf or group nodes
+- on an empty group, a valid `pivot` has no effect: the group stays match-all
 
 A pivot can still be rejected later at runtime if it does not match a valid nested field path for the active catalogue.
 
@@ -491,6 +538,34 @@ Pivot doesn't change any of this: pivot scopes *multiple* conditions to the same
 This applies to any value on a nested field, not just an ordinary one like `'red'`. It's also why negating a `__missing__` check the same way is surprising: `__missing__` is just a value from the query builder's perspective, so it inherits the exact same gotcha. If you specifically want "at least one item is missing this field," the same rule applies: use `in` with `__missing__` directly rather than negating `not-in`.
 
 </details>
+
+### An empty value list is not an empty group
+
+A leaf whose `value` is `[]` keeps its own operator's meaning, unlike an empty group, which is always match-all:
+
+| Leaf | Matches |
+| --- | --- |
+| `in` with `[]` | match-none. This is how a filter writes "deny", through `SqonBuilder.matchNothing(fieldName).toValue()`, so no backend may refuse it. |
+| `not-in` with `[]` | match-all on a flat field. On a nested field, only the documents with at least one nested item, since `not-in` on a nested field asks whether some item holds a value outside the list (see the section above). |
+| `some-not-in` with `[]` | match-all |
+| `all` with `[]` | invalid: the schema rejects it |
+
+```json
+{ "op": "in", "content": { "fieldName": "fruit.color", "value": [] } }
+```
+
+### Filters that restrict access
+
+Code that builds a filter to limit what a person can see, such as an access-control filter, follows these rules, most of them because an empty group is match-all:
+
+- **It never contains an empty group, at any depth, the root included.** A filter assembled from a list that turned out to be empty would widen access instead of narrowing it. So code with no grants to express handles that case first, as a deny, and never builds a group from the empty list.
+- **It treats a list it could not load as a deny, never as an empty list.** An empty exclusion list excludes nothing, so a failed lookup read as an empty list would admit everything.
+- **It writes a set of values as one leaf's value list**, never as a group of single-value leaves. An empty value list keeps its meaning, so an empty `in` is match-none, where an empty group of leaves is match-all.
+- **It lists its values rather than referencing a saved set**, so what it matches never depends on a document stored somewhere else.
+- **It denies by returning `SqonBuilder.matchNothing(fieldName).toValue()`, and allows by returning the GraphQL router's `includeEverything(context)`**, a `not` around such a leaf. `matchNothing` returns a builder, and a callback has to return the filter it holds. Both carry a leaf, so neither is an empty group.
+- **The code composing it checks it.** Besides empty groups, it refuses the parts that would match broadly where nobody meant them to: an `all` with no values, a range with no bound, a clause naming no field, an exclusion missing its value list, and an entry that is not a SQON node. No part of a SQON marks it as an access filter, so neither reduction nor a backend can apply these rules on its behalf.
+
+Arranger refuses a deployment's server-side filter that holds an empty group or any of the broad parts listed in the last rule, before combining it with a query. The other rules are for the code that builds the filter, since only that code knows where its values came from.
 
 ## Introspection
 

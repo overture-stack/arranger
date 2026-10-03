@@ -3,12 +3,15 @@ import { suite, test } from 'node:test';
 
 import fastCheck from 'fast-check';
 
+import { SqonBuilder } from '#builder/index.js';
 import { reduceSqon } from '#builder/reduce.js';
+import { isGroupNode } from '#builder/utils.js';
 import type { SqonNode } from '#schema/index.js';
 
 /**
  * Modeled subset: `in`, `not-in`, `gt`, `gte`, `lt`, `lte`, `between`, `all`, `some-not-in`, the
- * `and`/`or`/`not` combinators, and `pivot` on every node.
+ * `and`/`or`/`not` combinators, and `pivot` on every node. A combinator may be empty, under any kind
+ * of parent, and an empty one means every document.
  *
  * `all`/`some-not-in` use a dedicated multi-valued field pool (`m`/`n`), evaluated as `buildQuery`
  * actually compiles them, not as their names alone suggest: `all` requires every listed value
@@ -79,17 +82,24 @@ const multiValueLeaf = fastCheck.record({
 
 const leaf: fastCheck.Arbitrary<ModeledLeaf> = fastCheck.oneof(membershipLeaf, rangeLeaf, betweenLeaf, multiValueLeaf);
 
-const sqonTree: fastCheck.Arbitrary<ModeledNode> = fastCheck.letrec<{
-	node: ModeledNode;
-	combination: ModeledCombination;
-}>((tie) => ({
-	node: fastCheck.oneof({ depthSize: 'small', withCrossShrink: true }, leaf, tie('combination')),
-	combination: fastCheck.record({
-		op: fastCheck.constantFrom('and', 'or', 'not'),
-		content: fastCheck.array(tie('node'), { minLength: 1, maxLength: 3 }),
-		pivot,
-	}),
-})).node;
+const sqonTreeOf = (minimumChildren: number): fastCheck.Arbitrary<ModeledNode> =>
+	fastCheck.letrec<{
+		node: ModeledNode;
+		combination: ModeledCombination;
+	}>((tie) => ({
+		node: fastCheck.oneof({ depthSize: 'small', withCrossShrink: true }, leaf, tie('combination')),
+		combination: fastCheck.record({
+			op: fastCheck.constantFrom('and', 'or', 'not'),
+			content: fastCheck.array(tie('node'), { minLength: minimumChildren, maxLength: 3 }),
+			pivot,
+		}),
+	})).node;
+
+/** Trees that may hold an empty group anywhere, under every kind of parent. */
+const sqonTree = sqonTreeOf(0);
+
+/** Trees holding no empty group, the shape every caller that never adds one passes the builder. */
+const sqonTreeWithoutEmptyGroups = sqonTreeOf(1);
 
 const fieldValues: fastCheck.Arbitrary<FieldValues> = fastCheck.record({
 	a: fastCheck.oneof(scalarValue, rangeValue),
@@ -117,6 +127,10 @@ const isMultiValueLeaf = (node: ModeledLeaf): node is Extract<ModeledLeaf, { op:
 /** Evaluates the modeled subset directly, independent of reduceSqon's own logic. */
 const evaluate = (node: ModeledNode, doc: ModeledDocument): boolean => {
 	if (isCombination(node)) {
+		// An empty group means every document, whatever its op and pivot.
+		if (node.content.length === 0) {
+			return true;
+		}
 		if (node.op === 'and') return node.content.every((child) => evaluate(child, doc));
 		if (node.op === 'or') return node.content.some((child) => evaluate(child, doc));
 		return node.content.every((child) => !evaluate(child, doc)); // not
@@ -219,6 +233,31 @@ const evaluateRange = (node: RangeNode, doc: RangeDocument): boolean => {
 	return difference <= 0; // lte
 };
 
+type BuilderStep = { content: ModeledNode[]; method: 'and' | 'not' | 'or' };
+
+const builderStep: fastCheck.Arbitrary<BuilderStep> = fastCheck.record({
+	content: fastCheck.array(sqonTreeWithoutEmptyGroups, { maxLength: 2, minLength: 1 }),
+	method: fastCheck.constantFrom<BuilderStep['method']>('and', 'not', 'or'),
+});
+
+/**
+ * One builder step, composed with no empty start: the first step's content stands alone, and a later
+ * step joins the current value the way the builder's own combine does. `not` adds a negated group
+ * under `and`, as the builder's `not` method does.
+ */
+const combineFromNothing = (current: SqonNode | undefined, { content, method }: BuilderStep): SqonNode => {
+	const op = method === 'not' ? 'and' : method;
+	const items = (method === 'not' ? [{ op: 'not', content }] : content) as unknown as SqonNode[];
+
+	if (current === undefined) {
+		return { op, content: items };
+	}
+	if (isGroupNode(current) && current.op === op && current.pivot === undefined) {
+		return { op, content: [...current.content, ...items] };
+	}
+	return { op, content: [current, ...items] };
+};
+
 suite('reduceSqon (property-based)', () => {
 	test('merging two same-field range bounds never changes which documents match', () => {
 		fastCheck.assert(
@@ -254,6 +293,25 @@ suite('reduceSqon (property-based)', () => {
 					assert.equal(evaluate(reduced, doc), evaluate(tree, doc));
 				}
 			}),
+			{ numRuns: 5000 },
+		);
+	});
+
+	test('the builder empty start is invisible: a chain that never adds an empty group builds what the same chain builds from nothing', () => {
+		fastCheck.assert(
+			fastCheck.property(fastCheck.array(builderStep, { maxLength: 4, minLength: 1 }), (steps) => {
+				const built = steps.reduce(
+					(builder, { content, method }) => builder[method](content as unknown as SqonNode[]),
+					SqonBuilder.empty(),
+				);
+				const fromNothing = steps.reduce<SqonNode | undefined>(
+					(current, step) => reduceSqon(combineFromNothing(current, step)),
+					undefined,
+				);
+
+				assert.deepEqual(built.toValue(), fromNothing);
+			}),
+			{ numRuns: 2000 },
 		);
 	});
 });

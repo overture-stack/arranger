@@ -219,6 +219,50 @@ suite('SQON builder', () => {
 			});
 		});
 
+		// A range compares against a finite number, a non-empty string such as a date, or a valid Date. Null,
+		// and the non-finite numbers that serialize to null, would reach a search engine as no bound at all;
+		// an empty string or a boolean, as a value that a numeric or date field rejects.
+		suite('range bounds', () => {
+			const notBounds = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, null, '', true];
+
+			test('every range method refuses a value that is not a bound', () => {
+				for (const method of ['gt', 'gte', 'lt', 'lte'] as const) {
+					for (const value of notBounds) {
+						assert.throws(() => SqonBuilder[method]('age', value as never), RangeError);
+						assert.throws(() => SqonBuilder.in('study', ['a'])[method]('age', value as never), RangeError);
+					}
+				}
+			});
+
+			test('between refuses anything but exactly two bounds', () => {
+				for (const value of [
+					[],
+					[5],
+					[5, 10, 15],
+					[null, null],
+					[Number.NaN, 10],
+					[0, Number.POSITIVE_INFINITY],
+					['', 5],
+					[true, 5],
+				]) {
+					assert.throws(() => SqonBuilder.between('age', value as never), RangeError);
+				}
+			});
+
+			test('setFilter refuses a range value that is not a bound, alone or in a list', () => {
+				assert.throws(() => SqonBuilder.setFilter('age', 'gt', Number.POSITIVE_INFINITY), RangeError);
+				assert.throws(() => SqonBuilder.setFilter('age', 'gt', null as never), RangeError);
+				assert.throws(() => SqonBuilder.setFilter('age', 'gte', [] as never), RangeError);
+				assert.throws(() => SqonBuilder.in('study', ['a']).setFilter('age', 'lte', Number.NaN), RangeError);
+			});
+
+			test('accepts finite numbers, non-empty strings and valid dates as bounds', () => {
+				assert.doesNotThrow(() => SqonBuilder.gt('age', 0).lte('age', -5.5).between('weight', [1, 2]));
+				assert.doesNotThrow(() => SqonBuilder.gte('diagnosed', '2024-01-01').lt('released', 'now-6M'));
+				assert.doesNotThrow(() => SqonBuilder.gt('diagnosed', new Date('2024-01-01') as never));
+			});
+		});
+
 		suite('wildcard()', () => {
 			test('builds a wildcard op node from a single field name', () => {
 				const result = SqonBuilder.wildcard('donor.name', 'jo*').toValue();
@@ -833,6 +877,101 @@ suite('SQON builder', () => {
 			// Duplicates within a single filter's value array are removed
 			const content = (result as { content: { value: unknown[] } }).content;
 			assert.equal(content.value.filter((v) => v === 'active').length, 1);
+		});
+	});
+
+	// An empty group means every document, wherever it sits and whatever its pivot. Removing one
+	// leaves the meaning unchanged only directly under and, so that is the one place it goes.
+	suite('empty groups', () => {
+		const study = { op: 'in', content: { fieldName: 'study', value: ['a'] } } as const;
+		const site = { op: 'in', content: { fieldName: 'site', value: ['b'] } } as const;
+		const emptyGroup = (op: 'and' | 'not' | 'or', pivot?: string) => ({
+			op,
+			content: [],
+			...(pivot !== undefined && { pivot }),
+		});
+
+		test('removes an empty and directly under and, since and with everything changes nothing', () => {
+			assert.deepEqual(reduceSqon({ op: 'and', content: [study, emptyGroup('and')] }), study);
+		});
+
+		test('removes a pivoted empty and directly under and, since a pivot on an empty group has no effect', () => {
+			assert.deepEqual(reduceSqon({ op: 'and', content: [study, emptyGroup('and', 'donors')] }), study);
+		});
+
+		test('keeps an empty or under or, since or with everything matches everything', () => {
+			const sqon = { op: 'or', content: [study, emptyGroup('or')] };
+			assert.deepEqual(reduceSqon(sqon), sqon);
+		});
+
+		test('keeps an empty and or not under or', () => {
+			for (const op of ['and', 'not'] as const) {
+				const sqon = { op: 'or', content: [study, emptyGroup(op)] };
+				assert.deepEqual(reduceSqon(sqon), sqon);
+			}
+		});
+
+		test('keeps an empty or or not under and', () => {
+			for (const op of ['or', 'not'] as const) {
+				const sqon = { op: 'and', content: [study, emptyGroup(op)] };
+				assert.deepEqual(reduceSqon(sqon), sqon);
+			}
+		});
+
+		test('keeps every empty group under not, since not of everything matches nothing', () => {
+			for (const op of ['and', 'or', 'not'] as const) {
+				const beside = { op: 'not', content: [study, emptyGroup(op)] };
+				const alone = { op: 'not', content: [emptyGroup(op)] };
+				assert.deepEqual(reduceSqon(beside), beside);
+				assert.deepEqual(reduceSqon(alone), alone);
+			}
+		});
+
+		test('keeps an empty group inside a not that sits under and', () => {
+			const sqon = { op: 'and', content: [study, { op: 'not', content: [emptyGroup('or')] }] };
+			assert.deepEqual(reduceSqon(sqon), sqon);
+		});
+
+		test('keeps an empty group at the root as it is', () => {
+			for (const op of ['and', 'or', 'not'] as const) {
+				assert.deepEqual(reduceSqon(emptyGroup(op)), emptyGroup(op));
+			}
+		});
+
+		test('the same filter given to from() keeps an empty or under or', () => {
+			const sqon = { op: 'or', content: [study, emptyGroup('or')] };
+			assert.deepEqual(SqonBuilder.from(sqon).toValue(), sqon);
+		});
+
+		test('or() builds on no clause from the empty start', () => {
+			assert.deepEqual(SqonBuilder.or([study, site]).toValue(), { op: 'or', content: [study, site] });
+			assert.deepEqual(SqonBuilder.empty().or(study).toValue(), study);
+		});
+
+		test('an empty group given to from() is no filter yet, whatever its op or pivot, so or() builds on no clause', () => {
+			for (const op of ['and', 'or', 'not'] as const) {
+				for (const pivot of [undefined, 'donors']) {
+					assert.deepEqual(SqonBuilder.from(emptyGroup(op, pivot)).or(study).toValue(), study);
+				}
+			}
+		});
+
+		test('a builder emptied by removing its only filter builds on no clause again', () => {
+			assert.deepEqual(SqonBuilder.in('study', ['a']).removeFilter('study').or(site).toValue(), site);
+		});
+
+		test('removing the last clause of any group leaves no clause to build on, whatever the group op or pivot', () => {
+			for (const op of ['and', 'or', 'not'] as const) {
+				for (const pivot of [undefined, 'donors']) {
+					const group = { op, content: [study], ...(pivot !== undefined && { pivot }) };
+					assert.deepEqual(SqonBuilder.from(group).removeFilter('study').or(site).toValue(), site);
+					assert.deepEqual(
+						SqonBuilder.from(group).removeFilter('study', 'in', ['a']).or(site).toValue(),
+						site,
+					);
+					assert.deepEqual(SqonBuilder.from(group).removeExactFilter(study).or(site).toValue(), site);
+				}
+			}
 		});
 	});
 

@@ -95,4 +95,44 @@ suite('sqon/jsonSchema', () => {
 		assert.equal(schema.$schema, 'https://json-schema.org/draft/2020-12/schema');
 		assert.equal(schema.$id.includes(`/v${SQON_SCHEMA_VERSION}.schema.json`), true);
 	});
+
+	// Agents read these through /introspection/sqon, and docs/reference/04-sqon-in-detail.md says the
+	// same thing for people, so the texts are pinned exactly.
+	suite('field descriptions', () => {
+		const PIVOT =
+			'Path of a nested field that scopes this node: conditions under it on fields within that path are tested against one nested object at a time. A pivoted and or or matches a document when one of its nested objects satisfies the node; a pivoted not matches when none of its nested objects meets all of its conditions on that path. A pivot only scopes conditions: on a group with none, it has no effect, and the empty group matches every document. Without a pivot, conditions on a nested field may each be met by a different nested object. Must name a nested field of the catalogue being queried.';
+		const FIELD_NAME =
+			'Dotted path of the field this clause tests, such as donor.age. The key is fieldName: a clause that uses the key `field` instead names no field.';
+		const VALUE = {
+			All: 'The values the field must all hold, at least one.',
+			Between: '[min, max], both inclusive.',
+			InLike: 'A value, or a list of values, that the field is tested against. With in, an empty list matches nothing.',
+			RangeLike:
+				'The bound: a number, or a date string for a date field. Given a list, every bound applies, so the strictest one decides: the largest for gt and gte, the smallest for lt and lte.',
+		};
+		const FIELD_NAMES = 'The fields to search; a document matches if any one of them matches the pattern.';
+
+		test('describes pivot on every node', () => {
+			const { $defs } = getSqonJsonSchema();
+
+			for (const node of ['All', 'Between', 'Group', 'InLike', 'RangeLike', 'Wildcard'] as const) {
+				assert.equal($defs[node].properties.pivot.description, PIVOT, node);
+			}
+		});
+
+		test('describes fieldName and value on every single-field clause', () => {
+			const { $defs } = getSqonJsonSchema();
+
+			for (const [clause, valueDescription] of Object.entries(VALUE)) {
+				assert.equal($defs[clause].properties.content.properties.fieldName.description, FIELD_NAME, clause);
+				assert.equal($defs[clause].properties.content.properties.value.description, valueDescription, clause);
+			}
+		});
+
+		test('describes fieldNames on wildcard', () => {
+			const { $defs } = getSqonJsonSchema();
+
+			assert.equal($defs.Wildcard.properties.content.properties.fieldNames.description, FIELD_NAMES);
+		});
+	});
 });

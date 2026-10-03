@@ -193,7 +193,15 @@ const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
 		return;
 	}
 
-	if (reduced.content.length === 0) return; // remove empty combinations
+	// An empty group means every document, so it stays where it is, never flattened into a same-op
+	// parent. The one removal is an empty `and` directly under `and`, which changes nothing.
+	if (reduced.content.length === 0) {
+		if (reduced.op === 'and' && output.op === 'and') {
+			return;
+		}
+		output.content.push(reduced);
+		return;
+	}
 
 	if (reduced.op === 'not') {
 		// not combinations are never flattened into the outer
@@ -227,7 +235,9 @@ const foldIntoOutput = (output: SqonCombination, reduced: SqonNode): void => {
  * only saves a clause, so a bound in any date format is accepted either way.
  *
  * **Combination-node rules:**
- * - Empty inner combination: removed.
+ * - Empty inner combination: means every document, whatever its pivot, so it is kept as written and
+ *   never flattened. The exception is an empty `and` directly under `and`, which changes nothing and
+ *   is removed.
  * - Single-item `and`/`or` (unpivoted): unwrapped to its sole child.
  * - Inner `not`: never flattened into the outer.
  * - Inner combination with same op and pivot as outer: content flattened into the outer.

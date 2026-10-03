@@ -86,6 +86,18 @@ suite('addFilterClause', () => {
 	suite('combining with an existing SQON', () => {
 		const existing = { op: 'in' as const, content: { fieldName: 'status', value: ['active'] } };
 
+		test('treats an existing empty and as no filter, so or yields just the clause', () => {
+			const result = addFilterClause({
+				combination: 'or',
+				existing: { op: 'and', content: [] },
+				fieldName: 'status',
+				operator: 'in',
+				value: 'active',
+			});
+
+			assert.deepEqual(result, existing);
+		});
+
 		test('combines with an existing leaf using and by default', () => {
 			const result = addFilterClause({ fieldName: 'project', operator: 'in', value: ['TCGA'], existing });
 

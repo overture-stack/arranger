@@ -93,6 +93,10 @@ SqonBuilder.wildcard(['donor.name', 'donor.alias'], 'jo*');
 | `wildcard(fieldNames, value)`      | `wildcard`                                                                            |
 | `matchNothing(fieldName)`          | `in`, with an empty value list; see [Match-none filters](#match-none-filters) below   |
 
+The range methods `gt`, `gte`, `lt`, `lte` and `between` throw a `RangeError` for a value that cannot
+bound a range, and so does `setFilter` given one of those operators. A bound is a finite number, a
+non-empty string such as a date, or a valid `Date`, and `between` takes exactly two.
+
 ### Combining filters
 
 ```ts
@@ -105,11 +109,23 @@ SqonBuilder.in('status', ['active'])
 	.toValue();
 ```
 
+### Empty groups
+
+An empty group such as `{ op: 'or', content: [] }` means every document, whatever its operator or
+pivot. The builder reduces every value it holds, and reduction keeps an empty group where it is
+written, never flattening it into a parent with the same operator: `or[A, or[]]` matches every
+document rather than `A`. The one removal is an empty `and` directly under an `and`, which changes
+nothing. A root `and[]` is the canonical "no filter".
+
+The builder is the one place an empty group reads as no filter yet: when the builder's value is a
+group with no clauses, such as its `empty()` start or a group left empty by `removeFilter`, combining
+onto it gives just the incoming content.
+
 ### Same-field merge rules
 
-When two filters on the same field end up under the same `and`/`or`, `reduceSqon` merges them into
-one only where merging preserves meaning; which rule applies depends on both the operator and the
-combination type:
+When two filters on the same field end up under the same `and`/`or`, the builder's reduction merges
+them into one only where merging preserves meaning; which rule applies depends on both the operator
+and the combination type:
 
 - `in` merges under `or` only: `OR(in:[A], in:[B])` = `in:[A,B]`, since either clause widens the
   match to "any of these values". Under `and`, both clauses must hold at once, meaning their
@@ -142,8 +158,8 @@ whatever it is later combined with. It's an `in` filter with an empty value list
 
 Three properties hold that guarantee together, and being a leaf is only the first of them:
 
-- It's a leaf rather than a combination, and `reduceSqon` only ever prunes empty combinations, so
-  reduction never removes it.
+- It's a leaf rather than a combination, and the builder's reduction never drops a leaf: an empty
+  `and` directly under an `and` is the only node it removes.
 - Nothing merges under `not`, and `in` never merges under `and` (see
   [Same-field merge rules](#same-field-merge-rules) above), so a permission on the same field cannot
   absorb it into a wider filter during composition.
@@ -160,9 +176,9 @@ SqonBuilder.matchNothing('study').toValue();
 ```
 
 Use this to express "match nothing" (for example, a denied principal in an access-control filter)
-rather than constructing it by hand as a negated empty combination: `reduceSqon` removes empty
-combinations, so a filter meant to match nothing must carry at least one leaf clause to survive
-reduction.
+rather than building it by hand from an empty combination such as `not[and[]]`. An empty combination
+means every document (see [Empty groups](#empty-groups) above). A query compiler may refuse a filter
+holding one, and Arranger's GraphQL router refuses an access-control filter holding one anywhere.
 
 ### Preserving a stable top-level shape
 
