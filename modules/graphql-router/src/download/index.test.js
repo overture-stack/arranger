@@ -1183,6 +1183,52 @@ suite('download', () => {
 					postDownload(arranger.server, paramsWithFile({ sqon })),
 				));
 		}
+
+		// A request its sender can correct is answered with the rule it broke: a fixed text naming the
+		// field at fault, never the value sent.
+		for (const [description, params, rule] of [
+			[
+				'files holding two files',
+				paramsWithFiles([STOCK_FILE, STOCK_FILE]),
+				'files must be an array holding exactly one file object: this version exports one file per request.',
+			],
+			[
+				'a chunkSize of 0',
+				paramsWithFile({ chunkSize: 0 }),
+				'chunkSize must be a positive integer, sent as a JSON number.',
+			],
+			['a fileType other than tsv or json', paramsWithFile({ fileType: 'xml' }), 'fileType must be tsv or json.'],
+			[
+				'a sort entry with no order',
+				paramsWithFile({ sort: [{ fieldName: 'age' }] }),
+				'sort must be an array of entries, each with a non-empty fieldName and an order of asc or desc.',
+			],
+		]) {
+			test(`names the rule broken by ${description}`, async () => {
+				// Given a request breaking one rule
+				// When it is downloaded
+				const response = await postDownload(arranger.server, params);
+
+				// Then the answer is that rule's own text
+				assertPlainTextError(response, 400);
+				assert.equal(response.text, rule);
+			});
+		}
+
+		test("names the compiler's rule for a client sqon it refuses", async () => {
+			// Given a client sqon whose pivot names no nested field
+			const sqon = { content: [studyClause], op: 'and', pivot: CLIENT_TEXT };
+
+			// When it is downloaded
+			const response = await postDownload(arranger.server, paramsWithFile({ sqon }));
+
+			// Then the answer says the filter could not be compiled, and why
+			assertPlainTextError(response, 400);
+			assert.equal(
+				response.text,
+				`The export filter could not be compiled: A filter's pivot must name a nested field of this catalogue; it requires the filter's conditions to hold for the same nested object.`,
+			);
+		});
 	});
 
 	suite('dataStream validating params itself', () => {
@@ -1253,6 +1299,57 @@ suite('download', () => {
 			assert.equal(answers[0], answers[1], 'the text should not depend on what the engine reported');
 		});
 
+		test("tells the client a fault is the server's, not the request's", async () => {
+			await withArranger(
+				{ failOnRequest: 1, failureMessage: 'index [donor_internal_7] is closed' },
+				async ({ server }) => {
+					// Given an engine that fails the first search
+					const consoleCapture = captureConsole();
+
+					try {
+						// When the stock form is posted
+						const response = await postDownload(server, paramsWithFile());
+
+						// Then the answer says the problem is on the server, not in the request
+						assertPlainTextError(response, 500, ['donor_internal']);
+						assert.equal(
+							response.text,
+							'The download failed because of a problem on the server, not in the request.',
+						);
+					} finally {
+						consoleCapture.restore();
+					}
+				},
+			);
+		});
+
+		test('logs an access-control failure both as a failed download, with its reason, and as an access-control event', async () => {
+			await withArranger(
+				{
+					getServerSideFilter: () => {
+						throw new Error('token service unreachable at 10.0.0.5');
+					},
+				},
+				async ({ server }) => {
+					// Given a router whose filter callback throws
+					const consoleCapture = captureConsole();
+
+					try {
+						// When the stock form is posted
+						await postDownload(server, paramsWithFile());
+						const logged = consoleCapture.loggedText();
+
+						// Then the failed download carries a reason naming access control, and the access-control event is logged too
+						assert.match(logged, /download\.failed/);
+						assert.match(logged, /reason: 'access_control'/);
+						assert.match(logged, /access_control\.evaluation_failed/);
+					} finally {
+						consoleCapture.restore();
+					}
+				},
+			);
+		});
+
 		test('answers 500 when the first page reports a failed shard', async () => {
 			await withArranger({ shardFailureOnRequest: 1 }, async ({ server }) => {
 				// Given an engine whose first response reports a failed shard, beside the hits it did find
@@ -1272,6 +1369,16 @@ suite('download', () => {
 				},
 			],
 			['returns a promise', () => Promise.resolve({ content: { fieldName: 'study', value: ['A'] }, op: 'in' })],
+			[
+				'returns a filter holding an empty combination',
+				() => ({
+					content: [
+						{ content: { fieldName: 'study', value: ['A'] }, op: 'in' },
+						{ content: [], op: 'or' },
+					],
+					op: 'and',
+				}),
+			],
 		]) {
 			test(`answers 500 with fixed text, before any engine request, when the filter callback ${description}`, async () => {
 				await withArranger({ getServerSideFilter }, async ({ engine, server }) => {
@@ -1285,6 +1392,10 @@ suite('download', () => {
 						// Then it answers 500 in fixed plain text, without searching
 						assertPlainTextError(response, 500, ['10.0.0.5']);
 						assert.equal(engine.requests.length, 0);
+						assert.equal(
+							response.text,
+							'The server could not apply its access control because of a problem in its configuration, not in this request.',
+						);
 
 						if (description === 'throws') {
 							assert.ok(

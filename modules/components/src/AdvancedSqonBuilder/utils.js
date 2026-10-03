@@ -69,26 +69,42 @@ export const resolveSyntheticSqon = (allSqons) => (syntheticSqon) => {
  * Non-mutative removal of the entry at "indexToRemove" from a list of
  * synthetic sqons "sqonList" and updates references.
  **/
+/** Drops every reference to one of `indices` from a query, leaving an empty query as it is. */
+const withoutReferencesTo = (indices) => (sqon) =>
+	isEmptySqon(sqon) ? sqon : { ...sqon, content: sqon.content.filter((entry) => !indices.includes(entry)) };
+
+/**
+ * Drops references to the queries that went from holding operands (`before`) to holding none (`after`),
+ * then to any query those drops empty in turn: an empty query means every document wherever another
+ * query refers to it, so it has to stop counting as an operand, as the removed query does.
+ */
+const withoutReferencesToEmptied = (before, after) => {
+	const emptied = after.flatMap((sqon, index) => (isEmptySqon(sqon) && !isEmptySqon(before[index]) ? [index] : []));
+
+	return emptied.length ? withoutReferencesToEmptied(after, after.map(withoutReferencesTo(emptied))) : after;
+};
+
 export const removeSqonAtIndex = (indexToRemove, sqonList) => {
-	return sqonList
-		.filter((s, i) => i !== indexToRemove) // takes out the removed sqon
-		.map((sqon) => {
-			return isEmptySqon(sqon)
-				? sqon
-				: {
-						// removes references to the removed sqon
-						...sqon,
-						content: sqon.content
-							.filter(
-								// removes references
-								(content) => content !== indexToRemove,
-							)
-							.map(
-								// shifts references to indices greater than the removed one
-								(s) => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
-							),
-					};
-		});
+	const remaining = sqonList.filter((s, i) => i !== indexToRemove); // takes out the removed sqon
+	const updated = remaining.map((sqon) => {
+		return isEmptySqon(sqon)
+			? sqon
+			: {
+					// removes references to the removed sqon
+					...sqon,
+					content: sqon.content
+						.filter(
+							// removes references
+							(content) => content !== indexToRemove,
+						)
+						.map(
+							// shifts references to indices greater than the removed one
+							(s) => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
+						),
+				};
+	});
+
+	return withoutReferencesToEmptied(remaining, updated);
 };
 
 /**
@@ -138,7 +154,26 @@ export const removeSqonPath = (paths) => (sqon) => {
 	const parent = view(parentLens, sqon);
 
 	// returns the modified structure with removeTarget filtered out
-	return set(parentLens, { ...parent, content: parent.content.filter((c) => c !== removeTarget) }, sqon);
+	const remaining = parent.content.filter((c) => c !== removeTarget);
+	const updated = set(parentLens, { ...parent, content: remaining }, sqon);
+
+	// An emptied group would mean every document, so it goes too, up to the root, whose emptiness the
+	// builder already answers by removing the whole query.
+	return remaining.length === 0 && paths.length > 1 ? removeSqonPath(paths.slice(0, -1))(updated) : updated;
+};
+
+/**
+ * Removes the clause at location 'paths' in 'sqon' when its value list is empty, as a cleared term filter
+ * leaves it, through the same removal as deleting it, so any group it empties goes too. An in with no
+ * values matches nothing, so leaving one under an and would empty the whole query's results.
+ * @param {[Number]} paths
+ * @param {*} sqon
+ */
+export const removeClauseIfCleared = (paths) => (sqon) => {
+	const value = getOperationAtPath(paths)(sqon)?.content?.value;
+
+	// A clause at the root has no group to be removed from, so it is submitted as it stands.
+	return paths.length > 0 && Array.isArray(value) && value.length === 0 ? removeSqonPath(paths)(sqon) : sqon;
 };
 
 export const isIndexReferencedInSqon = (syntheticSqon) => (indexReference) => {

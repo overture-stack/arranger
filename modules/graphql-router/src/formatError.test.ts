@@ -75,7 +75,8 @@ const buildApp = async () => {
 	return express().use(arrangerRouter);
 };
 
-const MASKED_MESSAGE = 'Access control could not be evaluated for this request.';
+const MASKED_MESSAGE =
+	'The server could not apply its access control because of a problem in its configuration, not in this request.';
 const SECRET_DETAIL = 'token service unreachable at 10.0.0.5';
 const ENGINE_FAILURE = 'engine unavailable at 10.0.0.9';
 /** An ordinary error that merely talks about filters and access control, which masking by message text would catch. */
@@ -390,6 +391,29 @@ suite("formatError masks filter callback failures on the router's read paths", (
 			assert.ok(
 				lines.some((line) => line.includes(SECRET_DETAIL)),
 				`expected the log to carry the thrown detail, got ${JSON.stringify(lines)}`,
+			);
+		});
+
+		test(`refuses a filter holding an empty combination, on ${readPath}, and logs where it sits`, async () => {
+			// Given a router whose callback returns an empty or beside a clause
+			const app = await buildRouterApp({
+				getServerSideFilter: () => ({
+					content: [
+						{ content: { fieldName: 'study', value: ['A'] }, op: 'in' },
+						{ content: [], op: 'or' },
+					],
+					op: 'and',
+				}),
+			});
+
+			// When the read path is queried
+			const { lines, result: response } = await postQuery(app, query);
+
+			// Then the client sees only the fixed text, and the server log says where the empty combination is
+			assertMasked(graphQLErrorsOf(response), 'content[1]');
+			assert.ok(
+				lines.some((line) => line.includes("empty 'or' combination at content[1]")),
+				`expected the log to place the empty combination, got ${JSON.stringify(lines)}`,
 			);
 		});
 

@@ -184,6 +184,58 @@ suite('middleware/normalizeFilter', () => {
 
 		assert.deepEqual(normalizeFilters(input), output);
 	});
+
+	// An empty combination means every document, so it may be removed only where that changes nothing:
+	// directly under "and". Under "or" it widens the parent to every document, and so must survive.
+	test(`11.normalizeFilters keeps an empty "or" under "or", since it widens its parent to every document`, () => {
+		// Given an empty or beside a clause, under or
+		const leaf = { content: { fieldName: 'b', value: ['x'] }, op: IN_OP };
+		const input = { content: [leaf, { content: [], op: OR_OP }], op: OR_OP };
+
+		// When it is normalized, Then the empty or survives beside the clause
+
+		const output = {
+			content: [
+				{ ...leaf, pivot: null },
+				{ content: [], op: OR_OP, pivot: null },
+			],
+			op: OR_OP,
+			pivot: null,
+		};
+
+		assert.deepEqual(normalizeFilters(input), output);
+	});
+
+	test(`12.normalizeFilters may flatten an empty "and" under "and", which changes nothing`, () => {
+		// Given an empty and beside a clause, under and
+		const leaf = { content: { fieldName: 'b', value: ['x'] }, op: IN_OP };
+		const input = { content: [leaf, { content: [], op: AND_OP }], op: AND_OP };
+
+		// When it is normalized, Then the empty and is flattened away, pinned here as the current shape
+
+		const output = { content: [{ ...leaf, pivot: null }], op: AND_OP, pivot: null };
+
+		assert.deepEqual(normalizeFilters(input), output);
+	});
+
+	test(`13.normalizeFilters keeps an empty combination whose operator differs from its parent's`, () => {
+		// Given an empty and beside a clause, under or
+		const leaf = { content: { fieldName: 'b', value: ['x'] }, op: IN_OP };
+		const input = { content: [leaf, { content: [], op: AND_OP }], op: OR_OP };
+
+		// When it is normalized, Then the empty and survives, since only a same-operator group is flattened
+
+		const output = {
+			content: [
+				{ ...leaf, pivot: null },
+				{ content: [], op: AND_OP, pivot: null },
+			],
+			op: OR_OP,
+			pivot: null,
+		};
+
+		assert.deepEqual(normalizeFilters(input), output);
+	});
 });
 
 // A SQON arrives from the client, so whatever it holds is client input, including the entries a
@@ -251,6 +303,57 @@ suite('normalizeFilters error messages', () => {
 					return true;
 				},
 			);
+		});
+	}
+});
+
+// A value list holding a special value (missing, a regular expression, or a saved set) is split into one
+// clause per kind of value. Matching any of them is an or of the parts; excluding all of them is an and.
+suite('normalizeFilters splitting special values out of a value list', () => {
+	const clauseOf = (op, value) => ({ content: { fieldName: 'kind', value: [value] }, op, pivot: null });
+
+	for (const [kind, special] of [
+		['a missing value', '__missing__'],
+		['a regular expression', '*b*'],
+		['a saved set', 'set_id:abc'],
+	]) {
+		test(`matches a plain value or ${kind} as an or of the two`, () => {
+			// Given an in holding a plain value and that special value
+			const input = { content: { fieldName: 'kind', value: ['a', special] }, op: IN_OP };
+
+			// When it is normalized, Then a document matching either part matches
+			assert.deepEqual(normalizeFilters(input), {
+				content: [clauseOf(IN_OP, 'a'), clauseOf(IN_OP, special)],
+				op: OR_OP,
+				pivot: null,
+			});
+		});
+
+		for (const fieldName of ['kind', 'files.file_type']) {
+			test(`excludes a plain value and ${kind} from every one of a some-not-in's values, on ${fieldName}, as an and of the two`, () => {
+				// Given a some-not-in holding a plain value and that special value
+				const input = { content: { fieldName, value: ['a', special] }, op: 'some-not-in' };
+				const part = (value) => ({ content: { fieldName, value: [value] }, op: 'some-not-in', pivot: null });
+
+				// When it is normalized, Then it splits like a not-in, so each special value keeps its meaning
+				assert.deepEqual(normalizeFilters(input), {
+					content: [part('a'), part(special)],
+					op: AND_OP,
+					pivot: null,
+				});
+			});
+		}
+
+		test(`excludes a plain value and ${kind} as an and of the two`, () => {
+			// Given a not-in holding a plain value and that special value
+			const input = { content: { fieldName: 'kind', value: ['a', special] }, op: 'not-in' };
+
+			// When it is normalized, Then a document must avoid both parts to match
+			assert.deepEqual(normalizeFilters(input), {
+				content: [clauseOf('not-in', 'a'), clauseOf('not-in', special)],
+				op: AND_OP,
+				pivot: null,
+			});
 		});
 	}
 });

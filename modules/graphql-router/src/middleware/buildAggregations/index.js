@@ -43,6 +43,12 @@ function removeFieldFromQuery({ fieldName, query }) {
 		const cleaned = removeFieldFromQuery({ fieldName, query: nestedQuery });
 		return cleaned && { ...query, [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } };
 	} else if (bool) {
+		// A bool that arrived with no clauses is an empty combination, which means every document; it is
+		// kept, so a facet reads it as hits do. Only a bool this removal empties is dropped.
+		if (!Object.values(bool).some((values) => values.length > 0)) {
+			return query;
+		}
+
 		const filtered = Object.entries(bool).reduce((acc, [type, values]) => {
 			const filteredValues = values
 				.map((value) => removeFieldFromQuery({ fieldName, query: value }))
@@ -53,7 +59,7 @@ function removeFieldFromQuery({ fieldName, query }) {
 			return acc;
 		}, {});
 
-		// `null` means "nothing left", whether every clause named this field or there were none.
+		// `null` means every clause named this field, so nothing of this part of the filter is left.
 		return Object.keys(filtered).length > 0 ? { [ES_BOOL]: filtered } : null;
 	} else {
 		return query;
@@ -93,9 +99,8 @@ function wrapWithFilters({
 	if (!aggregationsFilterThemselves) {
 		const cleanedQuery = removeFieldFromQuery({ fieldName: esFieldName, query });
 		// TODO: better way to figure out that the field wasn't found
-		// Relies on `query` never being empty, which `compileFilter` guarantees by rejecting a
-		// clause-less server-side filter. An empty one would compare unequal to `null` and wrap
-		// every field.
+		// `removeFieldFromQuery` returns a bool that arrived empty unchanged, so only a clause on the
+		// aggregated field makes the cleaned query differ and calls for the global wrapper.
 		if (!isEqual(cleanedQuery || {}, query || {})) {
 			return createGlobalAggregation({
 				fieldName,

@@ -19,22 +19,17 @@ const isProperSqon = (sqon) => !!(sqon && sqon.op);
  * `disableClientFilters` drops the caller's filter here rather than at the request handler, which
  * can only guess which variable holds one. By this point it is a parsed SQON however it arrived.
  *
- * @throws {AccessControlError} when the server-side filter is absent, or has no clauses to apply.
+ * @throws {AccessControlError} when the server-side filter is absent, or holds anywhere a part that
+ *   would match broadly where nobody meant it to: an empty combination, an `all` with no values, a
+ *   range with no bound, an exclusion with no value list, a clause naming no field, or an entry that
+ *   is not a SQON node.
  */
 export default ({ clientSideFilter, disableClientFilters = false, serverSideFilter }) => {
 	const checkedServerSideFilter = requireServerSideFilter(serverSideFilter);
 	const applicableClientFilter = !disableClientFilters && isProperSqon(clientSideFilter);
 
 	return {
-		content: [
-			applicableClientFilter
-				? clientSideFilter
-				: {
-						content: [],
-						op: 'and',
-					},
-			checkedServerSideFilter,
-		],
+		content: applicableClientFilter ? [clientSideFilter, checkedServerSideFilter] : [checkedServerSideFilter],
 		op: 'and',
 	};
 };

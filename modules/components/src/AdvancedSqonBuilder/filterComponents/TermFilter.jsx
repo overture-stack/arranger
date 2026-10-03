@@ -9,7 +9,15 @@ import TextFilter from '#TextFilter/index.js';
 import defaultApiFetcher from '#utils/api.js';
 import noopFn from '#utils/noops.js';
 
-import { getOperationAtPath, setSqonAtPath, FIELD_OP_DISPLAY_NAME, TERM_OPS, IN_OP, AND_OP } from '../utils.js';
+import {
+	getOperationAtPath,
+	removeClauseIfCleared,
+	setSqonAtPath,
+	FIELD_OP_DISPLAY_NAME,
+	TERM_OPS,
+	IN_OP,
+	AND_OP,
+} from '../utils.js';
 
 import { FilterContainer } from './common.js';
 import './FilterContainerStyle.css';
@@ -51,7 +59,7 @@ export const TermFilterUI = (props) => {
 			currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
 		});
 	const getCurrentFieldOp = (s) => getOperationAtPath(sqonPath)(s.state.localSqon);
-	const onSqonSubmit = (s) => () => onSubmit(s.state.localSqon);
+	const onSqonSubmit = (s) => () => onSubmit(removeClauseIfCleared(sqonPath)(s.state.localSqon));
 	const computeBuckets = (s, buckets) =>
 		sortBy(
 			filterStringsCaseInsensitive(buckets, s.state.searchString, 'key'),

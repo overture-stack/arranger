@@ -1184,6 +1184,20 @@ suite('middleware/buildQuery', () => {
 	});
 });
 
+suite('buildQuery with a saved set', () => {
+	test("excludes a saved set's ids for some-not-in, as it does for not-in", () => {
+		// Given the same saved-set reference under not-in and under some-not-in
+		const query = (op) =>
+			buildQuery({
+				filters: { content: { fieldName: 'kind', value: ['set_id:abc'] }, op },
+				nestedFieldNames: [],
+			});
+
+		// When each is compiled, Then both exclude the set's ids
+		assert.deepEqual(query('some-not-in'), query('not-in'));
+	});
+});
+
 // A SQON arrives from the client, so its refusals name the field or shape at fault and never include
 // the value the client sent.
 suite('buildQuery error messages', () => {
@@ -1208,6 +1222,17 @@ suite('buildQuery error messages', () => {
 
 		// When it is compiled, Then it is still refused, without the pivot in the message
 		assertRefusedWithoutQuoting(() => buildQuery({ filters, nestedFieldNames: ['files'] }), CLIENT_TEXT);
+	});
+
+	test('explains what a pivot is when refusing one, so its author can correct it', () => {
+		// Given a combination whose pivot names no nested field
+		const filters = { content: [leaf], op: 'and', pivot: CLIENT_TEXT };
+
+		// When it is compiled, Then the refusal says what a pivot must name and what it does
+		assert.throws(() => buildQuery({ filters, nestedFieldNames: ['files'] }), {
+			message:
+				"A filter's pivot must name a nested field of this catalogue; it requires the filter's conditions to hold for the same nested object.",
+		});
 	});
 
 	test('reports an invalid pivot on a single clause without quoting the pivot', () => {

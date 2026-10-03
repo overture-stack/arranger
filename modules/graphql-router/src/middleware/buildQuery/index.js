@@ -40,6 +40,7 @@ import {
 } from '#middleware/utils/esFilter.js';
 import { applyNestingPrefixToFieldNames, applyNestingPrefixToSqon } from '#middleware/utils/nestingPrefix.js';
 
+import { InvalidFilterError } from './InvalidFilterError.js';
 import normalizeFilters from './normalizeFilters.js';
 
 const { sets } = fallbackConfigs;
@@ -129,40 +130,57 @@ function getMissingFilter({ nestedFieldNames, filter }) {
 		content: { fieldName },
 		op,
 	} = filter;
-	return wrapFilter({
-		esFilter: { exists: { field: fieldName, boost: 0 } },
-		nestedFieldNames,
-		filter,
-		isNot: op === IN_OP,
-	});
+	const wrapExists = (isNot) =>
+		wrapFilter({ esFilter: { exists: { field: fieldName, boost: 0 } }, nestedFieldNames, filter, isNot });
+	const someItemLacksIt = wrapExists(true);
+
+	if (op === IN_OP) {
+		return someItemLacksIt;
+	}
+
+	// some-not-in is universal on a nested field: no item lacks the field. On a flat field it reads as not-in.
+	if (op === SOME_NOT_IN_OP && isNested(someItemLacksIt)) {
+		return wrapMustNot(someItemLacksIt);
+	}
+
+	return wrapExists(false);
 }
 
+/** An entry that can bound a range: a finite number, a non-empty string, or any other value a search engine might accept. */
+const canBoundRange = (bound) =>
+	typeof bound === 'number' ? Number.isFinite(bound) : typeof bound === 'string' ? bound.length > 0 : bound != null;
+
+// Every bound in a list applies: a list of numbers reduces to its strictest, and any other list is
+// applied bound by bound. An entry that cannot bound a range is left out beside one that can.
 function getRangeFilter({ nestedFieldNames, filter }) {
 	const {
 		op,
 		content: { fieldName, value },
 	} = filter;
+	const usableBounds = value.filter(canBoundRange);
+	const bounds = usableBounds.length > 0 ? usableBounds : value;
+	const rangeFrom = (bound) => ({ range: { [fieldName]: { boost: 0, [op]: toEsRangeValue(bound) } } });
+	const reducesToOneBound = bounds.length === 1 || bounds.every((bound) => typeof bound === 'number');
+
 	return wrapFilter({
 		filter,
 		nestedFieldNames,
-		esFilter: {
-			range: {
-				[fieldName]: {
-					boost: 0,
-					[op]: toEsRangeValue([GT_OP, GTE_OP]?.includes?.(op) ? _.max(value) : _.min(value)),
-				},
-			},
-		},
+		esFilter: reducesToOneBound
+			? rangeFrom([GT_OP, GTE_OP].includes(op) ? _.max(bounds) : _.min(bounds))
+			: wrapMust(bounds.map(rangeFrom)),
 	});
 }
 
+// Only nested clauses on the same path merge, which holds their conditions to one item. Any other
+// clause stays its own: merging two bools would change what a not, or a must_not, negates.
 function collapseNestedFilters({ esFilter, bools }) {
-	const filterIsNested = isNested(esFilter);
-	const basePath = [...(filterIsNested ? [ES_NESTED, ES_QUERY] : []), ES_BOOL];
-	const path = [ES_MUST, ES_MUST_NOT].map((p) => [...basePath, p]).find((path) => _.get(esFilter, path));
+	if (!isNested(esFilter)) {
+		return [...bools, esFilter];
+	}
 
-	const found =
-		path && bools.find((bool) => (filterIsNested ? readPath(bool) === readPath(esFilter) : _.get(bool, path)));
+	const basePath = [ES_NESTED, ES_QUERY, ES_BOOL];
+	const path = [ES_MUST, ES_MUST_NOT].map((p) => [...basePath, p]).find((path) => _.get(esFilter, path));
+	const found = path && bools.find((bool) => readPath(bool) === readPath(esFilter));
 
 	return [
 		...bools.filter((bool) => bool !== found),
@@ -170,12 +188,10 @@ function collapseNestedFilters({ esFilter, bools }) {
 			? mergePath(
 					found,
 					path,
-					filterIsNested
-						? collapseNestedFilters({
-								esFilter: _.get(esFilter, path)[0],
-								bools: _.get(found, path, []),
-							})
-						: [..._.get(found, path), ..._.get(esFilter, path)],
+					collapseNestedFilters({
+						esFilter: _.get(esFilter, path)[0],
+						bools: _.get(found, path, []),
+					}),
 				)
 			: esFilter,
 	];
@@ -189,8 +205,8 @@ const wrappers = {
 function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot } }) {
 	const applyBooleanWrapper = wrappers[op];
 	const esFilters = content.map((filter) => opSwitch({ nestedFieldNames, filter }));
-	const isNested = !!esFilters[0]?.nested;
-	if (isNested && esFilters.map((f) => f.nested?.path)?.includes?.(pivot)) {
+	// A pivot holds the conditions on its path to one nested item, whichever child comes first.
+	if (esFilters.some((esFilter) => isNested(esFilter) && esFilter.nested.path === pivot)) {
 		const flattned = esFilters.reduce(
 			(bools, esFilter) =>
 				op === AND_OP || op === NOT_OP ? collapseNestedFilters({ esFilter, bools }) : [...bools, esFilter],
@@ -203,7 +219,7 @@ function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot } }) {
 }
 
 function getSetFilter({ nestedFieldNames, filter, filter: { content, op } }) {
-	return wrapFilter({
+	const esFilter = wrapFilter({
 		isNot: op === NOT_IN_OP,
 		filter,
 		nestedFieldNames,
@@ -220,6 +236,8 @@ function getSetFilter({ nestedFieldNames, filter, filter: { content, op } }) {
 			},
 		},
 	});
+
+	return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
 const getBetweenFilter = ({ nestedFieldNames, filter }) => {
@@ -249,7 +267,9 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	} = filter;
 
 	if (pivot && pivot !== '.' && !nestedFieldNames.includes(pivot)) {
-		throw new Error('Invalid pivot field, not a nested field');
+		throw new InvalidFilterError(
+			"A filter's pivot must name a nested field of this catalogue; it requires the filter's conditions to hold for the same nested object.",
+		);
 	}
 
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
@@ -286,7 +306,9 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	} else if (WILDCARD_OP === op || FILTER_OP === op) {
 		return getWildcardFilter({ nestedFieldNames, filter });
 	} else {
-		throw new Error('unknown op');
+		throw new InvalidFilterError(
+			'Each filter node must name an operator SQON defines, such as and, or, not, in or gte.',
+		);
 	}
 };
 

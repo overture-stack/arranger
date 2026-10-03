@@ -1886,13 +1886,13 @@ This is the inverse of the phantom-dependency audit, which looked only for impor
 **Fix:** Move both to `fieldName` throughout, keeping a read-only fallback for `field` if stored SQONs need it.
 **Standalone:** yes
 
-### AdvancedSqonBuilder leaves stale references, emptied groups and empty value lists behind
+### AdvancedSqonBuilder leaves stale references behind when a query is deleted
 
-**File:** `modules/components/src/AdvancedSqonBuilder/utils.js:72-92` (`removeSqonAtIndex`), `:127-142` (`removeSqonPath`); `index.jsx:117-129,235`; `filterComponents/TermFilter.jsx:89-100`
+**File:** `modules/components/src/AdvancedSqonBuilder/utils.js:72-92` (`removeSqonAtIndex`); `index.jsx:117-129`
 **Severity:** medium
 **Kind:** correctness
-**Issue:** Deleting a query rewrites references to it only at the top level, so nested references go stale, although the dialog says dependent queries are deleted; the selection is not cleared either, so the and/or buttons can then reference queries that no longer exist. Removing the last condition from a nested group leaves the empty group in place, since only the root is checked, so the builder can produce `or[ X, or[] ]`. TermFilter's Clear leaves `in(field, [])`, which matches no document, so clearing a term filter inside an `and` makes the whole query match nothing.
-**Fix:** Rewrite or remove nested references on delete and clear the selection; remove a group once it is empty; make Clear remove the condition rather than empty its values. Test each through the builder's own actions.
+**Issue:** Deleting a query rewrites references to it only at the top level, so nested references go stale, although the dialog says dependent queries are deleted; the selection is not cleared either, so the and/or buttons can then reference queries that no longer exist.
+**Fix:** Rewrite or remove nested references on delete and clear the selection. Test each through the builder's own actions.
 **Standalone:** yes
 
 ### Components publicly exports SQON types that differ from `@overture-stack/sqon`

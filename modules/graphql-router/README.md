@@ -218,7 +218,7 @@ So a deployment with no access control writes nothing, and a read path that lose
 
 ### Writing a callback
 
-**The callback must be synchronous, and must return a filter for every request it receives, including unauthenticated ones.** There is no "no filter" return value: an absent filter, or a combination with no clauses, would match every document, so it is refused rather than applied. Each intent has its own value:
+**The callback must be synchronous, and must return a filter for every request it receives, including unauthenticated ones.** There is no "no filter" return value: an absent filter, or one holding an empty combination, an `all` with no values, a range with no bound, an exclusion with no value list, a clause naming no field or an entry that is not a SQON node anywhere, such as a hole in a list, would match broadly, so it is refused rather than applied. Each intent has its own value:
 
 | Intent | Return |
 | --- | --- |
@@ -248,11 +248,11 @@ const getServerSideFilter: GetServerSideFilterFn<AppContext> = (context) => {
 const router = await arrangerRouter({ configs, getServerSideFilter });
 ```
 
-Note `fieldName`, not `field`. A content clause using any other key does not describe a field, and the resulting filter restricts nothing.
+Note `fieldName`, not `field`. A content clause using any other key does not describe a field, so the router refuses the filter rather than apply a clause that restricts nothing.
 
 `user` stands for whatever the deployment's own authentication established. The callback receives the GraphQL context on GraphQL reads and the router's request context, `req.context`, on exports, so whatever it reads to identify the caller must be in both: set it on `req.context` in middleware mounted before the router, and add it to the GraphQL context through the router's `graphqlOptions.context`, a function given the Express request.
 
-The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "Access control could not be evaluated for this request.", while the full message and its cause are logged on the server under `access_control.evaluation_failed`.
+The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "The server could not apply its access control because of a problem in its configuration, not in this request.", while the full message and its cause are logged on the server under `access_control.evaluation_failed`.
 
 ### How the filter applies
 
@@ -277,11 +277,11 @@ The router serves exports at `POST /download`. An integration building its own e
 
 `dataStream` checks `params`, and `getAllData` checks its `chunkSize`, `sort` and `sqon`, so an integration can hand `dataStream` the client's object whole. A broken rule rejects the call with an `InvalidExportRequestError` before any output:
 
-- `params.files` is an array holding exactly one file object: one file per request.
+- `params.files` holds exactly one file object: this version exports one file per request.
 - The file's fields are read by name, `sqon`, `columns`, `sort`, `fileName`, `fileType`, `maxRows`, `chunkSize`, `uniqueBy` and `valueWhenEmpty`. Anything else in the file, or at the top level of `params`, is ignored and never used.
 - `chunkSize` is a positive integer and `maxRows` a non-negative integer, both as JSON numbers. `fileType` is `tsv` or `json`, where absent, `null` or empty names none, and `tsv` applies when nothing names one. `columns` is a non-empty array of column objects. `fileName` is a well-formed string, and `uniqueBy` and `valueWhenEmpty` are strings. A top-level `chunkSize`, `fileName` or `fileType` follows the same rule, and applies where the file names none.
 - `sort`, for `dataStream` and `getAllData` alike, is an array of entries, each naming a non-empty `fieldName` and an `order` of `asc` or `desc`, in any case. Empty or absent keeps the default order, and an `_id` tiebreaker always follows.
-- A `sqon` that cannot be compiled into a query is refused.
+- A `sqon` that cannot be compiled into a query is refused, naming the SQON rule it broke where there is one.
 - A `maxRows` applies only when the catalogue allows custom row limits, and `0` asks for the configured limit.
 
 ### The filter comes from the router
@@ -299,11 +299,11 @@ On a context built some other way, pass the filter function this deployment's ro
 
 | Error | Means | Answer |
 | --- | --- | --- |
-| `InvalidExportRequestError`, from `./download` | The request broke a rule | `400` |
-| `AccessControlError`, from the package root | Access control could not be evaluated for the request | `500` |
-| Anything else | A server fault, such as a failed search | `500` |
+| `InvalidExportRequestError`, from `./download` | The request broke a rule. Its message names the rule broken where there is one, and never a value the request carried, so it is written for the client | `400`, with the error's message |
+| `AccessControlError`, from the package root | The deployment's access control could not be applied to the request | `500`, with a fixed text saying the problem is in the server's configuration, not in the request |
+| Anything else | A server fault, such as a failed search | `500`, with a fixed text saying the problem is on the server, not in the request |
 
-Answer each as plain text with fixed wording, and log the error itself on the server: its message is written for the log, not for the client.
+Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s message is written for the client; any other error's message, and every error's cause, is written for the log.
 
 ### Joining the output to the response
 
@@ -314,13 +314,24 @@ The package does not declare `req.context` on Express's `Request` type, so a Typ
 ```js
 import { pipeline } from 'node:stream';
 
-import arrangerRouter from '@overture-stack/arranger-graphql-router';
+import arrangerRouter, { ACCESS_CONTROL_FAILURE_MESSAGE } from '@overture-stack/arranger-graphql-router';
 import { dataStream, InvalidExportRequestError } from '@overture-stack/arranger-graphql-router/download';
 import express from 'express';
 
 const app = express();
 
 app.use(await arrangerRouter({ configs }));
+
+// The rule broken for an invalid request, written for the client; fixed text for anything else.
+const failureText = (error) => {
+	if (error instanceof InvalidExportRequestError) {
+		return error.message;
+	}
+
+	return error?.name === 'AccessControlError'
+		? ACCESS_CONTROL_FAILURE_MESSAGE
+		: 'The export failed because of a problem on the server, not in the request.';
+};
 
 app.post('/export', express.json(), async (req, res) => {
 	try {
@@ -333,14 +344,12 @@ app.post('/export', express.json(), async (req, res) => {
 			}
 		});
 	} catch (error) {
-		const isInvalidRequest = error instanceof InvalidExportRequestError;
-
 		console.error('export.failed', error);
 		res
-			.status(isInvalidRequest ? 400 : 500)
+			.status(error instanceof InvalidExportRequestError ? 400 : 500)
 			.type('text/plain')
 			.set('X-Content-Type-Options', 'nosniff')
-			.send(isInvalidRequest ? 'The export request is invalid.' : 'The export could not be completed.');
+			.send(failureText(error));
 	}
 });
 ```

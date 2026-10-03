@@ -26,14 +26,15 @@ const checkedFilterFrom = <Context>({
 /**
  * The server-side filter an export applies: the router's recorded filter, narrowed by the caller's when
  * both are present, or the caller's alone on a context no router built, which is refused when the
- * caller passes nothing. Each callback is evaluated once and its filter checked on its own, so an
- * absent filter or an empty combination from either is refused rather than hidden by the other's clauses.
+ * caller passes nothing. Each callback is evaluated once and its filter checked on its own, so a
+ * filter from either that `requireServerSideFilter` refuses is refused rather than hidden by the
+ * other's clauses.
  *
  * @param context the request context the export runs under.
  * @param getServerSideFilter the caller's own callback, or undefined to apply the record's alone.
  * @throws {AccessControlError} when the caller's value is not a non-async function, when there is no
- *   record and no callback, or when a callback throws, returns a thenable, or yields an absent filter
- *   or an empty combination.
+ *   record and no callback, or when a callback throws, returns a thenable, or yields a filter that
+ *   `requireServerSideFilter` refuses.
  */
 export const resolveServerSideFilter = <Context>({
 	context,

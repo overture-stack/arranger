@@ -8,8 +8,9 @@ import {
 
 import { resolveServerSideFilter } from '#accessControl/resolveServerSideFilter.js';
 import fallbackConfigs from '#config/index.js';
-import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
+import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
+import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
 
 /**
@@ -28,7 +29,7 @@ const requirePageSize = (chunkSize) => {
 		return chunkSize;
 	}
 
-	throw new InvalidExportRequestError('chunkSize must be a positive integer.');
+	throw new InvalidExportRequestError('chunkSize must be a positive integer, sent as a JSON number.');
 };
 
 const SORT_ORDERS = ['asc', 'desc'];
@@ -66,7 +67,14 @@ const compileQuery = (queryArguments) => {
 		return buildQuery({ caller: 'getAllData', ...queryArguments });
 	} catch (cause) {
 		// A deployment's own filter compiles on every read path, so one that fails only here is the caller's.
-		throw new InvalidExportRequestError('The export filter could not be compiled.', { cause });
+		// A broken SQON rule is named, since its message never carries the filter's values; anything
+		// else stays unnamed, since its message may describe the compiler's internals.
+		throw new InvalidExportRequestError(
+			isInvalidFilterError(cause)
+				? `The export filter could not be compiled: ${cause.message}`
+				: 'The export filter could not be compiled.',
+			{ cause },
+		);
 	}
 };
 

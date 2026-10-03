@@ -2,14 +2,14 @@ import { finished, pipeline } from 'node:stream';
 
 import { Router, urlencoded } from 'express';
 
+import { ACCESS_CONTROL_FAILURE_MESSAGE, isAccessControlError } from '#accessControl/AccessControlError.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
 import noopFn from '#utils/noops.js';
 
 export { InvalidExportRequestError };
 
-const INVALID_REQUEST_TEXT = 'The download request is invalid.';
-const SERVER_FAULT_TEXT = 'The download could not be completed.';
+const SERVER_FAULT_TEXT = 'The download failed because of a problem on the server, not in the request.';
 
 const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -34,15 +34,15 @@ const PARAMS_RULES = [
 	{ isMet: isPlainObject, message: 'params must be an object.' },
 	{
 		isMet: ({ files }) => Array.isArray(files) && files.length === 1 && isPlainObject(files[0]),
-		message: 'files must be an array holding exactly one file object.',
+		message: 'files must be an array holding exactly one file object: this version exports one file per request.',
 	},
 	{
 		isMet: ({ chunkSize, files: [file] }) => [chunkSize, file.chunkSize].every(isAbsentOr(isPositiveInteger)),
-		message: 'chunkSize must be a positive integer.',
+		message: 'chunkSize must be a positive integer, sent as a JSON number.',
 	},
 	{
 		isMet: ({ files: [file] }) => isAbsentOr(isNonNegativeInteger)(file.maxRows),
-		message: 'maxRows must be a non-negative integer.',
+		message: 'maxRows must be a non-negative integer, sent as a JSON number.',
 	},
 	{
 		isMet: ({ fileType, files: [file] }) => [fileType, file.fileType].every(isAbsentOr(isFileType)),
@@ -137,15 +137,35 @@ const paramsFrom = (body) => {
 	throw new InvalidExportRequestError('params must be sent as one form field holding JSON.');
 };
 
-const failureResponseFor = (error) =>
-	error instanceof InvalidExportRequestError
-		? { event: 'download.invalid_request', log: console.warn, status: 400, text: INVALID_REQUEST_TEXT }
+// An invalid request is answered with the rule it broke: each rule's message is fixed text naming the
+// field at fault, never a value the client sent. Any other failure names only whose problem it is.
+const failureResponseFor = (error) => {
+	if (error instanceof InvalidExportRequestError) {
+		return { event: 'download.invalid_request', log: console.warn, status: 400, text: error.message };
+	}
+
+	return isAccessControlError(error)
+		? {
+				event: 'download.failed',
+				log: console.error,
+				reason: 'access_control',
+				status: 500,
+				text: ACCESS_CONTROL_FAILURE_MESSAGE,
+			}
 		: { event: 'download.failed', log: console.error, status: 500, text: SERVER_FAULT_TEXT };
+};
 
 const sendFailure = ({ error, res }) => {
-	const { event, log, status, text } = failureResponseFor(error);
+	const { event, log, reason, status, text } = failureResponseFor(error);
 
-	log(event, error);
+	log(event, error, ...(reason ? [{ reason }] : []));
+
+	if (reason === 'access_control') {
+		// Also the event GraphQL and network search log for the same failure, so one alert covers every
+		// read path while an alert already counting failed downloads keeps firing.
+		console.error('access_control.evaluation_failed', error.message, { cause: error.cause, route: 'download' });
+	}
+
 	res.status(status).type('text/plain').set('X-Content-Type-Options', 'nosniff').send(text);
 };
 
