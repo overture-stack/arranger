@@ -35,7 +35,7 @@ import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/inde
 import type { SchemaTypesTuple } from '#schema/types.js';
 import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
-import { addContext } from '#utils/context.js';
+import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 
@@ -307,7 +307,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 						? await graphqlOptions.context(req, res, connection)
 						: graphqlOptions.context;
 
+				// The request's state comes first, so a filter callback reads what an application recorded in
+				// res.locals before the router here as it does on the export path, and the keys after it take precedence.
 				return {
+					...requestStateOf(res.locals),
 					esClient,
 					request,
 					...(externalContext || {}),
@@ -353,7 +356,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 	router.use(
 		'/',
-		addContext({
+		addArrangerLocals({
 			schema,
 		}),
 	);
@@ -570,8 +573,10 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		}
 
 		return [
-			// this middleware makes the esClient and config available in all requests, in a "context" object
-			addContext({
+			// Makes the catalogue's configuration and search client available to every read path, under
+			// res.locals.arranger, with req.context kept as a view of it for routes built without the router.
+			keepRequestContextView,
+			addArrangerLocals({
 				configs: typesWithMappings?.[1],
 				esClient,
 				fieldsFromMapping,

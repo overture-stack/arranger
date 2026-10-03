@@ -15,11 +15,14 @@ const runMiddlewareChain = async ({
 }) => {
 	const response: {
 		body: unknown;
+		locals: Record<string, unknown>;
 		statusCode: number;
 		json(payload: unknown): unknown;
 		status(code: number): unknown;
 	} = {
 		body: undefined,
+		// Express gives every response its own locals.
+		locals: {},
 		statusCode: 200,
 		json(payload: unknown) {
 			this.body = payload;
@@ -95,6 +98,9 @@ suite('router middleware injection', () => {
 		assert.equal(result.response.statusCode, 400);
 		assert.deepEqual(result.response.body, {
 			error: 'Filters are disabled for this server.',
+		});
+		assert.deepEqual(result.response.locals.arranger, {
+			enableDebug: true,
 		});
 		assert.deepEqual(result.req.context, {
 			enableDebug: true,

@@ -335,17 +335,24 @@ const postStockDownload = (application: express.Express, path: string, params: R
 		.type('form')
 		.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(params) });
 
-/** Pattern A: the router mounted the way the search server mounts it, after its own parsers and context. */
+/**
+ * Pattern A: the router mounted the way the search server mounts it, after its own parsers. With
+ * `callsAddContext`, the application also calls the deprecated `addContext` before the router, as the
+ * search server did before 1.0.
+ */
 const buildPatternAApplication = async ({
+	callsAddContext = false,
 	getServerSideFilter,
 	mountPath = '/',
-}: { getServerSideFilter?: GetServerSideFilterFn<unknown>; mountPath?: string } = {}) => {
+}: { callsAddContext?: boolean; getServerSideFilter?: GetServerSideFilterFn<unknown>; mountPath?: string } = {}) => {
 	const searchEngine = createSearchEngine(STORED_DOCUMENTS);
 	const application = express();
 
 	application.use(json());
 	application.use(urlencoded({ extended: false }));
-	application.use(utils.addContext({ enableDebug: false }));
+	if (callsAddContext) {
+		application.use(utils.addContext({ enableDebug: false }));
+	}
 	application.use(mountPath, await buildRouter(searchEngine, getServerSideFilter));
 
 	return { application, searchEngine };
@@ -515,6 +522,17 @@ suite(
 			const response = await postStockDownload(application, '/model-catalogue/download', stockDownloadParams());
 
 			// Then every document comes back exactly as at the root
+			assert.equal(downloadedText(response), EVERY_ROW_TSV_CHUNKS.join(''));
+		});
+
+		test('serves the same rows when the application still calls the deprecated addContext before the router', async () => {
+			// Given the application merging enableDebug through addContext, as the search server did before 1.0
+			const { application } = await buildPatternAApplication({ callsAddContext: true });
+
+			// When the stock UI's download form is posted
+			const response = await postStockDownload(application, '/download', stockDownloadParams());
+
+			// Then every document comes back exactly as without it
 			assert.equal(downloadedText(response), EVERY_ROW_TSV_CHUNKS.join(''));
 		});
 

@@ -758,3 +758,220 @@ suite("a restricting filter reaches the search engine on each of the router's re
 		assert.deepEqual(response.body.data.network.aggregations.study.buckets, [{ doc_count: 3, key: 'A' }]);
 	});
 });
+
+/** Permits the study an application recorded for the request, as an access-control middleware hands a router its result. */
+const studyOnRequestContext = (context: unknown) =>
+	restrictingFilter({
+		fieldName: 'study',
+		values: [String((context as { permittedStudy?: unknown } | undefined)?.permittedStudy ?? 'none recorded')],
+	})(context);
+
+/** Records study A in `res.locals` before the router, as an application's own middleware does. */
+const recordStudyA: RequestHandler = (_req, res, next) => {
+	res.locals.permittedStudy = 'A';
+	next();
+};
+
+/** An application that records study A for each request before the router. */
+const appRecordingStudyA = (router: Router, recordStudy: RequestHandler = recordStudyA) =>
+	express()
+		.use(express.urlencoded({ extended: false }))
+		.use(recordStudy)
+		.use(router);
+
+const DONOR_EXPORT_PARAMS = {
+	fileName: '',
+	files: [
+		{
+			columns: [
+				{
+					accessor: 'donor_id',
+					canChangeShow: true,
+					displayName: 'Donor',
+					fieldName: 'donor_id',
+					isArray: false,
+					jsonPath: null,
+					query: null,
+					show: true,
+					sortable: true,
+					type: 'keyword',
+				},
+			],
+			documentType: 'donor',
+			fileName: 'donors.tsv',
+			fileType: 'tsv',
+			maxRows: 0,
+			sqon: null,
+		},
+	],
+};
+
+suite('a filter callback reads what an application recorded in res.locals, on every read path', () => {
+	test('hits apply the filter the callback derives from the request context', async () => {
+		// Given a router whose callback permits the study recorded on the request context, behind an application recording study A
+		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
+
+		// When hits are queried
+		const response = await request(appRecordingStudyA(router)).post('/graphql').send({ query: HITS_QUERY });
+
+		// Then only study A's documents come back
+		assert.deepEqual(hitIdsOf(response), PERMITTED_IDS);
+	});
+
+	test('aggregations apply the filter the callback derives from the request context', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
+
+		const response = await request(appRecordingStudyA(router)).post('/graphql').send({ query: AGGREGATIONS_QUERY });
+
+		assert.deepEqual(response.body.data.donor.aggregations.study.buckets, [{ doc_count: 3, key: 'A' }]);
+	});
+
+	test('saveSet applies the filter the callback derives from the request context', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
+
+		const response = await request(appRecordingStudyA(router)).post('/graphql').send({ query: SAVE_SET_MUTATION });
+
+		assert.deepEqual(response.body.data.saveSet.ids, PERMITTED_IDS);
+	});
+
+	test('the export applies the filter the callback derives from the request context', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
+
+		const response = await request(appRecordingStudyA(router))
+			.post('/download')
+			.type('form')
+			.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+
+		assert.equal(response.status, 200, response.text);
+		assert.deepEqual(response.text.split('\n').filter(Boolean), ['Donor', ...PERMITTED_IDS]);
+	});
+
+	test("the router's own context keys take precedence over the application's", async () => {
+		// Given a callback permitting the study a request's headers name, behind an application that records
+		// a request object of its own naming study B
+		const { router } = await buildRouter({ getServerSideFilter: studyNamedByRequest });
+		const app = express()
+			.use((_req, res, next) => {
+				res.locals.request = { headers: new Headers({ [PERMITTED_STUDY_HEADER]: 'B' }) };
+				next();
+			})
+			.use(router);
+
+		// When hits are queried by a request whose own header names study A
+		const response = await request(app)
+			.post('/graphql')
+			.set(PERMITTED_STUDY_HEADER, 'A')
+			.send({ query: HITS_QUERY });
+
+		// Then the callback read the router's request, so the application's key never replaced it
+		assert.deepEqual(hitIdsOf(response), PERMITTED_IDS);
+	});
+});
+
+/** Records study A through the deprecated `req.context`, as integrations written before 1.0 do. */
+const recordStudyAOnRequestContext = packageRoot.utils.addContext({ permittedStudy: 'A' });
+
+suite('an application writing the deprecated req.context still reaches the filter callback', () => {
+	test('hits apply the filter the callback derives from a key written to req.context before the router', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
+
+		const response = await request(appRecordingStudyA(router, recordStudyAOnRequestContext))
+			.post('/graphql')
+			.send({ query: HITS_QUERY });
+
+		assert.deepEqual(hitIdsOf(response), PERMITTED_IDS);
+	});
+
+	test('the export applies the filter the callback derives from a key written to req.context before the router', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
+
+		const response = await request(appRecordingStudyA(router, recordStudyAOnRequestContext))
+			.post('/download')
+			.type('form')
+			.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+
+		assert.equal(response.status, 200, response.text);
+		assert.deepEqual(response.text.split('\n').filter(Boolean), ['Donor', ...PERMITTED_IDS]);
+	});
+
+	test('a write through req.context after the router lands in res.locals.arranger, and the reverse', async () => {
+		// Given an application route after the router that writes through each store
+		const { router } = await buildRouter();
+		const app = express()
+			.use(router)
+			.get('/probe', (req, res) => {
+				const legacyContext = (req as unknown as { context: Record<string, unknown> }).context;
+				legacyContext.writtenThroughRequest = true;
+				res.locals.arranger = Object.assign(res.locals.arranger ?? {}, { writtenThroughLocals: true });
+				res.json({
+					inLocals: res.locals.arranger.writtenThroughRequest,
+					inRequestContext: legacyContext.writtenThroughLocals,
+					sameObject: legacyContext === res.locals.arranger,
+				});
+			});
+
+		// When it runs, Then each write is visible through the other store, since both are one object
+		const response = await request(app).get('/probe');
+		assert.deepEqual(response.body, { inLocals: true, inRequestContext: true, sameObject: true });
+	});
+});
+
+/** Reads the access an application's middleware recorded in `res.locals.usher`, as an access-control adapter does. */
+const studyFromRecordedAccess = (context: unknown) => {
+	const access = (context as { usher?: { permittedStudy?: string } } | undefined)?.usher;
+
+	if (!access?.permittedStudy) {
+		throw new Error('No access was recorded for this request.');
+	}
+
+	return restrictingFilter({ fieldName: 'study', values: [access.permittedStudy] })(context);
+};
+
+suite("an application's own export route behind a callback reading res.locals", () => {
+	/** An application recording access in `res.locals.usher`, with an export route reading the store `store` names. */
+	const exportApp = (router: Router) =>
+		express()
+			.use((_req, res, next) => {
+				res.locals.usher = { permittedStudy: 'A' };
+				next();
+			})
+			.use(router)
+			.get('/export/:store', async (req, res) => {
+				const ctx = req.params.store === 'locals' ? res.locals : Reflect.get(req, 'context');
+				try {
+					const chunks = await packageRoot.utils.getAllData({ ctx, sqon: null });
+					const rows: string[] = [];
+					for await (const chunk of chunks) {
+						rows.push(...chunk.hits.map((hit: { donor_id: string }) => hit.donor_id));
+					}
+					res.json({ rows });
+				} catch (error) {
+					res.status(500).json({ error: error instanceof Error ? error.name : String(error) });
+				}
+			});
+
+	test('exports the permitted rows when the route passes res.locals', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: studyFromRecordedAccess });
+
+		const response = await request(exportApp(router)).get('/export/locals');
+
+		assert.deepEqual(response.body, { rows: PERMITTED_IDS });
+	});
+
+	test('fails closed, refusing the export, when the route passes the deprecated req.context', async () => {
+		// Given access recorded at the root of res.locals, which req.context, Arranger's own namespace, does not hold
+		const callback = mock.fn(studyFromRecordedAccess);
+		const { router } = await buildRouter({ getServerSideFilter: callback });
+
+		// When the route hands req.context to the export
+		const response = await request(exportApp(router)).get('/export/context');
+
+		// Then the router's record reached the export, so the callback ran, found no access, and the export
+		// is refused with the access-control failure
+		const contextsSeen = callback.mock.calls.map((call) => call.arguments[0] as { usher?: unknown });
+		assert.equal(contextsSeen.length, 1, 'the callback never ran, so the export found no access-control record');
+		assert.equal(contextsSeen[0]?.usher, undefined);
+		assert.equal(response.status, 500, JSON.stringify(response.body));
+		assert.deepEqual(response.body, { error: 'AccessControlError' });
+	});
+});

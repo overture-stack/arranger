@@ -24,7 +24,7 @@ import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIn
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext } from '#types.js';
-import { addContext } from '#utils/context.js';
+import { addArrangerLocals, keepRequestContextView } from '#utils/context.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
 
 export const mergeConfigs = <Context extends ArrangerBaseContext>(
@@ -42,8 +42,9 @@ export const resolveLabel = ({
 }): string => catalogueId || documentType || FALLBACK_LABEL;
 
 /**
- * The middleware every request meets first: it records the router's access-control decision and debug
- * flag on the request context, then applies the request-level controls `configs` enables.
+ * The middleware every request meets first: it keeps `req.context` as a view of `res.locals.arranger`,
+ * records the router's access-control decision and debug flag there, then applies the request-level
+ * controls `configs` enables.
  */
 export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
 	accessControlRecord,
@@ -54,7 +55,8 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
 	configs: Partial<ConfigsObject<Context>>;
 	enableDebug?: boolean;
 }): RequestHandler[] => [
-	addContext({
+	keepRequestContextView,
+	addArrangerLocals({
 		[ACCESS_CONTROL_RECORD]: accessControlRecord,
 		enableDebug,
 	}),

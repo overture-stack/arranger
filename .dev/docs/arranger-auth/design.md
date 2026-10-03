@@ -14,7 +14,7 @@ Worth stating before anything else, because it is easy to assume otherwise and i
 - **No EGO dependency.** Zero references in source; the sole repo-wide match is `ego-ui` named in a tech-debt note about sibling repos' license fields.
 - The only `Authorization` header Arranger constructs is **outbound Basic auth to Elasticsearch** (`searchClient/index.ts:10`).
 
-Identity reaches Arranger through exactly one door: `addContext(patch)`, an Express middleware merging arbitrary values into `req.context`, which the host application populates with whatever it has already authenticated. The access-control hook is then `getServerSideFilter`, typed `(context: Context) => SqonNode`, where **`Context` is a generic parameter Arranger never constrains**.
+Identity reaches Arranger through exactly one door: `res.locals`, which the host application populates, in middleware mounted before the router, with whatever it has already authenticated. `addContext(patch)` and `req.context` reach the router's own part of it, `res.locals.arranger`, and are deprecated. The access-control hook is then `getServerSideFilter`, typed `(context: Context) => SqonNode`, where **`Context` is a generic parameter Arranger never constrains**.
 
 So Arranger is authorization-only and identity-agnostic by construction. Three consequences:
 

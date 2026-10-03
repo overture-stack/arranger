@@ -370,7 +370,8 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 							operationName,
 							totalHits: results.length,
 						}));
-						context.warnings = [...(context.warnings || []), ...summaries];
+						// An application's own res.locals keys reach the context, so `warnings` may hold anything.
+						context.warnings = [...(Array.isArray(context.warnings) ? context.warnings : []), ...summaries];
 						summaries.forEach((summary) =>
 							console.warn(`  WARNING [${summary.catalogue}/${summary.operationName}]: ${summary.message}`),
 						);

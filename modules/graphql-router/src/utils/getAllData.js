@@ -12,6 +12,7 @@ import compileFilter from '#mapping/utils/compileFilter.js';
 import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
+import { requestStateOf } from '#utils/context.js';
 
 /**
  * An export refused for what its caller sent rather than for a fault on the server. The message names
@@ -174,12 +175,13 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  */
 export default async ({
 	chunkSize = fallbackConfigs.downloads.chunkSize,
-	ctx = {},
+	ctx: givenContext = {},
 	getServerSideFilter,
 	maxRows = null,
 	sort = [],
 	sqon,
 }) => {
+	const ctx = requestStateOf(givenContext);
 	const serverSideFilter = resolveServerSideFilter({ context: ctx, getServerSideFilter });
 	const pageSize = requirePageSize(chunkSize);
 	const exportSort = requireSort(sort);

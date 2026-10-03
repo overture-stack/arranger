@@ -250,7 +250,7 @@ const router = await arrangerRouter({ configs, getServerSideFilter });
 
 Note `fieldName`, not `field`. A content clause using any other key does not describe a field, so the router refuses the filter rather than apply a clause that restricts nothing.
 
-`user` stands for whatever the deployment's own authentication established. The callback receives the GraphQL context on GraphQL reads and the router's request context, `req.context`, on exports, so whatever it reads to identify the caller must be in both: set it on `req.context` in middleware mounted before the router, and add it to the GraphQL context through the router's `graphqlOptions.context`, a function given the Express request.
+`user` stands for whatever the deployment's own authentication established. Set it on `res.locals` in middleware mounted before the router, and the callback reads it on every read path: it receives the application's own `res.locals` keys beneath the router's, which sit under `res.locals.arranger`, so a key the router or `graphqlOptions.context` also sets takes their value. `req.context` is a deprecated view of `res.locals.arranger`; see the [migration guide](../../docs/reference/08-Migration/v3.1.md#per-request-state-res-locals).
 
 The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "The server could not apply its access control because of a problem in its configuration, not in this request.", while the full message and its cause are logged on the server under `access_control.evaluation_failed`.
 
@@ -286,7 +286,7 @@ The router serves exports at `POST /download`. An integration building its own e
 
 ### The filter comes from the router
 
-Mount the router at the application's root and the export route after it, so every request has passed through the router's middleware, and pass the context it built as `ctx: req.context`. The export then applies the filter the router recorded:
+Mount the router at the application's root and the export route after it, so every request has passed through the router's middleware, and pass the request's state as `ctx: res.locals`. The export then applies the filter the router recorded:
 
 | Context | `getServerSideFilter` left out | `getServerSideFilter` passed |
 | --- | --- | --- |
@@ -309,7 +309,7 @@ Answer each as plain text, and log the error itself on the server. Only an `Inva
 
 Join `output` to the response with `stream.pipeline`, which aborts the response when the export fails partway and stops the export when the client disconnects. `output` emits `'error'` on any failure after the call resolves.
 
-The package does not declare `req.context` on Express's `Request` type, so a TypeScript version of this example declares that property itself.
+The package declares `res.locals.arranger` on Express's `Locals`, so a TypeScript version of this example needs no declarations of its own. An export route still passing the deprecated `ctx: req.context` keeps working where no access control is configured; with access control, the callback then sees no key recorded at the root of `res.locals` and treats the export as a request carrying no identity, by its own rule; pass `res.locals`.
 
 ```js
 import { pipeline } from 'node:stream';
@@ -335,7 +335,7 @@ const failureText = (error) => {
 
 app.post('/export', express.json(), async (req, res) => {
 	try {
-		const { contentType, output, responseFileName } = await dataStream({ ctx: req.context, params: req.body });
+		const { contentType, output, responseFileName } = await dataStream({ ctx: res.locals, params: req.body });
 
 		res.attachment(responseFileName).set('Content-Type', contentType);
 		pipeline(output, res, (error) => {

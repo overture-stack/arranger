@@ -1,4 +1,3 @@
-import { addContext } from '@overture-stack/arranger-graphql-router/utils';
 import cors from 'cors';
 import express, { json, urlencoded } from 'express';
 import morgan from 'morgan';
@@ -52,13 +51,6 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 						? [health.pingPath].some((endpoint) => req.originalUrl.includes(endpoint))
 						: res.statusCode < 400;
 				},
-			}),
-		);
-
-		app.use(
-			'/',
-			addContext({
-				enableDebug,
 			}),
 		);
 

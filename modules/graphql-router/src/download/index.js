@@ -3,6 +3,7 @@ import { finished, pipeline } from 'node:stream';
 import { Router, urlencoded } from 'express';
 
 import { ACCESS_CONTROL_FAILURE_MESSAGE, isAccessControlError } from '#accessControl/AccessControlError.js';
+import { arrangerLocalsOf, requestStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
 import noopFn from '#utils/noops.js';
@@ -96,7 +97,8 @@ const requireValidParams = (params) => {
  * @throws {InvalidExportRequestError} when `params` breaks a rule or its filter cannot be compiled.
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
  */
-export const dataStream = async ({ ctx, getServerSideFilter, params }) => {
+export const dataStream = async ({ ctx: givenContext, getServerSideFilter, params }) => {
+	const ctx = requestStateOf(givenContext);
 	const {
 		chunkSize: defaultChunkSize,
 		fileName: defaultFileName,
@@ -224,7 +226,7 @@ const download = ({ enableAdmin = false } = {}) => {
 	router.post('/', async (req, res) => {
 		try {
 			const { contentType, output, responseFileName } = await dataStream({
-				ctx: req.context,
+				ctx: requestStateOf(res.locals),
 				params: paramsFrom(req.body),
 			});
 
@@ -242,7 +244,7 @@ const download = ({ enableAdmin = false } = {}) => {
 		// TODO: introspection endpoint!!! relocate
 		router.get('/fields', async (req, res) => {
 			// all the fields, as flattened from the ES mapping
-			const { fieldsFromMapping } = req.context;
+			const { fieldsFromMapping } = arrangerLocalsOf(res);
 
 			res.json(fieldsFromMapping);
 		});
