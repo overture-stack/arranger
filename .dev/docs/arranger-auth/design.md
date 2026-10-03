@@ -156,7 +156,7 @@ Practical consequence for the Usher adapter: build one Usher adapter instance pe
 
 **Recommendation: allow both, composed with defined precedence, global AND per-catalogue, never OR.** A deployment-wide restriction and a platform-admin bypass both need a global layer, and AND is the only composition that cannot widen access. The roadmap's Auth entry already lists "Multi-catalog filter composition" as required for controlled-access multicatalogue deployments, so this is answering an existing question rather than opening a new one.
 
-Note the asymmetry with the aggregation defect in [`debt.md`](debt.md): there, two mechanisms disagree on `should` versus `must`. The lesson generalizes. For anything on an access-control path, OR is almost never the intended composition, and a mechanism that silently produces OR where AND was meant is an over-disclosure.
+For anything on an access-control path, OR is almost never the intended composition, and a mechanism that silently produces OR where AND was meant is an over-disclosure.
 
 ---
 

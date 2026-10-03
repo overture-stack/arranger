@@ -914,14 +914,14 @@ Optionally and separately, convert `opSwitch` to a `function` declaration for th
 **Fix:** Update the comment to reference `serverDetails.ts`, or remove the provenance note if it no longer adds value.
 **Standalone:** yes; one-line comment fix
 
-### Sets query filter reads `INDEX` for both `index` and `type`
+### A saved-set filter's lookup names a document type, so it finds no set
 
-**File:** `modules/graphql-router/src/middleware/buildQuery/index.js:214-215`
-**Severity:** medium (a Sets filter's ES `terms` lookup query likely targets the wrong document type)
+**File:** `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`)
+**Severity:** high (every `set_id:` filter on hits, exports and saved sets selects the wrong records)
 **Kind:** bug
-**Issue:** The `terms` filter built for a Sets-based query reads `sets[setsProperties.INDEX]` for both the `index` and `type` fields: `type: sets[setsProperties.INDEX]` should almost certainly read `sets[setsProperties.TYPE]`. Found while tracing `SetsConfigs` consumers to confirm making its `index`/`type` fields optional wouldn't introduce a new runtime risk; both fields are always populated by graphql-router's own fallback defaults regardless, so this bug predates and is unaffected by that change.
-**Fix:** Change the second field to `type: sets[setsProperties.TYPE]`. Confirm via a test that a Sets-based query actually resolves against the configured `type`, not `index`, before treating this as fixed: the current behaviour may have gone unnoticed because both default to the same value (`'arranger-sets'`) in every existing deployment and test fixture.
-**Standalone:** yes; one-line fix, but needs its own test coverage and verification against a real Sets deployment where index and type genuinely differ
+**Issue:** The `terms` lookup a `set_id:` value compiles to names `type: sets[setsProperties.INDEX]`, which is `'arranger-sets'`. Elasticsearch 7 indices are typeless, so their documents carry the type `_doc`, and a lookup naming any other type finds no document. On Elasticsearch 7.17, the version this repository's compose file runs, an `in` on a set therefore matches no records and a `not-in` on a set matches every record. The 3.0 line read the type from `ES_ARRANGER_SET_TYPE`, which a deployment could set; the GraphQL router fixes it to the index name. Reading `setsProperties.TYPE` instead would change nothing, since both default to `'arranger-sets'`. Whether OpenSearch, which removed types, rejects the parameter or ignores it is unverified.
+**Fix:** drop `type` from the lookup. The `todo` tests in `integration-tests/server/test/accessParity.test.ts` that filter records by a set pass once it lands.
+**Standalone:** yes
 
 ### Aggregation arguments are read by position, but GraphQL argument order is caller's choice
 
@@ -974,6 +974,15 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Fix:** Normalize a root-level leaf by wrapping it in `{ op: 'and', content: [leaf] }` before (or inside) `buildAggregations`, matching the hits path's tolerance. The MCP query builder could defensively wrap root leaves too, but the canonical fix belongs in Arranger.
 **Downstream workaround to delete when this is fixed (2026-08-10):** `build_sqon` now works around it. `normalizeRoot` in `apps/mcp-server/src/mcp/buildSqonTool.ts` wraps a root leaf in an `and` group on output, because `reduceSqon` unwraps single-item groups and a one-clause build would otherwise emit a bare leaf that works for `queryType: "hits"` and fails for `"aggregations"` and `"both"`. It carries a `TODO` pointing here. Delete it once `buildAggregations` handles a leaf root, and drop the corresponding assertions in `buildSqonTool.test.ts`. Until then, note that every SQON `build_sqon` emits is `and`-wrapped even for a single condition, which is why its `summary` and a hand-written equivalent SQON differ in shape while meaning the same thing.
 **Standalone:** yes; small fix in `buildAggregations` plus a unit test for a root-leaf SQON. Removing the mcp-server workaround is a separate, optional follow-up: it stays correct either way.
+
+### A field aggregation's own filter must compile with the catalogue's nested fields
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/createFieldAggregation.js` (the `term_filters` aggregation)
+**Severity:** low
+**Kind:** bug
+**Issue:** The filter a field aggregation takes as its own argument is compiled with `opSwitch({ nestedFields: [] })`, a key `opSwitch` does not read, so `nestedFieldNames` arrives undefined. A filter there carrying a pivot that names a field therefore fails with a `TypeError` instead of compiling or being refused with the pivot rule.
+**Fix:** Pass the key `nestedFieldNames`, as the aggregation path's other `opSwitch` calls do, and add a test with a pivoted filter on that argument.
+**Standalone:** yes
 
 ### `GraphQLEndpointOptions` escape hatch
 
@@ -1252,12 +1261,39 @@ Three things remain open, and the first is the one that makes the others hard to
 **Fix:** Confirm with the team whether this was intentionally kept for a future revival; if not, delete `src/admin/**` entirely (it implements the design being replaced, not anything to build on) and remove the now-unnecessary `graphql-tools` dependency. If somehow revived, note it has no access control of its own today.
 **Standalone:** yes, the deletion is self-contained; if kept, fixing `tsconfig.release.json`'s `exclude` array (add `"src/admin/**"`) is the minimum interim mitigation to stop it shipping in `dist/`.
 
-### `buildAggregations`'s `startsWith(nestedPaths)` is dead code at depth 2+, and two overlapping nested-filter mechanisms have never been reconciled
+### A nested facet's filter must keep the operators around each clause
 
-**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:96-100` (`contentsFiltered`), feeding `createFieldAggregation.js:95-105` (`:nested_filtered`); overlapping mechanism in `buildAggregations/injectNestedFiltersToAggs.js` (`:filtered`)
-**Severity:** medium. **URGENT for the Usher/ABAC work** (see below), low urgency otherwise.
-**Kind:** dead code + unreconciled design overlap
-**Issue:** `c.content?.fieldName?.startsWith(nestedPaths)` passes an _array_ to `startsWith`, which coerces it via `Array.prototype.join(',')`. Confirmed by execution, the behaviour is depth-dependent:
+**File:** `modules/graphql-router/src/middleware/buildAggregations/getNestedSqonFilters.js`, `injectNestedFiltersToAggs.js` (`<path>:filtered`)
+**Severity:** medium
+**Kind:** correctness
+**Issue:** The filter a nested facet applies at its level must mean what the client filter means there, so each clause on a nested field must keep the `not`, `and` or `or` around it. Under `not[in(donors.specimens.tissue, ['Solid'])]` the specimen facets must count the matching records' specimens, rather than narrow them to Solid ones and come back empty.
+**Fix:** Build each nested path's filter as the client filter's subtree for that path, keeping its combinations, instead of collecting leaves into one `should`. Cover it with real-engine cells for `not`, `and` and `or` around specimen-level clauses.
+**Standalone:** yes
+
+### A nested facet's term filters must follow the client filter's structure
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js` (`contentsFiltered`, `termFilters`), feeding `createFieldAggregation.js` (`:nested_filtered`)
+**Severity:** medium
+**Kind:** correctness
+**Issue:** The term filters a nested facet applies must narrow it as the client filter means. They must reach a clause inside a group, and follow the root's operator: under a root `or` of `in(donors.donor_id, ['D1'])` and `in(donors.gender, ['F'])`, the donors facet must not require one donor to be both.
+**Fix:** Derive the term filters from the client filter's tree rather than from the root's direct children joined with `must`, likely sharing the subtree builder the entry above needs.
+**Standalone:** yes
+
+### Several clauses on one nested level must narrow a facet only as far as the filter means
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/createFieldAggregation.js` (`:nested_filtered`, `bool.must`); `injectNestedFiltersToAggs.js` (`<path>:filtered`, `bool.should`)
+**Severity:** medium
+**Kind:** correctness
+**Issue:** Without a pivot, two clauses on the same nested level may each be met by a different item, so a facet on that level must not require one item to meet both. At one level of nesting both mechanisms fire on the same clauses, the injector's `should` wrapping the term filters' `must`. So under `and[in(donors.donor_id, ['D1']), in(donors.gender, ['F'])]`, a record whose D1 donor and female donor are different items matches, but adds no donor to the donors facet.
+**Fix:** Decide what a facet on that level counts for several unpivoted clauses, then let one mechanism own it and delete the other. Cover it with a fixture holding two clauses on one level, which no current fixture has.
+**Standalone:** no; it settles together with the two entries above, which decide what each mechanism applies.
+
+### A facet's term-filter selection must compare its nested paths, not a joined list of them
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js` (`contentsFiltered`)
+**Severity:** low
+**Kind:** correctness
+**Issue:** `c.content?.fieldName?.startsWith(nestedPaths)` passes an _array_ to `startsWith`, which joins it with commas, so the selection depends on depth. Confirmed by execution:
 
 | nesting depth  | coerces to                              | effect                                                                                                              |
 | -------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -1265,7 +1301,7 @@ Three things remain open, and the first is the one that makes the others hard to
 | 1              | `'participants'`                        | correct, **by coincidence**: a single-element array stringifies to exactly its element                              |
 | 2+             | `'participants,participants.diagnoses'` | never matches a real field name, so `termFilters` is always empty and the `:nested_filtered` wrapper is never built |
 
-**Corrected severity, and this is the important part.** An earlier version of this entry claimed the depth-2 case silently drops nested-filter exclusion, implying wrong aggregation counts. That is **not** what happens, verified directly: `injectNestedFiltersToAggs` independently applies the same nested SQON filters via a `<path>:filtered` wrapper, and it works correctly at depth 2+. So counts are right today; the `startsWith` expression is simply dead at the depth where it would matter.
+It also has no dot boundary, so a singly nested facet on `donors` selects a clause on `donorsX.y`. At depth 2+ only `injectNestedFiltersToAggs` applies clauses at that level, through `<path>:filtered`, within the limits of the first entry above.
 
 **Why the obvious fix is not safe, confirmed empirically rather than argued.** Replacing the expression with `nestedPaths.some((path) => fieldName?.startsWith(path))` was applied and tested: the `buildAggregations` suite went from 10/10 to 7/10, failing exactly tests 6, 7, and 8, the three depth-2 sibling-filter cases. Dumping the real output shows why: both wrappers now fire, nested one inside the other, applying the same field filter twice. That alone would be merely redundant, but the two mechanisms do not use the same boolean semantics:
 
@@ -1273,10 +1309,8 @@ Three things remain open, and the first is the one that makes the others hard to
 - `createFieldAggregation`'s `:nested_filtered` builds `bool.must` (AND across sibling filters)
 
 With exactly one sibling filter those are equivalent, which is why the naive fix looks harmless on the existing fixtures. With two or more sibling filters they are not, so "fixing" the coercion silently changes query semantics from OR to AND-on-top-of-OR for multi-filter depth-2 aggregations. That is a behavioural change to filtered aggregation counts, not a typo repair.
-**Fix:** Needs a design decision before any code change: which mechanism owns nested-filter application at depth 2+, and is `should` or `must` the intended semantics for multiple sibling filters on the same nested path? Most likely one of the two paths should be deleted outright rather than both being made to work. Whichever is kept needs a test with **two** sibling filters on the same nested path, which no current fixture has; every existing depth-2 test uses exactly one, which is precisely why the overlap went unnoticed.
-**Standalone:** no. Confirmed unsafe as a drop-in change; the empirical result above is the evidence, not a caution.
-
-**Why this is urgent specifically for Usher/ABAC:** the Usher adapter translates Usher grants into server-side SQON filters, and its correctness guarantee is that a grant-derived filter is actually applied to both records _and_ aggregate counts. That guarantee runs straight through this code. Two overlapping mechanisms with different boolean semantics, one of them dead at the depth real clinical schemas use, is not a foundation to build access control on: an access-control filter that becomes OR where AND was intended is an over-disclosure. Reconcile this before the Usher adapter's filter-injection point is designed, not after. See [`.dev/docs/arranger-auth/usher-adapter.md`](docs/arranger-auth/usher-adapter.md) and roadmap § Auth and field/record-level access control.
+**Fix:** Select by the facet's innermost nested path with a dot boundary, once the entry above has decided which mechanism owns filtering at that level; selecting at depth 2+ before then applies the same clauses twice with different operators. The minimal fix for a facet's deeper clauses, compiling each term filter with the nested paths below the facet's innermost path, leaves this selection alone on purpose.
+**Standalone:** no; it waits on the entry above.
 
 ### Legacy wildcard-in-`IN` filter only converts the first `*` to a regex wildcard
 
@@ -1398,16 +1432,25 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 
 ### The aggregation path resolves saved sets outside the catalogue's own sets configuration
 
-**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`; `modules/graphql-router/src/schema/index.ts` (`setsMapping`)
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`; `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`); `modules/graphql-router/src/schema/index.ts` (`setsMapping`)
 **Severity:** high for deployments with access control; for the rest, wrong aggregation counts in multi-catalogue deployments
 **Kind:** correctness; access-control prerequisite
-**Scope:** `resolveSetsInSqon` has exactly one caller, `resolveAggregations.ts`. Record fetches go through `resolveSets.js`, which takes `setsIndex` per catalogue correctly.
+**Scope:** `resolveSetsInSqon` has exactly one caller, `resolveAggregations.ts`. Saving a set goes through `resolveSets.js`, which takes `setsIndex` per catalogue correctly. A `set_id:` filter on hits, exports and saved sets does not: the lookup `getSetFilter` compiles names the fallback sets index as well.
 **Issue:** A set's identifiers are drawn from one catalogue and mean nothing against another, so a set belongs to the catalogue that produced it. The aggregation path resolves sets against the fallback sets configuration rather than the catalogue's own, behind a standing `// TODO: trickle from passed in configs`. With per-catalogue sets indices, sets therefore resolve to empty on aggregations, silently. With one shared index, a set's identifiers can be applied to a catalogue they were never drawn from. And `setsMapping` records the documentType, which is not unique across catalogues, and no catalogue identifier, so a shared index cannot say which catalogue a set came from.
-**Not an abandoned design; a workaround that outlived its reason.** The file's header says it exists to work around elastic/elasticsearch#27782 in Elasticsearch 6.2, removable once 6.3 shipped, and carries its own `// TODO: evaluate this` against that header. This repository now depends on `@elastic/elasticsearch` ^7.17.14 and `@opensearch-project/opensearch` ^3.6.0. Its oldest touch is 2018, when one server meant one catalogue and a single sets index was per-catalogue by construction. The per-catalogue channel was built later and is threaded through `arrangerRoutes`, `createSetsType`, `initializeSets`, `saveSet` and `resolveSets.js`; this file is the only place that bypasses it.
-**Fix:** delete the workaround and route aggregations through the same per-catalogue resolution as every other path, which fixes per-catalogue deployments outright. A shared index would also need a catalogue identifier in `setsMapping` plus a reindex; rather than build that, deployments with access control use per-catalogue sets indices.
+**Not an abandoned design; a workaround that outlived its reason.** The file's header says it exists to work around elastic/elasticsearch#27782 in Elasticsearch 6.2, removable once 6.3 shipped, and carries its own `// TODO: evaluate this` against that header. This repository now depends on `@elastic/elasticsearch` ^7.17.14 and `@opensearch-project/opensearch` ^3.6.0. Its oldest touch is 2018, when one server meant one catalogue and a single sets index was per-catalogue by construction. The per-catalogue channel was built later and is threaded through `arrangerRoutes`, `createSetsType`, `initializeSets`, `saveSet` and `resolveSets.js`; this file and `getSetFilter` are the two places that bypass it.
+**Fix:** delete the workaround so that aggregations use the same compiled set filter as hits, and give `getSetFilter` the catalogue's sets index in place of the fallback, which fixes per-catalogue deployments outright. A shared index would also need a catalogue identifier in `setsMapping` plus a reindex; rather than build that, deployments with access control use per-catalogue sets indices.
 **Requirement that lands with the fix:** every path that reads or expands a set resolves it only for its owner, and the owner comes from the request's trusted context, the same context `getServerSideFilter` receives, never from a client-supplied argument. With no identity in the context, behaviour is unchanged. Scheduled as [auth roadmap Phase 1 item 8](docs/arranger-auth/roadmap.md).
 **Standalone:** the resolution fix, yes; the ownership requirement is part of Phase 1 item 8.
 **Relates to:** the Usher integration, which defines a catalogue as the scope within which a field name resolves, explicitly not a governance boundary; see that project's glossary entry for Catalogue.
+
+### Aggregations fail on any filter referencing a saved set
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js` (`resolveSetIdsFromEs`)
+**Severity:** high (every facet request filtering by a set fails)
+**Kind:** bug; regression
+**Issue:** `resolveSetIdsFromEs` reads `hits` from the top of the search response. Since the SearchClient change (#1021), `esSearch` returns the whole response with its result under `body`, where every other caller reads it; this one was not updated. An aggregation request whose filter holds a `set_id:` value therefore fails with `Cannot read properties of undefined (reading 'hits')`, with or without access control, in every graphql-router 1.0.0 release candidate.
+**Fix:** read `body.hits`, or delete the workaround as the entry above proposes, which removes this caller. The `todo` facet test in `integration-tests/server/test/accessParity.test.ts` passes once it lands.
+**Standalone:** yes
 
 ### Display labels on a field that access control keys on must be narrowed per principal
 
@@ -1460,7 +1503,7 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Severity:** low
 **Kind:** dependency hygiene
 **Issue:** `tar-stream` and `@types/tar-stream` served only the removed multi-file export.
-**Fix:** Remove both and regenerate the lockfile.
+**Fix:** Remove both and regenerate the lockfile, unless the roadmap's exports holding several files come first: those need an archive library, so keep or replace it there instead.
 **Standalone:** yes
 
 ### Route tests using `supertest(app)` can collide with other local listeners
@@ -1470,6 +1513,51 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Kind:** test reliability
 **Issue:** `supertest(app)` binds an ephemeral port on every interface and connects to `127.0.0.1`, so another local process listening on the same port number there can answer instead, giving an intermittent 404 or an empty body. `download/index.test.js` already binds its servers to `127.0.0.1`.
 **Fix:** Bind test servers to `127.0.0.1` the same way, through one shared helper.
+**Standalone:** yes
+
+### A null in a value list must never match a document by its field being the empty string
+
+**File:** `modules/graphql-router/src/middleware/buildQuery/` (value coercion for clause value lists)
+**Severity:** medium
+**Kind:** correctness
+**Issue:** A `null` in a clause's value list must never match a document whose field holds the empty string.
+**Fix:** Compile a `null` in a value list to what its clause means without coercing it to a string, deciding that meaning with Usher first, since a deployment's deny may rely on such a clause matching nothing.
+**Standalone:** yes
+
+### A fault in the deployment's own filter must never be answered as the client's
+
+**File:** `modules/graphql-router/src/utils/getAllData.js` (`compileQuery`); the GraphQL read paths' resolvers
+**Severity:** low
+**Kind:** error attribution
+**Issue:** When the compiler refuses the server-side filter rather than the client's, such as a pivot naming no nested field, the answer must be an access-control failure with the configuration text, not a `400` naming a rule the client never sent.
+**Fix:** Compile the server-side filter on its own before composing it with the client's, and turn its compiler refusal into an `AccessControlError`, on exports and GraphQL alike.
+**Standalone:** yes
+
+### An export sorted on a field the catalogue lacks must be answered as the request's fault
+
+**File:** `modules/graphql-router/src/utils/getAllData.js` (`requireSort`, the search's sort); `modules/graphql-router/src/download/index.js`
+**Severity:** low
+**Kind:** error attribution
+**Issue:** A sort naming a field the catalogue does not have must be refused with `400` and the rule it broke, as other invalid requests are, rather than reaching the search engine and being answered with the server-fault text.
+**Fix:** Check each sort field against the catalogue's fields before searching, or answer the search engine's refusal of a sort as an invalid request.
+**Standalone:** yes
+
+### A nested not-in with special values beside plain ones must be satisfied by one nested item
+
+**File:** `modules/graphql-router/src/middleware/buildQuery/normalizeFilters.js` (the special-value split); `index.js` (`getGroupFilter`)
+**Severity:** medium
+**Kind:** correctness
+**Issue:** A `not-in` on a nested field whose value list mixes plain and special values must match a record only when one nested item satisfies every part.
+**Fix:** Join the split parts with `and` under a pivot on the field's nested path, so they compile into one nested query; part of the pivot follow-up, with a fixture record holding a nested item that lacks the field.
+**Standalone:** no, it depends on the pivot fix
+
+### A field's No Data facet bucket and in(field, ['__missing__']) must count the same records
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/`; `modules/graphql-router/src/middleware/buildQuery/index.js` (the missing-value filter)
+**Severity:** low
+**Kind:** correctness
+**Issue:** A field's No Data facet bucket and `in(field, ['__missing__'])` must count the same records, including those with no nested items at all.
+**Fix:** Compare the two on a nested field with records holding no nested items, and correct whichever side disagrees with the agreed meaning.
 **Standalone:** yes
 
 ## modules/charts

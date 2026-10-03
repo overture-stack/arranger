@@ -494,6 +494,12 @@ Real scope:
 
 Originates from [tech-debt: `DownloadButton`'s exporter customization reads as `'saveTSV'`-only, but accepts any function](tech-debt.md#downloadbuttons-exporter-customization-reads-as-savetsv-only-but-accepts-any-function); raised alongside `onExport` but scoped and prioritized separately since it touches the server and needs genuinely new CSV-escaping logic, not just a client-side change.
 
+### Exports holding several files
+
+_Priority: low. No use case yet. `modules/graphql-router`._
+
+Let one export request carry several files and answer them as one archive. The rules that hold for one file hold for each: every file in the request is validated before any output, so a request with one invalid file is refused whole; each file's filter is composed with the router's access-control filter; and the archive streams with backpressure and stops paging when the client disconnects. Until then, a request holding more than one file is refused with "files must be an array holding exactly one file object: this version exports one file per request." The archive format and library are open; `tar-stream`, still a dependency, is one candidate.
+
 ## Components
 
 The `modules/components` package carries significant legacy weight and has accumulated several years of organic growth. The items below can be approached incrementally; none require a big-bang rewrite; but the Emotion replacement decision should be made before extending the theming infrastructure.

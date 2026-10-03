@@ -64,7 +64,7 @@ Not adopted: the zod-based config in `apps/mcp-server`, which remains the better
 
 **P0-f. Add per-request structured logging.** Unchanged from the original list: denial and bypass events need somewhere to land, and the shape should exist before enforcement does.
 
-**Then** the original Phase 0 items that remain: reconcile the two nested-filter mechanisms (`should` vs `must`), and the download-limit miswiring.
+**Then** the original Phase 0 item that remains: the download-limit miswiring. The two nested-filter mechanisms in aggregations are not an access-control path (see below), so reconciling them is facet correctness, tracked in `.dev/tech-debt.md`.
 
 ### Tested and found safe, so nobody re-investigates them
 
@@ -75,6 +75,7 @@ Results from the 2026-08-18 sweep that came back clean. Recorded because a negat
 - **`maxDepthRule` and `maxAliasesRule` fall back to safe defaults** when unset. Note this is about their defaults only; `maxDepth` itself is separately bypassable across fragments, tracked in `.dev/tech-debt.md`.
 - **Local federated nodes do carry the filter.**
 - **`getAllData`'s `maxRows` capping works** against the runtime config shape.
+- **The two nested-filter mechanisms in aggregations never see the access filter** (2026-10-02). Both read the client's filter before composition, and the access filter reaches facets only through the composed query and the re-applied server-side query, which compile with correct nesting at any depth. Checked on both engines with an access field nested two deep, and pinned by the nested-facet cells in `integration-tests/server/test/accessParity.test.ts`.
 - **`getDefaultServerSideFilter`'s match-all is a deliberate default**, not a silent failure, though it shares a shape with a genuine fail-open and that is why P0-a had to make the two distinguishable.
 
 ---
@@ -107,7 +108,7 @@ Phase 0 is worth doing even if Usher were cancelled, which is the test for wheth
 
 <!-- Item 7 is done and removed. Items are cited by number elsewhere, so the numbers are never reused. -->
 
-8. **Bind saved sets to their catalogue and their owner on every path.** Route aggregation-path set resolution through the catalogue's own sets configuration, deleting the Elasticsearch 6.2 workaround that bypasses it, and require per-catalogue sets indices wherever access control is on. Every path that reads or expands a set resolves it only for its owner, taken from the request's trusted context rather than from a client-supplied argument; with no identity in the context, behaviour is unchanged. Canonical: `.dev/tech-debt.md` § graphql-router, "The aggregation path resolves saved sets outside the catalogue's own sets configuration."
+8. **Bind saved sets to their catalogue and their owner on every path.** Every path that reads or expands a set resolves it through the catalogue's own sets configuration: a filter on records, aggregations or an export, and saving a set from a filter. That includes deleting the Elasticsearch 6.2 workaround on the aggregation path, and requiring per-catalogue sets indices wherever access control is on. Each of those paths resolves a set only for its owner, taken from the request's trusted context rather than from a client-supplied argument; with no identity in the context, behaviour is unchanged. Canonical: `.dev/tech-debt.md` § graphql-router, "The aggregation path resolves saved sets outside the catalogue's own sets configuration."
 9. **Give configuration a per-request shaping hook.** The configs resolver takes the request context and passes the configuration through a deployment-supplied hook, identity by default, so labels on a field that access control keys on can be narrowed per principal. Which values a principal reaches comes from their grants, so the narrowing itself lands with the Usher adapter; until then the operator rule is not to label such a field. This is the same hook the configuration shaping in [`usher-adapter.md`](usher-adapter.md) builds on. Canonical: `.dev/tech-debt.md` § graphql-router, "Display labels on a field that access control keys on must be narrowed per principal."
 
 After Phase 1 the seam is safe for *any* consumer, Usher or otherwise. That is deliberate: nothing in Phases 0 or 1 is Usher-specific, so none of it is wasted if the Usher design changes.

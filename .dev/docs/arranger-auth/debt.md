@@ -44,11 +44,6 @@ Nothing on the filter-compilation path (`compileFilter`/`buildQuery`) carries an
 
 **The nesting half of this entry is closed and the reason it closed is worth keeping.** It read as one defect with two mechanisms, and only one was fixable in the compiler: whether a clause is wrapped as `nested` is decided by a list that is now derived from the mapping at every call site, `getAllData` included, and absent rather than empty is refused. Cardinality is not fixable the same way, because Elasticsearch has no array type and the mapping therefore carries no signal to validate against. So what remains is a **deployment precondition** rather than a property the software can assert, which is a different kind of blocker from the one this entry originally described and should be resolved with Usher as a contract question rather than closed here by a code change.
 
-### Two overlapping nested-filter mechanisms disagree on boolean semantics
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router, "`buildAggregations`'s `startsWith(nestedPaths)` is dead code at depth 2+..."
-**Why it blocks Usher:** aggregate counts are half the enforcement surface, and this is the code that filters them. `injectNestedFiltersToAggs` builds `bool.should` (OR) while `createFieldAggregation`'s `:nested_filtered` builds `bool.must` (AND), and the latter is dead at the nesting depth real clinical schemas use. An access filter that resolves to OR where AND was intended is an over-disclosure. Confirmed empirically that the obvious one-line fix changes query semantics rather than repairing a typo, so this needs a design decision (which mechanism owns depth-2, which semantics are intended) plus a two-sibling-filter fixture, which no existing test provides.
-
 ### No structured request logging exists
 
 **Canonical entry:** `.dev/roadmap.md` § Structured request logging as a prerequisite for ABAC

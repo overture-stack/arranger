@@ -320,11 +320,13 @@ half is absent or clause-less.
 
 **Any mechanism that can put `OR` between the enforcement filter and a principal-supplied clause is a
 principal-controlled bypass, whatever depth it occurs at.** That is why this line is written here rather
-than left to the Usher adapter: the audit found one, `buildAggregations`'s two nested-filter mechanisms
-disagreeing on `should` versus `must`, and a reader who knows only that a filter is "applied" has no
-way to tell that a disagreement about a boolean operator three levels down is an access-control
-defect. It is asserted by the aggregation fixtures, and a contract whose most important clause exists
-only in a test is a contract nobody can read.
+than left to the Usher adapter: a reader who knows only that a filter is "applied" has no way to tell
+that a boolean operator three levels down is an access-control matter. The aggregation path is where
+to look first, since it compiles nested filters by mechanisms of its own. Those read only the client's
+filter, and the enforcement filter reaches facets through the composed query alone, which the
+nested-facet cells in `integration-tests/server/test/accessParity.test.ts` pin. A contract whose most
+important clause exists only in a test is a contract nobody can read, which is why it is stated here
+as well.
 
 ### Step 5 replaces a 404 on a missing entry, and the difference is not cosmetic
 
@@ -718,6 +720,14 @@ than a narrower one: no records to list, so no table, and a headline count narro
 that principal may use. Arranger's configuration cannot express a component's absence today, for any
 component. No first-release principal holds `count` alone, so what is asked for is the design, not the
 implementation.
+
+**This is the per-principal answer to [issue #846](https://github.com/overture-stack/arranger/issues/846)**,
+which asks for an aggregations-only mode. A deployment-wide switch would give everyone the same
+counts-only page; a grant carrying `count` without `view` gives it to the principals it applies to,
+and leaves everyone else's page as it is. So the issue stays open until a principal holding `count`
+alone is served this page, with hits withheld and counts computed over what that principal may count,
+which needs the third widening in "Both paths prune from one field set" above. `count` permits counts
+only, never `min`, `max` or `top_hits`, per Usher's capability vocabulary.
 
 
 ## Integration point
