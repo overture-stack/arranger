@@ -30,7 +30,9 @@ const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(targetTheme: ThemeOp
 		return targetTheme;
 	}
 
-	return mergeWith({ ...targetTheme }, customTheme, replaceArrays);
+	// Into a fresh object: lodash writes into the first argument's nested objects, so merging into the
+	// target, or a shallow copy of it, would change themes other providers share, Arranger's base included.
+	return mergeWith({}, targetTheme, customTheme, replaceArrays);
 };
 
 // Treats any two function values as equal, regardless of identity. An inline theme object (the
@@ -45,19 +47,58 @@ const treatFunctionsAsEqual = (a: unknown, b: unknown) => (typeof a === 'functio
 
 export const isThemeEqual = (a: unknown, b: unknown): boolean => isEqualWith(a, b, treatFunctionsAsEqual);
 
+// What the fold applies a caller's contribution to: the base, then every contribution before it.
+const foldInputFor = (
+	contributions: Record<string, ThemeContribution>,
+	callerKey: string,
+	base: ThemeOptions,
+): ThemeOptions => {
+	const keys = Object.keys(contributions);
+	const position = keys.indexOf(callerKey);
+
+	return mergeThemes(
+		base,
+		(position < 0 ? keys : keys.slice(0, position)).map((key) => contributions[key]),
+	);
+};
+
+// Theme functions are compared by what they produce from the input the fold gives them, since a caller
+// may build a new function on every render: equal results keep the update skipped, and a result that
+// follows changed state, such as a light or dark toggle, registers as the change it is.
+const isContributionEqual = (stored: unknown, incoming: unknown, inputOf: () => ThemeOptions): boolean => {
+	if (typeof stored === 'function' && typeof incoming === 'function') {
+		const input = inputOf();
+
+		return isThemeEqual(stored(input), incoming(input));
+	}
+
+	return isThemeEqual(stored, incoming);
+};
+
 /**
  * Replaces a caller's registry entry wholesale rather than merging into it, so that caller's next
  * contribution correctly reflects removed keys, shrunk arrays, or any other way its value got
  * smaller, not just bigger. Returns the exact same `contributions` reference when nothing changed
  * for this caller, so a consumer using this as a React state updater gets a correct bail-out
  * (React skips the re-render when a state updater returns the same reference it was given).
+ *
+ * A contribution that is a theme function is compared by applying the stored and the incoming function to
+ * the theme the fold gives it: `base`, then every contribution before this caller's. Theme functions must
+ * be pure, returning the same theme for the same input. One whose result changes between calls, from a
+ * clock, a random value or a counter, never compares equal, so it updates the theme on every render and
+ * re-renders without end.
+ *
+ * @param base the provider's base theme, which the fold starts from.
  */
 export const updateThemeContribution = (
 	contributions: Record<string, ThemeContribution>,
 	callerKey: string,
 	partialTheme: ThemeContribution,
+	base: ThemeOptions = emptyObj,
 ): Record<string, ThemeContribution> =>
-	isThemeEqual(contributions[callerKey], partialTheme) ? contributions : { ...contributions, [callerKey]: partialTheme };
+	isContributionEqual(contributions[callerKey], partialTheme, () => foldInputFor(contributions, callerKey, base))
+		? contributions
+		: { ...contributions, [callerKey]: partialTheme };
 
 // export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>
 export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>

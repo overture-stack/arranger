@@ -133,3 +133,60 @@ describe('registry + fold together (the actual bug this file exists to fix)', ()
 		expect(secondTheme.components?.Table?.defaultSorting).toBeUndefined();
 	});
 });
+
+describe('updateThemeContribution with a theme function', () => {
+	const base = { components: { Table: { background: 'white' } } };
+
+	it('counts a rebuilt function with an equal result as unchanged, so one created on every render causes no loop', () => {
+		// Given a stored theme function, and a new function instance producing an equal theme
+		const stored = (theme: any) => ({ ...theme, components: { Table: { hideLoader: true } } });
+		const rebuilt = (theme: any) => ({ ...theme, components: { Table: { hideLoader: true } } });
+		const contributions = { caller: stored };
+
+		// When the rebuilt function is contributed
+		const updated = updateThemeContribution(contributions, 'caller', rebuilt, base);
+
+		// Then nothing changes: the same reference comes back, letting React skip the update
+		expect(updated).toBe(contributions);
+	});
+
+	it('counts a function whose result differs as a change, so a theme following state takes effect', () => {
+		// Given a stored function hiding the loader, and a new one showing it
+		const hiding = (theme: any) => ({ ...theme, components: { Table: { hideLoader: true } } });
+		const showing = (theme: any) => ({ ...theme, components: { Table: { hideLoader: false } } });
+
+		// When the new one is contributed
+		const updated = updateThemeContribution({ caller: hiding }, 'caller', showing, base);
+
+		// Then it replaces the stored one
+		expect(updated.caller).toBe(showing);
+	});
+});
+
+describe('mergeThemes leaving its target untouched', () => {
+	it('leaves the target theme unchanged when merging a nested change into it', () => {
+		const target = { components: { Table: { background: 'white' } } };
+
+		const merged = mergeThemes(target, { components: { Table: { hideLoader: true } } });
+
+		expect(merged.components?.Table).toEqual({ background: 'white', hideLoader: true });
+		expect(target).toEqual({ components: { Table: { background: 'white' } } });
+	});
+});
+
+describe('updateThemeContribution comparing a theme function as the fold applies it', () => {
+	it('counts functions differing only on a key an earlier contribution sets as a change', () => {
+		// Given a base without the key, a sibling contribution that sets it, and two functions reading it
+		const base = {};
+		const sibling = { accent: { dark: '#000', light: '#fff' } };
+		const dark = (theme: any) => ({ ...theme, accentUsed: theme.accent?.dark });
+		const light = (theme: any) => ({ ...theme, accentUsed: theme.accent?.light });
+
+		// When the light function replaces the dark one, which the fold applies after the sibling
+		const contributions: Record<string, any> = { sibling, caller: dark };
+		const updated = updateThemeContribution(contributions, 'caller', light, base);
+
+		// Then it is stored, though both give the same result applied to the base alone
+		expect(updated.caller).toBe(light);
+	});
+});

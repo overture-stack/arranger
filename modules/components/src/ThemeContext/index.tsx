@@ -78,9 +78,15 @@ export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): T
 
 const useAggregableTheme = (baseTheme: ThemeOptions): readonly [ThemeOptions, ThemeAggregatorFn] => {
 	const [contributions, setContributions] = useState<Record<string, ThemeContribution>>(emptyObj);
+	// Read by the stable callback below, which children call from their own effects, before this
+	// provider's effects would run, so it is kept current during render.
+	const baseThemeRef = useRef(baseTheme);
+	baseThemeRef.current = baseTheme;
 
 	const aggregateTheme = useCallback<ThemeAggregatorFn>((partialTheme, callerKey = ANONYMOUS_CALLER_KEY) => {
-		setContributions((previousContributions) => updateThemeContribution(previousContributions, callerKey, partialTheme));
+		setContributions((previousContributions) =>
+			updateThemeContribution(previousContributions, callerKey, partialTheme, baseThemeRef.current),
+		);
 	}, []);
 
 	const theme = useMemo(
