@@ -148,12 +148,20 @@ const buildAggregations = ({
 		const rawFieldPath = rawPathsByGraphqlFlatName[fieldKey] ?? fieldName;
 		const esFieldName = applyNestingPrefix(rawFieldPath, nestingPrefix);
 		const nestedPaths = getNestedPathsInField({ fieldName: esFieldName, nestedFieldNames });
+		const innermostPath = nestedPaths.at(-1);
 		const contentsFiltered = (normalizedSqon?.content || []).filter((c) =>
 			aggregationsFilterThemselves
 				? c.content?.fieldName?.startsWith(nestedPaths)
 				: c.content?.fieldName?.startsWith(nestedPaths) && c.content?.fieldName !== esFieldName,
 		);
-		const termFilters = contentsFiltered.map((filter) => opSwitch({ nestedFieldNames: [], filter, setsIndex }));
+		// Term filters apply inside the facet's innermost nested scope, so only a level below it still
+		// needs its own nested query.
+		const pathsBelowFacet = innermostPath
+			? nestedFieldNames.filter((path) => path.startsWith(`${innermostPath}.`))
+			: [];
+		const termFilters = contentsFiltered.map((filter) =>
+			opSwitch({ nestedFieldNames: pathsBelowFacet, filter, setsIndex }),
+		);
 
 		const fieldAggregation = createFieldAggregation({
 			esFieldName,
