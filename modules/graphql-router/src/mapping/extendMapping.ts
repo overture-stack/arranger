@@ -21,7 +21,7 @@ import { toQuery } from './utils/columnsToGraphql.js';
  * Prefers a direct raw-path match; falls back to un-escaping the legacy `__`-flattened form some
  * existing `facets.json` files still use for nested fields, from before configs could reference
  * them by their natural raw path the same way `extended.json`/`table.json` already do.
- * TODO: remove the legacy `__` fallback in 3.2, once existing `facets.json` files have migrated.
+ * TODO: remove the deprecated legacy `__` fallback once existing `facets.json` files have migrated.
  */
 const matchesExtendedField = (aggFieldName: string, extendedFieldName: string): boolean =>
 	extendedFieldName === aggFieldName || extendedFieldName === aggFieldName.replace(/__/g, '.');

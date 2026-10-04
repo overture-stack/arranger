@@ -578,6 +578,15 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Fix:** Refuse or floor a zero or negative interval at the config seam, with a warning naming the value.
 **Standalone:** yes
 
+### A missing configuration directory starts the server on the environment alone, while an empty one refuses to start
+
+**Files:** `apps/search-server/src/configs/fromFiles/fileHandlers.ts` (`readDirectoryAsync`), `apps/search-server/src/configs/index.ts`
+**Severity:** medium (a misplaced mount can serve a catalogue missing its configuration instead of failing at startup)
+**Kind:** inconsistent startup behaviour
+**Issue:** When `CONFIGS_PATH` resolves to a directory that does not exist, the server warns that no configuration directory was found, builds one catalogue, `fromEnv`, from the environment alone, and starts. With `ES_INDEX` and `DOCUMENT_TYPE` set, that catalogue can load and serve without its extended, table or facets configuration. When the directory exists but holds no JSON file or subdirectory, the server refuses to start with "No catalogues configured". The two mistakes are equally likely and get opposite answers.
+**Fix:** answer both the same way, deliberately. Refusing to start, naming the resolved path, is the safer choice, since a misplaced mount then fails where an operator sees it. The fallback to the 3.0 configuration location applies first, so this concerns a path that names no directory in either place.
+**Standalone:** yes
+
 ## docs [URGENT: reminder every session]
 
 ### Inconsistent user-facing terminology: directory/folder, configuration/settings, docs prose
@@ -1946,6 +1955,15 @@ This is the inverse of the phantom-dependency audit, which looked only for impor
 **Fix:** Re-export sqon's own types instead, keeping temporary aliases if consumers import these names.
 **Standalone:** yes
 
+### `CurrentSQON` and `SQONView` warn that they "will be deprecated in a future Arranger version"
+
+**File:** `modules/components/src/SQONViewer/index.jsx` (`CurrentSQON`)
+**Severity:** low
+**Kind:** deprecation wording
+**Issue:** Both are old names of `SQONViewer`, renamed in 2022, and their console warning says the old name "will be deprecated in a future Arranger version", which is the one form the deprecation rule excludes (agentics `conventions/documentation.md` § A breaking change ships its migration path). A deprecation says what is deprecated and what replaces it, links its migration section by a URL pinned to the release tag, and never says when it goes. The components package has no version a browser bundle can read, so the pinned link needs one first.
+**Fix:** Give the components package a build-time version constant. Then the warning says `CurrentSQON` and `SQONView` are deprecated in favour of `SQONViewer`, links a migration-guide section saying the same, and warns once rather than on every render.
+**Standalone:** yes
+
 ### `modules/components` has no DOM-level tests, so effect and unmount wiring goes untested
 
 **Files:** `modules/components/jest.config.ts`, `modules/components/src/ThemeContext/index.tsx`
@@ -2123,6 +2141,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Kind:** logging
 **Issue:** `stringToNumber` interpolates the raw string into its warning without escaping and without an event name, unlike `stringToBool`. Both warnings name the value but not the variable it came from, so an operator has to work out which setting is wrong.
 **Fix:** Render the value with the same escaping as `stringToBool`, add an event name, and accept an optional variable name for the warning, passed from `localEnvs.ts`.
+**Standalone:** yes
+
+### `ExtendedConfigs` types `isArray` and `unit` as always set, while the router fills `null` for an undeclared field
+
+**Files:** `modules/types/src/configs/index.ts` (`ExtendedConfigs`), `modules/graphql-router/src/mapping/extendMapping.ts` (`extendFields`)
+**Severity:** low
+**Kind:** type accuracy
+**Issue:** `extendFields` defaults `isArray` and `unit` to `null` for a field no configuration declares, since undeclared is not a confirmed single value, and `ColumnConfigs['isArray']` is already `boolean | null`. `ExtendedConfigs` still types `isArray` as `boolean` and `unit` as `string`, so TypeScript code reading the router's extended fields is told `null` cannot occur, and a falsy check then reads an undeclared field as single-valued, the reading the third state exists to prevent.
+**Fix:** type both as `| null`, matching what the router returns. Consumers' compiles then flag every unchecked read, so the change ships with a line in the migration guide's `is-array-null` section.
 **Standalone:** yes
 
 ## release / publishing
