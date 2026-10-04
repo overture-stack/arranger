@@ -137,6 +137,7 @@ const buildSchema = (total) => buildCountSchema(() => total);
 
 const buildConfigs = ({
 	allowCustomMaxRows = false,
+	configuredChunkSize,
 	maxRows = 100,
 	nestedFieldNames = [],
 	nestingPrefix,
@@ -152,6 +153,7 @@ const buildConfigs = ({
 		[configRootProperties.DOWNLOADS]: {
 			[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: allowCustomMaxRows,
 			[downloadProperties.MAX_ROWS]: maxRows,
+			...(configuredChunkSize !== undefined && { [downloadProperties.STREAM_BUFFER_SIZE]: configuredChunkSize }),
 		},
 		...(nestingPrefix ? { [configOptionalProperties.NESTING_PREFIX]: nestingPrefix } : {}),
 	},
@@ -589,6 +591,39 @@ suite('getAllData', () => {
 
 			// Then all 150 arrive
 			assert.equal(rows.length, 150);
+		});
+	});
+
+	suite('the page size', () => {
+		const pageSizesOf = async ({ chunkSize, configuredChunkSize }) => {
+			const engine = createPagingEngine({ documents: numberedDocuments(7) });
+			const configs = buildConfigs({ configuredChunkSize, maxRows: 0 });
+			await collectStream(
+				await getAllData({
+					...exportEverything,
+					chunkSize,
+					ctx: contextFor(engine, { configs, documentCount: 7 }),
+				}),
+			);
+			return engine.requests.map((request) => request.size);
+		};
+
+		test("pages by the catalogue's configured size, DOWNLOAD_STREAM_BUFFER_SIZE, when the caller gives none", async () => {
+			// Given seven documents and a catalogue configured to page three at a time
+			// When they are exported with no chunkSize from the caller
+			// Then every page asks for three, as 3.0 paged by the same setting
+			assert.deepEqual(await pageSizesOf({ configuredChunkSize: 3 }), [3, 3, 3]);
+		});
+
+		test('pages at the default where the configured size is not a positive integer, never refusing the request for it', async () => {
+			// Given a catalogue configured with a size of 0, which 3.0 also read as the default
+			// When an export names no chunkSize, Then it pages at the default rather than failing as the client's fault
+			assert.deepEqual(await pageSizesOf({ configuredChunkSize: 0 }), [2000]);
+			assert.deepEqual(await pageSizesOf({ configuredChunkSize: 2.5 }), [2000]);
+		});
+
+		test("pages by the caller's chunkSize where it gives one", async () => {
+			assert.deepEqual(await pageSizesOf({ chunkSize: 4, configuredChunkSize: 3 }), [4, 4]);
 		});
 	});
 

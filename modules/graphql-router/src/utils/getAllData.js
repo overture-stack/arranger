@@ -163,7 +163,8 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  *
  * @template Context
  * @param {object} args
- * @param {number} [args.chunkSize] how many documents each page asks for, a positive integer.
+ * @param {number} [args.chunkSize] how many documents each page asks for, a positive integer, where leaving
+ *   it out takes the catalogue's configured size, `DOWNLOAD_STREAM_BUFFER_SIZE`.
  * @param {Context} [args.ctx] the request context, normally the one a router built.
  * @param {import('@overture-stack/arranger-types/configs').GetServerSideFilterFn<Context>} [args.getServerSideFilter]
  *   a filter of the caller's own, which can only narrow the one the router recorded.
@@ -178,19 +179,22 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  * @throws {InvalidExportRequestError} when `chunkSize` is not a positive integer, `sort` is not an array
  *   of such entries, or the filter cannot be compiled.
  */
-export default async ({
-	chunkSize = fallbackConfigs.downloads.chunkSize,
-	ctx: givenContext = {},
-	getServerSideFilter,
-	maxRows = null,
-	sort = [],
-	sqon,
-}) => {
+export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, maxRows = null, sort = [], sqon }) => {
 	const ctx = requestStateOf(givenContext);
 	const serverSideFilter = resolveServerSideFilter({ context: ctx, getServerSideFilter });
-	const pageSize = requirePageSize(chunkSize);
-	const exportSort = requireSort(sort);
 	const { configs, esClient } = ctx;
+	// A caller's own chunkSize wins, and is checked as the caller's input. Otherwise the catalogue's
+	// DOWNLOAD_STREAM_BUFFER_SIZE pages the export where it is usable, as in 3.0, and the default where not,
+	// since a server setting is never the request's fault.
+	const configuredPageSize =
+		configs.config?.[configRootProperties.DOWNLOADS]?.[downloadProperties.STREAM_BUFFER_SIZE];
+	const pageSize =
+		chunkSize === undefined
+			? Number.isInteger(configuredPageSize) && configuredPageSize > 0
+				? configuredPageSize
+				: fallbackConfigs.downloads.chunkSize
+			: requirePageSize(chunkSize);
+	const exportSort = requireSort(sort);
 	const nestingPrefix = configs.config?.[configOptionalProperties.NESTING_PREFIX];
 
 	// From the mapping, like every other call site, rather than from `extendedFields`: nesting is an
