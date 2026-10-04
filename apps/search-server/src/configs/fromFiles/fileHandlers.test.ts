@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { after, afterEach, suite, test } from 'node:test';
+import { after, afterEach, mock, suite, test } from 'node:test';
 
 import getConfigFromFiles from './fileHandlers.js';
 
@@ -128,5 +128,67 @@ suite('getConfigFromFiles', () => {
 				enableDebug: false,
 			}),
 		);
+	});
+});
+
+suite('getConfigFromFiles reading the 3.0 "index" key', () => {
+	/** Loads `files`, over `baseConfig`, returning the configuration and the warnings emitted. */
+	const loadWith = async (files: Record<string, unknown>, baseConfig: Record<string, unknown> = {}) => {
+		const dir = makeConfigDir(
+			Object.fromEntries(Object.entries(files).map(([name, contents]) => [name, JSON.stringify(contents)])),
+		);
+		const emitWarning = mock.method(process, 'emitWarning', () => undefined);
+		const [, aggregatedConfigs] = await getConfigFromFiles({
+			baseConfig,
+			catalogueConfigsPath: dir,
+			currentDirectory: '',
+			enableDebug: false,
+		});
+		emitWarning.mock.restore();
+
+		return {
+			configs: aggregatedConfigs as Record<string, unknown>,
+			warnings: emitWarning.mock.calls.map((call) => ({
+				code: (call.arguments[1] as { code?: string } | undefined)?.code,
+				message: String(call.arguments[0]),
+			})),
+		};
+	};
+
+	test('reads a file\'s "index" as esIndex, with one deprecation warning naming the new key and the guide', async () => {
+		// Given a 3.0 base.json naming its index with the 3.0 key
+		const { configs, warnings } = await loadWith({ 'base.json': { documentType: 'file', index: 'legacy-index' } });
+
+		// Then the index reaches the configuration as esIndex, and one warning says so
+		assert.equal(configs.esIndex, 'legacy-index');
+		assert.equal(configs.index, undefined);
+		assert.deepEqual(
+			warnings.map(({ code }) => code),
+			['ARRANGER_CONFIG_RENAMED'],
+		);
+		assert.match(warnings[0]?.message ?? '', /"index" is deprecated: name it "esIndex" instead/);
+		assert.match(warnings[0]?.message ?? '', /#config-index-key$/);
+		assert.doesNotMatch(warnings[0]?.message ?? '', /removed|until|future/);
+	});
+
+	test('lets a file\'s "index" override the environment\'s index, as 3.0 let a file override ES_INDEX', async () => {
+		const { configs } = await loadWith({ 'base.json': { index: 'from-file' } }, { esIndex: 'from-environment' });
+
+		assert.equal(configs.esIndex, 'from-file');
+	});
+
+	test('keeps esIndex where a file sets both, warning that "index" was ignored', async () => {
+		const { configs, warnings } = await loadWith({ 'base.json': { esIndex: 'new-index', index: 'old-index' } });
+
+		assert.equal(configs.esIndex, 'new-index');
+		assert.equal(warnings.length, 1);
+		assert.match(warnings[0]?.message ?? '', /"index" is ignored because "esIndex" is also set/);
+	});
+
+	test('prints nothing for a configuration naming esIndex only', async () => {
+		const { configs, warnings } = await loadWith({ 'base.json': { esIndex: 'new-index' } });
+
+		assert.equal(configs.esIndex, 'new-index');
+		assert.deepEqual(warnings, []);
 	});
 });

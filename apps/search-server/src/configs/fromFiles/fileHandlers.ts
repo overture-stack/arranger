@@ -3,6 +3,7 @@ import path from 'path';
 
 import { merge } from 'lodash-es';
 
+import { renameLegacyIndexKey } from './legacyKeys.js';
 import normalize from './normalize.js';
 import type { ConfigsFromFilesFn, FileEncodingType } from './types.js';
 
@@ -57,7 +58,7 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 		return [configsPath, { ...baseConfig }];
 	}
 
-	const aggregatedConfigs = files.reduce((configsAcc, [fileName, fileData]) => {
+	const configsFromFiles = files.reduce<Record<string, unknown>>((configsAcc, [fileName, fileData]) => {
 		try {
 			const fileDataJSON = JSON.parse(fileData);
 			const normalizedJSON = normalize(fileDataJSON);
@@ -67,9 +68,16 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 			enableDebug && console.debug(`\n  DEBUG: ${err}`);
 			throw new Error(`Could not parse configuration file "${fileName}.json" in "${configsPath}"`);
 		}
-	}, { ...baseConfig });
+	}, {});
 
-	return [configsPath, aggregatedConfigs];
+	const { configs, notice } = renameLegacyIndexKey({ configsFromFiles, configsPath });
+
+	if (notice) {
+		process.emitWarning(notice.message, { code: notice.code, type: 'DeprecationWarning' });
+	}
+
+	// Into a fresh object, so the environment's configuration, shared by every catalogue, is never written to.
+	return [configsPath, merge({}, baseConfig, configs)];
 };
 
 export default getConfigFromFiles;
