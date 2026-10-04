@@ -1946,6 +1946,15 @@ This is the inverse of the phantom-dependency audit, which looked only for impor
 **Fix:** Re-export sqon's own types instead, keeping temporary aliases if consumers import these names.
 **Standalone:** yes
 
+### `modules/components` has no DOM-level tests, so effect and unmount wiring goes untested
+
+**Files:** `modules/components/jest.config.ts`, `modules/components/src/ThemeContext/index.tsx`
+**Severity:** medium
+**Kind:** missing test coverage
+**Issue:** The suite runs in Jest's node environment against the babel build in `dist/`. A per-file `@jest-environment jsdom` docblock does not survive that build, since babel writes `"use strict"` ahead of it, and switching the whole suite to jsdom breaks the suites that render with `react-dom/server` or need `TextEncoder`. So no test mounts a component, runs its effects or unmounts it. The theme registry's per-instance keys and its removal on unmount are pinned only at the registry level: nothing renders two instances of one themed component with different `theme` props, one of them a function, and checks that they settle, or checks that an instance's theme leaves the provider when it unmounts.
+**Fix:** run DOM tests as a second Jest project with `testEnvironment: 'jsdom'` and its own `testMatch`, such as `*.dom.test.*`, keeping the node project for the rest, with `jest-environment-jsdom` at Jest's own major. Then add those two rendering tests.
+**Standalone:** yes
+
 ## modules/types
 
 ### No unit tests for `networkAggregationConfigUtils`, and its two exports turned out to be unused, not just untested

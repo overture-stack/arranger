@@ -27,7 +27,7 @@ import type {
 	UseThemeContextProps,
 	WithThemeProps,
 } from './types/index.js';
-import { isProviderNested, mergeThemes, updateThemeContribution } from './utils.js';
+import { isProviderNested, mergeThemes, removeThemeContribution, updateThemeContribution } from './utils.js';
 
 export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>({
 	missingProvider: 'ThemeContext',
@@ -51,17 +51,21 @@ const noopAggregateTheme: ThemeAggregatorFn = () => undefined;
  * @returns {Theme} theme object
  */
 export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): ThemeOptions => {
-	const { aggregateTheme = noopAggregateTheme, missingProvider, theme } = useContext(ThemeContext);
-	// Falls back to a per-instance generated key when the caller doesn't supply callerName, so an
-	// anonymous contribution still replaces its own prior value across re-renders of this same
-	// component instance, rather than being merged onto indefinitely (see aggregateTheme below).
-	const fallbackKeyRef = useRef<string>();
-	fallbackKeyRef.current ??= `anonymous-theme-caller-${Math.random().toString(36).slice(2)}`;
-	const callerKey = customTheme.callerName || fallbackKeyRef.current;
+	const { aggregateTheme = noopAggregateTheme, missingProvider, removeTheme, theme } = useContext(ThemeContext);
+	// Each instance keys its own contribution, named for its component only to ease debugging. Two
+	// instances of one component sharing a key would each overwrite the other's contribution whenever
+	// the theme changed, and never settle.
+	const instanceKeyRef = useRef<string>();
+	instanceKeyRef.current ??= `${customTheme.callerName || 'anonymous-theme-caller'}-${Math.random().toString(36).slice(2)}`;
+	const callerKey = instanceKeyRef.current;
 
 	useEffect(() => {
 		aggregateTheme<ThemeOptions>(typeof customTheme === 'function' ? customTheme : omit(customTheme, 'callerName'), callerKey);
 	}, [aggregateTheme, callerKey, customTheme, theme]);
+
+	// Its own effect, keyed on the instance alone, so it runs when the instance unmounts rather than
+	// whenever the theme changes.
+	useEffect(() => () => removeTheme?.(callerKey), [removeTheme, callerKey]);
 
 	missingProvider && missingProviderHandler(ThemeContext.displayName, customTheme.callerName);
 
@@ -76,7 +80,9 @@ export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): T
 // a new value, never remove a key, shrink an array, or otherwise reflect a caller's value getting
 // smaller, since there is nothing in the "smaller" value to overlay onto the stale remainder.
 
-const useAggregableTheme = (baseTheme: ThemeOptions): readonly [ThemeOptions, ThemeAggregatorFn] => {
+const useAggregableTheme = (
+	baseTheme: ThemeOptions,
+): readonly [ThemeOptions, ThemeAggregatorFn, (callerKey: string) => void] => {
 	const [contributions, setContributions] = useState<Record<string, ThemeContribution>>(emptyObj);
 	// Read by the stable callback below, which children call from their own effects, before this
 	// provider's effects would run, so it is kept current during render.
@@ -94,7 +100,11 @@ const useAggregableTheme = (baseTheme: ThemeOptions): readonly [ThemeOptions, Th
 		[baseTheme, contributions],
 	);
 
-	return [theme, aggregateTheme] as const; // make tuple type
+	const removeTheme = useCallback((callerKey: string) => {
+		setContributions((previousContributions) => removeThemeContribution(previousContributions, callerKey));
+	}, []);
+
+	return [theme, aggregateTheme, removeTheme] as const; // make tuple type
 };
 
 /** Context provider for Arranger's theme functionalities
@@ -112,10 +122,11 @@ export const ThemeProvider = <Theme extends BaseThemeInterface>({
 	// const otherThemes = [outerTheme, localTheme, isNested];
 	const otherThemes = localTheme ? [outerTheme, localTheme] : outerTheme;
 
-	const [theme, aggregateTheme] = useAggregableTheme(mergeThemes(initialTheme, otherThemes));
+	const [theme, aggregateTheme, removeTheme] = useAggregableTheme(mergeThemes(initialTheme, otherThemes));
 
 	const contextValues = {
 		aggregateTheme,
+		removeTheme,
 		theme,
 	};
 

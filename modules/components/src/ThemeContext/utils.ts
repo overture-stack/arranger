@@ -100,6 +100,23 @@ export const updateThemeContribution = (
 		? contributions
 		: { ...contributions, [callerKey]: partialTheme };
 
+/**
+ * Removes a caller's registry entry, for an instance that unmounts. Returns the same `contributions`
+ * reference when the caller has none, so a React state updater bails out.
+ */
+export const removeThemeContribution = (
+	contributions: Record<string, ThemeContribution>,
+	callerKey: string,
+): Record<string, ThemeContribution> => {
+	if (callerKey in contributions) {
+		const { [callerKey]: _removed, ...remaining } = contributions;
+
+		return remaining;
+	}
+
+	return contributions;
+};
+
 // export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>
 export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>
 	Array.isArray(partialTheme)

@@ -1,4 +1,4 @@
-import { isThemeEqual, mergeThemes, updateThemeContribution } from './utils.js';
+import { isThemeEqual, mergeThemes, removeThemeContribution, updateThemeContribution } from './utils.js';
 
 describe('mergeThemes', () => {
 	it('merges plain object values additively, same as a normal deep merge', () => {
@@ -188,5 +188,35 @@ describe('updateThemeContribution comparing a theme function as the fold applies
 
 		// Then it is stored, though both give the same result applied to the base alone
 		expect(updated.caller).toBe(light);
+	});
+});
+
+describe('the registry under one key, shared by two callers', () => {
+	it('never settles when two callers alternate different values under one key, which is why each instance keys its own', () => {
+		// Given one caller contributing a theme and another, under the same key, contributing none
+		const one = { components: { Table: { hideLoader: true } } };
+		const none = {};
+		const start: Record<string, any> = { Table: none };
+
+		// When both contribute again, as each does whenever the provider's theme changes
+		const afterBoth = updateThemeContribution(updateThemeContribution(start, 'Table', one), 'Table', none);
+
+		// Then the content is unchanged but the object is new, so React never bails out of the update
+		expect(afterBoth).toEqual(start);
+		expect(afterBoth).not.toBe(start);
+	});
+});
+
+describe('removeThemeContribution', () => {
+	it("removes a caller's contribution", () => {
+		const contributions: Record<string, any> = { kept: {}, removed: { components: { Table: { hideLoader: true } } } };
+
+		expect(removeThemeContribution(contributions, 'removed')).toEqual({ kept: {} });
+	});
+
+	it('returns the same reference when the caller has no contribution, so React can skip the update', () => {
+		const contributions: Record<string, any> = { kept: {} };
+
+		expect(removeThemeContribution(contributions, 'absent')).toBe(contributions);
 	});
 });

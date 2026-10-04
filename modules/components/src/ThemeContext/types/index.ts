@@ -48,6 +48,8 @@ export interface ThemeMergerFn {
 export interface ThemeContextInterface<Theme = ThemeOptions> {
 	aggregateTheme: ThemeAggregatorFn;
 	missingProvider?: string;
+	/** Drops a caller's contribution, as an instance does when it unmounts. */
+	removeTheme?: (callerKey: string) => void;
 	theme: Theme;
 }
 
