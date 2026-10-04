@@ -92,6 +92,7 @@ type ConfigsRead = {
 		catalogs: {
 			fromEnv: { downloads: { allowCustomMaxRows?: boolean; maxRows?: number }; sets: { index?: string } };
 		};
+		enableAdmin?: boolean;
 		enableDebug?: boolean;
 		serverPort?: number;
 	};
@@ -287,5 +288,27 @@ suite('search-server image: the export row limit', () => {
 
 		assert.equal(hundred.configs.catalogs.fromEnv.downloads.maxRows, 100, hundred.errorOutput);
 		assert.equal(zero.configs.catalogs.fromEnv.downloads.maxRows, 0, zero.errorOutput);
+	});
+});
+
+suite('search-server image: an ENABLE_ADMIN value 3.0 read as off', () => {
+	const ADMIN_NOTICE_CODE = '[ARRANGER_ENV_MEANING_CHANGED]';
+
+	test('turns admin on, as 3.1 reads 1, with exactly one warning that is not a deprecation', async () => {
+		// Given an image started with ENABLE_ADMIN=1, which 3.0 read as off
+		const read = await readConfigs({ ENABLE_ADMIN: '1' });
+
+		// Then admin is on, and one plain warning, printed once, says 3.0 read the value differently
+		const notices = read.errorOutput.split('\n').filter((line) => line.includes(ADMIN_NOTICE_CODE));
+		assert.equal(read.configs.enableAdmin, true, read.errorOutput);
+		assert.equal(notices.length, 1, read.errorOutput);
+		assert.doesNotMatch(notices[0] ?? '', /DeprecationWarning/);
+	});
+
+	test('prints nothing for true, which 3.0 and 3.1 both read as on', async () => {
+		const read = await readConfigs({ ENABLE_ADMIN: 'true' });
+
+		assert.equal(read.configs.enableAdmin, true, read.errorOutput);
+		assert.equal(read.errorOutput.includes(ADMIN_NOTICE_CODE), false, read.errorOutput);
 	});
 });

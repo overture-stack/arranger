@@ -50,7 +50,7 @@ export const ENV_MIGRATION_URL = migrationGuideUrlFor(
 );
 
 // 3.0 read a flag as true only for the text `true`, in any case and untrimmed, and as false otherwise.
-const isTrueToVersion3 = (value: string): boolean => value.toLowerCase() === 'true';
+export const isTrueToVersion3 = (value: string): boolean => value.toLowerCase() === 'true';
 const fromVersion3Flag = (value: string): string | undefined => (isTrueToVersion3(value) ? 'true' : undefined);
 
 // 3.0 read a number as `Number(value) || default`, so zero, and text that is no number, took the default.

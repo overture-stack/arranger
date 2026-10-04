@@ -12,6 +12,7 @@ import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/too
 
 import { readLegacyNetworkEnv } from '#configs/legacyNetwork.js';
 
+import { adminFlagNotice } from './adminFlag.js';
 import { parseEnableAccessControl } from './enableAccessControl.js';
 import { resolveRenamedEnvs } from './renamedEnvs.js';
 
@@ -22,6 +23,14 @@ const { legacy: legacyNetwork, notices: networkNotices } = readLegacyNetworkEnv(
 [...notices, ...networkNotices].forEach(({ code, message }) =>
 	process.emitWarning(message, { code, type: 'DeprecationWarning' }),
 );
+
+// Read once, so a value the boolean rule ignores is warned about once. Admin adds a surface, so a value
+// 3.0 read as off is named where it now turns admin on; nothing is deprecated, so it is a plain warning.
+const enableAdmin = stringToBool(env.ENABLE_ADMIN);
+const adminNotice = adminFlagNotice({ enabled: enableAdmin, value: env.ENABLE_ADMIN });
+if (adminNotice) {
+	process.emitWarning(adminNotice.message, { code: adminNotice.code });
+}
 
 // TODO: make a more robust isProd helper (e.g. casing + alternatives like 'prod')
 const isProd = env.NODE_ENV === 'production';
@@ -94,7 +103,7 @@ const configsFromEnv = {
 		},
 	},
 	enableAccessControl: parseEnableAccessControl(env.ENABLE_ACCESS_CONTROL),
-	[configFeatureFlagProperties.ENABLE_ADMIN]: stringToBool(env.ENABLE_ADMIN),
+	[configFeatureFlagProperties.ENABLE_ADMIN]: enableAdmin,
 	[configFeatureFlagProperties.ENABLE_DEBUG]: stringToBool(env.ENABLE_DEBUG),
 	[configFeatureFlagProperties.ENABLE_LOGS]: stringToBool(env.ENABLE_LOGS),
 	health: {
