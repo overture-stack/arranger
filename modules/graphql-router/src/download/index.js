@@ -1,4 +1,4 @@
-import { finished, pipeline } from 'node:stream';
+import { finished, pipeline, Transform } from 'node:stream';
 
 import { Router, urlencoded } from 'express';
 
@@ -92,8 +92,10 @@ const requireValidParams = (params) => {
  * @param {import('@overture-stack/arranger-types/configs').GetServerSideFilterFn<Context>} [args.getServerSideFilter]
  *   a filter of the caller's own, which can only narrow the one the router recorded.
  * @param {unknown} args.params the download params as the client sent them, holding exactly one file.
- * @returns {Promise<{ contentType: string, output: import('node:stream').Readable, responseFileName: string }>}
- *   `output` emits `'error'` when the export fails after it starts.
+ * @returns {Promise<{ contentType: string, exportTotals: () => { matchingTotal: number, truncated: boolean } | undefined, output: import('node:stream').Readable, responseFileName: string }>}
+ *   `output` emits `'error'` when the export fails after it starts. `exportTotals` gives how many
+ *   documents the export's filter matches and whether the row limit cut the export short, once its first
+ *   row is formatted, and undefined before then or for an export that matched nothing.
  * @throws {InvalidExportRequestError} when `params` breaks a rule or its filter cannot be compiled.
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
  */
@@ -117,11 +119,23 @@ export const dataStream = async ({ ctx: givenContext, getServerSideFilter, param
 	});
 	const output = dataToExportFormat({ columns, ctx, fileType: outputFileType, uniqueBy, valueWhenEmpty });
 
+	// Recorded as the first chunk passes, so a route can mark a cut export in the headers it sends with
+	// the first formatted row, which that chunk always precedes.
+	let firstTotals;
+	const recordTotals = new Transform({
+		objectMode: true,
+		transform(chunk, _encoding, callback) {
+			firstTotals ??= { matchingTotal: chunk.matchingTotal, truncated: chunk.truncated };
+			callback(null, chunk);
+		},
+	});
+
 	// Every failure reaches the consumer as an 'error' on `output`, which pipeline destroys with it.
-	pipeline(source, output, noopFn);
+	pipeline(source, recordTotals, output, noopFn);
 
 	return {
 		contentType: 'text/plain',
+		exportTotals: () => firstTotals,
 		output,
 		responseFileName: fileName || defaultFileName || `file.${outputFileType}`,
 	};
@@ -169,6 +183,15 @@ const sendFailure = ({ error, res }) => {
 	}
 
 	res.status(status).type('text/plain').set('X-Content-Type-Options', 'nosniff').send(text);
+};
+
+/** Marks a response whose export the row limit cut short, in headers a browser page may read. */
+const markCutExport = ({ res, totals }) => {
+	if (totals?.truncated) {
+		res.append('Access-Control-Expose-Headers', 'Arranger-Export-Matching-Total, Arranger-Export-Truncated')
+			.set('Arranger-Export-Matching-Total', String(totals.matchingTotal))
+			.set('Arranger-Export-Truncated', 'true');
+	}
 };
 
 const logStreamFailure = (error) => {
@@ -225,7 +248,7 @@ const download = ({ enableAdmin = false } = {}) => {
 
 	router.post('/', async (req, res) => {
 		try {
-			const { contentType, output, responseFileName } = await dataStream({
+			const { contentType, exportTotals, output, responseFileName } = await dataStream({
 				ctx: requestStateOf(res.locals),
 				params: paramsFrom(req.body),
 			});
@@ -233,7 +256,10 @@ const download = ({ enableAdmin = false } = {}) => {
 			await pipeFromFirstChunk({
 				output,
 				res,
-				setHeaders: () => res.attachment(responseFileName).set('Content-Type', contentType),
+				setHeaders: () => {
+					res.attachment(responseFileName).set('Content-Type', contentType);
+					markCutExport({ res, totals: exportTotals() });
+				},
 			});
 		} catch (error) {
 			sendFailure({ error, res });

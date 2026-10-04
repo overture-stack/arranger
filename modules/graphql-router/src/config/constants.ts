@@ -9,7 +9,8 @@ import {
 } from '@overture-stack/arranger-types/configs/constants';
 
 // individual values
-const DOWNLOAD_MAX_ROWS = 100;
+// 0 is no limit: a deployment that sets none exports every row, as 3.0 did.
+const DOWNLOAD_MAX_ROWS = 0;
 const DOWNLOAD_STREAM_BUFFER_SIZE = 2000;
 const ES_ARRANGER_SETS = 'arranger-sets';
 

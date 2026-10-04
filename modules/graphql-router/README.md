@@ -282,7 +282,8 @@ The router serves exports at `POST /download`. An integration building its own e
 - `chunkSize` is a positive integer and `maxRows` a non-negative integer, both as JSON numbers. `fileType` is `tsv` or `json`, where absent, `null` or empty names none, and `tsv` applies when nothing names one. `columns` is a non-empty array of column objects. `fileName` is a well-formed string, and `uniqueBy` and `valueWhenEmpty` are strings. A top-level `chunkSize`, `fileName` or `fileType` follows the same rule, and applies where the file names none.
 - `sort`, for `dataStream` and `getAllData` alike, is an array of entries, each naming a non-empty `fieldName` and an `order` of `asc` or `desc`, in any case. Empty or absent keeps the default order, and an `_id` tiebreaker always follows.
 - A `sqon` that cannot be compiled into a query is refused, naming the SQON rule it broke where there is one.
-- A `maxRows` applies only when the catalogue allows custom row limits, and `0` asks for the configured limit.
+- A `maxRows` applies only when the catalogue allows custom row limits, and `0` asks for the configured limit. A configured limit that is unset or `0` exports every row.
+- An export the row limit cuts short is marked without changing the file: `getAllData`'s chunks carry `matchingTotal`, how many documents the filter matches, and `truncated`, beside `hits` and `total`, which is capped at the limit, and `dataStream` returns `exportTotals()`, giving the same once the first row is formatted. The router's `/download` sends them as the `Arranger-Export-Truncated` and `Arranger-Export-Matching-Total` headers.
 
 ### The filter comes from the router
 

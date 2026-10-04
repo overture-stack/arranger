@@ -538,6 +538,48 @@ suite('getAllData', () => {
 			assert.equal(rows.length, 150);
 		});
 
+		test('marks every chunk of an export the limit cuts short with the total the filter matches', async () => {
+			// Given ten documents, a page size of two, and a configured limit of three
+			const engine = createPagingEngine({ documents: numberedDocuments(10) });
+			const configs = buildConfigs({ allowCustomMaxRows: false, maxRows: 3 });
+
+			// When they are exported
+			const chunks = await collectStream(
+				await getAllData({
+					...exportEverything,
+					chunkSize: 2,
+					ctx: contextFor(engine, { configs, documentCount: 10 }),
+				}),
+			);
+
+			// Then each chunk keeps its capped total, and adds the matching total and that the export was cut
+			assert.deepEqual(
+				chunks.map(({ matchingTotal, total, truncated }) => ({ matchingTotal, total, truncated })),
+				[
+					{ matchingTotal: 10, total: 3, truncated: true },
+					{ matchingTotal: 10, total: 3, truncated: true },
+				],
+			);
+		});
+
+		test('marks no chunk as cut when the limit leaves every matching row in', async () => {
+			const engine = createPagingEngine({ documents: numberedDocuments(4) });
+			const configs = buildConfigs({ allowCustomMaxRows: false, maxRows: 4 });
+
+			const chunks = await collectStream(
+				await getAllData({
+					...exportEverything,
+					chunkSize: 4,
+					ctx: contextFor(engine, { configs, documentCount: 4 }),
+				}),
+			);
+
+			assert.deepEqual(
+				chunks.map(({ matchingTotal, total, truncated }) => ({ matchingTotal, total, truncated })),
+				[{ matchingTotal: 4, total: 4, truncated: false }],
+			);
+		});
+
 		test('exports every row when both the configured and the caller maxRows are 0', async () => {
 			// Given 150 documents, custom row limits allowed, and a configured limit of 0
 			const configs = buildConfigs({ allowCustomMaxRows: true, maxRows: 0 });
@@ -866,7 +908,7 @@ suite('getAllData', () => {
 	});
 
 	suite('output shape', () => {
-		test("yields { hits, total } chunks holding each document's source, page by page", async () => {
+		test("yields { hits, total } chunks holding each document's source, page by page, with the matching total and whether the export was cut", async () => {
 			// Given three documents
 			const documents = numberedDocuments(3);
 			const engine = createPagingEngine({ documents });
@@ -876,10 +918,10 @@ suite('getAllData', () => {
 				await getAllData({ ...exportEverything, chunkSize: 2, ctx: contextFor(engine, { documentCount: 3 }) }),
 			);
 
-			// Then each chunk holds its page's sources under hits, with the total beside them
+			// Then each chunk holds its page's sources under hits, with the totals beside them
 			assert.deepEqual(chunks, [
-				{ hits: [documents[0]._source, documents[1]._source], total: 3 },
-				{ hits: [documents[2]._source], total: 3 },
+				{ hits: [documents[0]._source, documents[1]._source], matchingTotal: 3, total: 3, truncated: false },
+				{ hits: [documents[2]._source], matchingTotal: 3, total: 3, truncated: false },
 			]);
 		});
 	});
@@ -1127,7 +1169,9 @@ suite('getAllData', () => {
 			assert.deepEqual(chunks, [
 				{
 					hits: [{ data: { bmi: 24.5, submitter_donor_id: 'DO_1' }, bmi: 24.5, submitter_donor_id: 'DO_1' }],
+					matchingTotal: 1,
 					total: 1,
+					truncated: false,
 				},
 			]);
 		});
@@ -1158,7 +1202,7 @@ suite('getAllData', () => {
 			const chunks = await collectStream(stream);
 
 			assert.deepEqual(searchCalls[0].body.sort, [{ bmi: 'asc' }, { _id: 'asc' }]);
-			assert.deepEqual(chunks, [{ hits: [{ bmi: 24.5 }], total: 1 }]);
+			assert.deepEqual(chunks, [{ hits: [{ bmi: 24.5 }], matchingTotal: 1, total: 1, truncated: false }]);
 		});
 	});
 });

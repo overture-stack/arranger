@@ -271,3 +271,21 @@ suite('search-server image: MAX_DOWNLOAD_ROWS, the row limit 3.0 never applied',
 		);
 	});
 });
+
+suite('search-server image: the export row limit', () => {
+	test('reads an unset DOWNLOAD_MAX_ROWS as no limit, as 3.0 applied none', async () => {
+		const read = await readConfigs({});
+
+		assert.equal(read.configs.catalogs.fromEnv.downloads.maxRows, 0, read.errorOutput);
+	});
+
+	test('keeps an explicit DOWNLOAD_MAX_ROWS, 0 included', async () => {
+		const [hundred, zero] = await Promise.all([
+			readConfigs({ DOWNLOAD_MAX_ROWS: '100' }),
+			readConfigs({ DOWNLOAD_MAX_ROWS: '0' }),
+		]);
+
+		assert.equal(hundred.configs.catalogs.fromEnv.downloads.maxRows, 100, hundred.errorOutput);
+		assert.equal(zero.configs.catalogs.fromEnv.downloads.maxRows, 0, zero.errorOutput);
+	});
+});

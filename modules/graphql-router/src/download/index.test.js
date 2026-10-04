@@ -1031,6 +1031,117 @@ suite('download', () => {
 		});
 	});
 
+	suite('the row limit, and marking an export it cuts short', () => {
+		const idsOf = (documents) => documents.map((document) => document._id);
+
+		test('exports every row where the catalogue configures no row limit', async () => {
+			// Given 150 documents and a router configured with no downloads section at all
+			const documents = generatedDocuments(150);
+
+			await withArranger({ documents }, async ({ server }) => {
+				// When they are downloaded
+				const response = await postDownload(server, paramsWithFile());
+
+				// Then every row arrives, and nothing marks the export as cut short
+				assert.equal(response.status, 200);
+				assert.equal(response.text, tsvOf(idsOf(documents), documents));
+				assert.equal(response.headers['arranger-export-truncated'], undefined);
+			});
+		});
+
+		test('marks an export the limit cuts short with headers a browser page can read, giving the matching total', async () => {
+			// Given ten documents and a configured limit of three
+			const documents = generatedDocuments(10);
+
+			await withArranger(
+				{ documents, downloads: { allowCustomMaxRows: false, maxRows: 3 } },
+				async ({ server }) => {
+					// When they are downloaded
+					const response = await postDownload(server, paramsWithFile());
+
+					// Then three rows arrive, the file holding nothing else, and the headers say ten matched
+					assert.equal(response.text, tsvOf(idsOf(documents.slice(0, 3)), documents));
+					assert.equal(response.headers['arranger-export-truncated'], 'true');
+					assert.equal(response.headers['arranger-export-matching-total'], '10');
+					assert.deepEqual((response.headers['access-control-expose-headers'] ?? '').split(/,\s*/).sort(), [
+						'Arranger-Export-Matching-Total',
+						'Arranger-Export-Truncated',
+					]);
+				},
+			);
+		});
+
+		test('exports every row where the configured limit is 0, which cancels the limit', async () => {
+			const documents = generatedDocuments(150);
+
+			await withArranger(
+				{ documents, downloads: { allowCustomMaxRows: false, maxRows: 0 } },
+				async ({ server }) => {
+					const response = await postDownload(server, paramsWithFile());
+
+					assert.equal(response.text, tsvOf(idsOf(documents), documents));
+					assert.equal(response.headers['arranger-export-truncated'], undefined);
+				},
+			);
+		});
+
+		test('exports every permitted row where the configured limit is 0, under a restricting filter too', async () => {
+			// Given 150 documents, half of them in study A, a router restricted to study A, and a limit of 0
+			const documents = generatedDocuments(150);
+			const permitted = documents.filter((document) => document._source.study === 'A');
+
+			await withArranger(
+				{
+					documents,
+					downloads: { allowCustomMaxRows: false, maxRows: 0 },
+					getServerSideFilter: restrictingFilter({ fieldName: 'study', values: ['A'] }),
+				},
+				async ({ server }) => {
+					// When they are downloaded
+					const response = await postDownload(server, paramsWithFile());
+
+					// Then every permitted row arrives, with nothing marking the export as cut
+					assert.equal(response.text, tsvOf(idsOf(permitted), documents));
+					assert.equal(response.headers['arranger-export-truncated'], undefined);
+				},
+			);
+		});
+
+		test('carries no marker when the limit cuts nothing', async () => {
+			const documents = generatedDocuments(3);
+
+			await withArranger(
+				{ documents, downloads: { allowCustomMaxRows: false, maxRows: 3 } },
+				async ({ server }) => {
+					const response = await postDownload(server, paramsWithFile());
+
+					assert.equal(response.text, tsvOf(idsOf(documents), documents));
+					assert.equal(response.headers['arranger-export-truncated'], undefined);
+					assert.equal(response.headers['arranger-export-matching-total'], undefined);
+				},
+			);
+		});
+
+		test("gives dataStream's caller the totals of an export the limit cuts short", async () => {
+			const documents = generatedDocuments(10);
+
+			await withArranger(
+				{ documents, downloads: { allowCustomMaxRows: false, maxRows: 3 } },
+				async (arranger) => {
+					// Given an integration route streaming the export
+					const ctx = await arranger.captureContext();
+					const { exportTotals, output } = await dataStream({ ctx, params: paramsWithFile() });
+
+					// When it has read the output
+					await readOutput(output);
+
+					// Then the totals say ten matched and the export was cut
+					assert.deepEqual(exportTotals(), { matchingTotal: 10, truncated: true });
+				},
+			);
+		});
+	});
+
 	suite('naming the attachment', () => {
 		let arranger;
 

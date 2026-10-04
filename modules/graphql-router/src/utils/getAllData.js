@@ -134,14 +134,17 @@ const pageSearcher =
 async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage }) {
 	const firstSize = Math.min(chunkSize, rowLimit);
 	const firstPage = await searchPage({ size: firstSize, trackTotalHits: true });
-	const total = typeof firstPage.total === 'number' ? Math.min(firstPage.total, rowLimit) : firstPage.total;
+	const matchingTotal = firstPage.total;
+	const total = typeof matchingTotal === 'number' ? Math.min(matchingTotal, rowLimit) : matchingTotal;
+	// Additive beside `{ hits, total }`, so an export the limit cuts short says so to every reader.
+	const truncated = typeof matchingTotal === 'number' && matchingTotal > rowLimit;
 
 	let delivered = 0;
 	let hits = firstPage.hits;
 	let size = firstSize;
 
 	while (hits.length > 0) {
-		yield { hits: hits.map((hit) => unwrapSource(hit?._source, nestingPrefix)), total };
+		yield { hits: hits.map((hit) => unwrapSource(hit?._source, nestingPrefix)), matchingTotal, total, truncated };
 
 		delivered += hits.length;
 		const hasMore = hits.length >= size && delivered < rowLimit;
@@ -152,9 +155,11 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
 }
 
 /**
- * Streams the documents an export selects as `{ hits, total }` chunks, one per search page, under the
- * filter resolved from the context's access-control record and the caller's own callback. Every
- * refusal rejects the call before any search, and a failed search or shard errors the stream.
+ * Streams the documents an export selects as `{ hits, matchingTotal, total, truncated }` chunks, one per
+ * search page, under the filter resolved from the context's access-control record and the caller's own
+ * callback. `total` is capped at the row limit, `matchingTotal` is how many documents the filter matches,
+ * and `truncated` says whether the limit cut the export short. Every refusal rejects the call before any
+ * search, and a failed search or shard errors the stream.
  *
  * @template Context
  * @param {object} args

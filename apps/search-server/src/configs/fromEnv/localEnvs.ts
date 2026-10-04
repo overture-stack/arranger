@@ -78,7 +78,7 @@ const configsFromEnv = {
 			},
 			[configRootProperties.DOWNLOADS]: {
 				[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: stringToBool(env.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS),
-				[downloadProperties.MAX_ROWS]: stringToNumber(env.DOWNLOAD_MAX_ROWS, 100),
+				[downloadProperties.MAX_ROWS]: stringToNumber(env.DOWNLOAD_MAX_ROWS, 0),
 				[downloadProperties.STREAM_BUFFER_SIZE]: stringToNumber(env.DOWNLOAD_STREAM_BUFFER_SIZE, 2000),
 			},
 			[configRootProperties.SETS]: {

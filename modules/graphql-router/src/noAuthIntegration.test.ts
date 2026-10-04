@@ -28,7 +28,7 @@ import arrangerRouter, { utils, wrapOpenSearchClient } from './index.js';
 type StoredDocument = { _id: string; _source: Record<string, unknown> };
 type SearchParams = { body?: Record<string, unknown>; from?: number; index?: string | string[]; size?: number };
 type RequestWithContext = Request & { context?: Record<string, unknown> };
-type ExportChunk = { hits: unknown[]; total: unknown };
+type ExportChunk = { hits: unknown[]; matchingTotal: unknown; total: unknown; truncated: unknown };
 
 const CONFIGURED_INDEX = 'model-records';
 const DOCUMENT_TYPE = 'model';
@@ -612,20 +612,23 @@ suite(
 	() => {
 		requireNoProcessErrors();
 
-		test('getAllData yields every document as { hits, total } chunks when nothing is passed anywhere', async () => {
+		test('getAllData yields every document as { hits, total } chunks, with the matching total and an uncut mark beside them, when nothing is passed anywhere', async () => {
 			// Given an application whose route calls getAllData({ sqon, maxRows, ctx: req.context })
 			const { application } = await buildPatternBApplication();
 
 			// When the client posts its export payload with no sqon
 			const response = await request(application).post('/export/hits').send(patternBClientPayload());
 
-			// Then the route received chunks shaped { hits, total } that hold every document, in _id order
+			// Then the route received { hits, total } chunks holding every document, in _id order, with only the
+			// additive matchingTotal and truncated beside them
 			assert.deepEqual(hitsFrom(response), SOURCES_IN_ID_ORDER);
 			const chunks = response.body.chunks as ExportChunk[];
 			for (const chunk of chunks) {
-				assert.deepEqual(Object.keys(chunk).sort(), ['hits', 'total']);
+				assert.deepEqual(Object.keys(chunk).sort(), ['hits', 'matchingTotal', 'total', 'truncated']);
 				assert.ok(Array.isArray(chunk.hits), 'every chunk carries its rows as an array under hits');
 				assert.equal(chunk.total, STORED_DOCUMENTS.length);
+				assert.equal(chunk.matchingTotal, STORED_DOCUMENTS.length);
+				assert.equal(chunk.truncated, false);
 			}
 		});
 
