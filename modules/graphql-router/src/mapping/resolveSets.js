@@ -80,6 +80,7 @@ export const saveSet =
 				disableClientFilters: context.disableClientFilters,
 				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
 			}),
+			setsIndex,
 		});
 
 		const ids = await retrieveSetIds({

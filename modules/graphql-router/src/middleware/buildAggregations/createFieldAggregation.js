@@ -32,7 +32,7 @@ const createNumericAggregation = ({ type, esFieldName, fieldName, graphqlField }
 	};
 };
 
-const createTermAggregation = ({ esFieldName, fieldName, isNested, graphqlField, termFilters }) => {
+const createTermAggregation = ({ esFieldName, fieldName, isNested, graphqlField, setsIndex, termFilters }) => {
 	const maxAggregations = get(graphqlField, ['buckets', '__arguments', 0, 'max', 'value'], MAX_AGGREGATION_SIZE);
 	const termFilter = graphqlField?.buckets?.filter_by_term || null;
 	const topHits = graphqlField?.buckets?.top_hits || null;
@@ -62,6 +62,7 @@ const createTermAggregation = ({ esFieldName, fieldName, isNested, graphqlField,
 			opSwitch({
 				nestedFields: [],
 				filter: normalizeFilters(sqonFilter),
+				setsIndex,
 			}),
 		);
 
@@ -129,7 +130,7 @@ const computeCardinalityAggregation = ({ esFieldName, fieldName, graphqlField })
  * path used inside the query clauses themselves; the two diverge only when the catalogue has a
  * `nestingPrefix` configured (see `middleware/utils/nestingPrefix.ts`).
  */
-export default ({ esFieldName, fieldName, graphqlField = {}, isNested = false, termFilters = [] }) => {
+export default ({ esFieldName, fieldName, graphqlField = {}, isNested = false, setsIndex, termFilters = [] }) => {
 	const resolvedEsFieldName = esFieldName ?? fieldName;
 	const types = [BUCKETS, STATS, HISTOGRAM, RANGE, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
 
@@ -137,7 +138,14 @@ export default ({ esFieldName, fieldName, graphqlField = {}, isNested = false, t
 		if (type === BUCKETS || type === BUCKET_COUNT) {
 			return Object.assign(
 				acc,
-				createTermAggregation({ esFieldName: resolvedEsFieldName, fieldName, isNested, graphqlField, termFilters }),
+				createTermAggregation({
+					esFieldName: resolvedEsFieldName,
+					fieldName,
+					graphqlField,
+					isNested,
+					setsIndex,
+					termFilters,
+				}),
 			);
 		} else if ([STATS, HISTOGRAM, RANGE].includes(type)) {
 			return Object.assign(

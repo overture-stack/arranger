@@ -140,6 +140,7 @@ PUT  /<setsIndex>  (with mappings body, only when index does not exist)
 ```
 
 > **Required permissions (sets index level):**
+>
 > - `indices:admin/exists` - existence check on startup
 > - `indices:admin/create` + `indices:admin/mapping/put` - index creation on first run
 >
@@ -159,27 +160,17 @@ On each GraphQL query:
 
 1. The resolver receives a SQON filter and calls `buildQuery` to translate it into an ES query body.
 
-2. If the SQON contains values starting with `set_id:`, `resolveSetsInSqon` is called first:
+2. A value starting with `set_id:` compiles to a `terms` lookup against the catalogue's own sets index. The search engine fetches the set's `ids` while it runs the query, so no separate request is made.
 
-    **File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
+    > **Required permission:** `indices:data/read/get` on the sets index, since the search engine fetches the set's document by id during the query. Covered by the `read` built-in action group (`indices:data/read*`).
 
-    ```
-    POST /<setsIndex>/_search
-    ```
-
-    > **Required permission:** `indices:data/read/search` on the sets index.
-
-    This looks up the stored set document and substitutes the `ids` array into the SQON filter before the main query runs.
-
-3. The resolved ES query runs:
+3. The query runs:
 
     ```
     POST /<dataIndex>/_search
     ```
 
     > **Required permission:** `indices:data/read/search` on the data index. Covered by the `read` built-in action group (`indices:data/read*`).
-
-> **Known issue:** `hackyTemporaryEsSetResolution.js` is a stale ES 6.2 workaround that reads `setsIndex` from the global `fallbackConfigs` object instead of receiving it as a parameter (convention violation). Tracked in tech-debt; evaluate during Sets full-feature implementation.
 
 References: [OpenSearch search API](https://docs.opensearch.org/latest/api-reference/search/) | [Elasticsearch search API](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/search-search.html)
 
@@ -238,20 +229,20 @@ References: [OpenSearch search API](https://docs.opensearch.org/latest/api-refer
 
 All transport actions Arranger can initiate, grouped by phase:
 
-| Phase                       | API call                     | Transport action                                    | Minimum grant                                        |
-| --------------------------- | ---------------------------- | --------------------------------------------------- | ---------------------------------------------------- |
-| Entrypoint script†          | `GET /_cluster/health`       | `cluster:monitor/health`                            | cluster-level explicit (startup script only - not application code) |
-| Startup: detection          | `GET /`                      | `cluster:monitor/main`                              | cluster-level explicit, or set `SEARCH_ENGINE`       |
-| Startup: detection fallback | `GET /_nodes/_local`         | `cluster:monitor/nodes/info`                        | cluster-level explicit (not needed if `GET /` works) |
-| Startup: alias resolution   | `GET /_cat/aliases`          | `indices:admin/aliases/get`                         | index-level on `*` (explicit; `cluster_composite_ops_ro` does not cover direct alias API calls) |
-| Startup: mapping fetch      | `GET /<index>/_mapping`      | `indices:admin/mappings/get`                        | explicit on data index                               |
-| Startup: sets check         | `HEAD /<setsIndex>`          | `indices:admin/exists`                              | `manage` on sets index                               |
-| Startup: sets creation      | `PUT /<setsIndex>`           | `indices:admin/create`, `indices:admin/mapping/put` | `manage` on sets index                               |
-| Per query: search           | `POST /<index>/_search`      | `indices:data/read/search`                          | `read` on data index                                 |
-| Per query: set expansion    | `POST /<setsIndex>/_search`  | `indices:data/read/search`                          | `read` on sets index                                 |
-| Downloads                   | `POST /<index>/_search`      | `indices:data/read/search`                          | `read` on data index                                 |
-| saveSet: collect IDs        | `POST /<dataIndex>/_search`  | `indices:data/read/search`                          | `read` on data index                                 |
-| saveSet: write set          | `PUT /<setsIndex>/_doc/<id>` | `indices:data/write/index`                          | `write` on sets index                                |
+| Phase                       | API call                                    | Transport action                                    | Minimum grant                                                                                   |
+| --------------------------- | ------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Entrypoint script†          | `GET /_cluster/health`                      | `cluster:monitor/health`                            | cluster-level explicit (startup script only - not application code)                             |
+| Startup: detection          | `GET /`                                     | `cluster:monitor/main`                              | cluster-level explicit, or set `SEARCH_ENGINE`                                                  |
+| Startup: detection fallback | `GET /_nodes/_local`                        | `cluster:monitor/nodes/info`                        | cluster-level explicit (not needed if `GET /` works)                                            |
+| Startup: alias resolution   | `GET /_cat/aliases`                         | `indices:admin/aliases/get`                         | index-level on `*` (explicit; `cluster_composite_ops_ro` does not cover direct alias API calls) |
+| Startup: mapping fetch      | `GET /<index>/_mapping`                     | `indices:admin/mappings/get`                        | explicit on data index                                                                          |
+| Startup: sets check         | `HEAD /<setsIndex>`                         | `indices:admin/exists`                              | `manage` on sets index                                                                          |
+| Startup: sets creation      | `PUT /<setsIndex>`                          | `indices:admin/create`, `indices:admin/mapping/put` | `manage` on sets index                                                                          |
+| Per query: search           | `POST /<index>/_search`                     | `indices:data/read/search`                          | `read` on data index                                                                            |
+| Per query: set lookup       | `GET /<setsIndex>/_doc/<id>`, by the engine | `indices:data/read/get`                             | `read` on sets index                                                                            |
+| Downloads                   | `POST /<index>/_search`                     | `indices:data/read/search`                          | `read` on data index                                                                            |
+| saveSet: collect IDs        | `POST /<dataIndex>/_search`                 | `indices:data/read/search`                          | `read` on data index                                                                            |
+| saveSet: write set          | `PUT /<setsIndex>/_doc/<id>`                | `indices:data/write/index`                          | `write` on sets index                                                                           |
 
 † `cluster:monitor/health` is called by `scripts/ping-elasticsearch.sh` before the Node.js process starts. The application itself never calls `/_cluster/health`. This permission can be omitted if the startup display is not needed; startup still succeeds. See roadmap: "Decouple startup health check from application credential".
 

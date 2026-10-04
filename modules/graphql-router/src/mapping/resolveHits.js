@@ -272,6 +272,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 				disableClientFilters: context.disableClientFilters,
 				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
 			}),
+			setsIndex: type.setsIndex,
 		});
 
 		const body =

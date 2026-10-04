@@ -10,7 +10,7 @@ import { applyNestingPrefix } from '#middleware/utils/nestingPrefix.js';
  * queries that are on a term that shares a parent with a aggregation field
  * needs to be dropped down to the aggregation level as a filter.
  */
-const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilterThemselves, nestingPrefix }) =>
+const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilterThemselves, nestingPrefix, setsIndex }) =>
 	Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
 		const skipToNextLevel = () => {
 			acc[aggName] = {
@@ -20,6 +20,7 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
 					nestedSqonFilters,
 					aggregationsFilterThemselves,
 					nestingPrefix,
+					setsIndex,
 				}),
 			};
 			return acc;
@@ -45,6 +46,7 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
 										opSwitch({
 											nestedFieldNames: [],
 											filter: normalizeFilters(sqonFilter),
+											setsIndex,
 										}),
 									),
 							},
@@ -54,6 +56,7 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
 							nestedSqonFilters,
 							aggregationsFilterThemselves,
 							nestingPrefix,
+							setsIndex,
 						}),
 					},
 				},

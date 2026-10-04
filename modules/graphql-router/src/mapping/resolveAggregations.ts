@@ -8,7 +8,6 @@ import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/
 import type { SchemaTypesDefinition } from '#schema/types.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
-import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
 
@@ -86,11 +85,6 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const { esClient } = context;
 
-		// due to this problem in Elasticsearch 6.2 https://github.com/elastic/elasticsearch/issues/27782,
-		// we have to resolve set ids into actual ids. As this is an aggregations specific issue,
-		// we are placing this here until the issue is resolved by Elasticsearch in version 6.3
-		const resolvedFilter = await resolveSetsInSqon({ sqon: filters, esClient });
-
 		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
 
 		const query = buildQuery({
@@ -98,10 +92,11 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			nestedFieldNames,
 			nestingPrefix,
 			filters: compileFilter({
-				clientSideFilter: resolvedFilter,
+				clientSideFilter: filters,
 				disableClientFilters: context.disableClientFilters,
 				serverSideFilter,
 			}),
+			setsIndex: type.setsIndex,
 		});
 
 		/**
@@ -116,6 +111,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			nestedFieldNames,
 			nestingPrefix,
 			filters: serverSideFilter,
+			setsIndex: type.setsIndex,
 		});
 
 		/**
@@ -127,7 +123,8 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		const aggs = buildAggregations({
 			query,
 			serverSideQuery,
-			sqon: resolvedFilter,
+			setsIndex: type.setsIndex,
+			sqon: filters,
 			graphqlFields,
 			nestedFieldNames,
 			nestingPrefix,

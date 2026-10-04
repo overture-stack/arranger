@@ -141,11 +141,13 @@ const buildConfigs = ({
 	nestedFieldNames = [],
 	nestingPrefix,
 	extendedFields = [],
+	setsIndex,
 } = {}) => ({
 	extendedFields,
 	index: DOCUMENT_TYPE,
 	name: DOCUMENT_TYPE,
 	nested_fieldNames: nestedFieldNames,
+	...(setsIndex !== undefined && { setsIndex }),
 	config: {
 		[configRootProperties.DOWNLOADS]: {
 			[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: allowCustomMaxRows,
@@ -720,6 +722,37 @@ suite('getAllData', () => {
 					"every page should require the filter's study clause",
 				);
 			}
+		});
+	});
+
+	suite('a saved-set filter', () => {
+		const setFilter = {
+			content: [{ content: { fieldName: 'donor_id', value: ['set_id:abc'] }, op: 'in' }],
+			op: 'and',
+		};
+		const lookupIndexOf = async (configs) => {
+			const engine = createPagingEngine({ documents: numberedDocuments(1) });
+			await collectStream(
+				await getAllData({
+					ctx: contextFor(engine, { configs, documentCount: 1 }),
+					...exportEverything,
+					sqon: setFilter,
+				}),
+			);
+			const lookup = requiredTermsOf(engine.requests[0].body.query).find((terms) => terms.donor_id?.id === 'abc');
+
+			return lookup?.donor_id.index;
+		};
+
+		test('looks the set up in the sets index the context carries', async () => {
+			// Given a context whose catalogue keeps its sets in its own index
+			// When an export filters by a saved set
+			// Then the lookup names that index
+			assert.equal(await lookupIndexOf(buildConfigs({ setsIndex: 'catalogue-sets' })), 'catalogue-sets');
+		});
+
+		test('looks the set up in the default sets index when a context built without the router names none', async () => {
+			assert.equal(await lookupIndexOf(buildConfigs()), 'arranger-sets');
 		});
 	});
 

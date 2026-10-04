@@ -133,6 +133,7 @@ const buildAggregations = ({
 	query,
 	rawPathsByGraphqlFlatName = {},
 	serverSideQuery,
+	setsIndex,
 	sqon,
 }) => {
 	const nestedFieldNames =
@@ -152,13 +153,14 @@ const buildAggregations = ({
 				? c.content?.fieldName?.startsWith(nestedPaths)
 				: c.content?.fieldName?.startsWith(nestedPaths) && c.content?.fieldName !== esFieldName,
 		);
-		const termFilters = contentsFiltered.map((filter) => opSwitch({ nestedFieldNames: [], filter }));
+		const termFilters = contentsFiltered.map((filter) => opSwitch({ nestedFieldNames: [], filter, setsIndex }));
 
 		const fieldAggregation = createFieldAggregation({
 			esFieldName,
 			fieldName,
 			graphqlField,
 			isNested: nestedPaths.length,
+			setsIndex,
 			termFilters,
 		});
 
@@ -192,6 +194,7 @@ const buildAggregations = ({
 		aggs,
 		nestedSqonFilters,
 		nestingPrefix,
+		setsIndex,
 	});
 
 	return filteredAggregations;

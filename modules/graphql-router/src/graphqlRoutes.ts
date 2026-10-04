@@ -23,7 +23,7 @@ import {
 	isAccessControlError,
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
-import { initializeSets } from '#config/index.js';
+import fallbackConfigs, { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
@@ -51,12 +51,15 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 	enableDebug,
 	label,
 	mappingFromIndex,
+	setsIndex,
 }: {
 	enableDebug: boolean;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
 	mappingFromIndex: any;
 	configs: ConfigsObject<Context>;
+	/** The catalogue's own sets index, where every read path looks up a saved set. */
+	setsIndex: string;
 }) => {
 	if (Object.keys(configs).length > 0) {
 		try {
@@ -144,6 +147,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					extendedFields,
 					index: configs?.[configRootProperties.ES_INDEX],
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
+					setsIndex,
 				},
 				mapping: mappingFromIndex,
 				registry: graphqlNameRegistry,
@@ -400,6 +404,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			enableDebug,
 			label,
 			mappingFromIndex,
+			setsIndex,
 		});
 
 		const { schema, resolvers } = await createSchema({
@@ -528,7 +533,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	assertFilterCallback({ getServerSideFilter, receiver: 'getGraphQLRoutes' });
 
 	// TODO: surfacing this variable to be reused later
-	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
+	const setsIndex = configs[configOptionalProperties.SETS]?.index || fallbackConfigs.sets.index;
 
 	try {
 		const { fieldsFromMapping, schema, typesWithMappings } = await createSchemasFromConfigs({

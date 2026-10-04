@@ -1,7 +1,5 @@
-import { setsProperties } from '@overture-stack/arranger-types/configs';
 import _ from 'lodash-es';
 
-import fallbackConfigs from '#config/constants.js';
 import {
 	ALL_OP,
 	AND_OP,
@@ -42,8 +40,6 @@ import { applyNestingPrefixToFieldNames, applyNestingPrefixToSqon } from '#middl
 
 import { InvalidFilterError } from './InvalidFilterError.js';
 import normalizeFilters from './normalizeFilters.js';
-
-const { sets } = fallbackConfigs;
 
 const wrapFilter = ({ esFilter, nestedFieldNames, filter, isNot }) => {
 	return filter?.content?.fieldName
@@ -202,9 +198,9 @@ const wrappers = {
 	[OR_OP]: wrapShould,
 	[NOT_OP]: wrapMustNot,
 };
-function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot } }) {
+function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot }, setsIndex }) {
 	const applyBooleanWrapper = wrappers[op];
-	const esFilters = content.map((filter) => opSwitch({ nestedFieldNames, filter }));
+	const esFilters = content.map((filter) => opSwitch({ nestedFieldNames, filter, setsIndex }));
 	// A pivot holds the conditions on its path to one nested item, whichever child comes first.
 	if (esFilters.some((esFilter) => isNested(esFilter) && esFilter.nested.path === pivot)) {
 		const flattned = esFilters.reduce(
@@ -218,7 +214,11 @@ function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot } }) {
 	}
 }
 
-function getSetFilter({ nestedFieldNames, filter, filter: { content, op } }) {
+function getSetFilter({ nestedFieldNames, filter, filter: { content, op }, setsIndex }) {
+	if (!setsIndex) {
+		throw new Error("A saved-set filter needs the catalogue's sets index to look the set up in.");
+	}
+
 	const esFilter = wrapFilter({
 		isNot: op === NOT_IN_OP,
 		filter,
@@ -227,10 +227,8 @@ function getSetFilter({ nestedFieldNames, filter, filter: { content, op } }) {
 			terms: {
 				boost: 0,
 				[content.fieldName]: {
-					// FIXME: use configs from router instead of constants
-					index: sets[setsProperties.INDEX],
-					type: sets[setsProperties.INDEX],
 					id: _.flatMap([content.value])[0].replace('set_id:', ''),
+					index: setsIndex,
 					path: 'ids',
 				},
 			},
@@ -259,7 +257,7 @@ const getBetweenFilter = ({ nestedFieldNames, filter }) => {
 	});
 };
 
-export const opSwitch = ({ nestedFieldNames, filter }) => {
+export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
 	const {
 		op,
 		pivot,
@@ -273,12 +271,12 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	}
 
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
-		return getGroupFilter({ nestedFieldNames, filter });
+		return getGroupFilter({ nestedFieldNames, filter, setsIndex });
 	} else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
 		if (`${value[0]}`.includes(REGEX)) {
 			return getRegexFilter({ nestedFieldNames, filter });
 		} else if (`${value[0]}`.includes(SET_ID)) {
-			return getSetFilter({ nestedFieldNames, filter });
+			return getSetFilter({ nestedFieldNames, filter, setsIndex });
 		} else if (`${value[0]}`.includes(MISSING)) {
 			return getMissingFilter({ nestedFieldNames, filter });
 		} else {
@@ -287,6 +285,7 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	} else if ([ALL_OP].includes(op)) {
 		return getGroupFilter({
 			nestedFieldNames,
+			setsIndex,
 			filter: {
 				op: AND_OP,
 				pivot: pivot || '.',
@@ -319,16 +318,18 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
  * @param {string} [args.caller] Label used in diagnostics only.
  * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`, so their clauses are wrapped.
  * @param {string} [args.nestingPrefix] Prefix applied to field names before compilation.
+ * @param {string} [args.setsIndex] The catalogue's own sets index, where a `set_id:` value is looked up.
  * @param {object} [args.filters] The SQON to compile. Absent or empty compiles to `{}`, which
  *   matches every document, so callers on an access-control path must guarantee a filter separately.
  *   `compileFilter` is what enforces that, and it throws rather than returning a nullish filter.
  * @returns {object} An Elasticsearch query body.
  */
-export default function ({ caller = 'unknown', nestedFieldNames = [], nestingPrefix, filters: rawFilters }) {
+export default function ({ caller = 'unknown', nestedFieldNames = [], nestingPrefix, filters: rawFilters, setsIndex }) {
 	if (Object.keys(rawFilters || {}).length === 0) return {};
 
 	return opSwitch({
 		nestedFieldNames: applyNestingPrefixToFieldNames(nestedFieldNames, nestingPrefix) ?? nestedFieldNames,
 		filter: normalizeFilters(applyNestingPrefixToSqon(rawFilters, nestingPrefix)),
+		setsIndex,
 	});
 }

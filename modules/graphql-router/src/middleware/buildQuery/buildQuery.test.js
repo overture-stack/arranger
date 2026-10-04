@@ -1191,6 +1191,7 @@ suite('buildQuery with a saved set', () => {
 			buildQuery({
 				filters: { content: { fieldName: 'kind', value: ['set_id:abc'] }, op },
 				nestedFieldNames: [],
+				setsIndex: 'catalogue-sets',
 			});
 
 		// When each is compiled, Then both exclude the set's ids

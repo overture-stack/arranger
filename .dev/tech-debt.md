@@ -914,15 +914,6 @@ Optionally and separately, convert `opSwitch` to a `function` declaration for th
 **Fix:** Update the comment to reference `serverDetails.ts`, or remove the provenance note if it no longer adds value.
 **Standalone:** yes; one-line comment fix
 
-### A saved-set filter's lookup names a document type, so it finds no set
-
-**File:** `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`)
-**Severity:** high (every `set_id:` filter on hits, exports and saved sets selects the wrong records)
-**Kind:** bug
-**Issue:** The `terms` lookup a `set_id:` value compiles to names `type: sets[setsProperties.INDEX]`, which is `'arranger-sets'`. Elasticsearch 7 indices are typeless, so their documents carry the type `_doc`, and a lookup naming any other type finds no document. On Elasticsearch 7.17, the version this repository's compose file runs, an `in` on a set therefore matches no records and a `not-in` on a set matches every record. The 3.0 line read the type from `ES_ARRANGER_SET_TYPE`, which a deployment could set; the GraphQL router fixes it to the index name. Reading `setsProperties.TYPE` instead would change nothing, since both default to `'arranger-sets'`. Whether OpenSearch, which removed types, rejects the parameter or ignores it is unverified.
-**Fix:** drop `type` from the lookup. The `todo` tests in `integration-tests/server/test/accessParity.test.ts` that filter records by a set pass once it lands.
-**Standalone:** yes
-
 ### Aggregation arguments are read by position, but GraphQL argument order is caller's choice
 
 **File:** `modules/graphql-router/src/middleware/buildAggregations/createFieldAggregation.js:13,36,39,40,59,110`
@@ -1063,14 +1054,6 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Issue:** `getESAliases` has two distinct code paths: alias found (returns the backing index name) and no match (returns `esIndex` as-is); neither has a unit test. Mock the `cat.aliases` response to cover both branches.
 **Standalone:** yes; unit test only, no application changes
 
-### No unit tests for `resolveSetsInSqon` set expansion
-
-**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
-**Severity:** low (missing test coverage)
-**Kind:** missing test coverage
-**Issue:** `resolveSetsInSqon` has two paths: SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
-**Standalone:** yes; but note the file also carries the `hackyTemporaryEsSetResolution` tech-debt entry; evaluate for removal during Sets full-feature implementation rather than investing deeply in tests for code that may be replaced
-
 ### No unit tests for `dataToExportFormat`
 
 **File:** `modules/graphql-router/src/utils/dataToExportFormat.js`
@@ -1080,22 +1063,13 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Fix:** Unit tests covering: basic field mapping; `jsonPath` extraction; `extendedDisplayValues` label substitution; columns with `show: false` excluded; empty hit set returns empty array.
 **Standalone:** yes; pure transformation function
 
-### `hackyTemporaryEsSetResolution.js`: stale ES 6.2 workaround + convention violation
-
-**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
-**Severity:** low
-**Kind:** stale code / convention violation
-**Issue:** Two related problems in one file. (1) The file header says the code is a workaround for an Elasticsearch 6.2 bug fixed in 6.3: "Once the issue is resolved by Elasticsearch in version 6.3, we no longer need these functions here." That condition was met years ago; we are on ES 7.x/OpenSearch. The function should be evaluated for removal. (2) `resolveSetIdsFromEs` reads `fallbackConfigs.sets.index` from a module-level import of the global `fallbackConfigs` object rather than receiving the sets index name as a parameter. This violates the module convention (modules receive config as typed params; they do not read from global or environment state).
-**Fix:** ~~Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised~~ Confirmed: `resolveSetsInSqon` is called unconditionally from `mapping/resolveAggregations.ts:96` on every request, regardless of `enableSets`; it is not gated and cannot be removed without breaking `set_id:` filter resolution wherever Sets is enabled. Rewrite `resolveSetIdsFromEs` to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. The ES 6.2 workaround framing in the file header is still stale and should be removed once confirmed unnecessary against current ES/OS versions, but the functions themselves stay. See also the new access-control entry below, found while confirming this.
-**Standalone:** no; evaluate alongside the Sets full feature implementation; the `fallbackConfigs` parameter fix is standalone, the ES 6.2 header cleanup is standalone, but do not remove the file
-
 ### `ENABLE_SETS` flag does not fully gate the Sets query path
 
-**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js` (`resolveSetsInSqon`, called unconditionally from `mapping/resolveAggregations.ts:96`); `modules/graphql-router/src/middleware/buildQuery/index.js:214-259` (`set_id:` terms-lookup query construction)
+**File:** `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`, the `set_id:` terms lookup)
 **Severity:** medium (OWASP A01: Broken Access Control; the risk is bounded by `setId` being an unguessable UUID, but there is no ownership check at all)
 **Kind:** design gap / feature flag does not cover its own attack surface
-**Issue:** `ENABLE_SETS` (default `false`) only gates `initializeSets`, which creates the sets ES index on startup (`config/utils/index.ts:15-17`). `resolveSetsInSqon` and the `set_id:` terms-lookup query builder run unconditionally on every request regardless of the flag. If a sets index exists in the cluster (the flag was enabled at some point, or the index is shared across deployments), any query containing `set_id:<uuid>` resolves to that set's full document ID list with no ownership check: the sets ES mapping stores `userId` per set, but nothing anywhere reads or enforces it.
-**Fix:** Short-term mitigation: gate `resolveSetsInSqon` and the `set_id:` query path on `enableSets` explicitly, so a disabled flag is a real kill switch rather than only skipping index creation. Real fix: implement the ABAC ownership check already scoped in [roadmap: Sets full feature implementation](roadmap.md#sets-full-feature-implementation) before treating any `set_id:` query as safe in a multi-tenant deployment.
+**Issue:** `ENABLE_SETS` (default `false`) only gates `initializeSets`, which creates the sets ES index on startup (`config/utils/index.ts:15-17`). The `set_id:` terms lookup runs on every read path regardless of the flag. If a sets index exists in the cluster (the flag was enabled at some point, or the index is shared across deployments), any query containing `set_id:<uuid>` resolves to that set's full document ID list with no ownership check: the sets ES mapping stores `userId` per set, but nothing anywhere reads or enforces it.
+**Fix:** Short-term mitigation: gate the `set_id:` lookup on `enableSets` explicitly, so a disabled flag is a real kill switch rather than only skipping index creation. Real fix: implement the ABAC ownership check already scoped in [roadmap: Sets full feature implementation](roadmap.md#sets-full-feature-implementation) before treating any `set_id:` query as safe in a multi-tenant deployment.
 **Standalone:** yes for the flag-gating mitigation; no for the ABAC ownership check, which is the roadmap item's own scope
 
 ### `SupportedClientTypes`/`clientType` naming conflates "which search engine" with "which client library"
@@ -1430,27 +1404,16 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Fix:** A short comment at each of the two ordering-sensitive lines stating what breaks if it moves. A test asserting `GET /introspection` returns the introspection body rather than a GraphQL response would catch the actual regression and is worth more than the comment.
 **Standalone:** yes
 
-### The aggregation path resolves saved sets outside the catalogue's own sets configuration
+### A saved set must resolve only for its owner, and only within the catalogue it came from
 
-**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`; `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`); `modules/graphql-router/src/schema/index.ts` (`setsMapping`)
-**Severity:** high for deployments with access control; for the rest, wrong aggregation counts in multi-catalogue deployments
-**Kind:** correctness; access-control prerequisite
-**Scope:** `resolveSetsInSqon` has exactly one caller, `resolveAggregations.ts`. Saving a set goes through `resolveSets.js`, which takes `setsIndex` per catalogue correctly. A `set_id:` filter on hits, exports and saved sets does not: the lookup `getSetFilter` compiles names the fallback sets index as well.
-**Issue:** A set's identifiers are drawn from one catalogue and mean nothing against another, so a set belongs to the catalogue that produced it. The aggregation path resolves sets against the fallback sets configuration rather than the catalogue's own, behind a standing `// TODO: trickle from passed in configs`. With per-catalogue sets indices, sets therefore resolve to empty on aggregations, silently. With one shared index, a set's identifiers can be applied to a catalogue they were never drawn from. And `setsMapping` records the documentType, which is not unique across catalogues, and no catalogue identifier, so a shared index cannot say which catalogue a set came from.
-**Not an abandoned design; a workaround that outlived its reason.** The file's header says it exists to work around elastic/elasticsearch#27782 in Elasticsearch 6.2, removable once 6.3 shipped, and carries its own `// TODO: evaluate this` against that header. This repository now depends on `@elastic/elasticsearch` ^7.17.14 and `@opensearch-project/opensearch` ^3.6.0. Its oldest touch is 2018, when one server meant one catalogue and a single sets index was per-catalogue by construction. The per-catalogue channel was built later and is threaded through `arrangerRoutes`, `createSetsType`, `initializeSets`, `saveSet` and `resolveSets.js`; this file and `getSetFilter` are the two places that bypass it.
-**Fix:** delete the workaround so that aggregations use the same compiled set filter as hits, and give `getSetFilter` the catalogue's sets index in place of the fallback, which fixes per-catalogue deployments outright. A shared index would also need a catalogue identifier in `setsMapping` plus a reindex; rather than build that, deployments with access control use per-catalogue sets indices.
-**Requirement that lands with the fix:** every path that reads or expands a set resolves it only for its owner, and the owner comes from the request's trusted context, the same context `getServerSideFilter` receives, never from a client-supplied argument. With no identity in the context, behaviour is unchanged. Scheduled as [auth roadmap Phase 1 item 8](docs/arranger-auth/roadmap.md).
-**Standalone:** the resolution fix, yes; the ownership requirement is part of Phase 1 item 8.
+**File:** `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`); `modules/graphql-router/src/schema/index.ts` (`setsMapping`)
+**Severity:** high for deployments with access control
+**Kind:** access-control prerequisite
+**Issue:** Every read path looks a set up in its catalogue's own sets index. A set's identifiers are drawn from one catalogue and mean nothing against another, so a set belongs to the catalogue that produced it, but `setsMapping` records the documentType, which is not unique across catalogues, and no catalogue identifier, so a sets index shared by several catalogues cannot say which catalogue a set came from.
+**Fix:** Deployments with access control use per-catalogue sets indices, rather than a catalogue identifier in `setsMapping` and a reindex.
+**Requirement:** every path that reads or expands a set resolves it only for its owner, and the owner comes from the request's trusted context, the same context `getServerSideFilter` receives, never from a client-supplied argument. With no identity in the context, behaviour is unchanged. Scheduled as [auth roadmap Phase 1 item 8](docs/arranger-auth/roadmap.md).
+**Standalone:** no; part of Phase 1 item 8.
 **Relates to:** the Usher integration, which defines a catalogue as the scope within which a field name resolves, explicitly not a governance boundary; see that project's glossary entry for Catalogue.
-
-### Aggregations fail on any filter referencing a saved set
-
-**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js` (`resolveSetIdsFromEs`)
-**Severity:** high (every facet request filtering by a set fails)
-**Kind:** bug; regression
-**Issue:** `resolveSetIdsFromEs` reads `hits` from the top of the search response. Since the SearchClient change (#1021), `esSearch` returns the whole response with its result under `body`, where every other caller reads it; this one was not updated. An aggregation request whose filter holds a `set_id:` value therefore fails with `Cannot read properties of undefined (reading 'hits')`, with or without access control, in every graphql-router 1.0.0 release candidate.
-**Fix:** read `body.hits`, or delete the workaround as the entry above proposes, which removes this caller. The `todo` facet test in `integration-tests/server/test/accessParity.test.ts` passes once it lands.
-**Standalone:** yes
 
 ### Display labels on a field that access control keys on must be narrowed per principal
 

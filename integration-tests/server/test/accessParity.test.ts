@@ -304,44 +304,26 @@ suite('a principal holding every grant sees exactly what no access control shows
 	});
 });
 
-/**
- * The sets index that set filters resolve against. Hits and aggregations both read the fallback sets
- * configuration rather than the catalogue's own (tracked in tech-debt), so a set saved to any other index
- * filters nothing, and its parity would hold without testing anything.
- */
-const FALLBACK_SETS_INDEX = 'arranger-sets';
-
-/**
- * Set filters give the wrong records today on every router alike, so parity alone would pass without
- * testing anything: these stay `todo`, asserting the set's own records too, until set filters work.
- */
-const SET_FILTER_TODO = {
-	todo: 'a set filter finds no set on this engine, and aggregations fail on one; both tracked in tech-debt',
-};
-
 suite('a saved set filters the same records with every grant as with no access control', { concurrency: false }, () => {
 	const esIndex = 'testing-access-parity-set-filters';
+	// The catalogue's own sets index, named apart from the default so a lookup elsewhere finds nothing.
+	const setsIndex = 'testing-access-parity-set-filters-sets';
 	const routers: Record<string, Started> = {};
-	const savedSetIds: string[] = [];
 
 	before(async () => {
 		await seed(esIndex, RECORDS);
-		Object.assign(routers, await startParityRouters(esIndex, FALLBACK_SETS_INDEX));
+		Object.assign(routers, await startParityRouters(esIndex, setsIndex));
 	});
 
 	after(async () => {
 		Object.values(routers).forEach(({ server }) => server.close());
 		await esClient.indices.delete({ index: esIndex }).catch(() => undefined);
-		// The fallback index may hold sets this suite did not save, so only its own are removed.
-		await Promise.all(
-			savedSetIds.map((id) => esClient.delete({ id, index: FALLBACK_SETS_INDEX }).catch(() => undefined)),
-		);
+		await esClient.indices.delete({ index: setsIndex }).catch(() => undefined);
 	});
 
 	/** Saves the category x records as a set through one router, and returns a filter on that set. */
 	const setFilterSavedThrough = async (savedThrough: string, operator: string) => {
 		const { setId } = await saveSet(routers[savedThrough], asUisSend(clause('in', 'category', ['x'])));
-		savedSetIds.push(setId);
 
 		return asUisSend(clause(operator, 'name', [`set_id:${setId}`]));
 	};
@@ -355,28 +337,25 @@ suite('a saved set filters the same records with every grant as with no access c
 		for (const [operator, expected] of [
 			['in', ['p1', 'p3', 'p6']],
 			['not-in', ['p2', 'p4', 'p5', 'p7', 'p8']],
+			['some-not-in', ['p2', 'p4', 'p5', 'p7', 'p8']],
 		] as const) {
-			test(
-				`a set saved ${savedUnder}, used in ${operator}, gives every router the same records`,
-				SET_FILTER_TODO,
-				async () => {
-					// Given a set of the category x records, saved through one router
-					const filters = await setFilterSavedThrough(savedThrough, operator);
+			test(`a set saved ${savedUnder}, used in ${operator}, gives every router the same records`, async () => {
+				// Given a set of the category x records, saved through one router
+				const filters = await setFilterSavedThrough(savedThrough, operator);
 
-					// When every router answers a query filtering by that set
-					const [unrestricted, ...granted] = await Promise.all(
-						['none', ...FULL_GRANT_VARIANTS].map((name) => recordsFor(filters, routers[name])),
-					);
+				// When every router answers a query filtering by that set
+				const [unrestricted, ...granted] = await Promise.all(
+					['none', ...FULL_GRANT_VARIANTS].map((name) => recordsFor(filters, routers[name])),
+				);
 
-					// Then each answers as no access control does, and that answer is the set's own records
-					granted.forEach((answer) => assert.deepEqual(answer, unrestricted));
-					assert.deepEqual([...unrestricted.hits.names].sort(), expected);
-				},
-			);
+				// Then each answers as no access control does, and that answer is the set's own records
+				granted.forEach((answer) => assert.deepEqual(answer, unrestricted));
+				assert.deepEqual([...unrestricted.hits.names].sort(), expected);
+			});
 		}
 	}
 
-	test('a set filter gives every router the same facets, counting only the set', SET_FILTER_TODO, async () => {
+	test('a set filter gives every router the same facets, counting only the set', async () => {
 		// Given a set of the three category x records, saved with no access control
 		const filters = await setFilterSavedThrough('none', 'in');
 
@@ -404,6 +383,7 @@ suite('a facet that does not filter itself keeps the access filter on its own fi
 	after(async () => {
 		started?.server.close();
 		await esClient.indices.delete({ index: esIndex }).catch(() => undefined);
+		await esClient.indices.delete({ index: setsIndex }).catch(() => undefined);
 	});
 
 	for (const [description, filters] of [

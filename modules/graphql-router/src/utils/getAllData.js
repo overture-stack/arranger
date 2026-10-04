@@ -215,6 +215,9 @@ export default async ({
 		}),
 		nestedFieldNames: configs.nested_fieldNames,
 		nestingPrefix,
+		// A context the router built carries the catalogue's own sets index; one built elsewhere gets the
+		// index a catalogue with no sets configuration uses.
+		setsIndex: configs.setsIndex ?? fallbackConfigs.sets.index,
 	});
 
 	const esSort = exportSort
