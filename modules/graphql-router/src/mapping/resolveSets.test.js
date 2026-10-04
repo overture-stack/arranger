@@ -101,4 +101,45 @@ suite('saveSet', () => {
 
 		assert.deepEqual(searchCalls[0].sort, ['bmi:asc']);
 	});
+
+	suite('the filter a saved set records', () => {
+		const CLIENT_FILTER = { op: 'and', content: [{ op: 'in', content: { fieldName: 'name', value: ['x'] } }] };
+
+		/** Saves a set under `context`, returning what was stored and what the mutation answered. */
+		const saveUnder = async (context) => {
+			const indexCalls = [];
+			const esClient = {
+				search: async () => ({ body: { hits: { hits: [], total: { value: 0 } } } }),
+				index: async (params) => {
+					indexCalls.push(params);
+				},
+			};
+
+			const answer = await saveSet({
+				getServerSideFilter: getDefaultServerSideFilter,
+				setsIndex: 'arranger-sets',
+				types: buildTypes(undefined),
+			})(
+				null,
+				{ type: 'donor', userId: 'user-1', sqon: CLIENT_FILTER, path: 'submitter_donor_id' },
+				{ esClient, ...context },
+			);
+
+			return { answer, stored: indexCalls[0].body };
+		};
+
+		test("is the client's filter as sent, where client filters apply", async () => {
+			const { answer, stored } = await saveUnder({});
+
+			assert.deepEqual(stored.sqon, CLIENT_FILTER);
+			assert.deepEqual(answer.sqon, CLIENT_FILTER);
+		});
+
+		test('is none, where client filters are disabled, since no client filter selected its ids', async () => {
+			const { answer, stored } = await saveUnder({ disableClientFilters: true });
+
+			assert.equal(stored.sqon, null);
+			assert.equal(answer.sqon, null);
+		});
+	});
 });

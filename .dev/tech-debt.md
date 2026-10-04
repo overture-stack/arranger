@@ -1433,15 +1433,6 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Fix:** Default to the catalogue's configured value and fall back to the constant only when it is absent; test both.
 **Standalone:** yes
 
-### `disableFilters` must also govern nested aggregations and saved sets
-
-**File:** `modules/graphql-router/src/mapping/resolveAggregations.ts` (`buildAggregations`); `modules/graphql-router/src/mapping/resolveSets.js` (`saveSet`)
-**Severity:** low (the flag is off by default, and the server-side filter still applies)
-**Kind:** incomplete feature flag
-**Issue:** With `disableFilters` on, the client's filter must play no part in a response. The search query already leaves it out; `buildAggregations` must also receive the filter `compileFilter` applied rather than the client's, for nested-field sub-aggregations, and `saveSet` must store the filter it applied rather than the client's `sqon`, so a saved set's filter describes its ids.
-**Fix:** Pass the filter `compileFilter` actually applied to `buildAggregations`, and store that same filter on a saved set.
-**Standalone:** yes
-
 ### Network search answers only access-control failures with fixed text
 
 **File:** `modules/graphql-router/src/network/resolvers/aggregations.ts`

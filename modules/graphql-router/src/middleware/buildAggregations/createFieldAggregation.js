@@ -32,9 +32,18 @@ const createNumericAggregation = ({ type, esFieldName, fieldName, graphqlField }
 	};
 };
 
-const createTermAggregation = ({ esFieldName, fieldName, isNested, graphqlField, setsIndex, termFilters }) => {
+const createTermAggregation = ({
+	disableClientFilters,
+	esFieldName,
+	fieldName,
+	graphqlField,
+	isNested,
+	setsIndex,
+	termFilters,
+}) => {
 	const maxAggregations = get(graphqlField, ['buckets', '__arguments', 0, 'max', 'value'], MAX_AGGREGATION_SIZE);
-	const termFilter = graphqlField?.buckets?.filter_by_term || null;
+	// A bucket's filter_by_term is a client filter too, so it is left out where those are disabled.
+	const termFilter = disableClientFilters ? null : graphqlField?.buckets?.filter_by_term || null;
 	const topHits = graphqlField?.buckets?.top_hits || null;
 	const source = topHits?.__arguments?.[0]?._source || null;
 	const size = topHits?.__arguments?.[1]?.size || 1;
@@ -60,7 +69,7 @@ const createTermAggregation = ({ esFieldName, fieldName, isNested, graphqlField,
 
 		const aggsFilters = terms?.content?.map((sqonFilter) =>
 			opSwitch({
-				nestedFields: [],
+				nestedFieldNames: [],
 				filter: normalizeFilters(sqonFilter),
 				setsIndex,
 			}),
@@ -130,7 +139,15 @@ const computeCardinalityAggregation = ({ esFieldName, fieldName, graphqlField })
  * path used inside the query clauses themselves; the two diverge only when the catalogue has a
  * `nestingPrefix` configured (see `middleware/utils/nestingPrefix.ts`).
  */
-export default ({ esFieldName, fieldName, graphqlField = {}, isNested = false, setsIndex, termFilters = [] }) => {
+export default ({
+	disableClientFilters = false,
+	esFieldName,
+	fieldName,
+	graphqlField = {},
+	isNested = false,
+	setsIndex,
+	termFilters = [],
+}) => {
 	const resolvedEsFieldName = esFieldName ?? fieldName;
 	const types = [BUCKETS, STATS, HISTOGRAM, RANGE, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
 
@@ -139,6 +156,7 @@ export default ({ esFieldName, fieldName, graphqlField = {}, isNested = false, s
 			return Object.assign(
 				acc,
 				createTermAggregation({
+					disableClientFilters,
 					esFieldName: resolvedEsFieldName,
 					fieldName,
 					graphqlField,

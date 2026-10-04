@@ -48,7 +48,7 @@ These flags turn off a feature entirely. None carry a security recommendation ei
 | Flag | Env var | Default | What it does |
 | --- | --- | --- | --- |
 | `disableDownloads` | `DISABLE_DOWNLOADS` | `false` | Disables a catalogue's `/download` endpoint, which then answers `404` for every method and path beneath it. |
-| `disableFilters` | `DISABLE_FILTERS` | `false` | Drops the client's filter for a catalogue: a request whose GraphQL variables carry `filters` or `sqon` is refused with `400`, and a filter written inline in the query, or sent as an export's `sqon`, is left out of the search query, though aggregations on nested fields can still apply it to their buckets. The server-side filter still applies. |
+| `disableFilters` | `DISABLE_FILTERS` | `false` | Drops the client's filter for a catalogue: a request whose GraphQL variables carry `filters` or `sqon` is refused with `400`, and a filter written inline in the query, or sent as an export's `sqon`, is left out of the search query and of every facet, a bucket's `filter_by_term` included, and a saved set records none. The server-side filter still applies. |
 | `disablePlayground` | `DISABLE_GRAPHQL_PLAYGROUND` | `false` | Disables the GraphQL Playground UI at the catalogue's GraphQL endpoint. |
 | `enableSets` | `ENABLE_SETS` | `false` | Enables saved Sets (create/query saved document groupings). Off by default because the feature is incomplete: only creation exists today, with no list/delete/update; see the Sets roadmap item for status before enabling in a real deployment. |
 

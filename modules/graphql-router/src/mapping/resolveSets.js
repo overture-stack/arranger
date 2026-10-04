@@ -106,7 +106,8 @@ export const saveSet =
 			ids,
 			type,
 			path,
-			sqon,
+			// A set records the client's filter only where that filter selected its ids.
+			sqon: context.disableClientFilters ? null : sqon,
 			userId,
 			size: ids.length,
 		};

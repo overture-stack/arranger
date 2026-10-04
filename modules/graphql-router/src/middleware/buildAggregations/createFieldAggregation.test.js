@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
 import createFieldAggregation from '#middleware/buildAggregations/createFieldAggregation.js';
+import { InvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 
 suite('middleware/createFieldAggregation', () => {
 
@@ -315,4 +316,41 @@ suite('middleware/createFieldAggregation', () => {
 		assert.deepEqual(createFieldAggregation(input), output);
 	});
 
+});
+
+suite("a bucket's filter_by_term", () => {
+	const IS_TAGGED = { op: 'and', content: [{ op: 'in', content: { fieldName: 'is_tagged', value: ['true'] } }] };
+
+	/** A bucket selection asking for each bucket's count within `filter`, as graphql-fields hands it over. */
+	const bucketsFilteredBy = (filter) => ({
+		buckets: { filter_by_term: { __arguments: [{ filter: { kind: 'Variable', value: filter } }] } },
+	});
+
+	test("is compiled into each bucket's term_filters where client filters apply", () => {
+		const output = createFieldAggregation({ fieldName: 'name', graphqlField: bucketsFilteredBy(IS_TAGGED) });
+
+		assert.ok(output.name.aggs?.term_filters, JSON.stringify(output));
+	});
+
+	test('is left out where client filters are disabled, so no bucket counts within a client filter', () => {
+		const output = createFieldAggregation({
+			disableClientFilters: true,
+			fieldName: 'name',
+			graphqlField: bucketsFilteredBy(IS_TAGGED),
+		});
+
+		assert.equal(output.name.aggs?.term_filters, undefined, JSON.stringify(output));
+	});
+
+	test('refuses a pivot naming no nested field with the pivot rule', () => {
+		const pivoted = {
+			op: 'and',
+			content: [{ op: 'in', pivot: 'donors', content: { fieldName: 'donors.sex', value: ['female'] } }],
+		};
+
+		assert.throws(
+			() => createFieldAggregation({ fieldName: 'name', graphqlField: bucketsFilteredBy(pivoted) }),
+			(error) => error instanceof InvalidFilterError,
+		);
+	});
 });

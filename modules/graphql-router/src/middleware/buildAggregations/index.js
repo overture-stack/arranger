@@ -127,6 +127,7 @@ function wrapWithFilters({
  */
 const buildAggregations = ({
 	aggregationsFilterThemselves,
+	disableClientFilters = false,
 	graphqlFields,
 	nestedFieldNames: rawNestedFieldNames,
 	nestingPrefix,
@@ -138,7 +139,10 @@ const buildAggregations = ({
 }) => {
 	const nestedFieldNames =
 		applyNestingPrefixToFieldNames(rawNestedFieldNames, nestingPrefix) ?? rawNestedFieldNames ?? [];
-	const normalizedSqon = normalizeFilters(applyNestingPrefixToSqon(sqon, nestingPrefix));
+	// Where client filters are disabled, no facet reads the client's filter, as the query does not.
+	const normalizedSqon = disableClientFilters
+		? undefined
+		: normalizeFilters(applyNestingPrefixToSqon(sqon, nestingPrefix));
 	const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
 		const fieldName = fieldKey.replace(/__/g, '.');
 		// `fieldName` stays the response key; only the ES path is translated back. Undoing `__`
@@ -164,6 +168,7 @@ const buildAggregations = ({
 		);
 
 		const fieldAggregation = createFieldAggregation({
+			disableClientFilters,
 			esFieldName,
 			fieldName,
 			graphqlField,

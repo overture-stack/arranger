@@ -121,6 +121,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		 */
 		const graphqlFields = getFields(graphqlResolveInfo, {}, { processArguments: true });
 		const aggs = buildAggregations({
+			disableClientFilters: context.disableClientFilters,
 			query,
 			serverSideQuery,
 			setsIndex: type.setsIndex,

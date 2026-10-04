@@ -195,3 +195,102 @@ for (const layout of LAYOUTS) {
 		},
 	);
 }
+
+/** A filter on the donors' own level, written into the query document, for a bucket's filter_by_term. */
+const INLINE_FEMALE_FILTER =
+	'{ op: "and", content: [{ op: "in", content: { fieldName: "donors.sex", value: ["female"] } }] }';
+
+/** The same filter, written into the query document rather than sent as a variable. */
+const INLINE_SOLID_FILTER =
+	'{ op: "and", content: [{ op: "in", content: { fieldName: "donors.specimens.tissue", value: ["Solid"] } }] }';
+
+for (const layout of LAYOUTS) {
+	suite(
+		`with client filters disabled, a filter written into the query narrows no facet, on ${layout.description}`,
+		{ concurrency: false },
+		() => {
+			const esIndex = `${layout.esIndex}-filters-disabled`;
+			let server: Server;
+			let url: string;
+
+			before(async () => {
+				await esClient.indices.delete({ index: esIndex }).catch(() => undefined);
+				await esClient.indices.create({ body: layout.mappings, index: esIndex });
+				await Promise.all(
+					RECORDS.map((record) =>
+						esClient.index({
+							body: layout.document(record),
+							id: record.name,
+							index: esIndex,
+							refresh: 'wait_for',
+						}),
+					),
+				);
+
+				const router = await arrangerRouter({
+					configs: {
+						disableFilters: true,
+						documentType: DOCUMENT_TYPE,
+						esIndex,
+						...(layout.nestingPrefix && { nestingPrefix: layout.nestingPrefix }),
+					},
+					esClient,
+				});
+				server = express().use(router).listen(0, '127.0.0.1');
+				await new Promise((resolve) => server.once('listening', resolve));
+				url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/graphql`;
+			});
+
+			after(async () => {
+				server?.close();
+				await esClient.indices.delete({ index: esIndex }).catch(() => undefined);
+			});
+
+			test("no bucket counts within a client filter: each bucket's filter_by_term answers null", async () => {
+				// Given a client asking each donor bucket for its count within a filter it wrote into the query
+				const { data } = await axios.post(url, {
+					query: `{ ${DOCUMENT_TYPE} { aggregations { donors__donor_id { buckets { key filter_by_term(filter: ${INLINE_FEMALE_FILTER}) } } } } }`,
+				});
+
+				// Then every bucket is answered, and none with a count within that filter
+				assert.equal(data.errors, undefined, JSON.stringify(data.errors));
+				const buckets = data.data[DOCUMENT_TYPE].aggregations.donors__donor_id.buckets;
+				assert.equal(buckets.length, 6, JSON.stringify(buckets));
+				assert.deepEqual(
+					buckets.map(({ filter_by_term }: { filter_by_term: unknown }) => filter_by_term),
+					buckets.map(() => null),
+				);
+			});
+
+			for (const filterThemselves of [false, true]) {
+				test(`hits and both facets count every record, filtering themselves ${filterThemselves}`, async () => {
+					// Given a catalogue whose client filters are disabled, and a client writing a filter into the query text
+					const selection = FACETS.map((facet) => `${facet} { buckets { key doc_count } }`).join(' ');
+					const { data } = await axios.post(url, {
+						query: `{ ${DOCUMENT_TYPE} { hits(first: 100, filters: ${INLINE_SOLID_FILTER}) { edges { node { name } } } aggregations(filters: ${INLINE_SOLID_FILTER}, aggregations_filter_themselves: ${filterThemselves}) { ${selection} } } }`,
+					});
+
+					// When hits and the facets answer it, Then each answers as though no filter were sent
+					assert.equal(data.errors, undefined, JSON.stringify(data.errors));
+					const { aggregations, hits } = data.data[DOCUMENT_TYPE];
+					const bucketsOf = (facet: string) =>
+						aggregations[facet].buckets
+							.map(({ doc_count, key }: { doc_count: number; key: string }) => `${key}:${doc_count}`)
+							.sort();
+					assert.deepEqual(
+						{
+							donors: bucketsOf('donors__donor_id'),
+							hits: hits.edges.map(({ node }: { node: { name: string } }) => node.name).sort(),
+							tissues: bucketsOf('donors__specimens__tissue'),
+						},
+						{
+							donors: ['D1:2', 'D2:1', 'D3:1', 'D4:1', 'D5:1', 'D6:1'],
+							hits: ['f1', 'f2', 'f3', 'f4', 'f5'],
+							tissues: ['Blood:3', 'Solid:4'],
+						},
+					);
+				});
+			}
+		},
+	);
+}
