@@ -159,10 +159,10 @@ suite('resolveRenamedEnvs: variables no longer read', () => {
 		});
 	});
 
-	test('covers the five 3.0 variables nothing reads in 3.1', () => {
+	test('covers the three 3.0 variables nothing reads in 3.1', () => {
 		assert.deepEqual(
 			UNREAD_ENVS.map(({ name }) => name),
-			['ENABLE_NETWORK_AGGREGATION', 'ES_LOG', 'MAX_DOWNLOAD_ROWS', 'MAX_LIVE_VERSIONS', 'NETWORK_AGGREGATIONS'],
+			['ES_LOG', 'MAX_DOWNLOAD_ROWS', 'MAX_LIVE_VERSIONS'],
 		);
 	});
 

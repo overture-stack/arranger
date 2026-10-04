@@ -1,5 +1,6 @@
 import { merge } from 'lodash-es';
 
+import type { LegacyNetworkEnv } from '#configs/legacyNetwork.js';
 import type { AllServerConfigs, ExternalConfigs } from '#configs/types/index.js';
 
 import { resolveImageAccessControl } from './enableAccessControl.js';
@@ -14,7 +15,7 @@ import configsFromLocalEnv from './localEnvs.js';
  */
 const configsAggregator = (
 	externalConfigs: ExternalConfigs = {},
-): AllServerConfigs & { catalogueConfigsPath: string } => {
+): AllServerConfigs & { catalogueConfigsPath: string; legacyNetwork: LegacyNetworkEnv } => {
 	const {
 		allowedCorsOrigins,
 		catalogueConfigsPath,

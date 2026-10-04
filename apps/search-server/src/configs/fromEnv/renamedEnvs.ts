@@ -81,12 +81,10 @@ export const RENAMED_ENVS: RenamedEnv[] = [
 
 /** Every 3.0 variable no longer read, by name. */
 export const UNREAD_ENVS: UnreadEnv[] = [
-	{ instead: 'configure network search in network.json', name: 'ENABLE_NETWORK_AGGREGATION' },
 	{ instead: 'remove it', name: 'ES_LOG' },
 	// 3.0 read it, then looked for its value where it was never stored, so no 3.0 export was ever limited by it.
 	{ instead: '3.0 never applied it either, so set DOWNLOAD_MAX_ROWS to limit exports', name: 'MAX_DOWNLOAD_ROWS' },
 	{ instead: 'remove it', name: 'MAX_LIVE_VERSIONS' },
-	{ instead: 'configure network search in network.json', name: 'NETWORK_AGGREGATIONS' },
 ];
 
 /** Whether a variable holds a value: a blank one counts as unset, as every reader of it treats it. */

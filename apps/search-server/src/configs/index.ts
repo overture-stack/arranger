@@ -5,6 +5,7 @@ import { resolveCatalogueId } from './catalogueId.js';
 import { resolveConfigsLocation } from './configsLocation.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
+import { type LegacyNetworkEnv, resolveLegacyNetwork } from './legacyNetwork.js';
 import type { AllServerConfigs, CataloguesMap } from './types/index.js';
 
 const buildCataloguesFromFolder = async ({
@@ -95,11 +96,22 @@ const buildCataloguesFromFolder = async ({
 	return cataloguesMap;
 };
 
+/** Reads each catalogue's 3.0 network configuration as 3.1's, warning about each one that sets it. */
+const resolveLegacyNetworks = (catalogs: CataloguesMap, legacy: LegacyNetworkEnv): CataloguesMap =>
+	Object.fromEntries(
+		Object.entries(catalogs).map(([catalogueId, catalogue]) => {
+			const { catalogue: resolved, notices } = resolveLegacyNetwork({ catalogue, catalogueId, legacy });
+			notices.forEach(({ code, message }) => process.emitWarning(message, { code, type: 'DeprecationWarning' }));
+
+			return [catalogueId, resolved];
+		}),
+	);
+
 const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Promise<AllServerConfigs> => {
 	console.log('Gathering configuration data:');
 
 	// TODO: validate external configs to prevent undesired items, warn deprecations, etc.
-	const { catalogueConfigsPath, ...configsFromEnv } = aggregateConfigsFromEnv(externalConfigs);
+	const { catalogueConfigsPath, legacyNetwork, ...configsFromEnv } = aggregateConfigsFromEnv(externalConfigs);
 	const location = resolveConfigsLocation({
 		catalogueConfigsPath,
 		currentDirectory,
@@ -119,7 +131,7 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 
 		const aggregatedConfigs = {
 			...configsFromEnv,
-			catalogs: catalogueConfigs,
+			catalogs: resolveLegacyNetworks(catalogueConfigs, legacyNetwork),
 		};
 
 		// TODO: some form of config validation and logging for it
@@ -139,7 +151,7 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 
 		configsFromEnv.enableDebug && console.log(`\n  DEBUG: ${err}\n`);
 		console.log('  - No catalogue config directory found. Defaulting to config values from the environment...');
-		return configsFromEnv;
+		return { ...configsFromEnv, catalogs: resolveLegacyNetworks(configsFromEnv.catalogs, legacyNetwork) };
 	}
 };
 

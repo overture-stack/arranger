@@ -10,12 +10,18 @@ import {
 } from '@overture-stack/arranger-types/configs/constants';
 import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
 
+import { readLegacyNetworkEnv } from '#configs/legacyNetwork.js';
+
 import { parseEnableAccessControl } from './enableAccessControl.js';
 import { resolveRenamedEnvs } from './renamedEnvs.js';
 
 // A 3.0 deployment's variable names keep working as deprecated aliases, each warned about once, at startup.
 const { env, notices } = resolveRenamedEnvs(process.env);
-notices.forEach(({ code, message }) => process.emitWarning(message, { code, type: 'DeprecationWarning' }));
+// Network search's 3.0 variables too, which each catalogue applies once its files are read.
+const { legacy: legacyNetwork, notices: networkNotices } = readLegacyNetworkEnv(env);
+[...notices, ...networkNotices].forEach(({ code, message }) =>
+	process.emitWarning(message, { code, type: 'DeprecationWarning' }),
+);
 
 // TODO: make a more robust isProd helper (e.g. casing + alternatives like 'prod')
 const isProd = env.NODE_ENV === 'production';
@@ -96,6 +102,7 @@ const configsFromEnv = {
 		pingPath: env.PING_PATH || '/ping',
 		readyPath: env.READY_PATH || '/ready',
 	},
+	legacyNetwork,
 	serverPort: stringToNumber(env.SERVER_PORT, 5050),
 };
 
