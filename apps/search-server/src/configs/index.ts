@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { resolveCatalogueId } from './catalogueId.js';
+import { resolveConfigsLocation } from './configsLocation.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
 import type { AllServerConfigs, CataloguesMap } from './types/index.js';
@@ -99,13 +100,21 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 
 	// TODO: validate external configs to prevent undesired items, warn deprecations, etc.
 	const { catalogueConfigsPath, ...configsFromEnv } = aggregateConfigsFromEnv(externalConfigs);
+	const location = resolveConfigsLocation({
+		catalogueConfigsPath,
+		currentDirectory,
+		exists: (candidate) => fs.existsSync(candidate),
+	});
+	if (location.notice) {
+		process.emitWarning(location.notice.message, { code: location.notice.code, type: 'DeprecationWarning' });
+	}
 
 	try {
 		// TODO: this function should do all the multicatalogue config parsing
 		const catalogueConfigs = await buildCataloguesFromFolder({
 			catalogueConfigsPath,
 			configsFromEnv,
-			currentDirectory,
+			currentDirectory: location.currentDirectory,
 		});
 
 		const aggregatedConfigs = {
