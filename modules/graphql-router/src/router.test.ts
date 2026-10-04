@@ -975,3 +975,48 @@ suite("an application's own export route behind a callback reading res.locals", 
 		assert.deepEqual(response.body, { error: 'AccessControlError' });
 	});
 });
+
+suite('a configsSource, which the router no longer reads', () => {
+	/** Constructs a router with `settings`, resolving with why it failed, or undefined, and the warnings it emitted. */
+	const constructWith = async (settings: Record<string, unknown>) => {
+		const emitWarning = mock.method(process, 'emitWarning', () => undefined);
+		const { result: failure } = await withConsoleCaptured(() =>
+			arrangerRouter({ esClient: createSearchEngine().client, ...settings } as never).then(
+				() => undefined,
+				(error: unknown) => error,
+			),
+		);
+		emitWarning.mock.restore();
+
+		return { failure, warnings: emitWarning.mock.calls.map((call) => String(call.arguments[0])) };
+	};
+
+	test('is refused when passed with no configs, naming configs and linking the migration section', async () => {
+		// Given a 3.0-style call passing only a path to configuration files
+		const { failure } = await constructWith({ configsSource: './configs' });
+
+		// Then construction rejects with what to pass instead, and where the migration is described
+		assert.ok(failure instanceof Error, 'expected construction to reject');
+		assert.match(failure.message, /configsSource/);
+		assert.match(failure.message, /`configs`/);
+		assert.ok(failure.message.includes('#arranger-server-package'), failure.message);
+	});
+
+	test('counts as absent when empty, building from configs with no warning', async () => {
+		const { failure, warnings } = await constructWith({ configs: CATALOGUE_CONFIGS, configsSource: '' });
+
+		assert.equal(failure, undefined);
+		assert.deepEqual(warnings, []);
+	});
+
+	test('is warned about and ignored when passed beside configs, which the router builds from', async () => {
+		// Given a call passing both, as an integration following earlier advice may
+		const { failure, warnings } = await constructWith({ configs: CATALOGUE_CONFIGS, configsSource: './configs' });
+
+		// Then the router builds, and one warning says configsSource is not read, naming no removal time
+		assert.equal(failure, undefined);
+		assert.equal(warnings.length, 1, warnings.join('\n'));
+		assert.match(warnings[0] ?? '', /"configsSource" is not read/);
+		assert.doesNotMatch(warnings[0] ?? '', /removed|until|future/);
+	});
+});

@@ -118,6 +118,8 @@ See [docs/reference/08-Migration/v3.1.md](docs/reference/08-Migration/v3.1.md) f
 
 - **`req.context` is deprecated**: it remains a view of `res.locals.arranger`, so an application reading or writing it, setting it before the GraphQL router, or passing `ctx: req.context` to `getAllData` or `dataStream` keeps working, and Node prints one `DeprecationWarning`, code `ARRANGER_REQ_CONTEXT`, naming `res.locals` and linking the [migration guide](docs/reference/08-Migration/v3.1.md#per-request-state-res-locals). `addContext` is deprecated with it. With access control, `ctx: req.context` hands the filter callback the GraphQL router's keys alone, without those recorded at the root of `res.locals`, so the callback treats the export as a request carrying no identity, by its own rule. Pass `res.locals`.
 
+- **`arrangerRouter` no longer ignores a `configsSource` silently**: the GraphQL router reads no configuration files, so a path passed as `configsSource` with no `configs` would leave it with no configuration. That case now rejects at construction, naming `configs` as what to pass and linking the [migration guide](docs/reference/08-Migration/v3.1.md#arranger-server-package). Beside `configs`, `configsSource` is deprecated and not read, and a `DeprecationWarning`, code `ARRANGER_CONFIGS_SOURCE`, says so. An empty value counts as absent.
+
 ### MCP server
 
 - **New `apps/mcp-server`**: A Model Context Protocol server that exposes Arranger catalogues as LLM-queryable resources and tools. Separate Docker image: `ghcr.io/overture-stack/arranger-mcp-server`. Implements the MCP Streamable HTTP transport.

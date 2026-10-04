@@ -1,12 +1,3 @@
-export const warnDeprecatedConfigsSource = ({ configsSource = '', enableDebug = false }) => {
-	if (configsSource) {
-		console.warn(
-			'[Arranger] "configsSource" is deprecated. Pass a parsed configs object instead.',
-			enableDebug && 'DEBUG: file parsing has moved to the server as `catalogueConfigsPath`.',
-		);
-	}
-};
-
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export type GenericFn = (..._arg: any) => any;
 

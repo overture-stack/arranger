@@ -25,7 +25,7 @@ import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addArrangerLocals, keepRequestContextView } from '#utils/context.js';
-import { warnDeprecatedConfigsSource } from '#utils/noops.js';
+import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
 export const mergeConfigs = <Context extends ArrangerBaseContext>(
 	fallback: Partial<ConfigsObject<Context>>,
@@ -77,7 +77,7 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
 const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	catalogueId,
 	configs: customConfigs = {},
-	configsSource = '',
+	configsSource,
 	esClient: customEsClient = undefined,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -85,11 +85,32 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. Falls back to `documentType` when not provided. */
 	catalogueId?: string;
 	configs: Partial<ConfigsObject<Context>>;
-	configsSource?: string; // TODO: remove by v3.2
+	/**
+	 * @deprecated Not read, since the search server now reads configuration files: pass the configuration
+	 * as `configs`. Passed with no `configs`, construction rejects; beside them, it is ignored with a warning.
+	 */
+	configsSource?: string;
 	esClient?: SearchClient;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 }): Promise<Router> => {
+	// A router given only a path would start with no configuration, so that case is refused; beside
+	// `configs`, the path is ignored and the router builds from them.
+	if (configsSource) {
+		const hasConfigs = Object.keys(customConfigs).length > 0;
+
+		if (hasConfigs) {
+			process.emitWarning(
+				`arrangerRouter: "configsSource" is not read, and is deprecated: the router builds from \`configs\`. See ${MIGRATION_GUIDE_URL}#arranger-server-package`,
+				{ code: 'ARRANGER_CONFIGS_SOURCE', type: 'DeprecationWarning' },
+			);
+		} else {
+			throw new Error(
+				`arrangerRouter no longer reads "configsSource": pass the configuration as \`configs\` instead. See ${MIGRATION_GUIDE_URL}#arranger-server-package`,
+			);
+		}
+	}
+
 	const aggregatedConfigs = mergeConfigs(fallbackConfigs, customConfigs);
 	const label = resolveLabel({ catalogueId, documentType: aggregatedConfigs[configRootProperties.DOCUMENT_TYPE] });
 
@@ -109,8 +130,6 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			aggregatedConfigs,
 			customEsClient,
 		);
-
-		warnDeprecatedConfigsSource({ configsSource, enableDebug: aggregatedConfigs.enableDebug });
 
 		enableAdmin && console.log('    Instance will run in ADMIN mode!!');
 		// TODO: research and document what that means

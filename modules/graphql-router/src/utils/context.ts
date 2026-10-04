@@ -1,7 +1,8 @@
-import { createRequire } from 'node:module';
 import { deprecate } from 'node:util';
 
 import type { RequestHandler, Response } from 'express';
+
+import { MIGRATION_GUIDE_URL } from './migrationGuide.js';
 
 /**
  * What a router keeps about one request under `res.locals.arranger`: its catalogue configuration,
@@ -22,18 +23,8 @@ export const ARRANGER_LOCALS_KEY = 'arranger';
 
 const isRecord = (value: unknown): value is Record<PropertyKey, unknown> => typeof value === 'object' && value !== null;
 
-// The same path from src/utils and from the built dist/utils: both sit two levels below the package root.
-const packageJson: unknown = createRequire(import.meta.url)('../../package.json');
-const packageVersion = isRecord(packageJson) && typeof packageJson.version === 'string' ? packageJson.version : '';
-
-/**
- * Where the migration guide explains the move from `req.context` to `res.locals`, pinned to this
- * release's tag so the link keeps describing the version that printed it. A development build, which
- * has no tag, links to the main branch.
- */
-export const REQUEST_STATE_MIGRATION_URL = `https://github.com/overture-stack/arranger/blob/${
-	packageVersion && packageVersion !== '0.0.0-dev' ? `graphql-router-v${packageVersion}` : 'main'
-}/docs/reference/08-Migration/v3.1.md#per-request-state-res-locals`;
+/** Where the migration guide explains the move from `req.context` to `res.locals`, pinned as the guide's own link is. */
+export const REQUEST_STATE_MIGRATION_URL = `${MIGRATION_GUIDE_URL}#per-request-state-res-locals`;
 
 /** Emits one `DeprecationWarning` per process, however many requests use `req.context`. */
 const warnRequestContextDeprecated = deprecate(

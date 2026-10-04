@@ -55,7 +55,7 @@ const router = await arrangerRouter(options);
 | `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                       |
 | `esClient`            | `SearchClient`           | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
 | `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter each read is limited to, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
-| `configsSource`       | `string`                 | **Deprecated**: will be removed in v3.2. Pass `configs` directly instead.                                                           |
+| `configsSource`       | `string`                 | **Deprecated**, not read: pass `configs` instead. Passed with no `configs`, construction rejects; beside them, it is ignored with a warning. |
 
 ---
 
