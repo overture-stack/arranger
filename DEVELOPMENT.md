@@ -154,7 +154,7 @@ This project has first-class support for AI coding assistants. Agent instruction
 - [`CLAUDE.md`](CLAUDE.md): Claude (Claude Code CLI and desktop)
 - [`AGENTS.md`](AGENTS.md): Codex, GitHub Copilot, and other general-purpose agents
 
-Both cover the same ground with minor variations for tool-specific features. If you update project conventions, update both.
+`CLAUDE.md` only points Claude at `AGENTS.md`, which is the single canonical source for this project's conventions, so update `AGENTS.md`.
 
 Copilot previously had its own `.github/copilot-instructions.md`; it was retired 2026-08-17 because Copilot's coding agent, CLI, and VS Code Chat all read `AGENTS.md` directly now, so a second copy only created drift. See agentics' `CHANGELOG.md` § `copilot-instructions-retire-not-sync`.
 
