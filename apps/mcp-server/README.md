@@ -66,7 +66,7 @@ npm ci
 2. Configure environment variables:
 
 > [!NOTE]
-> See [Configuration](#configuration) for more details. This copies `.env.schema` and generates the one value it cannot carry, a signing key. It will not overwrite a `.env` you already have.
+> See [Configuration](#configuration) for more details. This copies `.env.schema` and generates the signing key it cannot carry.
 
 ```bash
 # from project root
@@ -112,7 +112,7 @@ An example environment variables file is located at [`.env.schema`](./.env.schem
 npm run setup-env
 ```
 
-That copies the template and fills in the key, and leaves an existing `.env` alone rather than overwriting whatever you have configured. Two narrower commands exist for the cases it does not cover:
+It does not overwrite an existing `.env` with the template, but it fills in the key if that is missing. Two narrower commands exist for the cases it does not cover:
 
 | Command                         | Does                                                                         |
 | ------------------------------- | ---------------------------------------------------------------------------- |
@@ -182,15 +182,79 @@ To test against a **remote** instance of Arranger Server:
 1. Update the `ARRANGER_BASE_URL` and `ARRANGER_CATALOGUES` in your MCP Server `.env` file to point to and reflect the state of your remote Arranger.
 2. Follow steps 3-5 of the [**local**](#local-arranger) testing instructions.
 
-### LM Studio
+### Chatting with an LLM
 
-To test with **LM Studio** instead of MCP Inspector:
+`execute_query` needs a client that speaks the `2026-07-28` MCP spec and supports elicitation, which most model hosts (including LM Studio) do not yet. Until Arranger has its own chat host, use the MCP TypeScript SDK's example CLI host, which works with any OpenAI-compatible endpoint, including Ollama.
 
-- Follow the LM Studio instructions to add an MCP server configuration: https://lmstudio.ai/docs/app/mcp
-    - Provide the config JSON in [`apps/mcp-server/mcp-inspector.json`](./mcp-inspector.json)
+You need Node 20 or later, pnpm 10, and an Ollama server (local or shared), with a tool-calling model.
+
+1. Start the MCP Server against a local Arranger (steps 1-3 of [Local Arranger](#local-arranger)) or a remote one ([Remote Arranger](#remote-arranger)).
+
+2. Pull a model, unless you are using a shared Ollama server:
+
+```bash
+ollama pull gemma4:e4b
+```
+
+3. Clone and build the SDK's CLI host:
+
+```bash
+# from outside this project
+git clone https://github.com/modelcontextprotocol/typescript-sdk.git
+cd typescript-sdk
+git checkout @modelcontextprotocol/client@2.1.0
+pnpm install
+pnpm build:all
+```
+
+4. From the `typescript-sdk` clone, start a chat:
+
+```bash
+OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama \
+  pnpm --filter @mcp-examples/cli-client start -- \
+  --server http://127.0.0.1:3100/mcp \
+  --protocol-version 2026-07-28 \
+  --provider openai \
+  --model gemma4:e4b
+```
+
+| Setting                         | Description                                                                                                     |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `OPENAI_BASE_URL`               | The model endpoint. For a shared server, use `http://<host>:11434/v1`.                                          |
+| `OPENAI_API_KEY`                | The client refuses to start without one. Ollama ignores the value.                                              |
+| `--protocol-version 2026-07-28` | Without it, the client can fall back to the 2025-era handshake, which this server refuses.                      |
+| `--provider openai`             | Without it, the client picks a provider from whichever API key your shell has set, such as `ANTHROPIC_API_KEY`. |
+| `--model`                       | Required, or set `OPENAI_MODEL`. The client's own default only finds OpenAI models.                             |
+
+5. Type `/servers` and check that the negotiated protocol is `2026-07-28`. `/tools` should list five tools.
+
+6. Ask something that needs the whole workflow, such as `what catalogues are there, and how many records are in the first one?`
+
+Each tool call prints as `→ mcp__127__list_catalogues {…}`. Expect `list_catalogues`, `get_catalogue_fields`, `build_sqon`, then `execute_query`. `execute_query` then pauses under `[elicitation request]`, showing the GraphQL query and variables it built, and asks `Execute this query? (...) [yes/no] (required):`:
+
+- `yes` runs the query.
+- `no`, `decline` or `cancel` skips it. The tool returns `executed: false` and nothing is sent to Arranger.
+
+Answer within 10 minutes. After that the confirmation expires, the call fails, and the model has to call `execute_query` again.
+
+**Limits of this client:**
+
+- **Tool rounds:** at most 8 model replies with tool calls per question. A model that retries a lot after validation errors can hit this, and the client prints `(stopped: tool-call round limit reached)`. Ask again, or narrow the question.
+- **Reply length:** each model reply is capped at 1024 tokens. A thinking model can spend that on reasoning and return an empty or cut-off answer. If that happens, try `llama3.1:8b`.
+- **System prompt:** there is no option to set one. The client uses its own short prompt plus this server's instructions, which is the combination worth testing.
+
+**Troubleshooting:**
+
+| Symptom                                         | Cause                                                                                                                                            |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `No mainline gpt-<version> model found`         | Neither `--model` nor `OPENAI_MODEL` is set.                                                                                                     |
+| Unsupported protocol version (`-32022`)         | `--protocol-version 2026-07-28` is missing.                                                                                                      |
+| `Invalid Host` (HTTP `403`)                     | The hostname you dialled is not in `MCP_ALLOWED_HOSTS`. Dial `127.0.0.1`, or add the hostname.                                                   |
+| The model chats but never calls a tool          | The model does not support tool calling. Try `qwen3:8b` or `llama3.1:8b`.                                                                        |
+| The model ignores the workflow or forgets tools | Ollama silently truncates prompts past its context window. Raise it on the Ollama server, with `OLLAMA_CONTEXT_LENGTH` or a Modelfile `num_ctx`. |
+| `Invalid or expired requestState`               | The confirmation waited more than 10 minutes, or the server restarted without `MCP_REQUEST_STATE_SECRET` set.                                    |
 
 ## Not Implemented Yet
 
 - stdin/stdout server transport
 - authentication
-- SQON generation helpers beyond introspection exposure

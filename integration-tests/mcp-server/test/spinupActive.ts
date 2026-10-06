@@ -69,8 +69,8 @@ export default ({ getClient, configuredCatalogues }: SpinupEnv) => {
 		assert.deepEqual(names, ['query_arranger']);
 	});
 
-	test('7.delivers the server instructions verbatim in the initialize response', async () => {
-		// Instructions are sent once, in the initialize result, and clients typically fold them into
+	test('7.delivers the server instructions verbatim in the server/discover result', async () => {
+		// Instructions are sent once, in the server/discover result, and clients typically fold them into
 		// the model's system prompt. Nothing else on the wire carries them, so if this is empty the
 		// model reaches the tool list with no discovery-before-query rule at all.
 		const instructions = getClient().getInstructions();

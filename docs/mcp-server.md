@@ -14,21 +14,31 @@ The `arranger-mcp-server` package implements the [Model Context Protocol](https:
 
 ```bash
 # from the monorepo root
+npm run mcp-server:setup-env
 npm run mcp-server:dev
 ```
 
-The server starts on `http://localhost:3100/mcp` by default. Two environment variables are required:
+`setup-env` copies `apps/mcp-server/.env.schema` to `apps/mcp-server/.env` and generates the one value the template cannot carry, a signing key. It does not overwrite an existing `.env` with the template, but it fills in the key if that is missing. The server then starts on `http://localhost:3100/mcp`. The default bind is IPv4 only, so if your client resolves `localhost` to `::1`, dial `127.0.0.1` instead, or set `MCP_HOST=::` where IPv6 is available.
+
+These variables are required:
 
 | Variable              | Description                                     |
 | --------------------- | ----------------------------------------------- |
 | `ARRANGER_BASE_URL`   | URL of the running Arranger search-server       |
 | `ARRANGER_CATALOGUES` | Comma-separated list of catalogue IDs to expose |
 
-All other variables (host, port, path, log level, request timeout) have sensible defaults. Copy `apps/mcp-server/.env.schema` to `apps/mcp-server/.env` to start from a working local baseline.
+These are also required unless `MCP_HOST` is loopback, such as `127.0.0.1`. The default, `0.0.0.0`, is not:
+
+| Variable                   | Description                                                            |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `MCP_ALLOWED_HOSTS`        | Hostnames clients use to reach the server. The template sets it        |
+| `MCP_REQUEST_STATE_SECRET` | Key that signs `execute_query` confirmations. `setup-env` generates it |
+
+All other variables have working defaults; see the [MCP server README](https://github.com/overture-stack/arranger/blob/main/apps/mcp-server/README.md#environment-variables) for the full list.
 
 ## What the server exposes
 
-**Instructions** (sent once, in the `initialize` response):
+**Instructions** (returned by `server/discover`, which a client calls when it connects):
 
 The server returns a short set of usage instructions that most clients fold into the model's system prompt. It describes what the server is for, requires the model to discover catalogue names, field names, and SQON syntax through the tools below rather than recalling them, and gives the call order (`list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`). Clients that ignore `instructions` still get the same rules from the tool descriptions, though later in the exchange.
 
@@ -64,15 +74,15 @@ One `combination` applies to the whole call. Mixed AND/OR nesting and the planne
 
 ## Connecting a client
 
-Any MCP-compatible client that supports Streamable HTTP can connect. Point it at the MCP server URL (`http://127.0.0.1:3100/mcp` with default config) and use transport type `streamable-http`.
+Any MCP client can connect over Streamable HTTP (`http://127.0.0.1:3100/mcp` with default config), provided it:
 
-**MCP Inspector** is useful during development: it's a browser-based UI for browsing resources and calling tools:
+- **speaks protocol revision `2026-07-28`**. The server refuses a client that negotiates an earlier revision.
+- **declares the `elicitation` capability**, to use `execute_query`. Every query is shown to the user for confirmation before it runs, and a client that cannot ask is refused. The other tools work without it.
 
-```bash
-npm run mcp-server:inspect
-```
+Many model hosts do not meet both yet, including LM Studio. Two that do:
 
-For **LM Studio** and other model hosts, follow the client's documentation to add an MCP server entry. The connection config lives at `apps/mcp-server/mcp-inspector.json` as a starting point.
+- **MCP Inspector**, a browser UI for browsing resources and calling tools, with no model: `npm run mcp-server:inspect`.
+- **The MCP TypeScript SDK's example CLI host**, for chatting with a model through any OpenAI-compatible endpoint such as Ollama. See [Chatting with an LLM](https://github.com/overture-stack/arranger/blob/main/apps/mcp-server/README.md#chatting-with-an-llm) for setup.
 
 ---
 
