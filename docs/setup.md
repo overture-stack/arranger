@@ -8,7 +8,7 @@ sidebar_position: 3
 
 Before you begin, ensure you have the following installed on your system:
 
-- Node.js (v22+)
+- Node.js (v24+)
 - [Docker](https://www.docker.com/products/docker-desktop/) (v4.39.0 or higher)
 
 ## Developer Setup

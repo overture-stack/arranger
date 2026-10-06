@@ -18,7 +18,7 @@ Technical resources for those working with or contributing to the project live i
 
 ## Development Environment
 
-- [Node.js](https://nodejs.org/) (v22 or higher)
+- [Node.js](https://nodejs.org/) (v24 or higher)
 - [Docker](https://www.docker.com/) (v4.39.0 or higher)
 - OpenSearch 1.x or higher, or Elasticsearch 7.x
 

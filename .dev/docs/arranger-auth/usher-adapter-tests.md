@@ -97,9 +97,10 @@ registration's shape and the bridge's interface, `KeyRegistration` and `BridgeCo
 loads it; its tests load it, for the Express layer used by the fake bridge. Until the packages are
 published, both are installed from `pnpm pack` tarballs, never a committed local path. `usher-types`
 depends on `@overture-stack/sqon` `^1.0.0-rc.6`, so Arranger's root `package.json` adds an
-`overrides` entry pointing it at Arranger's own workspace module. Express moves to 4.22.3, the
-bridge's floor, and both packages declare Node 24 or later, so Arranger's engines are settled at
-this step.
+`overrides` entry pointing it at Arranger's own workspace module. Express is at 4.22.3, the
+bridge's floor, and the repository requires Node 24, as both packages do. The package shipping the
+adapter declares Node 24 too, with its own line in the migration guide; components and charts
+declare no Node version.
 
     type Enforcement =
       | { kind: 'deny';   reason: 'no-grants' | 'unknown-resource' }
