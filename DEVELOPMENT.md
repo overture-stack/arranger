@@ -8,7 +8,7 @@ For community contribution guidelines (forks, PRs, code of conduct) see [CONTRIB
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v22 or higher
+- [Node.js](https://nodejs.org/) v24 or higher
 - [Docker](https://www.docker.com/) v4.39.0 or higher
 
 ---
