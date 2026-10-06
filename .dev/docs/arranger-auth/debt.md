@@ -16,14 +16,14 @@ A scoped view of `.dev/tech-debt.md` entries that sit on an access-control path,
 
 **Which clause is dangerous depends on the mechanism, and this entry previously named the wrong one.** It said a negated clause is the fail-open side of every defect in this family. That is true of the nesting mechanism, where a flat clause against a nested mapping matches nothing so its negation matches everything, and it is the reasoning that closed with the nesting fix. **Under cardinality drift it inverts**, because `terms` is existential over a flat multi-valued field:
 
-| Clause | A value appears that the principal does not hold | Direction |
+| Clause | A value not held by the principal appears | Direction |
 | --- | --- | --- |
 | `must_not(terms(field, complement))` | the new value is inside the complement, `terms` matches, the record is excluded | fails **closed** |
 | `terms(categoryField, held)` | the record still matches on the category it already carried | fails **open** |
 
-**Why it blocks Usher:** the enforcement clause is one conjunction per held `(resource, category)` pair, and the category half is a positive match. A record that gains a category value nobody granted still matches on the one it already had, so it is still returned, and categories are the axis where the universal rule is supposed to apply. That is the same defect as a record carrying two categories from the start, arriving through drift instead of through initial data shape.
+**Why it blocks Usher:** the enforcement clause is one conjunction per held `(resource, category)` pair, and the category half is a positive match. A record that gains a category value granted by nobody still matches on the one it already had, so it is still returned, and categories are the universal rule's intended axis. That is the same defect as a record carrying two categories from the start, arriving through drift instead of through initial data shape.
 
-**The resource half is live now, and closes when the data carries a category field.** Usher has settled this as conditional rather than as one reading winning. Under the complete model a resource is a selection and restrictions live on categories, so a record gaining a second cohort stays reachable through the granted cohort and its content is protected by the category clause: a community's claim rides on the category, which a custodian governs wherever it appears, so which cohort brought the reader does not matter.
+**The resource half is live now, and closes when the data carries a category field.** Usher has settled this as conditional rather than as one reading winning. Under the complete model a resource is a selection and restrictions live on categories, so a record gaining a second cohort stays reachable through the granted cohort and its content is protected by the category clause: a community's claim rides on the category, governed by a custodian wherever it appears, so which cohort brought the reader does not matter.
 
 **That protection is absent in the first deployment.** Usher has read both catalogues and neither carries an access-level field, so no category clause is emitted and the filter is the resource clause alone. With the restriction axis missing, the resource axis carries governance it was never designed to carry, and a record belonging to a community-governed resource and a co-contributing one is returned in full to a principal holding only the latter.
 
@@ -36,13 +36,13 @@ So the condition is a fact about indexed data that can change without either rep
 
 So exposure needs **both** conditions, not one: a missing category marking **and** the existential reading. A marking makes the record safe on its own; in its absence the quantifier decides by itself.
 
-An earlier version of this paragraph said the quantifier changed neither branch, which assumed its own conclusion: that is true only if the resource clause matches either way, which is only true under the existential reading, which is the reading under debate. The per-record category marking is still the condition worth acting on, because it is the one a deployment can fix and it closes the question whichever way the model is described. Today it is absent.
+An earlier version of this paragraph said the quantifier changed neither branch, which assumed its own conclusion: that is true only if the resource clause matches either way, which is only true under the existential reading, which is the reading under debate. The per-record category marking is still the condition worth acting on, because it is the one fixable by a deployment and it closes the question whichever way the model is described. Today it is absent.
 
 Nothing on the filter-compilation path (`compileFilter`/`buildQuery`) carries any cardinality instrumentation at all, so this happens with no code change, no error and no diff to review. `resolveHits`'s `isArray` warning does not cover it: it is response-shaping, fires only for a field present in the selection set, and a field used solely in a filter clause is never selected. The Usher adapter cannot see it either, since cardinality is an index-side fact neither service holds.
 
 **Evidence boundary.** The emitted queries above are executed. Document-level matching of `terms` over a multi-valued field is Elasticsearch's defined behaviour rather than something run against a live index here, and no integration test covers it. That test is what would close this properly.
 
-**The nesting half of this entry is closed and the reason it closed is worth keeping.** It read as one defect with two mechanisms, and only one was fixable in the compiler: whether a clause is wrapped as `nested` is decided by a list that is now derived from the mapping at every call site, `getAllData` included, and absent rather than empty is refused. Cardinality is not fixable the same way, because Elasticsearch has no array type and the mapping therefore carries no signal to validate against. So what remains is a **deployment precondition** rather than a property the software can assert, which is a different kind of blocker from the one this entry originally described and should be resolved with Usher as a contract question rather than closed here by a code change.
+**The nesting half of this entry is closed and the reason it closed is worth keeping.** It read as one defect with two mechanisms, and only one was fixable in the compiler: whether a clause is wrapped as `nested` is decided by a list that is now derived from the mapping at every call site, `getAllData` included, and absent rather than empty is refused. Cardinality is not fixable the same way, because Elasticsearch has no array type and the mapping therefore carries no signal to validate against. So what remains is a **deployment precondition** rather than a property that can be asserted by the software, which is a different kind of blocker from the one originally described by this entry and should be resolved with Usher as a contract question rather than closed here by a code change.
 
 ### No structured request logging exists
 
@@ -66,7 +66,7 @@ Nothing on the filter-compilation path (`compileFilter`/`buildQuery`) carries an
 ### A saved set must resolve only for its owner, and only within the catalogue it came from
 
 **Canonical entry:** `.dev/tech-debt.md` § graphql-router
-**Effect:** every path that reads or expands a set resolves it in the sets index its catalogue is configured with. Before enforcement relies on sets, each must also resolve it only for its owner, taken from the request's trusted context, and a deployment with access control needs a sets index per catalogue, since catalogues left on the default share one. Phase 1 item 8.
+**Effect:** every path that reads or expands a set resolves it in its catalogue's configured sets index. Before enforcement relies on sets, each must also resolve it only for its owner, taken from the request's trusted context, and a deployment with access control needs a sets index per catalogue, since catalogues left on the default share one. Phase 1 item 8.
 
 ### Display labels on a field that access control keys on must be narrowed per principal
 

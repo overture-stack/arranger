@@ -109,12 +109,12 @@ The Arranger repository ships everything needed for local development: a `docker
           <summary>**Click here for a detailed explanation of Arranger's environment variables**</summary>
 
           **Server**
-          - `SERVER_PORT`: The port the search server listens on
+          - `SERVER_PORT`: The search server's listening port
           - `ENABLE_LOGS`: Determines whether logging is enabled
 
           **Search engine connection**
           - `ES_HOST`: The URL of your Elasticsearch or OpenSearch instance. Use `localhost` when the server runs on your host and the cluster runs in Docker; the container hostname `elasticsearch` only resolves from inside the Compose network.
-          - `ES_USER` and `ES_PASS`: The credentials for accessing the cluster, matching the values the Makefile passes to Docker Compose
+          - `ES_USER` and `ES_PASS`: The credentials for accessing the cluster, matching the values passed by the Makefile to Docker Compose
           - `SEARCH_ENGINE`: Either `elasticsearch` or `opensearch`. Leave it unset to auto-detect from the cluster.
 
           **Catalogue configuration**
@@ -165,7 +165,7 @@ Once the server starts, you can access Arranger-Server at `http://localhost:5050
 
 When connecting Arranger to a secured OpenSearch or Elasticsearch cluster, the search engine user must have specific permissions for startup (alias resolution, mapping fetch), per-query search, and optionally Sets and auto-detection.
 
-For a full reference covering every API call Arranger makes, the transport action required, the minimum grant, and the rationale for non-obvious requirements (such as why `indices:admin/aliases/get` must be on `*` rather than the data index pattern), see the [search engine integration guide](https://github.com/overture-stack/arranger/blob/main/.dev/docs/search-engine-integration.md#permission-reference).
+For a full reference covering every API call made by Arranger, the transport action required, the minimum grant, and the rationale for non-obvious requirements (such as why `indices:admin/aliases/get` must be on `*` rather than the data index pattern), see the [search engine integration guide](https://github.com/overture-stack/arranger/blob/main/.dev/docs/search-engine-integration.md#permission-reference).
 
 ---
 

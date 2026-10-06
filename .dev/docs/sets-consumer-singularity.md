@@ -92,7 +92,7 @@ call it. It has its own Postgres, S3 object storage, and a Kafka consumer on a S
 **1. Arranger is not the only reader of the `clinical_centric` data index.** Singularity reads it
 directly with its own credentials from a Kubernetes secret, and portal-ui has Arranger configured
 to serve the same index. Two consumers read one index, one through Arranger and one around it, so
-any access control Arranger enforces covers one of two paths.
+any access control enforced by Arranger covers one of two paths.
 
 **The index must be named here rather than described, because "its index" is ambiguous between two
 and the evidence covers only one.** The claim above is about the **data** index, and it rests on
@@ -106,11 +106,11 @@ Naming `clinical_centric` is not a disclosure: portal-ui ships it to the browser
 `NEXT_PUBLIC_` variable, so it already sits in client-side JavaScript on a public site. Hostnames
 are a different class, describing reachable infrastructure, and are still omitted throughout.
 
-**This is the expected shape of the architecture, not a defect anyone introduced.** Arranger is a
+**This is the expected shape of the architecture, not a defect introduced by anyone.** Arranger is a
 query and aggregation layer over Elasticsearch, not a data-access gateway, so a second service
 reading the index directly with its own credentials is normal. The observation matters for design
 rather than for blame: it means enforcement placed in Arranger does not reach that consumer, which
-is the dual-layer problem with a second party nobody had named.
+is the dual-layer problem with a second, previously unnamed party.
 
 **2. The set ID is not *exposed* in this flow, which downgrades a concern raised here earlier.**
 The reasoning on this side had been that a set ID travels outward and might function as bearer

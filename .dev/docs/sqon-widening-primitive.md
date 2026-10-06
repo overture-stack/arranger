@@ -18,7 +18,7 @@ a separate, already-open item (see "Out of scope" below).
 
 A faceted UI ticking a second value in the same facet needs one thing: "either of these values,"
 expressed as a single `in` clause with both values. Two ways of building that currently exist, and
-neither is the ergonomic one a consumer reaches for first.
+neither is the ergonomic first choice for a consumer.
 
 **Chaining `.in()` for the same field does not do this: it `and`s.** `inFilter` is implemented as
 `and(makeFieldLeaf('in', fieldName, value))`, unconditionally. Confirmed directly in this repo's own
@@ -134,8 +134,8 @@ that doesn't need to account for a second, differently-behaved merge path.
    with two or more values is unsatisfiable on a single-valued field, exactly the defect the
    catalogue's `isArray` metadata exists to prevent (already gated in `build_sqon`, tracked as tech
    debt where it isn't). Generalizing here ships a primitive whose easiest misuse silently matches
-   nothing, in the one operator the repo already knows this about. Correctly gating it would need
-   field cardinality metadata this builder-level method has no access to, so `in`-only avoids the
+   nothing, in the one operator already flagged in the repo for this. Correctly gating it would need
+   field cardinality metadata inaccessible to this builder-level method, so `in`-only avoids the
    hazard rather than reproducing it.
 3. **Fix `setFilter`'s sign-inversion now, or track it separately from this proposal? Resolved:**
    fix it first. `addToFilter` delegates to `setFilter` and would otherwise inherit the gap; building

@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # Arranger MCP server
 
-The Arranger MCP server exposes a running Arranger instance's catalogue data and query tools to AI models, scripts, and pipelines. It is one of two surfaces for that purpose; the other is the [Introspection API](./reference/05-introspection.md), a set of read-only REST endpoints that any client can call directly.
+The Arranger MCP server exposes a running Arranger instance's catalogue data and query tools to AI models, scripts, and pipelines. It is one of two surfaces for that purpose; the other is the [Introspection API](./reference/05-introspection.md), a set of read-only REST endpoints callable directly by any client.
 
 The `arranger-mcp-server` package implements the [Model Context Protocol](https://modelcontextprotocol.io/) over Streamable HTTP. Connect any MCP-compatible AI client to it and the client can discover available catalogues, retrieve field metadata and the SQON schema, and construct search queries: without needing Arranger-specific integration code on the model side.
 
@@ -40,7 +40,7 @@ All other variables have working defaults; see the [MCP server README](https://g
 
 **Instructions** (returned by `server/discover`, which a client calls when it connects):
 
-The server returns a short set of usage instructions that most clients fold into the model's system prompt. It describes what the server is for, requires the model to discover catalogue names, field names, and SQON syntax through the tools below rather than recalling them, and gives the call order (`list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`). Clients that ignore `instructions` still get the same rules from the tool descriptions, though later in the exchange.
+The server returns a short set of usage instructions folded by most clients into the model's system prompt. It describes what the server is for, requires the model to discover catalogue names, field names, and SQON syntax through the tools below rather than recalling them, and gives the call order (`list_catalogues` → `get_catalogue_fields` → `build_sqon` → `execute_query`). Clients that ignore `instructions` still get the same rules from the tool descriptions, though later in the exchange.
 
 **Tools** (callable actions):
 
@@ -60,7 +60,7 @@ Two `in` clauses on the same field also merge, by combining their value lists, w
 
 One `combination` applies to the whole call. Mixed AND/OR nesting and the planned `fuzzy` operator are not yet supported: a query needing either still requires a hand-written `sqon`. An unfiltered query needs no `build_sqon` call at all; pass `{"op":"and","content":[]}` to `execute_query` directly.
 
-`execute_query` takes field names exactly as `get_catalogue_fields` reports them, but its **results** are keyed by the names Arranger's generated GraphQL schema uses, which are not always the same string. A name carrying a character GraphQL disallows is rewritten for the schema: dots separating an aggregation path become `__`, any other disallowed character becomes `_`, and a leading digit gets an `_` prefix. So a request for `donor-info.age-at-diagnosis` comes back as `donor_info { age_at_diagnosis }` under `hits`, and as `donor_info__age_at_diagnosis` under `aggregations`. Field names inside a `sqon` are never rewritten, in either direction: a SQON travels as a query variable rather than as part of the query document, so it always uses the raw name.
+`execute_query` takes field names exactly as `get_catalogue_fields` reports them, but its **results** are keyed by the names used in Arranger's generated GraphQL schema, which are not always the same string. A name carrying a character disallowed by GraphQL is rewritten for the schema: dots separating an aggregation path become `__`, any other disallowed character becomes `_`, and a leading digit gets an `_` prefix. So a request for `donor-info.age-at-diagnosis` comes back as `donor_info { age_at_diagnosis }` under `hits`, and as `donor_info__age_at_diagnosis` under `aggregations`. Field names inside a `sqon` are never rewritten, in either direction: a SQON travels as a query variable rather than as part of the query document, so it always uses the raw name.
 
 **Resources** (readable data by URI):
 

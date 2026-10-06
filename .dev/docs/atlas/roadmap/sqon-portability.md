@@ -27,7 +27,7 @@ A realistic SQON, three clauses, one of them a three-value `in`:
 | brotli + base64url | 184 | 184 |
 | Opaque identifier | 12 | 12 |
 
-A heavy bookmark, the shape a paper actually cites: thirty facet values ticked, plus a
+A heavy bookmark, the shape actually cited by a paper: thirty facet values ticked, plus a
 three-value second clause:
 
 | Encoding | In a URL |

@@ -84,7 +84,7 @@ Setting `SEARCH_ENGINE=opensearch` or `SEARCH_ENGINE=elasticsearch` skips all th
 
 After detection, `buildSearchClient` instantiates the appropriate client. Both are wrapped by the `SearchClient` abstract type (`modules/graphql-router/src/searchClient/types.ts`). All downstream code receives a `SearchClient` and does not know which engine is behind it.
 
-The two clients have compatible APIs for the operations Arranger uses (search, mapping get, cat aliases, index create/exists, document index). The abstraction exists precisely because the underlying SDK method signatures are close but not identical.
+The two clients have compatible APIs for the operations used by Arranger (search, mapping get, cat aliases, index create/exists, document index). The abstraction exists precisely because the underlying SDK method signatures are close but not identical.
 
 ---
 

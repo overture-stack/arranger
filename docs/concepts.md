@@ -36,7 +36,7 @@ Each option within a facet is a **bucket**: a distinct value paired with its doc
 | Lymphoma | 31 |
 | Sarcoma | 18 |
 
-Behind each facet is an Elasticsearch **aggregation**: the query Arranger sends to ES to compute those buckets. Aggregations are the technical backend; facets are their user-facing representation.
+Behind each facet is an Elasticsearch **aggregation**: the query sent by Arranger to ES to compute those buckets. Aggregations are the technical backend; facets are their user-facing representation.
 
 ## Filters, filter clauses, and SQONs
 
@@ -88,6 +88,6 @@ The word **filter** is used two ways: as a verb ("users filter the dataset") and
 | **SQON** | The full structured query object passed to Arranger, built from one or more filter clauses. |
 | **filter clause** | One field-level condition within a SQON (a single `{op, content}` leaf node). |
 | **filter** | (verb) To narrow a dataset by selecting facet options. (noun) A SQON, or informally a single filter clause. |
-| **`fieldName`** | The string property in a filter clause's `content` that names the single index field the condition applies to. Used by most operators. Never abbreviate to `field`. |
+| **`fieldName`** | The string property in a filter clause's `content` that names the condition's single index field. Used by most operators. Never abbreviate to `field`. |
 | **`fieldNames`** | The string-array property used instead of `fieldName` by the multi-field `wildcard` text operator (and by the planned, not-yet-implemented `fuzzy`). Matches one value against all listed fields simultaneously. Never abbreviate to `fields` or `field`. |
 | **settings** | Elasticsearch's own term for index-level configuration (the ES `settings` API). Use "configuration" for Arranger-level concepts; keep "settings" when mirroring ES language. |

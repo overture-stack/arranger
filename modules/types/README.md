@@ -12,7 +12,7 @@ without depending on each other directly.
   mapping).
 - `tools`: small pure utilities shared across packages, including the GraphQL name sanitizers
   (`sanitizeGraphqlNameSegment`, `sanitizeGraphqlFlatName`) and generic string/type helpers.
-- Root export: re-exports the SQON types this package builds on top of.
+- Root export: re-exports the SQON types underlying this package.
 
 **No stable release yet.** `npm install @overture-stack/arranger-types` resolves to the `latest`
 dist-tag, which only updates on a real release cut and can lag behind current work. Install

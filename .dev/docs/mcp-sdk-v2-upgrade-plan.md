@@ -174,7 +174,7 @@ The handoff into the handler is identical. `toNodeHandler` forwards `req.auth` a
 middleware"), and it reaches tool handlers as `ctx.http?.authInfo`. So our wiring assigns `req.auth`
 exactly as Express middleware would.
 
-One advantage the composed path gains: `verifyBearerToken` takes a raw `Authorization` header string,
+One advantage gained by the composed path: `verifyBearerToken` takes a raw `Authorization` header string,
 so auth can run **before** the body is read.
 
 ```ts
@@ -221,7 +221,7 @@ here. Drop `@types/express` from `apps/mcp-server`'s `devDependencies`.
 ### Decision 3, SETTLED 2026-09-03: serve one revision only, `legacy: 'reject'`
 
 **Decided.** `createMcpHandler(factory, { legacy: 'reject' })`. The endpoint serves `2026-07-28` and
-nothing else. This supersedes the narrower question the decision started as (signing off on lost
+nothing else. This supersedes the decision's original, narrower question (signing off on lost
 legacy resumability); the sign-off now covers dropping 2025-era serving entirely, which is a larger
 commitment and still someone's to own.
 
@@ -420,7 +420,7 @@ was written to be clean under it regardless.
   intact (`const confirmed = confirmExecution(); if (!confirmed) { ... }`), so the decline path and
   its `executed: false` result shape are still there to rebuild against.
 - `integration-tests/mcp-server/test/executeQuery.ts` tests 14 and 15 are `test.skip` with their
-  assertions unchanged. They describe the behaviour the rewrite has to reproduce.
+  assertions unchanged. They describe the behaviour to be reproduced by the rewrite.
 - `connectElicitingClient` in that file already registers its handler by method name
   (`'elicitation/create'`) and already carries the modern pin, so only the assertions move.
 - Decision 8 governs the remaining branch: a modern client that does not declare `elicitation` must
@@ -687,7 +687,7 @@ conversational step, not about elicitation.
             | `resources/read`           | `60_000`    | `private`    |
 
             **Verified 2026-09-05** by probe, as this section demanded, and the plan's own grouping was one of
-            the things the probe corrected.
+            the things corrected by the probe.
 
             | Probe                                                                   | Result                                                                      |
             | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -737,8 +737,8 @@ conversational step, not about elicitation.
             `listChanged` cannot reach anyone, so TTL expiry is the only correction mechanism, which argues
             against much longer. Development staleness is answered by the Inspector's `refresh`, not by
             shortening the production hint. A minute for the pair that tracks Arranger means a catalogue change
-            is visible without restarting this server, while still collapsing the burst of reads one agent
-            session makes.
+            is visible without restarting this server, while still collapsing the burst of reads from one agent
+            session.
 
             **Deferred, deliberately:** `arranger_sqon_schema` tracks Arranger's build rather than its
             catalogue configuration, so a longer per-resource `cacheHint` would fit it. It is one line and a
@@ -780,7 +780,7 @@ conversational step, not about elicitation.
   `validateMcpParamHeaders` runs pre-dispatch and rejects any call whose body carries that property
   without the matching `Mcp-Param-*` header, with `-32020` and HTTP `400`. It is a requirement on
   callers, not a hint. Every client that does not mirror parameters into headers would break, in
-  exchange for a routing capability no deployment currently wants. Revisit only alongside a gateway
+  exchange for a routing capability currently wanted by no deployment. Revisit only alongside a gateway
   that needs it.
 
 **The test harness already exists.** `src/server.test.ts`, added in commit 3, drives the real HTTP
@@ -813,7 +813,7 @@ mutation check confirms the six fail when `cacheHints` is removed from the const
 pins the manifest at `0.0.0-dev`, so today it cannot distinguish a manifest read from a literal that
 matches; the same mutation check saw it pass with the literal restored. It bites on a release build,
 which is the case that matters, and it also asserts `serverInfo` is stamped on more than one result
-type, which is the reason the version stopped being cosmetic.
+type, which is why the version stopped being cosmetic.
 
 **`capabilities.prompts` is advertised**, which an early probe suggested it might not be: the probe
 had registered no prompt. Against the real surface `server/discover` reports tools, resources and
@@ -864,7 +864,7 @@ listing a dozen `*.test.ts` entries as this section's wording implied. Enumerati
 doubled the block to restate a convention.
 
 **`npm run mcp-server:inspect` connects**, confirmed by hand against a live Arranger on 2026-09-05.
-It launches an interactive browser UI, so this is the one done-when condition no test covers.
+It launches an interactive browser UI, so this is the one done-when condition not covered by any test.
 
 **`.dev/docs/mcp-platform-testing.md` was deliberately not touched**, per the knock-on section below:
 it is owned elsewhere, and its five amendments belong to that owner rather than to a unilateral edit

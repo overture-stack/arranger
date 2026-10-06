@@ -62,7 +62,7 @@ at all.
 | `{op:'in', content:{fieldName, value:[]}}` | `{"terms":{"study":[],"boost":0}}`, match-none | **unchanged**, still match-none |
 | `{op:'not', content:[{op:'and', content:[]}]}` | `{"bool":{"must_not":[{"bool":{"must":[]}}]}}`, match-none | `{"bool":{"must_not":[]}}`, **match-all** |
 
-`reduceSqon` strips the empty inner combination, leaving `not` with nothing to negate, so deny inverts to allow-everything. Composed, that is worse than it sounds: `AND(client, match-all)` reduces to the client's own unrestricted query. Crucially, `reduceSqon` does **not** run anywhere in `graphql-router`'s compile path, so the negation form is correct until the value passes through the builder once, which is an ordinary normalization step someone adds later.
+`reduceSqon` strips the empty inner combination, leaving `not` with nothing to negate, so deny inverts to allow-everything. Composed, that is worse than it sounds: `AND(client, match-all)` reduces to the client's own unrestricted query. Crucially, `reduceSqon` does **not** run anywhere in `graphql-router`'s compile path, so the negation form is correct until the value passes through the builder once, which is an ordinary normalization step that gets added later.
 
 **No field-free encoding exists, and that is structural.** Every leaf operator requires a `fieldName`, so a field-free form must be a combination, and combinations are precisely what reduce collapses. Both `not[...]` variants collapse identically; `and []` survives but is match-all; `or []` survives as `{"bool":{"should":[]}}`, and that is now **verified against a live cluster: it matches every document**, so it is fail-open like the rest. Not worth building on regardless, since it is a combination and therefore prunable.
 
@@ -146,8 +146,8 @@ access.
 
 **This is no longer the open item it was written as.** It said the algorithm
 below is exclusion-shaped and called that the Usher adapter's most consequential undecided question. The
-replacement algorithm's record clause is a positive `in` over the resources a principal holds, which
-is the inclusion shape this finding asked for.
+replacement algorithm's record clause is a positive `in` over the resources held by a principal, which
+is the inclusion shape asked for by this finding.
 
 The finding is not simply discharged, because one clause is still exclusion-shaped **by necessity**.
 Step 7's provenance ceiling is a `not-in` over the complement, since containment of a record's
@@ -165,14 +165,14 @@ its conformance case under
 **Corrected.** The `Resource` row previously read "Catalogue (one Arranger index config,
 backed by one ES/OS index)". That row was the definition the rest of this file was written against,
 so correcting it downstream while leaving it standing here would have left the premise intact in the
-one place a reader consults out of sequence.
+one place consulted out of sequence by a reader.
 
 | Usher term                | Arranger term                                                                  |
 | ------------------------- | ------------------------------------------------------------------------------ |
 | Resource                  | **Not a catalogue.** A value in a field on a record. One catalogue holds records belonging to many resources, and a principal may hold some of them. See [What a resource is, and what it is not](#what-a-resource-is-and-what-it-is-not). |
 | Catalogue                 | **A different unit, and written "Arranger catalogue" wherever both are in play.** One `catalogueId`: configuration projecting a schema over one index, never the storage itself. `dcat:Catalog`, and therefore also a `dcat:Dataset`. |
-| Dataset                   | **Scoped to this document's technical register.** Here, say **resource** for the unit a grant names and **records** for what an index holds, so that `dataset` never silently picks a granularity. Usher's reader-facing onboarding document deliberately uses `dataset` for a resource, as lay register, and is correct to. `dcat:Dataset` cannot arbitrate between the two: a study satisfies it and a catalogue satisfies it, so the standard makes both senses true and settles neither. |
-| Data service              | Arranger itself: `dcat:DataService`, the API a principal queries. Usher is a service and is not a data service, which is the boundary the term draws for free. |
+| Dataset                   | **Scoped to this document's technical register.** Here, say **resource** for the unit named by a grant and **records** for what an index holds, so that `dataset` never silently picks a granularity. Usher's reader-facing onboarding document deliberately uses `dataset` for a resource, as lay register, and is correct to. `dcat:Dataset` cannot arbitrate between the two: a study satisfies it and a catalogue satisfies it, so the standard makes both senses true and settles neither. |
+| Data service              | Arranger itself: `dcat:DataService`, the API queried by a principal. Usher is a service and is not a data service, which is the boundary drawn for free by the term. |
 | `categories` include-list | The set of data categories the user is approved to see                         |
 | Server-side filter        | A SQON expression returned by `getServerSideFilter(context)`, intended to be ANDed into every query before it hits OpenSearch. "Every" is aspirational: see [Audit consequences](#audit-consequences). |
 | Grants token              | JWE payload decrypted by the bridge. The bridge resolves it and hands the Usher adapter an `Enforcement` decision rather than the payload itself; see [Grants payload structure](#grants-payload-structure). |
@@ -281,12 +281,12 @@ catalogue was built for. `sets` is the instance that surfaced this, via `createS
 Per protected type, per request.
 
 **Inputs.** From config: the resources configured for this type, each with the field value that
-identifies a record as belonging to it. From the token: the resources this principal holds.
+identifies a record as belonging to it. From the token: the resources held by this principal.
 
 1. Resolve which type is being queried.
 2. Take the configured resource set for that type.
-3. Take the resources the principal holds.
-4. **Intersect.** The visible set is those configured for this type that the principal also holds.
+3. Take the resources held by the principal.
+4. **Intersect.** The visible set is those configured for this type and also held by the principal.
 5. **An empty intersection denies this type.**
 6. Otherwise **narrow**, with a single positive clause matching the field values of the visible set.
 7. For a derived artifact type, **add the ceiling clause**, excluding any artifact whose recorded
@@ -354,7 +354,7 @@ on the whole artifact rather than exposing one record.
 that unconfigured records are invisible has verified nothing about artifacts, and has positive reason
 to believe otherwise.
 
-Conformance case: an artifact whose provenance names one configured resource the reader holds and one
+Conformance case: an artifact whose provenance names one configured resource held by the reader and one
 unconfigured value, asserted invisible.
 
 ### Why the complement can be computed locally
@@ -384,11 +384,11 @@ it matters.
 The general form also says what closes it, which the provenance-local version left implicit. Adding
 the complement clause alongside the positive one gets the universal reading back, and keeping the
 positive one is what still refuses a record carrying no held value at all. Neither closes the case of
-a record carrying a value nobody configured, because that requires quantifying over an open-ended
+a record carrying a value configured by nobody, because that requires quantifying over an open-ended
 space and a `terms` clause enumerates. That residue is data drift rather than configuration drift, so
 no startup check closes it durably: a document indexed tomorrow reopens it.
 
-The complement needs only the resources this deployment is configured for, not a global registry,
+The complement needs only this deployment's configured resources, not a global registry,
 because an artifact created here can only draw on resources served here. **Over-inclusion is harmless
 and under-inclusion is not**, which is the property to remember rather than the formula. Naming a
 resource that cannot appear in any provenance excludes nothing; omitting one that can is what lets an
@@ -414,9 +414,9 @@ grant lifecycle, so a lapsed researcher is told directly rather than left to inf
 Recorded on Usher's side as "A refusal carries no exception, and expiry is announced rather than
 inferred".
 
-**The warning this section carried was right, and it is why the change costs nothing.** Retrofitting a
+**The warning carried by this section was right, and it is why the change costs nothing.** Retrofitting a
 second state into a model whose denial is absence would mean every consumer reading a new field
-correctly or failing open, which is the shape the additive model exists to avoid. Deferring a
+correctly or failing open, and the additive model exists to avoid that shape. Deferring a
 notification path costs nothing structurally; deferring a token field would have cost precisely what
 this section predicted. The conclusion held and the mechanism moved.
 
@@ -463,7 +463,7 @@ lapsed grant and a stranger identical, so the exception is undetectable, and mak
 would mean putting the lapsed state on the wire, which was rejected on its own merits: a second state
 in a model whose denial is absence fails open the moment a consumer misreads it.
 
-**The cost this section named is real and has been accepted rather than solved here.** A lapsed grant
+**The cost named by this section is real and has been accepted rather than solved here.** A lapsed grant
 is a normal and frequent state in a model with expiry and an acceptance flow, and a refusal that
 explains nothing does generate support load. The answer is that Usher tells the person directly on the
 channel already carrying the grant lifecycle. Those notices are post-MVP, so for the first release the
@@ -472,7 +472,7 @@ rather than missing, and does not reintroduce the exception as an improvement.
 
 **Ambiguous outward, precise inward.** The denial reason distinguishes `no-grants` from
 `unconfigured-resource` in the audit trail while the response says neither. That pair is what the
-reason separates, and it is not the pair the section above declares indistinguishable: a lapsed grant
+reason separates, and it is not the pair declared indistinguishable by the section above: a lapsed grant
 and a stranger are identical everywhere, audit trail included. Do not helpfully surface the reason:
 that split is the design, and it is the thing a later contributor is most likely to undo as an
 improvement.
@@ -590,7 +590,7 @@ whether the eventual work is one change or several.
 to an Elasticsearch query, and a query selects **documents**. It has no vocabulary for which fields
 inside a returned document are visible. A predicate and a projection are different things, and the
 callback returns only the predicate. So this is a contract change rather than a configuration one,
-and it is the first the enforcement seam has needed.
+and it is the first needed by the enforcement seam.
 
 **`_source` is the nearest existing mechanism and it reaches two of six value-returning paths.**
 
@@ -682,7 +682,7 @@ looks like a query.
 ### Configuration shaping, and the one surface it cannot reach
 
 **What a principal may not use has to leave the configuration too.** A facet, a column or a chart over
-a field the principal cannot read discloses that field. Usher's rule for rendering is omission rather
+a field unreadable by the principal discloses that field. Usher's rule for rendering is omission rather
 than a marked restriction, since a marked state discloses that something exists.
 
 **The hook already exists.** The configs query is a GraphQL resolver, so it runs per request, at the
@@ -695,13 +695,13 @@ with state, which the `sets` type is not. So shaping is six decisions rather tha
 `charts` are the two easiest to overlook: `matchbox` names fields for identifier upload, and a chart
 names the field it plots.
 
-**The SQON viewer is outside this.** It renders a SQON the principal built or was handed, such as a
-shared link or a saved set, rather than configuration Arranger serves.
+**The SQON viewer is outside this.** It renders a SQON built by or handed to the principal, such as a
+shared link or a saved set, rather than configuration served by Arranger.
 
 **Omission needs a signal that something was omitted.** An omitted field is indistinguishable from a
 catalogue that never had it, which is the point for the principal and a problem for every honest
 consumer. `meta.authFiltered` in the published introspection response says a narrowing happened
-without saying what was narrowed, which is the granularity the omission rule needs. It is hardcoded
+without saying what was narrowed, which is the granularity needed by the omission rule. It is hardcoded
 `false` today (`buildCatalogueIntrospection.ts:68`), and setting it when shaping applies is part of this
 work rather than a follow-up.
 
@@ -816,7 +816,7 @@ unrelated indices. So a request is not one authorization decision. It is one per
 being asked for. Recovering the short-circuit would mean parsing and interpreting the GraphQL
 document in middleware, which is the pattern P0-c just removed for being defeatable.
 
-What preserves fail-closed, then, is not the layer the decision happens in but that deny has a total,
+What preserves fail-closed, then, is not the decision's layer but that deny has a total,
 leaf-shaped encoding: see [Grants payload structure](#grants-payload-structure).
 
 ### The cost this carries, recorded as a decision rather than a defect
@@ -829,7 +829,7 @@ Two things bound it. Denial is per type, so a request mixing a denied and a perm
 regardless. And the composed query collapses, which is the part that had to be measured, since the
 leaf's behaviour says nothing about the conjunction that actually reaches the cluster.
 
-Measured on the body Arranger emits, taken from `compileFilter` and `buildQuery` rather than written
+Measured on the body emitted by Arranger, taken from `compileFilter` and `buildQuery` rather than written
 by hand:
 
 ```
@@ -1136,7 +1136,7 @@ and `access_denied` as booleans), which is the safe case. But the same file-cent
 carries `participants.study.data_access_authority` at depth 1, a study-scoped access field living
 inside a nested object, and its nesting runs to depth 3
 (`participants.family.family_compositions.family_members.diagnoses`). So an Overture-shaped index
-can readily place the authorization unit somewhere the defect bites.
+can readily place the authorization unit within the defect's reach.
 
 If the iMS answer is depth 2 or deeper, the nested-filter reconciliation stops being a
 Phase 0 correctness item and becomes a hard blocker on the Usher adapter, and that changes the sequencing
@@ -1290,11 +1290,11 @@ paths, so neither has a suite to retrofit, and whichever side builds a fixture f
 this one anyway. Related to [`roadmap.md`](roadmap.md) P0-0, which asks for the same thing scoped to
 this repo alone; if the shared corpus happens, P0-0 should adopt it rather than duplicate it.
 
-**Access levels are mutable, which creates a staleness window nobody owns.** "At submission time or
+**Access levels are mutable, which creates a staleness window owned by nobody.** "At submission time or
 afterwards" means a level can change after indexing. Arranger filters only on what is in the index,
 so the change must trigger a reindex, and between the change and the reindex **Arranger serves a
 stale access decision**. Open to restricted is the dangerous direction: that window is
-over-disclosure of exactly the data the change was meant to protect, and its size is Maestro's
+over-disclosure of exactly the newly restricted data, and its size is Maestro's
 reindex latency. Worth deciding whether an access-level change needs a synchronous reindex or an
 explicit invalidation rather than riding the normal pipeline.
 
@@ -1371,7 +1371,7 @@ being wrong.
 answerable, and it spans two systems, so it may be nobody's explicit responsibility. When data is
 submitted under a study by a user, what authorization-relevant value ends up on the indexed
 document? Is it carried through, renamed, dropped, or reconstructed? Arranger can only filter on
-what is in the index, so if the indexing step drops the field the permission model depends on,
+what is in the index, so if the indexing step drops the field required by the permission model,
 neither service is at fault and the Usher adapter still cannot work.
 
 **E. What identity do service-to-service calls use?** Indexing, reconciliation, and health tooling

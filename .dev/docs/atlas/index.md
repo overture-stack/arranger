@@ -22,7 +22,7 @@ Applied per the convention's per-entry content test (does this entry carry reaso
 - [Auth, ABAC, and the admin access model](roadmap/auth-and-access-control.md)
 - [Query economics](roadmap/query-economics.md): persisted queries, PIT pagination, complexity limits
 - [Observability](roadmap/observability.md): metrics, tracing, per-catalogue availability
-- [Structured logging: the event envelope](roadmap/structured-logging.md): the settled CloudEvents decisions, the rejected service segment, and the `source` convention and shared entity vocabulary the shape still owes
+- [Structured logging: the event envelope](roadmap/structured-logging.md): the settled CloudEvents decisions, the rejected service segment, and the `source` convention and shared entity vocabulary still owed by the shape
 - [Planned SQON operators](roadmap/sqon-operators.md): fuzzy, genomic interval overlap, hybrid vector search
 - [Portable SQON encoding for URLs and citations](roadmap/sqon-portability.md): measurements for both regimes, prior art, four open questions
 - [Sets: full feature implementation](roadmap/sets-feature.md)
@@ -58,7 +58,7 @@ Two files predate this convention and are the same pattern under different names
 
 Two judgment inputs decide whether that count is meaningful, and both fail quietly. **Scope:** counting `roadmap/` alone returns fourteen of fourteen and looks clean, because the missing files were one tier up. **What counts as reachable:** treating any mention anywhere as reachability found three of the nine, since an incidental reference from a tech-debt entry is not an index entry, and a reader browsing this file still cannot get there. A wrong definition returns a plausible number rather than an error.
 
-The second input is sharper than "what you accept as an index". It is **whether you know every mechanism by which a file can be reachable**, and a definition can fail in either direction. Too permissive hides orphans, as above. Too narrow invents them: checking the published tree for prose links alone would have reported two pages as unreachable that are listed by a generated index, a mechanism a link-following check has no reason to look for. Only one of those two errors is self-correcting, and it is the one that looks worse: a false orphan demands an action and gets caught, while a false clean result asks nothing of anyone and closes the question.
+The second input is sharper than "what you accept as an index". It is **whether you know every mechanism by which a file can be reachable**, and a definition can fail in either direction. Too permissive hides orphans, as above. Too narrow invents them: checking the published tree for prose links alone would have reported two pages as unreachable that are listed by a generated index; a link-following check has no reason to look for that mechanism. Only one of those two errors is self-correcting, and it is the one that looks worse: a false orphan demands an action and gets caught, while a false clean result asks nothing of anyone and closes the question.
 
 Two other shapes are worth distinguishing from this one. A pointer that outlives what it points at reads as a live entry leading nowhere, and is caught by following every pointer. A target that outlives its pointer is findable only by `ls`, and is caught by sweeping whichever half the working conventions do not already make someone touch.
 

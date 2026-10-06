@@ -47,7 +47,7 @@ Returns a summary of all catalogues registered on this server instance, along wi
 - `mode` is `"single"` when one catalogue is registered, `"multi"` otherwise.
 - `description` is omitted when not set in the catalogue's `base.json`.
 - `paths.fields` is only present in single-catalogue mode as a convenience alias (see below).
-- The top-level **`status`** is an aggregate over every registered catalogue: `"healthy"` (none failed), `"degraded"` (some failed, at least one available), or `"unhealthy"` (all failed). This is the same computation the server's readiness endpoint uses to decide whether to accept traffic (not yet documented on this page, see the health-checks tech-debt item).
+- The top-level **`status`** is an aggregate over every registered catalogue: `"healthy"` (none failed), `"degraded"` (some failed, at least one available), or `"unhealthy"` (all failed). This is the same computation used by the server's readiness endpoint to decide whether to accept traffic (not yet documented on this page, see the health-checks tech-debt item).
 - Each entry under **`catalogs`** also has its own `status`, scoped to that one catalogue: `"available"` or `"failed"`. This is a different value set from the top-level `status` above; the two share a key name but describe different things.
 - A catalogue is never silently dropped from this list just because it failed to load.
 - **`error`** (an object with a machine-readable `code`: `index_not_found`, `permission_denied`, `connection_error`, `mapping_fetch_error`, `schema_build_error`, or `unknown_error`, plus a short, safe-to-display `message`) is only present on a catalogue entry when its `status` is `"failed"`, omitted entirely otherwise, not set to `null`.
@@ -141,7 +141,7 @@ The path segment accepts either a catalogue's real `catalogueId` or its `documen
 }
 ```
 
-`documentType` and (when configured) `description` come straight from the catalogue's `base.json`, same values `GET /introspection` would show for it, since that much is known from config alone, independent of whether the index is reachable. `description` is omitted when not set, same as everywhere else. Every other path for that catalogue (its GraphQL endpoint included) returns `404` instead, with the same fields plus a `details` pointer back to this endpoint, while it remains `failed`. This endpoint is the one place its status stays reachable without that extra pointer.
+`documentType` and (when configured) `description` come straight from the catalogue's `base.json`, same values as `GET /introspection` would show for it, since that much is known from config alone, independent of whether the index is reachable. `description` is omitted when not set, same as everywhere else. Every other path for that catalogue (its GraphQL endpoint included) returns `404` instead, with the same fields plus a `details` pointer back to this endpoint, while it remains `failed`. This endpoint is the one place that keeps its status reachable without that extra pointer.
 
 ---
 
@@ -157,7 +157,7 @@ See [SQONs in detail](./04-sqon-in-detail.md) for full documentation of the SQON
 
 ## GraphQL introspection
 
-The REST endpoints above are Arranger's own introspection API and are always available regardless of GraphQL settings. GraphQL's built-in introspection system (`__schema`, `__type` queries) is a separate capability that Arranger gates with the `disableGraphQLIntrospection` flag.
+The REST endpoints above are Arranger's own introspection API and are always available regardless of GraphQL settings. GraphQL's built-in introspection system (`__schema`, `__type` queries) is a separate capability gated by Arranger's `disableGraphQLIntrospection` flag.
 
 By default, GraphQL introspection is disabled when `NODE_ENV=production` and enabled otherwise. You can also control it explicitly:
 

@@ -67,7 +67,7 @@ internal types.
 `SqonBuilder.and([oneFilter]).toValue()` returns `oneFilter` itself, not
 `{ op: 'and', content: [oneFilter] }`. A real incident: a consumer's SQON-rendering component
 assumed the top level was always a combination (`sqon.content.map(...)`, with no shape check) and
-crashed the moment a caller built its first filter through `SqonBuilder` instead of a hand-written
+crashed as soon as a caller built its first filter through `SqonBuilder` instead of a hand-written
 object literal, since a lone filter collapses to a bare leaf and `content` stops being an array.
 
 This isn't a bug to route around case by case: `asCombination(node, op = 'and')` is exported for

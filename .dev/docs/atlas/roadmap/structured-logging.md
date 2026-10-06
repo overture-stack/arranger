@@ -50,7 +50,7 @@ as guidance. A grouping or namespace segment between the prefix and the entity i
 existing vocabulary that used one has renames to do, and the normalization is usually either dropping
 the group where the organization prefix now does that job, or folding a compound into the act, which
 is why acts may be camelCase. Left unstated, anyone holding a three-segment name reads `entity.act` as
-a pattern their name already resembles.
+a pattern already echoed by their name.
 
 **Why a fixed arity rather than any depth, since the obvious answer is the wrong one.** Parseability
 is the tempting justification and it does not hold up: prefix matching works at any depth, and few
@@ -76,7 +76,7 @@ an Overture-wide entity and the package is the only one in the repository publis
 `arranger-` infix.
 
 Worth keeping rather than treating as an aside: an `$id` is an identifier and a base URI, so one
-pointing at a domain nobody owns is squattable by whoever registers it. The exposure here was bounded
+pointing at an unowned domain is squattable by whoever registers it. The exposure here was bounded
 because every `$ref` in that schema targets an internal `$defs` entry, so ordinary validation never
 dereferences. It is also the concrete reason `dataschema` stays optional below.
 
@@ -91,7 +91,7 @@ part in.
 **`dataschema` stays optional.** Promoting it to required by convention would commit the platform to
 publishing versioned schemas at stable resolvable URIs and keeping them resolvable, since an
 incompatible schema change needs a different URI. This corpus has already shipped a published `$id`
-pointing at a domain nobody owns, so that surface is not one to multiply across every event type on
+pointing at an unowned domain, so that surface is not one to multiply across every event type on
 the strength of a naming convenience. Entity names resolve the same ambiguity, cost nothing, and host
 nothing.
 

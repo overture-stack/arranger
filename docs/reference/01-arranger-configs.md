@@ -60,7 +60,7 @@ With `nestingPrefix` set, `extended.json`/`facets.json`/`table.json` keep refere
 
 **Two things worth knowing before enabling it:**
 
-- **Bandwidth**: because a per-field `_source` request can't safely be narrowed to only the fields a specific query selected without risking a mismatch against a sanitized GraphQL name, Arranger requests the entire envelope from Elasticsearch for every hit when `nestingPrefix` is set, not just the selected fields. This is more data transferred per request than a catalogue with no envelope, though nothing outside the envelope is ever fetched.
+- **Bandwidth**: because a per-field `_source` request can't safely be narrowed to only the fields selected by a specific query without risking a mismatch against a sanitized GraphQL name, Arranger requests the entire envelope from Elasticsearch for every hit when `nestingPrefix` is set, not just the selected fields. This is more data transferred per request than a catalogue with no envelope, though nothing outside the envelope is ever fetched.
 - **Field-level access control**: if a future release adds field-level authorization (restricting which fields a given user can see), it will need to account for this catalogue's fetch-everything behaviour specifically. Fetching a field's value and filtering it out of the response afterward is not equivalent to never having fetched it.
 - **Environment-variable configuration cannot set this today.** `nestingPrefix` is only readable from a catalogue's `base.json` file; there is currently no corresponding environment variable.
 

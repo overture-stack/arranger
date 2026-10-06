@@ -117,7 +117,7 @@ written, never flattening it into a parent with the same operator: `or[A, or[]]`
 document rather than `A`. The one removal is an empty `and` directly under an `and`, which changes
 nothing. A root `and[]` is the canonical "no filter".
 
-The builder is the one place an empty group reads as no filter yet: when the builder's value is a
+The builder is the one place that reads an empty group as no filter yet: when the builder's value is a
 group with no clauses, such as its `empty()` start or a group left empty by `removeFilter`, combining
 onto it gives just the incoming content.
 

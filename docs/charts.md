@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Arranger Charts
 
-Arranger Charts (`@overture-stack/arranger-charts`) is a React chart library for visualizing the aggregation data an Arranger server returns. Charts read the catalogue and SQON state of the search interface they sit in, so every chart re-queries when a user changes a filter.
+Arranger Charts (`@overture-stack/arranger-charts`) is a React chart library for visualizing an Arranger server's aggregation data. Charts read the catalogue and SQON state of the search interface they sit in, so every chart re-queries when a user changes a filter.
 
 Charts under one `ChartsProvider` are fetched together: each chart registers the field it needs on mount, and the provider builds a **single GraphQL query** covering all of them.
 
@@ -148,14 +148,14 @@ Without `sortByKey`, the chart takes the `maxBars` largest buckets and draws the
 
 ### SunburstChart
 
-Two concentric rings showing specific values grouped into broader categories. The inner ring holds the categories your `mapper` returns, the outer ring the field's own values, and the legend lists the categories. A category and its values share a hue, with the inner ring drawn at half opacity.
+Two concentric rings showing specific values grouped into broader categories. The inner ring holds the categories returned by your `mapper`, the outer ring the field's own values, and the legend lists the categories. A category and its values share a hue, with the inner ring drawn at half opacity.
 
 ![Arranger Charts sunburst chart](./assets/charts-sunburst.png 'A SunburstChart in a consumer application; the card and title are not part of the library')
 
 **Props:**
 
 - `fieldName` (string, required): GraphQL field name to visualize
-- `mapper` (function, required): maps one of the field's values to the category it belongs to. Throws if omitted. A value the mapper returns nothing for is left out of the chart, so the mapper doubles as a filter; if it maps nothing at all, the chart renders its empty state.
+- `mapper` (function, required): maps one of the field's values to the category it belongs to. Throws if omitted. A value is left out of the chart when the mapper returns nothing for it, so the mapper doubles as a filter; if it maps nothing at all, the chart renders its empty state.
 - `maxSegments` (number, required): how many **categories** (inner-ring segments) to display. Every value belonging to a displayed category is drawn, so the number of outer segments is not capped directly. Throws if omitted or `0`.
 - `handlers.onClick`: called with the clicked segment plus an `ids` array: the values under a category when the inner ring is clicked, or the single value when the outer ring is clicked, which is what you would feed into a SQON filter
 
@@ -241,4 +241,4 @@ Ranges are `{ key, from, to }`, with `from` inclusive and `to` exclusive:
 
 ## Debugging
 
-Set `debugMode` on `ChartsProvider` to log the data pipeline to the browser console: which fields registered and deregistered, and the aggregation type each field resolved to. It is the first thing to turn on when a chart renders blank, since a field name that doesn't match the extended mapping is reported there as a missing mapping. Validation failures are logged whether or not `debugMode` is set.
+Set `debugMode` on `ChartsProvider` to log the data pipeline to the browser console: which fields registered and deregistered, and each field's resolved aggregation type. It is the first thing to turn on when a chart renders blank, since a field name that doesn't match the extended mapping is reported there as a missing mapping. Validation failures are logged whether or not `debugMode` is set.

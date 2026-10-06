@@ -79,13 +79,13 @@ filter, with the access filter ANDed on top and evaluated fresh against the curr
 
 **Stored IDs can therefore only narrow a result, never widen it.** No set-specific access check is
 needed, and nobody had to think about sets and access control together for this to be safe. That is
-the property a seam provides and a convention does not: correctness for cases its author never
-considered.
+the property provided by a seam and not by a convention: correctness for cases never considered
+by its author.
 
 Verified 2026-08-18 after asserting the opposite. The original claim, that set expansion needed a
 read-time access re-check, was reasoned from what a stored ID list implies rather than checked
 against composition order, and was wrong. Recorded because the error is instructive: "this stores
-IDs, therefore it can replay them" is exactly the intuition the seam is designed to make false.
+IDs, therefore it can replay them" is exactly the intuition made false by the seam's design.
 
 ### Why not a separate module, yet
 
@@ -180,4 +180,4 @@ Activation belongs inside `DataProvider` rather than a wrapping component, becau
 Two open problems, both of which exist independently of Usher and are worth fixing generally:
 
 - **Denial has no distinguishable client state.** `DataProvider`'s config fetch logs a console warning and resolves to empty. There is no way for a consuming app to render "access denied" as distinct from "no results." Related and worse: `modules/components` never inspects GraphQL `errors` at all, so any server-side failure already renders as empty UI (see the tech-debt entry on that).
-- **Usher adapter detection.** Whether a catalogue has enforcement active should come from a capability flag on that catalogue's introspection response rather than a prop the consuming app sets, for the same reason the roadmap's [capability-aware `DataContext`](../../roadmap.md) item prefers capability flags over version numbers.
+- **Usher adapter detection.** Whether a catalogue has enforcement active should come from a capability flag on that catalogue's introspection response rather than a prop set by the consuming app, for the same reason that leads the roadmap's [capability-aware `DataContext`](../../roadmap.md) item to prefer capability flags over version numbers.

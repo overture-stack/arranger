@@ -5,7 +5,7 @@ Arranger ships a set of boolean feature flags that turn optional behaviour on or
 - **Globally, via environment variable** (e.g. `DISABLE_GRAPHQL_INTROSPECTION=true`), applied to every catalogue on the server.
 - **Per catalogue, in that catalogue's `base.json`** (e.g. `"disableGraphQLIntrospection": true`), which overrides the global env var for that catalogue only.
 
-`apps/search-server/.env.schema` is the canonical list of every env var Arranger reads, with its default value. This page explains what each feature flag actually does and, where relevant, why the default is what it is.
+`apps/search-server/.env.schema` is the canonical list of every env var read by Arranger, with its default value. This page explains what each feature flag actually does and, where relevant, why the default is what it is.
 
 For numeric query-validation limits (`GRAPHQL_MAX_ALIASES`, `GRAPHQL_MAX_DEPTH`, `MAX_RESULTS_WINDOW`) and other invisible query defaults, see [Defaults and Limits](./06-defaults-and-limits.md) instead; they're a related but separate category from the on/off flags on this page.
 

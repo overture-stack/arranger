@@ -294,7 +294,7 @@ than incrementing anything (`1.0.0-rc.2` -> `1.0.0`, `3.1.0-rc.1` -> `3.1.0`, `0
 
 ## 8. Worked example: the 2026-07-20 round
 
-For concreteness, here's the actual round this document was extracted from.
+For concreteness, here's the actual round that served as this document's source.
 
 **Starting state (`release-test`, already published under npm `rc` dist-tag):**
 
@@ -347,11 +347,11 @@ For concreteness, here's the actual round this document was extracted from.
 **Real-world exposure check that informed the `components` severity call:** grepped this
 machine for other repos depending on `sqon-builder` (the package `components` is moving away
 from). Found three: one abandoned/dead project, one active repo confirmed to not interact with
-`arranger-components` at all, and one repo the user owns directly and can update on their own
+`arranger-components` at all, and one repo owned directly by the user, who can update it on their own
 schedule. This concretely narrowed the realistic blast radius of the `SQONType` breaking change,
 which is what justified `3.1.0-rc.1` over the semver-textbook-correct-but-more-cautious
-`4.0.0-rc.1`. This is exactly the kind of judgement a fully automated severity tool (§7) could
-never make: it requires knowing who actually consumes the package outside the repo.
+`4.0.0-rc.1`. A fully automated severity tool (§7) could never make exactly this kind of
+judgement: it requires knowing who actually consumes the package outside the repo.
 
 **Final bump applied:**
 

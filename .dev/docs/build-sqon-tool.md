@@ -35,7 +35,7 @@ Prompting does not fix this reliably. Putting the SQON schema in a system prompt
 Once `build_sqon` exists, two things change:
 
 - `execute_query`'s instructions change from "call `get_sqon_schema`, then write a `sqon`" to "call `build_sqon`, then pass its output as `sqon`."
-- The cheat sheet stops being the primary way an LLM constructs a query. It may still be worth keeping as a human-facing reference; that is a separate decision.
+- The cheat sheet stops being the primary way for an LLM to construct a query. It may still be worth keeping as a human-facing reference; that is a separate decision.
 
 Neither of these is a correction to the current implementation. `build_sqon` exists specifically to take over a job the cheat sheet is doing today.
 
@@ -166,7 +166,7 @@ build_sqon(input: {
 
 Two earlier drafts of this design got this wrong, in opposite directions. Worth naming both, so the mistakes aren't repeated.
 
-**Draft 1** grouped a clause's `fieldName`/`operator`/`value` under a nested `filter` key: `filter: { fieldName, operator, value }`. That is a SQON leaf with its `op`/`content` wrapper renamed, not removed. It put the LLM right back into composing a small SQON-shaped object by hand, the exact thing this tool exists to prevent.
+**Draft 1** grouped a clause's `fieldName`/`operator`/`value` under a nested `filter` key: `filter: { fieldName, operator, value }`. That is a SQON leaf with its `op`/`content` wrapper renamed, not removed. It put the LLM right back into composing a small SQON-shaped object by hand, exactly what this tool exists to prevent.
 
 **Draft 2** went the other way: one `build_sqon` call per clause, on the reasoning that a single-item call is safer to validate and retry. That turned out to be the wrong tradeoff. See below.
 
@@ -190,13 +190,13 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 
 **What batching requires the tool to do in return:** check every clause before responding, and report every invalid one in the same error message, not just the first. If the tool stopped at the first bad clause, the LLM would fix it, resubmit, and only then discover a second problem, costing the exact round trip batching was meant to remove.
 
-**This obligation covers the whole input, not only `clauses`** (corrected 2026-08-12, after review of #1091). The shipped tool originally validated `existingSqon` in two places that both sat outside the clause batch: a structural check that returned before `validateClauses` ran, and a catalogue check on the folded SQON that ran only after `validateClauses` had passed. A call carrying both an invalid clause and an `existingSqon` this catalogue cannot run therefore reported only the clauses, and the mismatch surfaced on the next call, which is the round trip this section exists to prevent. `existingSqon` is now validated against the catalogue independently of the fold and its errors join the same list, so one response carries every problem with the call. See [Error handling](#error-handling).
+**This obligation covers the whole input, not only `clauses`** (corrected 2026-08-12, after review of #1091). The shipped tool originally validated `existingSqon` in two places that both sat outside the clause batch: a structural check that returned before `validateClauses` ran, and a catalogue check on the folded SQON that ran only after `validateClauses` had passed. A call carrying both an invalid clause and an `existingSqon` that cannot run on this catalogue therefore reported only the clauses, and the mismatch surfaced on the next call, which is the round trip it is this section's job to prevent. `existingSqon` is now validated against the catalogue independently of the fold and its errors join the same list, so one response carries every problem with the call. See [Error handling](#error-handling).
 
 ### Why `build_sqon` needs a `catalogueId`
 
 **The choice:** whether `build_sqon` takes a `catalogueId` at all, or builds purely from what's in the `clauses` array.
 
-**Option A: no `catalogueId`.** `build_sqon` only checks a clause's _shape_ (is `operator` valid for `fieldName` vs. `fieldNames`, is `value` the right type, is this a double negation). It never asks whether `gt` actually makes sense on the field named in this clause. This is defensible: `get_catalogue_fields` already returns each field's ES type plus a type-to-operator map, so the LLM has everything it needs to pick a valid operator before ever calling `build_sqon`. Trusting that is one less input to the tool and one less thing the handler depends on.
+**Option A: no `catalogueId`.** `build_sqon` only checks a clause's _shape_ (is `operator` valid for `fieldName` vs. `fieldNames`, is `value` the right type, is this a double negation). It never asks whether `gt` actually makes sense on the field named in this clause. This is defensible: `get_catalogue_fields` already returns each field's ES type plus a type-to-operator map, so the LLM has everything it needs to pick a valid operator before ever calling `build_sqon`. Trusting that is one less input to the tool and one less dependency for the handler.
 
 **Option B: require `catalogueId`, chosen.** The handler looks up the actual field type for each clause (via the same catalogue introspection `get_catalogue_fields` already calls) and rejects an operator that doesn't fit it. The case Option A misses concretely: the LLM writes `{ fieldName: "donor.gender", operator: "gt", value: 5 }`, gender is a text field, `gt` doesn't apply. Under Option A, `build_sqon` builds it anyway, since nothing there knows what type `donor.gender` is, and the mistake isn't caught until `execute_query` runs it against Arranger and it fails. That's the same round-trip cost the batching decision above was designed to avoid, just moved one tool call later. Catching it in `build_sqon` instead costs nothing extra from the LLM's side: it already has `catalogueId` in hand from the `get_catalogue_fields` call that has to precede `build_sqon` in the flow anyway.
 
@@ -229,11 +229,11 @@ Batching wins even when something goes wrong. Rejecting a batch and fixing it is
 
 `getSqonFieldOperatorDetails()` reports `applicableTo: 'all'` for `in`, `not-in`, `some-not-in`, `all`, and `wildcard`. A catalogue disagrees: `getValidFieldOperators` in `buildCatalogueIntrospection.ts` gives range-typed fields `['in','not-in','gt','gte','lt','lte','between']`, enum-like fields `['in','not-in','some-not-in','all','filter']`, and everything else `['in','not-in','filter']`. So `wildcard` is withheld from numeric and date fields, and `all` and `some-not-in` from those plus text fields.
 
-The catalogue is the authority, because `validateClauses` enforces it. Rendering `applicableTo: 'all'` as "any field type" would therefore advertise a clause the tool then rejects. `describeOperators` says nothing about field types for such an operator instead, and the `clauses` array description names `get_catalogue_fields` as the authority once. Copying graphql-router's type classification into `apps/mcp-server` was rejected: the repo already carries tech debt for duplicated transforms, and one more copy to drift is worse than a pointer. The `applicableTo` inaccuracy in `modules/sqon` is tracked separately, since correcting it changes the published `get_sqon_schema` contract.
+The catalogue is the authority, because `validateClauses` enforces it. Rendering `applicableTo: 'all'` as "any field type" would therefore advertise a clause, only for the tool to reject it. `describeOperators` says nothing about field types for such an operator instead, and the `clauses` array description names `get_catalogue_fields` as the authority once. Copying graphql-router's type classification into `apps/mcp-server` was rejected: the repo already carries tech debt for duplicated transforms, and one more copy to drift is worse than a pointer. The `applicableTo` inaccuracy in `modules/sqon` is tracked separately, since correcting it changes the published `get_sqon_schema` contract.
 
 ### Same-field values: union by default, intersection needs `all`
 
-**The problem this section resolves.** A researcher listing multiple values for one field, "studies A and B," "biomarkers X and Y," almost always means union: match a record with _any_ of the listed values. But natural-language "and" is not reliable evidence of that: for a multi-valued field, "and" can just as plausibly mean a record must carry _every_ listed value, and there is no way to tell which the researcher meant from the phrasing alone.
+**The problem resolved by this section.** A researcher listing multiple values for one field, "studies A and B," "biomarkers X and Y," almost always means union: match a record with _any_ of the listed values. But natural-language "and" is not reliable evidence of that: for a multi-valued field, "and" can just as plausibly mean a record must carry _every_ listed value, and there is no way to tell which the researcher meant from the phrasing alone.
 
 **The decision.** Multiple values on one field default to union (`in`, one clause, every value in the array), matching how the worked example earlier in this document already builds `study_id in ["A", "B"]` from "studies A and B." Genuine intersection needs the `all` operator, and needs to be confirmed before `execute_query` runs, not inferred silently.
 
@@ -280,9 +280,9 @@ is a double negative. Drop negate, or switch to "in" if you meant to include
 the value instead of excluding it.
 ```
 
-Nothing is applied until every clause passes. Partial success is not a state this tool has to handle.
+Nothing is applied until every clause passes. This tool does not have to handle a partial-success state.
 
-**`existingSqon` is checked in the same pass, and reported in the same message.** Both ways it can be unusable, a value that is not a SQON at all and a SQON naming fields the target catalogue does not have, produce entries in the same list as the clause errors, ahead of them:
+**`existingSqon` is checked in the same pass, and reported in the same message.** Both ways it can be unusable, a value that is not a SQON at all and a SQON naming fields missing from the target catalogue, produce entries in the same list as the clause errors, ahead of them:
 
 ```
 No SQON was built. Fix everything listed, then resubmit the whole batch:
@@ -309,13 +309,13 @@ If existingSqon came from a different catalogue, drop it and rebuild the query f
 
 - `fieldNames` (plural) added as a fourth clause shape, for `wildcard`
 - `some-not-in` and `all` added, closing the gap between what `modules/sqon` implements and what the tool exposes. `all` needs its own union branch: `AllFilterSchema` requires an array, and `addFilterClause` builds an `all` clause from a bare scalar without complaint while `SqonSchema` then rejects the result
-- An asterisk inside an `in`, `not-in`, `some-not-in`, or `all` value is now rejected and redirected to `wildcard`, which resolves the open question this document previously carried about `*` in in-like values
+- An asterisk inside an `in`, `not-in`, `some-not-in`, or `all` value is now rejected and redirected to `wildcard`, which resolves this document's earlier open question about `*` in in-like values
 
 **No mutual-exclusion refinement was needed**, contrary to what § Implementation guidance predicted. The shipped input schema is a `discriminatedUnion` on `operator`, so the `wildcard` branch simply has no `fieldName` key and every other branch has no `fieldNames` key. The split is structural, and a clause sending the wrong one for its operator fails to match any branch.
 
 ### v2.1: fuzzy text search
 
-Blocked on three things, not one. Worth listing, because the first is the only one this document previously named:
+Blocked on three things, not one. Worth listing, because the first is the only one previously named in this document:
 
 1. **The operator does not exist in `modules/sqon`.** No `FuzzyFilterSchema`, no `SqonBuilder.fuzzy()`, and `opSwitch` in the GraphQL router refuses it with an `InvalidFilterError`: "Each filter node must name an operator SQON defines, such as and, or, not, in or gte."
 2. **An unresolved design question.** Whether `fuzzy` should tolerate leading-term fuzziness only (`operator: "AND"`) or any-term matching (`operator: "OR"`). See the fuzzy operator roadmap item.
@@ -357,7 +357,7 @@ SQON already supports this structurally: a combination node's children can be le
 - **`not` groups never get flattened into a parent group.**
 - **`pivot`**, an optional field on every node, stops a one-item group from being unwrapped, and a group flattens into its parent only when both have the same operator and pivot. It already exists in the schema. No tool sets it yet; v3 needs to decide whether `build_sqon`/`combine_sqons` ever should.
 - **Only `and`/`or`/`not` exist as combinators.** There is no `xor`.
-- **Symbol aliases exist** (`=`, `>=`, and similar) and get normalized before validation, but **only by `SqonBuilder.from()`, not by `addFilterClause`** (corrected 2026-08-10, measured). `addFilterClause` dispatches on the literal operator string through a switch with no default, so `{operator: '>='}` returns `undefined`: an alias does not build an equivalent clause, it drops the clause entirely. **The choice for `build_sqon`'s input schema, resolved:** canonical operator names only (`in`, `not-in`, `gt`, ...); the `operator` enum does not list `=`, `>=`, or any other alias. **The alternative considered:** also listing aliases as valid enum values, on the theory that a model biased by training data toward symbol operators would otherwise get rejected and need a retry. **Why canonical-only was chosen instead:** offering two spellings for the same operator reintroduces the exact ambiguity this tool exists to remove. The correction above makes the case stronger than it originally read here: an alias reaching the fold would silently produce a SQON missing that condition, not an equivalent one, so the enum is load-bearing rather than merely tidy. `foldClauses` keeps an `undefined` guard behind it, but **not as a text-operator tripwire**, which is what an earlier revision claimed: the guard fires only when an operator falls off the scalar switch, and `addFilterClause`'s text branch never reaches that switch. See § v2.1 for what actually needs fixing there. Aliases stay relevant only for the raw-SQON paths (`execute_query`'s `sqon` parameter, `SqonSchema.parse()` called directly), which are different consumers with different constraints; `existingSqon` is normalized on the way in for the same reason, since it arrives through `SqonBuilder.from()`.
+- **Symbol aliases exist** (`=`, `>=`, and similar) and get normalized before validation, but **only by `SqonBuilder.from()`, not by `addFilterClause`** (corrected 2026-08-10, measured). `addFilterClause` dispatches on the literal operator string through a switch with no default, so `{operator: '>='}` returns `undefined`: an alias does not build an equivalent clause, it drops the clause entirely. **The choice for `build_sqon`'s input schema, resolved:** canonical operator names only (`in`, `not-in`, `gt`, ...); the `operator` enum does not list `=`, `>=`, or any other alias. **The alternative considered:** also listing aliases as valid enum values, on the theory that a model biased by training data toward symbol operators would otherwise get rejected and need a retry. **Why canonical-only was chosen instead:** offering two spellings for the same operator reintroduces the exact ambiguity it is this tool's job to remove. The correction above makes the case stronger than it originally read here: an alias reaching the fold would silently produce a SQON missing that condition, not an equivalent one, so the enum is load-bearing rather than merely tidy. `foldClauses` keeps an `undefined` guard behind it, but **not as a text-operator tripwire**, which is what an earlier revision claimed: the guard fires only when an operator falls off the scalar switch, and `addFilterClause`'s text branch never reaches that switch. See § v2.1 for what actually needs fixing there. Aliases stay relevant only for the raw-SQON paths (`execute_query`'s `sqon` parameter, `SqonSchema.parse()` called directly), which are different consumers with different constraints; `existingSqon` is normalized on the way in for the same reason, since it arrives through `SqonBuilder.from()`.
 - **Extra properties on a node are silently kept, not rejected**, because every SQON schema uses Zod's `.passthrough()`. A typo in a required key (like `field` for `fieldName`) fails validation; a typo in an extra key does not.
 
 ---
@@ -384,7 +384,7 @@ import type { ScalarFilter, SqonNode, TextFilter } from '@overture-stack/sqon';
 
 **Zod schema:**
 
-Two corrections to the sample this section originally carried, both applied in the shipped schema; see `apps/mcp-server/src/mcp/buildSqonTool.ts` for what was actually built.
+Two corrections to this section's original sample, both applied in the shipped schema; see `apps/mcp-server/src/mcp/buildSqonTool.ts` for what was actually built.
 
 **`fuzzy` must not appear in the operator enum.** The original sample had `zod.enum(['wildcard', 'fuzzy'])`. `fuzzy` has no implementation in `modules/sqon`, and `addFilterClause` with `fuzzy` and `fieldNames` returns a **`wildcard`** clause with no error (measured), so listing it would offer the model an operator that silently builds a different query. It stays out of the enum until the fuzzy operator itself exists.
 
@@ -416,7 +416,7 @@ Note the schemas are factory functions rather than shared constants. Reusing one
 
 ## Progress to date
 
-**v1 shipped 2026-08-10 (#1080). v2 shipped 2026-08-25**, covering `wildcard` text search plus `some-not-in` and `all`. This document remains the design record: read it for why the tool has the shape it does. For what was built, and the step-by-step plan it was built from, see `.dev/docs/build-sqon-implementation.md`, which also carries the measured behaviour table this document's corrections came from. v2.1 (fuzzy) and v3 (mixed combinators) are still open, and § Phasing above is still the plan for them.
+**v1 shipped 2026-08-10 (#1080). v2 shipped 2026-08-25**, covering `wildcard` text search plus `some-not-in` and `all`. This document remains the design record: read it for why the tool has the shape it does. For what was built, and the step-by-step plan it was built from, see `.dev/docs/build-sqon-implementation.md`, which also carries the measured behaviour table behind this document's corrections. v2.1 (fuzzy) and v3 (mixed combinators) are still open, and § Phasing above is still the plan for them.
 
 v2 needed no change in `modules/sqon`, which is what the split described above bought. One `modules/sqon` fix did land immediately before it, separately: `reduceSqon` corrupted a merged date range bound to `null`, which `build_sqon`'s post-fold failsafe reported as a tool defect and which `graphql-router`'s network search path passed to remote nodes with no error at all.
 

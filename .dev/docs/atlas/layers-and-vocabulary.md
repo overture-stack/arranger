@@ -10,7 +10,7 @@ Listed from the bottom up. A layer may depend on the layers listed before it, ne
 |---|---|---|---|
 | SQON | `modules/sqon` | The query language: shape, construction, validation, reduction | Any other Arranger package |
 | Arranger logic | Inside `modules/graphql-router` (`buildQuery`, `buildAggregations`, mapping to the search engine) | Turning one SQON into a search engine query | Filtering, the Usher adapter, the GraphQL layer |
-| Filtering | `modules/graphql-router/src/filtering/` (planned) | Composing the filter a search asked for with the deployment's constraint, and refusing a constraint that is absent or has no clauses | The Usher adapter, the GraphQL layer |
+| Filtering | `modules/graphql-router/src/filtering/` (planned) | Composing the filter requested by a search with the deployment's constraint, and refusing a constraint that is absent or has no clauses | The Usher adapter, the GraphQL layer |
 | Usher adapter | `modules/usher-adapter` (planned), published as `@overture-stack/arranger-usher-adapter` | Turning Usher grants into a constraint. Depends on the bridge, `@overture-stack/usher-express-bridge`, from the Usher repository | The router package, filtering |
 | GraphQL layer | `modules/graphql-router`: schema, resolvers, Express routes | Per-request wiring: calling the deployment's callback and handing both filters to filtering | The Usher adapter |
 | Server | `apps/search-server` | Reading the environment, mounting the bridge, wiring the adapter into `getServerSideFilter` | Nothing. It is where the other layers are wired together |
@@ -21,7 +21,7 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 
 **Arranger logic and the GraphQL layer share one package and cannot be separated yet.** The boundary between them already holds in behaviour. Every call to `compileFilter` comes from a resolver or from the download route, and nothing in `buildQuery` or `buildAggregations` calls it, so Arranger logic only ever receives a filter that is already composed.
 
-**`modules/types` holds Arranger logic's types.** Despite its name it also ships runtime constants and helpers. Router and Express types belong with the router. Relocating the ones already in `modules/types` is separate work, and `GetServerSideFilterFn` is the only one this page plans for.
+**`modules/types` holds Arranger logic's types.** Despite its name it also ships runtime constants and helpers. Router and Express types belong with the router. Relocating the ones already in `modules/types` is separate work, and `GetServerSideFilterFn` is the only one in this page's plans.
 
 ## Arranger runs without Usher, and the dependency direction guarantees it
 
@@ -32,7 +32,7 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 
 ## One filter, three vocabularies
 
-| Layer | The filter a search asks for | The filter the deployment imposes | The value that keeps every document |
+| Layer | The filter requested by a search | The filter imposed by the deployment | The value that keeps every document |
 |---|---|---|---|
 | SQON | a SQON | a SQON | `SqonBuilder.matchEverything()`, planned below |
 | Filtering | the requested filter | the constraint | a filter that keeps every document |
@@ -45,10 +45,10 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 ## Terms
 
 - **Access control:** behaviour that depends on Usher. Only `usher-adapter` has any. Composing filters happens with or without Usher, so it is filtering and not access control.
-- **Constraint:** the filter every search is intersected with, supplied by the deployment. A constraint can only narrow what a search returns, never widen it. `compileFilter` requires one on every call and refuses one with no clauses.
+- **Constraint:** the filter intersected with every search, supplied by the deployment. A constraint can only narrow what a search returns, never widen it. `compileFilter` requires one on every call and refuses one with no clauses.
   **Its TSDoc has to say this outright.** The constraint used when nothing is configured matches every document, and a reader who meets that value first will take "constraint" to mean something that permits. It is still a constraint, one that keeps every document.
 - **`includeEverything`:** the router's filter callback that returns `matchEverything`'s SQON, `not[ in _id [] ]`, whatever the context. It is what a router given no `getServerSideFilter` applies, and what a callback returns as `includeEverything(context)` to allow one request without restricting it. It is a GraphQL-layer name because it is a callback taking the request context; `matchEverything` is the value it returns. `getDefaultServerSideFilter` is its deprecated alias, the same function object.
-- **`matchEverything`** _(planned, not yet in `sqon`)_**:** the SQON matching every document, `not[ in _id [] ]`, which is the negation of `matchNothing('_id')`. It takes no field name, because the field has no effect: an empty value list matches nothing on any field, including one that a `nestingPrefix` has turned into a path that does not exist. It carries a leaf, so `reduceSqon` never prunes it down to an empty combination, and `compileFilter` accepts it where it refuses a leafless one. Its test must cover that the reducer leaves it intact: as a `SqonBuilder` value it is reduced on construction, which the router's hand-written literal never was.
+- **`matchEverything`** _(planned, not yet in `sqon`)_**:** the SQON matching every document, `not[ in _id [] ]`, which is the negation of `matchNothing('_id')`. It takes no field name, because the field has no effect: an empty value list matches nothing on any field, including one turned by a `nestingPrefix` into a path that does not exist. It carries a leaf, so `reduceSqon` never prunes it down to an empty combination, and `compileFilter` accepts it where it refuses a leafless one. Its test must cover that the reducer leaves it intact: as a `SqonBuilder` value it is reduced on construction, which the router's hand-written literal never was.
   **It is the one value built to pass `compileFilter`'s guard, so reaching for it by mistake fails open.** The same mistake with `matchNothing` fails closed and gets noticed. Its TSDoc must say so, so that it does not read as `matchNothing`'s harmless twin.
 - **`matchNothing`:** the SQON matching no document, `in <fieldName> []`. The encoding every deny must use.
 - **Recorded access-control decision:** what a router records in the state of every request it serves, under a registry symbol: the filter callback it applies and its source. The source is one of two values, and the startup log reports one of three states, because one state is read from the callback rather than recorded:
@@ -61,7 +61,7 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 
   **"Explicit" is a report, never a decision.** It is recognized by identity at logging time, so a wrapper around `includeEverything` reads as `filter configured`, and nothing downstream branches on it. Exports branch only on whether a record is present at all.
 - **Request state:** what Arranger keeps about one request, and the base of what every read path hands the filter callback: the application's own `res.locals` keys, beneath the router's namespace `res.locals.arranger`, whose keys take precedence. The GraphQL paths add keys of their own after it. Parameter docs saying "the request context" mean this. `req.context` is a deprecated view of the namespace alone, so the application's root keys are not visible through it.
-- **Requested filter:** the filter a search asked for. The proposed name for `compileFilter`'s other input; not yet settled.
+- **Requested filter:** the filter asked for by a search. The proposed name for `compileFilter`'s other input; not yet settled.
 - **Server-side filter:** the GraphQL layer's name for the constraint, as the deployment supplies it. Correct in the router's API (`getServerSideFilter`, `includeEverything`, `getDefaultServerSideFilter`, `GetServerSideFilterFn`) and nowhere below it.
 
 Words to avoid, and what to say instead:

@@ -70,14 +70,14 @@ Two consequences worth knowing:
   two. Caching introspection is now load-bearing rather than an optimization, and is tracked in
   `.dev/tech-debt.md`.
 - **A client that cannot elicit is refused**, not served unconfirmed. With 2025-era serving gone,
-  that was the last remaining route to running a query nobody approved. Confirm-before-execute is an
+  that was the last remaining route to running an unapproved query. Confirm-before-execute is an
   invariant of the tool now rather than a best effort, which is what the server instructions and the
   `query_arranger` prompt always claimed it was.
 
 ## The approval is bound to the query
 
-Because nothing carries between the two rounds, the second round rebuilds the query from arguments
-the client re-sends. Left alone, that means an agent could show one query for confirmation and
+Because nothing carries between the two rounds, the second round rebuilds the query from the client's
+re-sent arguments. Left alone, that means an agent could show one query for confirmation and
 execute a different one under the same approval.
 
 The revision's answer is `requestState`: opaque server state the client echoes back. It travels
@@ -93,7 +93,7 @@ Three refusals fall out of this, all of them errors rather than fresh confirmati
 re-asking would hand a caller an unlimited retry loop against the gate:
 
 - a `requestState` that fails verification, refused by the SDK seam before the tool is entered;
-- a digest that does not match the query this call built;
+- a digest that does not match the query built by this call;
 - an answer carrying no `requestState` at all, refused exactly like a mismatch. Nothing forces a
   client to echo it, so comparing only when present would make the whole binding opt-out.
 

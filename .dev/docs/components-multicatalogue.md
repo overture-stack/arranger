@@ -154,8 +154,8 @@ standalone or internally by `DataProvider`:
   queries, when `documentType` isn't given explicitly. Consumers that pass `documentType` directly
   (every existing one) never trigger the hook at all, zero added latency, unchanged behaviour.
 - `APIFetcherFn`'s `body` became optional as a prerequisite: the hook needs a clean `GET` with no
-  body, and the contract previously forced every caller to pass one, the same awkwardness Stage's
-  own hand-rolled introspection call had already hit and worked around by bypassing the shared
+  body, and the contract previously forced every caller to pass one, the same awkwardness already
+  hit by Stage's own hand-rolled introspection call and worked around by bypassing the shared
   fetcher entirely.
 - Stale-request handling went through two iterations: a hand-rolled `let cancelled` flag flipped
   in the effect's cleanup, then an `AbortSignal` (a new `signal` field on `APIFetcherFn`, wired
@@ -217,7 +217,7 @@ Stage's own agent reviewed Arranger's docs plus another project consuming `arran
   `Bubble`, `Op`, `SQONGroup`, `SQONWrapper`, `useDataBubbles`, and `Value`, but that whole set was
   never re-exported from the package root. Fixed in `src/index.ts` by adding all seven to the
   existing `SQONViewer` re-export line, closing the actual gap rather than cherry-picking just the
-  one name Stage happened to need. Verified against the compiled output directly
+  one name that happened to be needed by Stage. Verified against the compiled output directly
   (`Object.defineProperty(exports, "FieldName", ...)` resolving correctly in `dist/index.js`), not
   just that the build succeeded.
 
@@ -259,8 +259,8 @@ trust the `url` it's called with (dropping the suffix-re-derivation workaround) 
 fetcher path (pattern 1), *if* the fetcher is instead given the catalogue explicitly at creation
 time rather than trying to reverse-engineer it from a per-call `url` (safer than trusting a
 per-call argument for the request's actual destination either way: the destination then comes
-from exactly one place, the value the consumer explicitly configured, not from re-parsing
-something `DataProvider` computed). It does *not* by itself make `apiUrl` meaningless: pattern 2
+from exactly one place, the consumer's explicitly configured value, not from re-parsing
+something computed by `DataProvider`). It does *not* by itself make `apiUrl` meaningless: pattern 2
 (`DownloadButton`) still reads it directly, so a proxying consumer should still point `apiUrl` at
 the proxy rather than the real host, even once its own fetcher stops using it, as a safety net
 for that separate path. See `.dev/docs/arranger/README.md` in Stage's own repo for the

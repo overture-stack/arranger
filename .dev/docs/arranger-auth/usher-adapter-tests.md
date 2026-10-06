@@ -73,7 +73,7 @@ the suites through the GraphQL router below use directly.
 **With access control on, the image bounds exports by default.** Where `ENABLE_ACCESS_CONTROL=true`
 and `DOWNLOAD_MAX_ROWS` is unset, an export stops at 100 rows; without access control, an unset
 limit means no limit, as in 3.0. An explicit value applies either way, `0` meaning every row, and an
-export a limit cuts short says so. The router knows nothing of this: the image chooses its own
+export cut short by a limit says so. The router knows nothing of this: the image chooses its own
 default from its own flag, and a custom host using the adapter sets its limit itself. The startup
 suite checks the default, and the suites through the GraphQL router check that a cut export carries
 its marker.
@@ -119,9 +119,9 @@ mocks.
   attaches the open tier alone, marked open-tier only, with each signed-in principal marked
   suspended; and cold, never having reached the controller, which answers 503 before any GraphQL
   router runs.
-- **It records each catalogue's registration**: the field names, the value each concrete category
-  maps to, and the categories declared absent, which the real bridge checks each resource's offered
-  categories against.
+- **It records each catalogue's registration**: the field names, each concrete category's mapped
+  value, and the categories declared absent, all used by the real bridge to check each resource's
+  offered categories against.
 
 **A recording search client** wraps the engine client's `search`, so the `deny` rows can assert the
 query the GraphQL router emits as well as the records it returns.
@@ -171,7 +171,7 @@ returns, not by structure.
 | a misconfigured catalogue                 | config | `deny`, `unknown-resource` | nothing                   |
 | a catalogue open by configuration         | none   | `allow`                    | every record, x1 included |
 
-**The three "bridge" deny rows are the ones a careless bridge renders as an empty filter**, so the
+**The three "bridge" deny rows are the ones rendered as an empty filter by a careless bridge**, so the
 adapter must receive them as denies and the bridge step must produce them as denies. They are the
 cases with grants that still reach nothing, which is why they are listed apart from case 1.
 
@@ -186,15 +186,15 @@ Test names state the requirement, per the repository's testing convention.
 
 ### The factory, at startup
 
-| Given                                                                       | Then                                                                                                                                                                 |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| a catalogue the host routes with no mapping in the adapter's configuration  | startup fails, naming the catalogue                                                                                                                                  |
-| a mapped field absent from the catalogue's index mapping                    | startup fails, naming the catalogue and the field                                                                                                                    |
-| a mapped field whose mapping shape the adapter cannot enforce on            | startup fails, since enforcing anyway would be guesswork                                                                                                             |
-| a catalogue's mapped categories and the categories it declares absent       | each mapped value and each declared absence reach the bridge's registration exactly; `unmarked` excludes the mapped values, and a declared absence adds no exclusion |
-| a resource offering a category the mapping neither maps nor declares absent | the bridge withholds it from this catalogue and logs `category.unmapped`; the bridge's suite tests that, and this one only that the declarations reach it            |
-| a valid mapping for every catalogue                                         | one callback per catalogue, and the bridge has every catalogue registered                                                                                            |
-| a callback invoked before its catalogue is verified                         | it throws, with the configuration-problem message                                                                                                                    |
+| Given                                                                  | Then                                                                                                                                                                 |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a host-routed catalogue with no mapping in the adapter's configuration | startup fails, naming the catalogue                                                                                                                                  |
+| a mapped field absent from the catalogue's index mapping               | startup fails, naming the catalogue and the field                                                                                                                    |
+| a mapped field whose mapping shape the adapter cannot enforce on       | startup fails, since enforcing anyway would be guesswork                                                                                                             |
+| a catalogue's mapped categories and the categories it declares absent  | each mapped value and each declared absence reach the bridge's registration exactly; `unmarked` excludes the mapped values, and a declared absence adds no exclusion |
+| a resource offering a category neither mapped nor declared absent      | the bridge withholds it from this catalogue and logs `category.unmapped`; the bridge's suite tests that, and this one only that the declarations reach it            |
+| a valid mapping for every catalogue                                    | one callback per catalogue, and the bridge has every catalogue registered                                                                                            |
+| a callback invoked before its catalogue is verified                    | it throws, with the configuration-problem message                                                                                                                    |
 
 **A category left out of the mapping withholds the resources offering it rather than stopping
 startup**, so one catalogue's gap never takes down the others, and the `category.unmapped` event,
@@ -292,7 +292,7 @@ inversion measures something other than what it claims.
 
 | Suite         | Inversion                                                                                         |
 | ------------- | ------------------------------------------------------------------------------------------------- |
-| startup       | name a field the index lacks, and startup must fail                                               |
+| startup       | name a field missing from the index, and startup must fail                                        |
 | callback      | return the allow-all value for `deny`, and the deny tests must fail                               |
 | per row       | swap two rows' results, and both rows must fail                                                   |
 | parity        | drop one grant from "every grant", and parity must fail                                           |

@@ -12,10 +12,10 @@ A catalogue's real ES/OS documents can wrap all their content under one top-leve
 
 ## Why unwrapping happens *before* schema generation, not at query time
 
-This is the one design choice this doc exists to justify. `unwrapMapping` runs as part of `getIndexMapping`, which feeds the mapping that schema generation is built from. The alternative, structurally simpler design would have been: keep the envelope in the schema (so `data` becomes its own real GraphQL type, e.g. `CatalogueData`), and unwrap only at the `_source`-reading step. That alternative was rejected, for two reasons:
+This doc exists to justify this one design choice. `unwrapMapping` runs as part of `getIndexMapping`, which feeds the mapping underlying schema generation. The alternative, structurally simpler design would have been: keep the envelope in the schema (so `data` becomes its own real GraphQL type, e.g. `CatalogueData`), and unwrap only at the `_source`-reading step. That alternative was rejected, for two reasons:
 
 1. **It would break every existing catalogue config.** `extended.json`/`facets.json`/`table.json` reference clean, unprefixed field names; if the schema itself grew a `data` wrapper type, every field reference in those files would need a `data.` prefix added, for every catalogue that adopts this feature. Unwrapping before schema generation is what lets those files stay untouched.
-2. **It would tax an already-tight, security-relevant depth budget.** This is the part that isn't obvious from reading the code cold, and the reason this doc exists.
+2. **It would tax an already-tight, security-relevant depth budget.** This is the part that isn't obvious from reading the code cold, and this doc's reason for existing.
 
 ## The depth-budget interaction, confirmed
 
@@ -44,7 +44,7 @@ The feature is resolved, so its roadmap entry was removed per the working-docs c
 
 _Resolved. Both phases implemented and verified._
 
-A catalogue's real ES/OS documents can wrap all their content under one top-level envelope property (confirmed real-world case: Lyric-sourced catalogues nest everything under a `data` property, a Lyric design choice Arranger works around rather than requiring upstream to change). Setting a catalogue's `nestingPrefix` config (e.g. `"data"`, or a dotted path for deeper envelopes) makes it behave, end to end, exactly like an unwrapped catalogue:
+A catalogue's real ES/OS documents can wrap all their content under one top-level envelope property (confirmed real-world case: Lyric-sourced catalogues nest everything under a `data` property, a Lyric design choice; Arranger works around it rather than requiring upstream to change). Setting a catalogue's `nestingPrefix` config (e.g. `"data"`, or a dotted path for deeper envelopes) makes it behave, end to end, exactly like an unwrapped catalogue:
 
 - **Mapping ingestion** (`searchClient/fetchMapping.ts`'s `unwrapMapping`): `getIndexMapping` unwraps the mapping once at startup, so schema generation, field discovery, and `extended.json`/`facets.json`/`table.json` all operate on clean, unprefixed names. Verified against a real, enveloped catalogue's mapping (all 246 configured fields resolve, including hyphenated names and the primary key).
 - **Per-request query/response translation** (`middleware/utils/nestingPrefix.ts`): a shared utility (`applyNestingPrefix`, `applyNestingPrefixToFieldNames`, `applyNestingPrefixToSqon`, `unwrapSource`, `unwrapHits`) applied at each pipeline's entry point, rather than threading `nestingPrefix` awareness into every filter-op builder or `_source` reader individually:

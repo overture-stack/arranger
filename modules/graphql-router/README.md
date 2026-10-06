@@ -54,7 +54,7 @@ const router = await arrangerRouter(options);
 | --------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                       |
 | `esClient`            | `SearchClient`           | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
-| `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter each read is limited to, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
+| `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter that limits each read, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
 | `configsSource`       | `string`                 | **Deprecated**, not read: pass `configs` instead. Passed with no `configs`, construction rejects; beside them, it is ignored with a warning. |
 
 ---
@@ -256,9 +256,9 @@ The router rejects at construction a `getServerSideFilter` that is neither left 
 
 ### How the filter applies
 
-The returned filter is composed with any SQON the client provides, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, set, network search and export queries.
+The returned filter is composed with any client-provided SQON, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, set, network search and export queries.
 
-Aggregations are worth one note, because they are the case where "the filter is applied" is easy to assume and hard to see. A facet does not apply the caller's own filter on the field it is aggregating, so that selecting a value does not collapse that facet to the single value chosen. That exemption is for the caller's filter only; the server-side filter is re-applied to every aggregation, including one on the same field it restricts. So a facet on an access-controlled field shows only the values that caller may see.
+Aggregations are worth one note, because they are the case where "the filter is applied" is easy to assume and hard to see. A facet does not apply the caller's own filter on the field it is aggregating, so that selecting a value does not collapse that facet to the single value chosen. That exemption is for the caller's filter only; the server-side filter is re-applied to every aggregation, including one on the same field it restricts. So a facet on an access-controlled field shows only the values visible to that caller.
 
 In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
 
@@ -283,11 +283,11 @@ The router serves exports at `POST /download`. An integration building its own e
 - `sort`, for `dataStream` and `getAllData` alike, is an array of entries, each naming a non-empty `fieldName` and an `order` of `asc` or `desc`, in any case. Empty or absent keeps the default order, and an `_id` tiebreaker always follows.
 - A `sqon` that cannot be compiled into a query is refused, naming the SQON rule it broke where there is one.
 - A `maxRows` applies only when the catalogue allows custom row limits, and `0` asks for the configured limit. A configured limit that is unset or `0` exports every row.
-- An export the row limit cuts short is marked without changing the file: `getAllData`'s chunks carry `matchingTotal`, how many documents the filter matches, and `truncated`, beside `hits` and `total`, which is capped at the limit, and `dataStream` returns `exportTotals()`, giving the same once the first row is formatted. The router's `/download` sends them as the `Arranger-Export-Truncated` and `Arranger-Export-Matching-Total` headers.
+- An export cut short by the row limit is marked without changing the file: `getAllData`'s chunks carry `matchingTotal`, how many documents match the filter, and `truncated`, beside `hits` and `total`, which is capped at the limit, and `dataStream` returns `exportTotals()`, giving the same once the first row is formatted. The router's `/download` sends them as the `Arranger-Export-Truncated` and `Arranger-Export-Matching-Total` headers.
 
 ### The filter comes from the router
 
-Mount the router at the application's root and the export route after it, so every request has passed through the router's middleware, and pass the request's state as `ctx: res.locals`. The export then applies the filter the router recorded:
+Mount the router at the application's root and the export route after it, so every request has passed through the router's middleware, and pass the request's state as `ctx: res.locals`. The export then applies the router's recorded filter:
 
 | Context | `getServerSideFilter` left out | `getServerSideFilter` passed |
 | --- | --- | --- |
@@ -300,7 +300,7 @@ On a context built some other way, pass the filter function this deployment's ro
 
 | Error | Means | Answer |
 | --- | --- | --- |
-| `InvalidExportRequestError`, from `./download` | The request broke a rule. Its message names the rule broken where there is one, and never a value the request carried, so it is written for the client | `400`, with the error's message |
+| `InvalidExportRequestError`, from `./download` | The request broke a rule. Its message names the rule broken where there is one, and never a value carried by the request, so it is written for the client | `400`, with the error's message |
 | `AccessControlError`, from the package root | The deployment's access control could not be applied to the request | `500`, with a fixed text saying the problem is in the server's configuration, not in the request |
 | Anything else | A server fault, such as a failed search | `500`, with a fixed text saying the problem is on the server, not in the request |
 

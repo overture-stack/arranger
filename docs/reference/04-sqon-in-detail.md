@@ -1,6 +1,6 @@
 # SQONs In Detail
 
-SQON is a JSON-based filter language Overture uses to describe query logic in a backend-neutral way, while retaining human readability and portability. This page focuses on the shape of a SQON itself: what nodes exist, what operators are supported, what aliases are accepted, and which edge cases matter when generating SQON programmatically.
+SQON is a JSON-based filter language used by Overture to describe query logic in a backend-neutral way, while retaining human readability and portability. This page focuses on the shape of a SQON itself: what nodes exist, what operators are supported, what aliases are accepted, and which edge cases matter when generating SQON programmatically.
 
 <details>
 <summary><b>Example: Flat Filter vs. SQON</b></summary>
@@ -123,7 +123,7 @@ Whether a document matches a group depends on how many of the nodes in the group
 
 This page uses two terms for the two extremes a filter can reach:
 
-- **match-all**: places no condition, so every document the query searches satisfies it
+- **match-all**: places no condition, so every document searched by the query satisfies it
 - **match-none**: no document satisfies it
 
 Where a deployment applies access control, the server combines its own filter with every query, so a match-all query still returns only the documents the person may see.
@@ -169,7 +169,7 @@ Most leaf nodes use:
 - `fieldName`
 - `value`
 
-`fieldName` is the dotted path of the field the clause tests, such as `donor.age`. The key must be `fieldName`: a clause that uses the key `field` instead names no field.
+`fieldName` is the dotted path of the field tested by the clause, such as `donor.age`. The key must be `fieldName`: a clause that uses the key `field` instead names no field.
 
 The `wildcard` operator is the exception and instead uses `fieldNames` (plural): a document matches if any one of those fields matches the pattern.
 

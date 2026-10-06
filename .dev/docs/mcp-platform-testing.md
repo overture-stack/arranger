@@ -20,16 +20,16 @@ These are the constraints the rest of the document is built on.
 
 Two consequences shape most of what follows: greedy sampling makes runs near-repeatable but never bit-exact, and the dataset is frozen but not _owned_ by the suite, so the suite verifies the freeze cheaply rather than enforcing it.
 
-**One rule follows from all of this, and it applies to anything added later.** If a value can change a case's expected answer, it is pinned in the manifest, recorded on the case, or guarded at scoring. If it can't be pinned, recorded, or guarded, it is an open question rather than an assumption. Three values already qualify, and they differ only in who sets them: the principal a query is attributed to (nobody sets it today, so it is pinned as a declaration), a deployment's server-side filter (the operator sets it, so it is declared and fingerprinted, [§2](#2-what-is-being-pinned)), and the `execute_query` parameters the model itself sets that change the structured result (recorded per case at derivation and guarded at scoring, [§4.2](#42-case-set-format)).
+**One rule follows from all of this, and it applies to anything added later.** If a value can change a case's expected answer, it is pinned in the manifest, recorded on the case, or guarded at scoring. If it can't be pinned, recorded, or guarded, it is an open question rather than an assumption. Three values already qualify, and they differ only in who sets them: a query's principal (nobody sets it today, so it is pinned as a declaration), a deployment's server-side filter (the operator sets it, so it is declared and fingerprinted, [§2](#2-what-is-being-pinned)), and the `execute_query` parameters set by the model itself that change the structured result (recorded per case at derivation and guarded at scoring, [§4.2](#42-case-set-format)).
 
 **Terminology**
 
 - **Dataset**: the documents in the testing indices (`concepts.md` already uses "dataset" in this plain sense).
-- **Test environment**: the dataset _and_ the catalogue configuration together, which is the scope the fingerprint covers, since either one changing invalidates a baseline identically.
+- **Test environment**: the dataset _and_ the catalogue configuration together, which is the fingerprint's scope, since either one changing invalidates a baseline identically.
 - **Case set**: the test cases and their expectations.
-- **Intent** and **phrasing**: an intent is one thing a researcher wants to know; a phrasing is one way of asking for it. A case is an intent plus several phrasings of it, all sharing the same expected outcome.
+- **Intent** and **phrasing**: an intent is one piece of information sought by a researcher; a phrasing is one way of asking for it. A case is an intent plus several phrasings of it, all sharing the same expected outcome.
 - **Fixtures** is reserved for small, committed, suite-controlled data files, matching existing repo usage.
-- **Principal**: the caller a request is attributed to when deciding what it may see. This suite runs with exactly one, anonymous and unrestricted.
+- **Principal**: a request's attributed caller when deciding what it may see. This suite runs with exactly one, anonymous and unrestricted.
 - **temperature**: controls how creative or predictable a model's output is, where 0 is the most predictable.
 - **top-p**: controls how many candidates the model may pick from at each step, where lower values confine it to the most likely few.
 - **seed**: the starting point for the model's random picks, so repeating a request with the same seed returns the same answer.
@@ -94,12 +94,12 @@ Everything here goes into a **run manifest** written alongside every results fil
 - **Tokenizer repo plus revision, recorded separately** from the model, even when the two come from the same repo. Every token metric is denominated in it ([§3.4](#34-measuring-tokens-and-time)), and the CI token gate loads a tokenizer with no model server at all ([§7](#7-implementation-plan), Phase 5), so the two paths can silently end up in different units unless the tokenizer is pinned in its own right.
 - Chat template, tool-call parser, and structured-output backend, including whether it was enabled for tool arguments.
 - Served context length, max output tokens, and any prompt-truncation policy.
-- Sampling and determinism: temperature, top-p, top-k, repetition penalty, seed policy, the concurrency the run executed at, and any engine batch-invariance mode.
+- Sampling and determinism: temperature, top-p, top-k, repetition penalty, seed policy, the run's concurrency, and any engine batch-invariance mode.
 
 **MCP surface and build.**
 
 - **The surface hash**: the `server/discover` result, which carries the instructions, plus `tools/list`, `resources/list`, `resources/templates/list`, and `prompts/list`. This is the thing under test, so its hash is the change identifier. `mcp-client` exports the function that computes it, and the [MCP host plan](mcp-host-plan.md#21-mcp-client) states its canonicalization: `_meta`, cache hints and cursors are stripped, keys sorted, list order kept. The server's identity is therefore excluded, and recorded as build identity below, so a version bump alone does not change the hash.
-- Mode, and the build identity that comes with it: local mode gives the git SHA of `apps/mcp-server` plus hashes of every rebuilt `modules/*`; remote mode gives whatever version the server reports ([§5.4.1](#541-local-versus-remote-mcp-server)).
+- Mode, and the build identity that comes with it: local mode gives the git SHA of `apps/mcp-server` plus hashes of every rebuilt `modules/*`; remote mode gives whatever version is reported by the server ([§5.4.1](#541-local-versus-remote-mcp-server)).
 
 **Harness.**
 
@@ -120,13 +120,13 @@ Every metric below is reported **per model tier**. Token metrics are tokenizer-r
 
 **Did it get the right answer?**
 
-| Metric                | Answers                                                                  | Layer | Kind          | Gate                               | §   |
-| --------------------- | ------------------------------------------------------------------------ | ----- | ------------- | ---------------------------------- | --- |
-| ★ `outcomeMatch`      | Exact total, primary-key set, and buckets                                | L2    | Deterministic | Report                             | 3.1 |
-| ★ `responseTypeMatch` | Answers, declines, asks, or chats, as the case requires                  | L2    | Deterministic | Report                             | 3.1 |
-| `sqonEquivalence`     | Was the filter semantically one of the acceptable SQONs                  | L2    | Deterministic | Report                             | 3.1 |
-| `paramMismatch`       | Did the run use the parameter values the expectations were derived under | L2    | Deterministic | Voids the affected assertion       | 4.2 |
-| `answerQuality`       | Is the final prose faithful, complete, correctly worded                  | L3    | Judged        | Report (human-validated judge, R4) | 3.1 |
+| Metric                | Answers                                                                | Layer | Kind          | Gate                               | §   |
+| --------------------- | ---------------------------------------------------------------------- | ----- | ------------- | ---------------------------------- | --- |
+| ★ `outcomeMatch`      | Exact total, primary-key set, and buckets                              | L2    | Deterministic | Report                             | 3.1 |
+| ★ `responseTypeMatch` | Answers, declines, asks, or chats, as the case requires                | L2    | Deterministic | Report                             | 3.1 |
+| `sqonEquivalence`     | Was the filter semantically one of the acceptable SQONs                | L2    | Deterministic | Report                             | 3.1 |
+| `paramMismatch`       | Did the run match the parameter values used to derive the expectations | L2    | Deterministic | Voids the affected assertion       | 4.2 |
+| `answerQuality`       | Is the final prose faithful, complete, correctly worded                | L3    | Judged        | Report (human-validated judge, R4) | 3.1 |
 
 `outcomeMatch` is the strongest single signal in the suite, and `responseTypeMatch` is starred beside it because it guards the one failure the rest of the group cannot see: without the negative categories, a server that makes the model query for everything scores well. `sqonEquivalence` is diagnostic, and matters because on a bounded dataset a wrong filter can still return the right count. `paramMismatch` is a guard rather than a quality signal: it says an assertion was not defined for this run, not that the server did anything wrong.
 
@@ -145,7 +145,7 @@ Every metric below is reported **per model tier**. Token metrics are tokenizer-r
 | Metric                 | Answers                                                 | Layer | Kind          | Gate   | §   |
 | ---------------------- | ------------------------------------------------------- | ----- | ------------- | ------ | --- |
 | ★ `forbiddenPatterns`  | Did it guess a catalogue, a field, or a raw SQON        | L2    | Deterministic | Report | 3.1 |
-| `requiredToolsPresent` | Did it call the tools the task needed (set containment) | L2    | Deterministic | Report | 3.1 |
+| `requiredToolsPresent` | Did it call the task's required tools (set containment) | L2    | Deterministic | Report | 3.1 |
 
 Only one is starred here, because `requiredToolsPresent` is largely implied by `outcomeMatch`: a case rarely produces the right structured result without the tools that fetch it. `forbiddenPatterns` catches what that misses, the model that guessed and happened to be right, and it is the direct measurement of whether the "Never guess" rules work.
 
@@ -172,7 +172,7 @@ Only one is starred here, because `requiredToolsPresent` is largely implied by `
 | `toolResultTokens`           | Which tool responses are fat (p50, max per tool)          | L2    | Recorded      | Report               | 3.4 |
 | `serverLatency`              | Time attributable to MCP plus Arranger plus ES (p50, p95) | L2    | Recorded      | Report, never gate   | 3.4 |
 
-`staticSurfaceTokens` is the only number here free of both model and hardware variance, which is why it is also the only one that gates CI. Among the rest, prefer `turnCount` over `serverLatency`: it is the efficiency measure shared GPUs cannot distort.
+`staticSurfaceTokens` is the only number here free of both model and hardware variance, which is why it is also the only one that gates CI. Among the rest, prefer `turnCount` over `serverLatency`: it is the efficiency measure that cannot be distorted by shared GPUs.
 
 ### 3.1 Measuring correctness and workflow
 
@@ -195,7 +195,7 @@ This covers the "Did it get the right answer?" and "Did it follow the intended w
 
 ### 3.2 Measuring rejections and recovery
 
-A rejected tool call is the highest-signal event the suite observes, and it needs no judge. The critical part is that **three different failures produce a rejection, and only two of them say anything about the MCP server.** They are told apart by where the call failed:
+A rejected tool call is the highest-signal event observed by the suite, and it needs no judge. The critical part is that **three different failures produce a rejection, and only two of them say anything about the MCP server.** They are told apart by where the call failed:
 
 - **`parseFailures`** covers calls that never formed at all: malformed JSON, a wrong wrapper, or a call emitted as prose. It is a **guard, not a quality metric**, because a chat template or tool-call parser mismatch produces exactly this while looking nothing like its own cause. A spike invalidates the run rather than condemning the server. A run that ends in a model-server error (`model_error`: an HTTP error, timeout or refusal) is void for the same reason.
 - **`schemaInvalid`** is a well-formed call rejected by the tool's input schema.
@@ -260,13 +260,13 @@ If R3 finds phrasing variance is high, the answer is more _intents_ rather than 
 
 Because the dataset is frozen, every outcome assertion can be exact and expectations only need to be derived once. Four mechanisms make that safe, and two of them carry a reading trap worth naming alongside them.
 
-**Derive expectations once, then commit them.** `eval bootstrap-expectations` computes each case's expected outcome by running one of its acceptable SQONs against Arranger, shows a diff for review, and writes it into the case file. A one-time step per case, worth having as a command so that adding a case never means hand-counting records. It also records the `execute_query` parameter values the expectations were derived under, since several of them change the structured result and the model chooses them at run time ([§4.2](#42-case-set-format)).
+**Derive expectations once, then commit them.** `eval bootstrap-expectations` computes each case's expected outcome by running one of its acceptable SQONs against Arranger, shows a diff for review, and writes it into the case file. A one-time step per case, worth having as a command so that adding a case never means hand-counting records. It also records the `execute_query` parameter values used to derive the expectations, since several of them change the structured result and the model chooses them at run time ([§4.2](#42-case-set-format)).
 
 **Read the derivation diff with the aggregation semantics in mind.** By default a facet's own filter clauses are dropped from its own bucket counts while every other clause still applies. That is multi-select facet behaviour, and it is what `aggregationsFilterThemselves: false` means. So a reviewer will see bucket counts that look unfiltered beside a filtered query, and the correction that suggests itself, adjusting them by hand, breaks the case permanently. The counts are right; the recorded flag is what defines them.
 
 **Fingerprint at run start, and abort on mismatch.** One check that the test environment is the one the expectations were derived from. This is not defence against expected drift, it is defence against a silent accident: an unannounced reindex, a catalogue configuration edit, or `ARRANGER_BASE_URL` pointed at the wrong instance. All three would present as an MCP regression, and all three are indistinguishable from one without the check. Recording the fingerprint in the manifest gives every baseline proof of what it ran against.
 
-**Fingerprint through Arranger, not ES.** Derive it from `/introspection` plus a few fixed aggregation queries. This needs no ES credentials, covers catalogue **configuration** as well as data (the change most likely to happen on a testing server even when the data is frozen), and exercises the same path the MCP server uses.
+**Fingerprint through Arranger, not ES.** Derive it from `/introspection` plus a few fixed aggregation queries. This needs no ES credentials, covers catalogue **configuration** as well as data (the change most likely to happen on a testing server even when the data is frozen), and exercises the same path used by the MCP server.
 
 **The signals also diagnose, not only detect.** They move in distinguishable combinations, and the abort message should say which:
 
@@ -277,9 +277,9 @@ Because the dataset is frozen, every outcome assertion can be exact and expectat
 | Canonicalized introspection only                                     | A catalogue configuration edit                    |
 | Everything                                                           | `ARRANGER_BASE_URL` points at the wrong instance  |
 
-The first row is the one to keep in mind. A deployment's `getServerSideFilter` is composed into every read path, so it moves the document count and the aggregation checksum, and it is invisible to both metadata signals. **The query-derived signals are the only ones that can catch it**, so dropping them for being over-sensitive would make an arriving filter present as a broad regression across every case at once, which is the failure this section exists to prevent. They are not in fact the sensitive ones: a count and a checksum over a frozen index do not move on a restart, whereas the raw introspection payload does, which is why [§2](#2-what-is-being-pinned) hashes it only after dropping `generatedAt` and `status`. Note also that `meta.authFiltered` in that payload is hardcoded `false` in Arranger today and reports nothing about whether a filter is active; assert that it is `false` rather than reading it as evidence, so the day it becomes real the assertion is already in place.
+The first row is the one to keep in mind. A deployment's `getServerSideFilter` is composed into every read path, so it moves the document count and the aggregation checksum, and it is invisible to both metadata signals. **The query-derived signals are the only ones that can catch it**, so dropping them for being over-sensitive would make an arriving filter present as a broad regression across every case at once, which is the failure it is this section's job to prevent. They are not in fact the sensitive ones: a count and a checksum over a frozen index do not move on a restart, whereas the raw introspection payload does, which is why [§2](#2-what-is-being-pinned) hashes it only after dropping `generatedAt` and `status`. Note also that `meta.authFiltered` in that payload is hardcoded `false` in Arranger today and reports nothing about whether a filter is active; assert that it is `false` rather than reading it as evidence, so the day it becomes real the assertion is already in place.
 
-**Use a read-only credential**, with sets, admin, and downloads disabled. The freeze is load-bearing for every number the suite produces, so the suite must not be what breaks it.
+**Use a read-only credential**, with sets, admin, and downloads disabled. The freeze is load-bearing for every number produced by the suite, so the suite must not be what breaks it.
 
 ### 4.2 Case set format
 
@@ -326,7 +326,7 @@ tiers                   which model tiers this case runs on (default: all)
 
 Source intents from real failures rather than imagination. Every hit-or-miss SQON generation problem that motivated `build_sqon` (roadmap § MCP integration readiness) is an intent. Aim for roughly 30 across the four categories, weighted deliberately toward the negative ones, then grow the set from observed failures. Real failures also supply the best phrasings, since the wording that broke the server once is worth keeping forever.
 
-**A model may draft phrasings; it must not decide what correct looks like.** Generating the expected answer with a model means measuring agreement with that model's beliefs about the dataset rather than correctness, and it encodes the same misunderstandings the server is supposed to prevent. It also makes the suite immune to the failure it exists to catch, since a model that misreads the catalogue the same way in both places scores a pass. Expectations are human-set, which is what the review diff in [§4.1](#41-working-against-the-frozen-dataset) is for.
+**A model may draft phrasings; it must not decide what correct looks like.** Generating the expected answer with a model means measuring agreement with that model's beliefs about the dataset rather than correctness, and it encodes the same misunderstandings it is the server's job to prevent. It also makes the suite immune to the failure it exists to catch, since a model that misreads the catalogue the same way in both places scores a pass. Expectations are human-set, which is what the review diff in [§4.1](#41-working-against-the-frozen-dataset) is for.
 
 ---
 
@@ -448,7 +448,7 @@ Per the repo convention in `AGENTS.md`, one module in `apps/mcp-cli` reads `proc
 - `LLM_TEMPERATURE` (0), `LLM_TOP_P`, `LLM_TOP_K`, `LLM_SEED`, `LLM_MAX_TOKENS`. Greedy is the only supported configuration ([§1.2](#12-greedy-sampling-and-measurements)); these exist to be recorded in the manifest and to make a deviation visible, not to be swept.
 - `LLM_CONTEXT_LENGTH` (served window, for the context-fraction metric)
 - `LLM_TOKENIZER`, `LLM_TOKENIZER_REVISION` (the pinned tokenizer, [§2](#2-what-is-being-pinned)), and `LLM_TOKENIZE_URL` where the serving stack has a tokenize endpoint ([§3.4](#34-measuring-tokens-and-time))
-- `LLM_STRUCTURED_TOOL_ARGS` = `on` | `off` (`off`, since Ollama cannot do it; recorded so that it becoming `on` is visible rather than silent, the same reason the inert sampling values above are recorded)
+- `LLM_STRUCTURED_TOOL_ARGS` = `on` | `off` (`off`, since Ollama cannot do it; recorded so that it becoming `on` is visible rather than silent, the same reason for recording the inert sampling values above)
 - `LLM_SERVING_ENGINE`, `LLM_SERVING_VERSION`, `LLM_TOOL_TEMPLATE` (the model's tool-call template or parser, however the engine names it), `LLM_BATCH_INVARIANT` = `on` \| `off`. All operator-declared and recorded in the manifest, since the harness cannot read most of them from the API; check against `/v1/models` where possible.
 
 **Judge**
@@ -478,7 +478,7 @@ Each spike can invalidate a design assumption, so all of them come before case a
 - **R3: greedy stability and phrasing noise floor.** Two measurements against an unchanged server, both before any cases are authored. First, one phrasing run 20 times: how often does greedy actually return the same trajectory and answer? **This validates the single-pass premise, so it comes before anything is built on it.** Second, several phrasings of one intent: how much does rewording move the result? That sets the smallest difference the suite can detect and the phrasings per intent ([§3.7](#37-how-many-phrasings-per-intent)). Record what the phrasings disagreed about, since that is a finding in itself and will likely reshape which intents get written in Phase 1.
 - **R4: judge reliability, with a human as the judge of the judge.** A human grades 20 stored answers against the rubric, the judge model then grades the same 20, and the two are compared as agreement beyond chance. If agreement is poor, rewrite the rubric or drop the judge layer. Do not build scoring on an unvalidated judge. **Commit the human grades as a fixture:** they are the control for every later judge or rubric change, and without them the agreement check validates one configuration and then silently covers every configuration after it.
 - **R5: tier range.** Does the small tier have usable range on a handful of cases, neither all-pass nor all-fail? Decides which tier carries the broad sweep. Lower priority than the spikes above it, since multi-tier work is deferred.
-- **R6: fingerprint design.** Pick the Arranger-side signals (introspection hash plus a few fixed aggregations) that catch a reindex, a configuration edit, an arriving server-side filter, or a wrong `ARRANGER_BASE_URL`. **The deliverable is a canonicalization rule rather than a sensitivity trade-off:** decide which fields of the `/introspection` payload are excluded before hashing (`generatedAt` at minimum, plus how catalogue `status` is treated), so the metadata signals survive a harmless restart while the query-derived signals stay in place to catch a filter, which nothing else can see ([§4.1](#41-working-against-the-frozen-dataset)). Also confirm the freeze is a documented commitment rather than an assumption, who else can write to that instance, **and who can change its access-control configuration**, which is now a baseline-invalidating parameter with no owner named.
+- **R6: fingerprint design.** Pick the Arranger-side signals (introspection hash plus a few fixed aggregations) that catch a reindex, a configuration edit, an arriving server-side filter, or a wrong `ARRANGER_BASE_URL`. **The deliverable is a canonicalization rule rather than a sensitivity trade-off:** decide which fields of the `/introspection` payload are excluded before hashing (`generatedAt` at minimum, plus how catalogue `status` is treated), so the metadata signals survive a harmless restart while the query-derived signals stay in place to catch a filter, which is invisible to everything else ([§4.1](#41-working-against-the-frozen-dataset)). Also confirm the freeze is a documented commitment rather than an assumption, who else can write to that instance, **and who can change its access-control configuration**, which is now a baseline-invalidating parameter with no owner named.
 - **R7: run scope.** From R3 and R5, work out the wall clock for a full run at the chosen phrasing counts and tiers. If it is uncomfortable, cut scope now rather than in CI.
 
 **Open questions for Phase 0:** whether transcripts containing real dataset records may be retained, and where; where committed baseline summaries live; whether anyone else could reindex the testing instance mid-run.
@@ -560,7 +560,7 @@ This is the phase that delivers the stated goal, and the easiest to under-scope.
 - [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (transcript versus outcome, 20 to 50 cases, grader types, balanced problem sets, saturation; `paraphraseRobustness` is this plan's answer to its pass^k idea, with phrasings substituted for repeated trials)
 - [Writing effective tools for AI agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
 - [Ollama: OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility) (the `/v1` surface and its `tools` support), plus the tokenize and detokenize endpoints ([ollama#12030](https://github.com/ollama/ollama/pull/12030)) and the Modelfile-parameters-ignored-on-`/v1` gotcha ([ollama#17744](https://github.com/ollama/ollama/issues/17744))
-- [vLLM: Reproducibility](https://docs.vllm.ai/en/latest/usage/reproducibility/) and [Batch Invariance](https://docs.vllm.ai/en/latest/features/batch_invariance/) (why temperature 0 plus a fixed seed is not sufficient on a batching server; the batch-invariance mode Ollama has no equivalent of)
+- [vLLM: Reproducibility](https://docs.vllm.ai/en/latest/usage/reproducibility/) and [Batch Invariance](https://docs.vllm.ai/en/latest/features/batch_invariance/) (why temperature 0 plus a fixed seed is not sufficient on a batching server; the batch-invariance mode, which has no Ollama equivalent)
 - [Defeating Nondeterminism in LLM Inference](https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/) (batch-size dependence of reduction kernels as the real cause)
 - [vLLM: Tool Calling](https://docs.vllm.ai/en/stable/features/tool_calling/) (`--enable-auto-tool-choice`, `--tool-call-parser`) and [Structured Outputs](https://developers.redhat.com/articles/2025/06/03/structured-outputs-vllm-guiding-ai-responses). The second is background for the [§8](#8-risks) row on tool-argument constraining, not something this suite does; Ollama has no equivalent today.
 - [mcp-eval](https://mcp-eval.ai/) (metric taxonomy, path efficiency, OTel)

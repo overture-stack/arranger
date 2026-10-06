@@ -138,7 +138,7 @@ You're building an API client, pipeline, or script that sends queries to Arrange
 Multiple organisations each run their own Arranger, and you want one portal reporting totals across all of them.
 
 1. [Federated search](./federated-search.md): how federation works, configuration, the query shape, and its limitations
-2. [Catalogue configuration](./reference/01-arranger-configs.md): the per-catalogue files each participating node needs
+2. [Catalogue configuration](./reference/01-arranger-configs.md): the per-catalogue files needed by each participating node
 3. [Feature flags](./reference/07-feature-flags.md): `disableGraphQLIntrospection` must be `false` on every remote node
 4. [Arranger Charts](./charts.md): `NetworkNodesChart` for showing per-node hit counts
 

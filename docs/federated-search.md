@@ -30,7 +30,7 @@ A typical arrangement: each site runs a normal Arranger server, and one of them 
 
 **Per query**, the server:
 
-1. Sends each remote node a query for only the requested fields that node actually has, plus that node's total hits.
+1. Sends each remote node a query for only the requested fields actually present on that node, plus that node's total hits.
 2. Queries the local node, if one is configured, through its in-process resolvers rather than over HTTP.
 3. Merges the returned buckets field by field, summing `doc_count` for buckets that share a `key`.
 4. Returns the merged aggregations alongside a per-node status list.
@@ -105,7 +105,7 @@ Add a `network.json` to the catalogue's configuration directory, alongside `base
 | `remoteNodes[].requests.headers` | no                         | Header names to forward to this node. **Replaces** `remoteRequests.headers` for this node rather than adding to it.                                                                                                              |
 | `remoteRequests.headers`         | no                         | Header names to copy from the incoming request onto every outgoing remote request.                                                                                                                                               |
 
-**Header passthrough is how authorization reaches remote nodes.** Listing `Authorization` copies the caller's token onto each remote request, letting every node apply its own access rules to the caller's identity. Only list headers the remote nodes should genuinely receive: each name listed is forwarded verbatim to every node it applies to.
+**Header passthrough is how authorization reaches remote nodes.** Listing `Authorization` copies the caller's token onto each remote request, letting every node apply its own access rules to the caller's identity. Only list headers genuinely meant for the remote nodes: each name listed is forwarded verbatim to every node it applies to.
 
 ### With `graphql-router` (library)
 
