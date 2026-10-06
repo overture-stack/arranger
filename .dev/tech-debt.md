@@ -438,6 +438,15 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Do not change `executeQueryTool.ts:199`.** It looks identical and is not: that call formats the GraphQL variables inside `server.server.elicitInput()`, the confirmation prompt a person reads before a query runs. Its indentation is the feature. A regex sweep of `JSON.stringify(.*null, 2)` breaks it, which is the reason this entry names sites individually rather than describing a pattern.
 **Standalone:** yes; one argument removed, plus a decision on the resource sites
 
+### `execute_query`'s confirmation state is bound to the OAuth client, not the user
+
+**File:** `apps/mcp-server/src/mcp/requestState.ts` (`createConfirmationCodec`, its `bind`)
+**Severity:** low (no effect until the endpoint authenticates callers; the query digest still binds a confirmation to one query)
+**Kind:** design gap
+**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. A backend registered as one OAuth client, as the notebook UI's would be ([MCP host plan](docs/mcp-host-plan.md) §2.4), serves all its users under one `clientId`, so a confirmation issued to one would verify for another.
+**Fix:** Bind to the user as well. The SDK's `AuthInfo` has no user field, so the token verifier puts the token's `sub` claim in `authInfo.extra` for `bind` to read. Encode the parts rather than joining with `\0`, as the comment above `bind` requires. Test that a state minted for one subject fails for another under the same client.
+**Standalone:** no; the subject exists only once the endpoint authenticates callers, so do this with that work (the "MCP endpoint has no authentication" entry above)
+
 ## apps/search-server
 
 ### `ENABLE_ADMIN` is read from the environment and reaches no consumer, and the docs describe the wrong channel

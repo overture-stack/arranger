@@ -1,6 +1,8 @@
 # MCP Server Platform Testing: Plan
 
-**Status:** plan only. Nothing here is implemented. Last updated 2026-08-27.
+**Status:** plan only. Nothing here is implemented. Last updated 2026-10-05.
+
+**Built on the [MCP host plan](mcp-host-plan.md), which is pending review.** The harness runs as `apps/mcp-cli eval` on that plan's modules. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
 
 **Goal:** a fixed harness, fixed dataset, and a pinned model configuration, run against a changing `apps/mcp-server`, producing numbers that justify a decision to keep or revert a change.
 
@@ -96,12 +98,12 @@ Everything here goes into a **run manifest** written alongside every results fil
 
 **MCP surface and build.**
 
-- **The surface hash**: the `initialize` instructions plus the serialized `tools/list`, `resources/list`, and `prompts/list`. This is the thing under test, so its hash is the change identifier.
+- **The surface hash**: the `server/discover` result, which carries the instructions, plus `tools/list`, `resources/list`, `resources/templates/list`, and `prompts/list`. This is the thing under test, so its hash is the change identifier. `mcp-client` exports the function that computes it, and the [MCP host plan](mcp-host-plan.md#21-mcp-client) states its canonicalization: `_meta`, cache hints and cursors are stripped, keys sorted, list order kept. The server's identity is therefore excluded, and recorded as build identity below, so a version bump alone does not change the hash.
 - Mode, and the build identity that comes with it: local mode gives the git SHA of `apps/mcp-server` plus hashes of every rebuilt `modules/*`; remote mode gives whatever version the server reports ([§5.4.1](#541-local-versus-remote-mcp-server)).
 
 **Harness.**
 
-- MCP client name and version, declared capabilities (notably whether `elicitation` is advertised), elicitation response policy, per-call timeout, tool-call and turn budgets.
+- MCP client name and version, declared capabilities (notably whether `elicitation` is advertised), elicitation response policy, request timeout and per-question timeout, the tool-result cap (none), tool-call and turn budgets, and the versions of `mcp-client` and `mcp-host-core`.
 - Judge model identity and judge prompt hash, plus the judge's agreement with the human grades from the most recent R4 run ([§5.3.4](#534-scoring)), so a judge scoring against a stale human control is visible in the baseline rather than invisible.
 
 **Not pinned:** model output. Greedy decoding narrows it sharply but does not make it bit-exact ([§1.2](#12-greedy-sampling-and-measurements)), so it is still treated as a variable to be measured rather than a constant to be relied on.
@@ -174,7 +176,7 @@ Only one is starred here, because `requiredToolsPresent` is largely implied by `
 
 ### 3.1 Measuring correctness and workflow
 
-This covers the "Did it get the right answer?" and "Did it follow the intended workflow?" groups, which share one piece of instrumentation. The MCP client sees every `tools/call`, so wrapping `client.callTool` to record `{ name, arguments, startedAt, durationMs, isError, resultTokens }` produces the whole trajectory, and every workflow metric is a query over that list.
+This covers the "Did it get the right answer?" and "Did it follow the intended workflow?" groups, which share one piece of instrumentation. Host-core emits `tool_call` and `tool_result` events for every call, carrying the arguments, outcome, `isError`, full result, wire time and waiting time. That event list is the whole trajectory, and every workflow metric is a query over it.
 
 - **★ `outcomeMatch`** asserts on the _structured_ result of the final `execute_query`, never the model's prose: exact `total`, exact set of returned primary keys, exact aggregation buckets. The frozen dataset makes these exact and the fingerprint check ([§4.1](#41-working-against-the-frozen-dataset)) licenses the exactness. The strongest single signal in the suite. Each part of it is defined only against the `execute_query` parameter values the expectation was derived under, so a run that chose different ones voids the affected part rather than failing it (`paramMismatch`, [§4.2](#42-case-set-format)).
 - **`sqonEquivalence`** compares the SQON that reached `execute_query` against the case's set of acceptable SQONs, normalized semantically (clause ordering, root wrapper, value arrays) rather than compared as strings. `modules/sqon` already owns the normalization primitives. Worth having separately from `outcomeMatch` because on a bounded dataset a wrong filter can return the right count.
@@ -195,7 +197,7 @@ This covers the "Did it get the right answer?" and "Did it follow the intended w
 
 A rejected tool call is the highest-signal event the suite observes, and it needs no judge. The critical part is that **three different failures produce a rejection, and only two of them say anything about the MCP server.** They are told apart by where the call failed:
 
-- **`parseFailures`** covers calls that never formed at all: malformed JSON, a wrong wrapper, or a call emitted as prose. It is a **guard, not a quality metric**, because a chat template or tool-call parser mismatch produces exactly this while looking nothing like its own cause. A spike invalidates the run rather than condemning the server.
+- **`parseFailures`** covers calls that never formed at all: malformed JSON, a wrong wrapper, or a call emitted as prose. It is a **guard, not a quality metric**, because a chat template or tool-call parser mismatch produces exactly this while looking nothing like its own cause. A spike invalidates the run rather than condemning the server. A run that ends in a model-server error (`model_error`: an HTTP error, timeout or refusal) is void for the same reason.
 - **`schemaInvalid`** is a well-formed call rejected by the tool's input schema.
 - **★ `semanticallyInvalid`** is a schema-valid call rejected by the server's own domain validation: unknown fields, operators not valid for a field type, catalogue mismatches, an invalid `existingSqon`.
 - **`errorRecoveryWithinK`** pairs each rejection with the calls that follow it: recovered in 1, recovered in 2 to k, or never recovered. This is the only measure of error _message_ quality. Expect it to be strongly tier-dependent: recovery is where small models fall apart, and where good error text pays off most.
@@ -215,7 +217,7 @@ These are computed across the _phrasings_ of one intent:
 
 **Tokens** come from the serving stack: `prompt_tokens` and `completion_tokens` on each response, and a tokenize endpoint for text the model has not been sent yet. Ollama exposes `/api/tokenize`, as does vLLM at `/tokenize`; where an engine has no such endpoint, load the model's tokenizer locally, pinned to the same revision.
 
-- **★ `staticSurfaceTokens`**: tokenize the `initialize` instructions plus the serialized tool schemas. No generation, no variance, so this is the CI budget gate. Because it is the only hard gate, its unit comes from an artifact outside this repository. Two rules keep that from turning the gate into a false-failure generator: the pinned tokenizer identity ([§2](#2-what-is-being-pinned)) is asserted before the budget is compared, and a mismatch **fails with its own message** ("tokenizer changed, re-baseline required") rather than as a budget breach. A tokenizer change is a deliberate re-baseline, the same as a serving-config change ([§7](#7-implementation-plan), Phase 6), not a build failing on an empty diff. Express the budget as headroom against the recorded baseline rather than an absolute figure, for the same reason.
+- **★ `staticSurfaceTokens`**: tokenize the tool definitions and server instructions in the form host-core sends them to the model. L1 builds that text with host-core's exported serialization from the raw SDK client's responses. The serving stack's chat template renders it further, so the count is a stable proxy for the real cost rather than the exact figure, which is what a budget gate needs. A host-core formatting change therefore moves the gate as a server change does, which is intended: both change what every session pays. No generation, no variance, so this is the CI budget gate. Because it is the only hard gate, its unit comes from an artifact outside this repository. Two rules keep that from turning the gate into a false-failure generator: the pinned tokenizer identity ([§2](#2-what-is-being-pinned)) is asserted before the budget is compared, and a mismatch **fails with its own message** ("tokenizer changed, re-baseline required") rather than as a budget breach. A tokenizer change is a deliberate re-baseline, the same as a serving-config change ([§7](#7-implementation-plan), Phase 6), not a build failing on an empty diff. Express the budget as headroom against the recorded baseline rather than an absolute figure, for the same reason.
 - **`contextFraction`**: the same figures from `staticSurfaceTokens` as a share of the served context window. A `get_catalogue_fields` response on a wide catalogue is a rounding error for a large model and a third of a small model's window, and only the fraction makes that visible.
 - **`runTokens`**: `prompt_tokens` plus `completion_tokens` across turns. With prefix caching on, the prompt-token figure may or may not reflect cache reuse depending on the engine, so record the engine's cache statistics and report a cache-independent figure.
 - **`toolResultTokens`**: p50 and max per tool. This is where `execute_query` result compaction and `get_catalogue_fields` verbosity show up.
@@ -224,7 +226,7 @@ These are computed across the _phrasings_ of one intent:
 
 - **Fix concurrency** (default 1) and record it. A run at concurrency 8 is not comparable to one at concurrency 1, and neither is comparable to one where someone else was using the GPUs.
 - **Record serving-side load**: queue depth or GPU utilization where the engine exposes them, snapshotted at run start and end, plus any batch-invariance mode in use. Timings are comparable as long as concurrency is pinned, with one exception: an engine's batch-invariance mode trades throughput for reproducibility, so timings from a run using it are not comparable to timings from one that is not ([§1.2](#12-greedy-sampling-and-measurements)).
-- **Separate `serverLatency` from model time.** `serverLatency` is the sum and per-tool p50/p95 of `tools/call` round-trip duration, including the Arranger round trip and ES time, and it is the only part the team can act on. Model time is wall clock minus that, and belongs in the manifest as serving-config context rather than as a metric. `turnCount` and `toolCallCount` are the efficiency proxies hardware load cannot confound, so when they disagree with wall clock, believe them.
+- **Separate `serverLatency` from model time.** `serverLatency` is the sum and per-tool p50/p95 of `tools/call` wire time, including the Arranger round trip and ES time but not time spent waiting on a confirmation, and it is the only part the team can act on. Model time is wall clock minus that, and belongs in the manifest as serving-config context rather than as a metric. `turnCount` and `toolCallCount` are the efficiency proxies hardware load cannot confound, so when they disagree with wall clock, believe them.
 
 ### 3.5 Reading rules
 
@@ -258,7 +260,7 @@ If R3 finds phrasing variance is high, the answer is more _intents_ rather than 
 
 Because the dataset is frozen, every outcome assertion can be exact and expectations only need to be derived once. Four mechanisms make that safe, and two of them carry a reading trap worth naming alongside them.
 
-**Derive expectations once, then commit them.** `evals:bootstrap-expectations` computes each case's expected outcome by running one of its acceptable SQONs against Arranger, shows a diff for review, and writes it into the case file. A one-time step per case, worth having as a command so that adding a case never means hand-counting records. It also records the `execute_query` parameter values the expectations were derived under, since several of them change the structured result and the model chooses them at run time ([§4.2](#42-case-set-format)).
+**Derive expectations once, then commit them.** `eval bootstrap-expectations` computes each case's expected outcome by running one of its acceptable SQONs against Arranger, shows a diff for review, and writes it into the case file. A one-time step per case, worth having as a command so that adding a case never means hand-counting records. It also records the `execute_query` parameter values the expectations were derived under, since several of them change the structured result and the model chooses them at run time ([§4.2](#42-case-set-format)).
 
 **Read the derivation diff with the aggregation semantics in mind.** By default a facet's own filter clauses are dropped from its own bucket counts while every other clause still applies. That is multi-select facet behaviour, and it is what `aggregationsFilterThemselves: false` means. So a reviewer will see bucket counts that look unfiltered beside a filtered query, and the correction that suggests itself, adjusting them by hand, breaks the case permanently. The counts are right; the recorded flag is what defines them.
 
@@ -291,7 +293,7 @@ phrasings               [ "...", "..." ] verbatim and frozen; 1, or 3 to 5 on th
                         robustness subset ([§3.7](#37-how-many-phrasings-per-intent)). Every phrasing runs separately
                         against the same expectations below
 entrypoint              raw prompt, or via the query_arranger MCP prompt
-elicitationPolicy       accept | decline | timeout | not-advertised
+elicitationPolicy       accept | decline | not-advertised
 expect:
   catalogue             expected catalogueId, or null
   requiredTools         set containment
@@ -300,12 +302,14 @@ expect:
   result                exact total, primary keys, buckets (derived, not hand-written)
   params                the execute_query parameter values `result` was derived under:
                         aggregationsFilterThemselves, includeMissing, first, offset
-                        (written by evals:bootstrap-expectations, never by hand)
+                        (written by eval bootstrap-expectations, never by hand)
   rubric                judge rubric plus a reference answer
 budget:
   maxToolCalls, maxTurns, maxWallClockMs
 tiers                   which model tiers this case runs on (default: all)
 ```
+
+**There is no `timeout` policy.** A client-side timeout reaches the server as `cancel`, and `execute_query` treats every answer but `accept` as declined, so it would score exactly like `decline`. Waiting out the server's 600-second window instead would cost over 10 minutes per case. `mcp-client`'s own tests cover a refused confirmation ([MCP host plan](mcp-host-plan.md#phase-1-mcp-client)).
 
 **Why `params` exists, and what it guards.** Four `execute_query` inputs are model-settable and change the structured result: `aggregationsFilterThemselves` and `includeMissing` change the buckets, `first` and `offset` change which primary keys come back. An exact assertion is only defined against fixed values, so `result` is derived under recorded ones and the scorer compares what the run actually used. **Each parameter voids exactly the sub-assertion it can move, and nothing else:**
 
@@ -330,59 +334,62 @@ Source intents from real failures rather than imagination. Every hit-or-miss SQO
 
 ### 5.1 Why this needs a custom harness
 
-No framework will do the Arranger-specific work: fingerprint an external Arranger, open an MCP session in either local or remote mode, advertise and answer elicitation on a script, bridge MCP tool schemas to the serving API's tool format, run the loop with budgets, separate parser failures from server rejections, and assert Arranger semantics like SQON equivalence.
+No framework does what this suite needs end to end: fingerprint an external Arranger, open an MCP session in either local or remote mode, advertise and answer elicitation on a script, bridge MCP tool schemas to the serving API's tool format, run the loop with budgets, separate parser failures from server rejections, and assert Arranger semantics like SQON equivalence.
 
-That is a few hundred lines specific to this repo, and part of it already exists in `integration-tests/mcp-server`. What a framework _can_ do is everything around it: run the suite, capture transcripts, plumb the judge, and write machine-readable artifacts. `vitest-evals` calls the part we write a **harness** and owns the rest, which is exactly that split ([§5.3.3](#533-runner-and-results-store)).
+Most of that list is what any MCP host needs. The [MCP host plan](mcp-host-plan.md) builds it once, as `mcp-client` and `mcp-host-core`, for this harness, a terminal chat and the notebook UI. What is left here is the Arranger-specific work and a small runner. Host-core's events already are the transcript, so a runner framework adds little ([§5.3.3](#533-runner-and-results-store)).
 
 ### 5.2 Tools considered
 
-| Status                          | Name                                                                                     | Note                                                                                                                                                                                                                                                      |
-| ------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Recommended**                 | [`@modelcontextprotocol/sdk` v1](https://github.com/modelcontextprotocol/typescript-sdk) | MCP client, matching the server's current major.                                                                                                                                                                                                          |
-| **Recommended**                 | [`openai` npm package](https://www.npmjs.com/package/openai)                             | Model client. Ollama, vLLM, SGLang, TGI and llama.cpp all expose an OpenAI-compatible chat completions API with `tools`, keeping the harness engine-independent. One Ollama caveat in [§5.3.2](#532-model-serving-and-the-determinism-assumption).        |
-| **Recommended**                 | [`vitest-evals`](https://github.com/getsentry/vitest-evals)                              | Eval runner. Wraps our loop as a custom **harness** and supplies the suite, transcript capture, usage accounting, judge plumbing, and JSON artifacts. Pin the version: 0.x, and the harness abstraction is new ([§5.3.3](#533-runner-and-results-store)). |
-| **Recommended**                 | [`@graphql-inspector/core`](https://the-guild.dev/graphql/inspector)                     | Arranger schema fingerprint, and a readable diff when it moves.                                                                                                                                                                                           |
-| **Recommended**                 | [`simple-statistics`](https://simple-statistics.github.io)                               | Confidence intervals in the compare CLI.                                                                                                                                                                                                                  |
-| Recommended<br>(separate track) | [promptfoo](https://www.promptfoo.dev/docs/providers/mcp/)                               | Its MCP provider treats the server as the target under test with explicit tools and deterministic assertions, plus red-team tooling. Right fit for the URGENT auth and rate-limit items in `tech-debt.md`; poor fit for multi-tier trajectory scoring.    |
-| Reference                       | [mcp-eval](https://github.com/lastmile-ai/mcp-eval) (Python)                             | Best available reference for the metric taxonomy and assertion vocabulary. Wrong runtime for this team.                                                                                                                                                   |
-| Deferred                        | [Langfuse](https://langfuse.com)                                                         | Self-hostable, so the data question has an answer. Revisit if trace visualization becomes the bottleneck.                                                                                                                                                 |
-| Deferred                        | [DuckDB](https://duckdb.org)                                                             | Queries JSONL in place (`read_json_auto`); the natural analysis layer if the compare CLI outgrows itself.                                                                                                                                                 |
-| Rejected                        | [Braintrust](https://www.braintrust.dev) and other hosted eval platforms                 | Prompts and transcripts contain real dataset records. Off-site is not an option, and it adds cost.                                                                                                                                                        |
-| Rejected                        | [Vercel AI SDK](https://ai-sdk.dev)                                                      | Abstracts over the exact `usage` and tool-call fields the suite needs to read precisely, and has moved through three majors in twelve months.                                                                                                             |
+| Status                          | Name                                                                                        | Note                                                                                                                                                                                                                                                                                              |
+| ------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recommended**                 | [`@modelcontextprotocol/client` v2](https://github.com/modelcontextprotocol/typescript-sdk) | MCP client, through the host plan's `mcp-client` module. 2.3.0 or later, raised together with the server's SDK packages.                                                                                                                                                                          |
+| **Recommended**                 | [`openai` npm package](https://www.npmjs.com/package/openai)                                | Model client, inside host-core's OpenAI-compatible provider. Ollama, vLLM, SGLang, TGI and llama.cpp all expose an OpenAI-compatible chat completions API with `tools`, keeping the harness engine-independent. One Ollama caveat in [§5.3.2](#532-model-serving-and-the-determinism-assumption). |
+| **Recommended**                 | [`@graphql-inspector/core`](https://the-guild.dev/graphql/inspector)                        | Arranger schema fingerprint, and a readable diff when it moves.                                                                                                                                                                                                                                   |
+| **Recommended**                 | [`simple-statistics`](https://simple-statistics.github.io)                                  | Confidence intervals in the compare CLI.                                                                                                                                                                                                                                                          |
+| Recommended<br>(separate track) | [promptfoo](https://www.promptfoo.dev/docs/providers/mcp/)                                  | Its MCP provider treats the server as the target under test with explicit tools and deterministic assertions, plus red-team tooling. Right fit for the URGENT auth and rate-limit items in `tech-debt.md`; poor fit for multi-tier trajectory scoring.                                            |
+| Reference                       | [mcp-eval](https://github.com/lastmile-ai/mcp-eval) (Python)                                | Best available reference for the metric taxonomy and assertion vocabulary. Wrong runtime for this team.                                                                                                                                                                                           |
+| Deferred                        | [Langfuse](https://langfuse.com)                                                            | Self-hostable, so the data question has an answer. Revisit if trace visualization becomes the bottleneck.                                                                                                                                                                                         |
+| Deferred                        | [DuckDB](https://duckdb.org)                                                                | Queries JSONL in place (`read_json_auto`); the natural analysis layer if the compare CLI outgrows itself.                                                                                                                                                                                         |
+| Rejected                        | [Braintrust](https://www.braintrust.dev) and other hosted eval platforms                    | Prompts and transcripts contain real dataset records. Off-site is not an option, and it adds cost.                                                                                                                                                                                                |
+| Rejected                        | [Vercel AI SDK](https://ai-sdk.dev)                                                         | Abstracts over the exact `usage` and tool-call fields the suite needs to read precisely, and has moved through three majors in twelve months.                                                                                                                                                     |
+| Rejected                        | [`vitest-evals`](https://github.com/getsentry/vitest-evals)                                 | Eval runner. Its transcript capture and usage accounting duplicate host-core's events, and its report needs a flatten step into this plan's JSONL ([§5.3.3](#533-runner-and-results-store)).                                                                                                      |
 
 ### 5.3 Recommendation
 
-Six thin layers, each independently swappable, all env-var configurable. L1 stays in the existing integration tests; L2 and L3 move to a new workspace running on `vitest-evals`, with our loop supplied as a custom harness. The two things worth getting right on day one are the record format and the manifest, because everything downstream is replaceable and those two are not.
+Six thin layers, each independently swappable, all env-var configurable. L1 stays in the existing integration tests. L2 and L3 run as `apps/mcp-cli eval`, on the [MCP host plan](mcp-host-plan.md)'s modules. The two things worth getting right on day one are the record format and the manifest, because everything downstream is replaceable and those two are not.
 
 #### 5.3.1 MCP client and tool-calling loop
 
-Use `@modelcontextprotocol/sdk` 1.x on both sides. Keep client construction in a single module.
+Built by the [MCP host plan](mcp-host-plan.md), not by the harness:
 
-Own the agent loop, roughly 60 lines, because it needs per-turn hooks for usage accounting, budget enforcement, parse-failure classification, and transcript capture. Two of those four the runner provides once the loop is wrapped as a harness, and the other two are ours whichever runner is used, so the loop stays code we write either way ([§5.3.3](#533-runner-and-results-store)).
+- `mcp-client` holds the MCP session, pinned to `2026-07-28`, and runs the confirmation rounds.
+- `mcp-host-core` runs the loop with its budgets, classifies malformed tool calls, and emits the events this suite stores as its transcript, including exact usage per model call.
+
+The harness supplies three things to each run: greedy sampling, the case's budget as the run's limits, and the case's elicitation policy as the input resolver.
 
 #### 5.3.2 Model serving and the determinism assumption
 
-The `openai` client against `OPENAI_BASE_URL` keeps the harness independent of the serving engine. Two caveats, both cheap to handle and both expensive to discover late:
+Host-core's OpenAI-compatible provider, pointed at `LLM_BASE_URL`, keeps the harness independent of the serving engine. Two caveats, both cheap to handle and both expensive to discover late:
 
-**Context window.** Ollama's [OpenAI-compatible endpoint cannot set `num_ctx`](https://docs.ollama.com/api/openai-compatibility) — it requires a Modelfile and `ollama create`. Ollama then silently clips anything over the limit, with no error. A truncated static surface produces a wrong `staticSurfaceTokens` reading in an undetectable direction, and truncated trajectories look like tool-selection failures attributable to the MCP server. Mitigation: pin `num_ctx` in a purpose-built Modelfile, record the resulting model digest in the manifest, and assert `prompt_tokens` against the configured window on every turn — failing the run rather than scoring it.
+**Context window.** Ollama's [OpenAI-compatible endpoint cannot set `num_ctx`](https://docs.ollama.com/api/openai-compatibility); it requires a Modelfile and `ollama create`. Ollama then silently clips anything over the limit, with no error. A truncated static surface produces a wrong `staticSurfaceTokens` reading in an undetectable direction, and truncated trajectories look like tool-selection failures attributable to the MCP server. Mitigation: pin `num_ctx` in a purpose-built Modelfile, record the resulting model digest in the manifest, and assert `prompt_tokens` against the configured window on every turn, failing the run rather than scoring it.
 
 #### 5.3.3 Runner and results store
 
-- **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them.
-- **L2 and L3** go in a new `integration-tests/mcp-evals` workspace on `vitest-evals`, plus a separate `evals:compare` CLI.
-    - Invoked explicitly, never from `npm test`. These are budgeted experiments, not tests, and should not sit where they can fail a build by accident. A separate workspace with its own Vitest config satisfies this, which also makes the Vitest-versus-`node:test` mismatch with the rest of the monorepo a non-issue.
+- **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them. Both apply the host plan's exported pure functions (`mcp-client`'s surface hash, `mcp-host-core`'s model-facing serialization) to the raw SDK client's responses, so the suite still bypasses this stack's connection path.
+- **L2 and L3** run as `apps/mcp-cli eval`, through its subcommands `run`, `judge`, `agreement`, `compare` and `bootstrap-expectations` ([MCP host plan](mcp-host-plan.md) §2.3).
+    - Invoked explicitly, never from `npm test`. These are budgeted experiments, not tests, and should not sit where they can fail a build by accident.
 
-**How the split works.** Our MCP session, elicitation driver, agent loop, budgets, and parse-failure classification all live inside a `createHarness` `run` function, which hands back the final output plus an ordered transcript. The runner takes it from there.
+**How the split works.** Host-core runs one phrasing as one run and emits its events. `eval` owns the runner around it: it loads the case set, fingerprints Arranger, loops an intent's phrasings, and writes the records and the manifest.
 
-**One test per intent, phrasings looped inside it.** The aggregate metrics ([§3.3](#33-measuring-consistency)) cannot be computed across independent Vitest tests, and looping inside one test puts them where their inputs already are. Concurrency is pinned to 1 anyway ([§1.2](#12-greedy-sampling-and-measurements)), so there is no parallelism to give up.
+**One loop per intent.** The aggregate metrics ([§3.3](#33-measuring-consistency)) are computed across an intent's phrasings, so `eval` runs them in one loop. Concurrency is pinned to 1 anyway ([§1.2](#12-greedy-sampling-and-measurements)).
 
-**Record format.** Vitest writes one JSON report per invocation; [§1.1](#11-the-approach) specifies append-only JSONL, one record per run. A small flatten step bridges them, so the runner never owns the format.
+**Record format.** `eval run` writes the append-only JSONL of [§1.1](#11-the-approach) directly: one record per run, carrying that run's events, plus the manifest.
 
 #### 5.3.4 Scoring
 
-Deterministic first, with `zod` schemas for `structuredContent` and the four `responseTypeMatch` classes. Report a set difference on primary keys rather than a boolean, so a failure names the records it disagreed about. Some contract checks come built into the runner; the rest are custom scorers over the harness transcript.
+Deterministic first, with `zod` schemas for `structuredContent` and the four `responseTypeMatch` classes. Report a set difference on primary keys rather than a boolean, so a failure names the records it disagreed about. Every scorer reads the stored events.
 
-The judge is **never the model under test**: a model grading its own output brings self-preference bias, and it defeats R4's agreement check, because a judge sharing the subject's blind spots looks accurate on exactly the cases where both are wrong the same way. Configure it as a separate `judgeHarness` on `JUDGE_MODEL` ([§6](#6-configuration-contract)), ideally a larger tier, with constrained JSON output so the verdict is structured rather than parsed out of prose (Ollama's `format`, which is response-level and unrelated to the tool-argument constraining it lacks, [§3.2](#32-measuring-rejections-and-recovery)).
+The judge is **never the model under test**: a model grading its own output brings self-preference bias, and it defeats R4's agreement check, because a judge sharing the subject's blind spots looks accurate on exactly the cases where both are wrong the same way. Configure it as a separate provider instance on `JUDGE_MODEL` ([§6](#6-configuration-contract)), ideally a larger tier, called outside the agent loop with constrained JSON output (`responseFormat`), so the verdict is structured rather than parsed out of prose (Ollama's `format`, which is response-level and unrelated to the tool-argument constraining it lacks, [§3.2](#32-measuring-rejections-and-recovery)).
 
 **A human is the judge of the judge model, not the other way round.** The model judge is a measured instrument rather than a trusted one: R4 has a human grade a set of answers against the rubric, those human grades are committed as a fixture, and any change to the rubric, the judge prompt, or `JUDGE_MODEL` re-runs the agreement check against them before the metric is read again. The manifest records the agreement figure from the most recent run, so a judge scoring against a stale human control is visible in the baseline rather than invisible.
 
@@ -402,11 +409,11 @@ The outcome metrics are per-case binary results, paired across baseline and cand
 
 Both are supported, selected by `MCP_MODE`. The surface hash works identically in either, since it is computed from the listing responses rather than from source.
 
-**Local.** Reuses the `startMcpServerForTest` pattern from [startMcpServer.ts](../../integration-tests/mcp-server/test/startMcpServer.ts), pointed at the external Arranger rather than a locally started one. Fast iteration, exact commit attribution, and per-call timing without network noise. This is the default for development and CI.
+**Local.** Starts the built `apps/mcp-server` as a child process, after the rebuild in [§5.4.2](#542-rebuild-before-local-runs), pointed at the external Arranger rather than a locally started one. It does not import the server's source as `startMcpServerForTest` does, which would pull that source into `apps/mcp-cli`'s build. Fast iteration, exact commit attribution, and per-call timing without network noise. This is the default for development and CI.
 
 **Remote.** Connects to a deployed MCP server over Streamable HTTP, which is what testing a real deployment and whatever auth sits in front of it requires. Two things block it:
 
-- **Version attribution.** Nothing in the MCP surface reports which build is running, so a remote result cannot be tied to a commit, which breaks the comparison premise entirely. The fix is for the server to report a build identifier. Ask for it as a **dedicated resource**, mirrored into `initialize`'s `serverInfo.version` while v1 lasts — the resource survives the v2 migration, whereas server identity moves to result `_meta` and `clientInfo` is demoted to SHOULD. This belongs with the roadmap's "Arranger version exposure" item. **Until it exists, remote mode can smoke-test a deployment but cannot compare anything.**
+- **Version attribution.** The server reports only its package version, `0.0.0-dev` on `main`, so a remote result cannot be tied to a commit. That breaks the comparison premise entirely. The fix is for the server to report a build identifier, as a **dedicated resource** and in its `server/discover` version. This belongs with the roadmap's "Arranger version exposure" item. **Until it exists, remote mode can smoke-test a deployment but cannot compare anything.**
 - **Auth.** Once `MCP_API_KEY` lands (an URGENT tech-debt item), the harness has to send it. Build the header plumbing in from the start. **It does not change [§0](#0-environment-assumptions)'s assumption:** an API key authenticates the transport, it does not make a request attributable to a principal. Arranger still receives no identity and still computes one filter for every caller. The tempting shortcut when that changes, giving the MCP server a single service credential, would make it a confused deputy: its authority rather than the caller's would decide what every caller sees.
 
 #### 5.4.2 Rebuild before local runs
@@ -417,7 +424,7 @@ Both are supported, selected by `MCP_MODE`. The surface hash works identically i
 
 ## 6. Configuration contract
 
-Per the repo convention in `AGENTS.md`, one module in the eval workspace reads `process.env`, validates with Zod, and exposes a typed config object. Nothing else touches `process.env`. The workspace also needs an `.env.schema` documenting every variable, since that file is the reference for whoever runs this next and is easy to forget.
+Per the repo convention in `AGENTS.md`, one module in `apps/mcp-cli` reads `process.env`, validates with Zod, and exposes a typed config object. `chat` shares it. Nothing else touches `process.env`; the host plan's modules take every setting as a parameter. The app also needs an `.env.schema` documenting every variable, since that file is the reference for whoever runs this next and is easy to forget.
 
 **Arranger (upstream)**
 
@@ -433,7 +440,6 @@ Per the repo convention in `AGENTS.md`, one module in the eval workspace reads `
 - `MCP_API_KEY` (remote mode, once implemented)
 - `MCP_HOST`, `MCP_PORT`, `MCP_PATH` (local mode, mirroring `apps/mcp-server` config)
 - `MCP_REQUEST_TIMEOUT_MS`
-- `MCP_CLIENT_ELICITATION` = `advertise` | `withhold`
 
 **Model server**
 
@@ -441,6 +447,7 @@ Per the repo convention in `AGENTS.md`, one module in the eval workspace reads `
 - `LLM_MODEL`, `LLM_MODEL_REVISION`, `LLM_TIER` = `small` | `medium` | `large`
 - `LLM_TEMPERATURE` (0), `LLM_TOP_P`, `LLM_TOP_K`, `LLM_SEED`, `LLM_MAX_TOKENS`. Greedy is the only supported configuration ([§1.2](#12-greedy-sampling-and-measurements)); these exist to be recorded in the manifest and to make a deviation visible, not to be swept.
 - `LLM_CONTEXT_LENGTH` (served window, for the context-fraction metric)
+- `LLM_TOKENIZER`, `LLM_TOKENIZER_REVISION` (the pinned tokenizer, [§2](#2-what-is-being-pinned)), and `LLM_TOKENIZE_URL` where the serving stack has a tokenize endpoint ([§3.4](#34-measuring-tokens-and-time))
 - `LLM_STRUCTURED_TOOL_ARGS` = `on` | `off` (`off`, since Ollama cannot do it; recorded so that it becoming `on` is visible rather than silent, the same reason the inert sampling values above are recorded)
 - `LLM_SERVING_ENGINE`, `LLM_SERVING_VERSION`, `LLM_TOOL_TEMPLATE` (the model's tool-call template or parser, however the engine names it), `LLM_BATCH_INVARIANT` = `on` \| `off`. All operator-declared and recorded in the manifest, since the harness cannot read most of them from the API; check against `/v1/models` where possible.
 
@@ -450,6 +457,7 @@ Per the repo convention in `AGENTS.md`, one module in the eval workspace reads `
 
 **Run**
 
+- `EVAL_CASES_PATH` (the case set, loaded from this path and never packaged)
 - `EVAL_REPEATS` (default 1; above 1 only for the greedy-stability check in R3)
 - `EVAL_CONCURRENCY` (default 1), `EVAL_CASE_FILTER`, `EVAL_TIERS`, `EVAL_ROBUSTNESS_SUBSET` (which intents run all their phrasings)
 - `EVAL_MAX_TOOL_CALLS`, `EVAL_MAX_TURNS`, `EVAL_MAX_WALLCLOCK_MS`
@@ -465,10 +473,7 @@ Per the repo convention in `AGENTS.md`, one module in the eval workspace reads `
 
 Each spike can invalidate a design assumption, so all of them come before case authoring.
 
-- **R1: end-to-end spike.** One hardcoded prompt through the harness against the testing Arranger, local MCP mode, one tier. Confirm that MCP tool schemas convert cleanly to the serving API's tool format (watch the Zod 3 versus Zod 4 skew in `tech-debt.md`), that per-turn `usage` is readable, that tool calls parse reliably, and that the elicitation request reaches a client-side handler and can be answered from a script. Three `vitest-evals` questions belong here too, because [§5.3.3](#533-runner-and-results-store) rests on them:
-    - **Is `run(input)` callable several times inside one test?** The one-test-per-intent arrangement depends on it. Nothing in the documentation says it is once-per-test, and nothing says it is not.
-    - **Can a custom harness carry an elicitation round trip?** Elicitation is the one part of our loop that is not request-response, and the harness documentation does not mention it. If it cannot, the harness boundary moves rather than the plan.
-    - **What does the RFC's "replay/VCR policy" actually do?** If it means real replay from a stored session, it delivers L3's replayability ([§1.3](#13-three-layers-not-one-suite)) rather than us building it. Treat it as a possible bonus, not a dependency.
+- **R1: end-to-end spike.** One hardcoded prompt through `eval` against the testing Arranger, local MCP mode, one tier. Confirm that MCP tool schemas convert cleanly to the serving API's tool format (watch the Zod 3 versus Zod 4 skew in `tech-debt.md`), that per-turn `usage` is readable, that tool calls parse reliably, and that a scripted policy answers the `execute_query` confirmation. The host plan's spikes S1, S3 and S4 test those parts singly; R1 runs them together.
 - **R2: serving-stack shakeout.** Which model tags actually emit well-formed tool calls, and the baseline parse-failure rate. Tool-argument constraining is not a question here: Ollama does not currently offer it (verified 2026-08-22), so re-check only on an engine change. On Ollama this is largely a question of the model's own tool template, so the spike is about choosing model tags rather than setting server flags; other engines expose it as explicit configuration instead (vLLM has `--enable-auto-tool-choice` and `--tool-call-parser`). Also confirm the context length is being applied, since a low default truncates silently ([§5.3.2](#532-model-serving-and-the-determinism-assumption)). **This must precede R3, because a high parse-failure rate makes every downstream metric uninterpretable.** Output: a pinned, documented serving config.
 - **R3: greedy stability and phrasing noise floor.** Two measurements against an unchanged server, both before any cases are authored. First, one phrasing run 20 times: how often does greedy actually return the same trajectory and answer? **This validates the single-pass premise, so it comes before anything is built on it.** Second, several phrasings of one intent: how much does rewording move the result? That sets the smallest difference the suite can detect and the phrasings per intent ([§3.7](#37-how-many-phrasings-per-intent)). Record what the phrasings disagreed about, since that is a finding in itself and will likely reshape which intents get written in Phase 1.
 - **R4: judge reliability, with a human as the judge of the judge.** A human grades 20 stored answers against the rubric, the judge model then grades the same 20, and the two are compared as agreement beyond chance. If agreement is poor, rewrite the rubric or drop the judge layer. Do not build scoring on an unvalidated judge. **Commit the human grades as a fixture:** they are the control for every later judge or rubric change, and without them the agreement check validates one configuration and then silently covers every configuration after it.
@@ -481,38 +486,40 @@ Each spike can invalidate a design assumption, so all of them come before case a
 ### Phase 1: case set and expectations
 
 - Case schema (Zod) and roughly 30 cases across the four categories, traceable to real observed failures wherever possible.
-- `evals:bootstrap-expectations`, deriving expected outcomes with a review diff.
+- `eval bootstrap-expectations`, deriving expected outcomes with a review diff.
 - Fingerprint computation and the recorded expected value.
 
 ### Phase 2: harness
 
-- `config.ts`: the single env-reading, Zod-validated module, plus `.env.schema`.
+This is the host plan's Phase 4, after its `mcp-client` and `mcp-host-core` phases.
+
+- The config module and `.env.schema` in `apps/mcp-cli`, shared with `chat`.
 - `fingerprint.ts`: Arranger-side dataset and configuration fingerprinting.
-- `mcpSession.ts`: local and remote modes behind one interface. Advertises `elicitation` and answers per the case policy, records every `tools/call` with arguments, duration, error flag, and result token count, and computes the surface hash.
-- `harness.ts`: the `createHarness` wrapper. Its `run` holds the OpenAI-compatible client with greedy sampling passed per request ([§1.2](#12-greedy-sampling-and-measurements)), MCP-to-tools schema conversion, the loop with its budgets, per-turn usage accumulation, and parse-failure classification. Returns `output`, `events`, and `usage`; attaches the manifest and the rejection breakdown via `setArtifact`.
+- The runner: runs each phrasing as one host-core run with greedy sampling ([§1.2](#12-greedy-sampling-and-measurements)), the case's budget and its elicitation policy, looping an intent's phrasings together.
+- The tokenizer client ([§3.4](#34-measuring-tokens-and-time)).
 - `manifest.ts`: assembles and hashes everything in [§2](#2-what-is-being-pinned), including rebuilt module hashes in local mode and the reported server version in remote mode.
-- Vitest project config for the workspace, kept out of the root `npm test` path.
-- Transcript persistence comes from the runner's `session` plus its JSON artifact rather than bespoke code, still gated by `EVAL_TRANSCRIPTS`, so L3 is replayable and failures are debuggable without re-running the loop.
+- Transcript persistence: each run's events go into its JSONL record, still gated by `EVAL_TRANSCRIPTS`, so L3 is replayable and failures are debuggable without re-running the loop.
 
 ### Phase 3: scorers
 
 Deterministic first, which is also descending order of signal:
 
 1. `requiredToolsPresent` and `forbiddenPatterns`
-2. `invalidCallRate` split into parse, schema, and semantic, plus `errorRecoveryWithinK`
+2. `invalidCallRate` split into parse, schema, and semantic, plus `errorRecoveryWithinK`. Parse failures are `malformed_tool_call` events or calls written as prose. Schema rejections start with the SDK's `Input validation error` prefix, pinned by an L1 test. The rest are semantic.
 3. `sqonEquivalence`, via `modules/sqon`, against the set of acceptable SQONs
 4. `outcomeMatch`: exact totals, primary keys, and buckets, with the `params` guard voiding the affected part when the run used different `execute_query` parameter values ([§4.2](#42-case-set-format))
 5. `tokenAccounting` per tier including context fraction, and `latencyAccounting` (reported, not gated)
 6. `responseTypeMatch`, scored per category
-7. `consistency`: `paraphraseRobustness` and answer dispersion. **These are aggregate scorers, computed across an intent's phrasings rather than per run, so they cannot be judges and cannot live in a per-run scorer.** They are computed in the test body after looping the phrasings ([§5.3.3](#533-runner-and-results-store)); build that shape first, since it determines what the per-run scorers have to return.
+7. `consistency`: `paraphraseRobustness` and answer dispersion. **These are aggregate scorers, computed across an intent's phrasings rather than per run, so they cannot be judges and cannot live in a per-run scorer.** The runner computes them after it loops an intent's phrasings ([§5.3.3](#533-runner-and-results-store)). Build that shape first, since it determines what the per-run scorers have to return.
 8. `answerQuality` (judge), last, and only if R4 passed
 
 ### Phase 4: reporting and comparison
 
 This is the phase that delivers the stated goal, and the easiest to under-scope.
 
-- A flatten step turning the Vitest JSON artifact into the append-only JSONL the rest of this phase consumes: one record per run, plus a run summary and the manifest ([§5.3.3](#533-runner-and-results-store)).
-- `evals:compare <baseline> <candidate>`: paired per-case differences with intervals, per metric, per tier; a verdict of improved, regressed, or no detectable effect; and a loud warning when the manifests differ in more than the dimension under study.
+- A run summary beside the JSONL records and manifest from `eval run` ([§5.3.3](#533-runner-and-results-store)). The rest of this phase reads all three.
+- `eval judge <records>`, which re-runs the judge over stored records, and `eval agreement`, its R4 check against the human grades.
+- `eval compare <baseline> <candidate>`: paired per-case differences with intervals, per metric, per tier; a verdict of improved, regressed, or no detectable effect; and a loud warning when the manifests differ in more than the dimension under study.
 - A per-case consistency view: `paraphraseRobustness` and distinct-answer count, beside the success rate so neither can be read without the other.
 - A markdown summary suitable for pasting into a PR.
 - Committed baseline **summaries** (small JSON, no transcripts) so a PR can cite what it was compared against.
@@ -523,13 +530,13 @@ This is the phase that delivers the stated goal, and the easiest to under-scope.
 - **Nightly and on manual dispatch:** one phrasing per intent, to catch breakage cheaply.
 - **Weekly or pre-release:** every phrasing on the robustness subset ([§3.7](#37-how-many-phrasings-per-intent)), plus the judge layer. Results as artifacts, with a summary comment when dispatched from a PR.
 - **Do not hardcode Elasticsearch.** The existing suite already takes `SEARCH_ENGINE`, and the OpenSearch-first migration wants integration suites runnable per engine. The harness talks to Arranger rather than the engine, which mostly insulates it, but the fingerprint logic should not assume ES-specific responses.
-- **Typecheck from the start.** `integration-tests/mcp-server` is still never typechecked (open tech-debt); the new sibling workspace should have `strict` on and a real `tsc` step rather than repeating that.
+- **Typecheck from the start.** `integration-tests/mcp-server` is still never typechecked (open tech-debt); `apps/mcp-cli` should have `strict` on and a real `tsc` step rather than repeating that.
 
 ### Phase 6: maintenance
 
 - **Every real-world MCP failure becomes a case.** The only sustainable source of cases.
 - **Watch for saturation.** A tier sitting at 100% has stopped measuring and needs harder cases.
-- **Re-baseline deliberately** on any change to the serving config, model, quantization, tokenizer revision, test environment, judge model, judge prompt, rubric, or the pinned `vitest-evals` version, with a recorded manifest and a note in the roadmap. Serving-stack upgrades are the sneakiest, because pulling a new engine version or re-pulling a model tag can change both tool-call behaviour and the tokenizer every token metric is denominated in, with no change to this repo at all.
+- **Re-baseline deliberately** on any change to the serving config, model, quantization, tokenizer revision, test environment, judge model, judge prompt, rubric, or the version of `mcp-client` or `mcp-host-core`, with a recorded manifest and a note in the roadmap. Serving-stack upgrades are the sneakiest, because pulling a new engine version or re-pulling a model tag can change both tool-call behaviour and the tokenizer every token metric is denominated in, with no change to this repo at all.
 - **Never auto-promote a baseline.** A post-merge job that overwrites the baseline with the latest run launders every regression into the new normal, and the suite then reports "no detectable effect" indefinitely while quality drifts downward. Promotion is a deliberate, reviewed act with a stated reason.
 - **Review the case set** whenever tools are added or descriptions change materially.
 
@@ -542,7 +549,7 @@ This is the phase that delivers the stated goal, and the easiest to under-scope.
 | Cross-tier token comparisons drawn by mistake                                  | Every token metric labelled with its tokenizer; comparison CLI refuses cross-tokenizer aggregation                                                                                                                                                  |
 | Runs get slow enough that the suite stops being used                           | One phrasing per intent for the frequent signal, full phrasings weekly, prefix caching, hard per-case budgets                                                                                                                                       |
 | Tool-argument constraining switches on unnoticed and deflates `schemaInvalid`  | Unavailable on Ollama today, so recorded in the manifest rather than designed around; treat a `schemaInvalid` cliff after an engine or model-tag change as this until proven otherwise                                                              |
-| A `vitest-evals` breaking change lands mid-suite                               | Version pinned and recorded in the manifest; coupling confined to our harness `run`, so the cost is an adapter rewrite; an upgrade is a re-baseline event ([§7](#7-implementation-plan), Phase 6)                                                   |
+| A host-core change alters the loop or its events mid-suite                     | `mcp-client` and `mcp-host-core` versions recorded in the manifest; an upgrade is a re-baseline event ([§7](#7-implementation-plan), Phase 6)                                                                                                       |
 | A tokenizer change fails the only hard gate on an unchanged diff               | Tokenizer pinned by repo and revision, identity asserted before the budget comparison, and a mismatch reported as a required re-baseline rather than a budget breach ([§3.4](#34-measuring-tokens-and-time))                                        |
 | A server-side filter arrives on the testing instance and reads as a regression | Access-control posture declared in the manifest ([§2](#2-what-is-being-pinned)); the query-derived fingerprint signals detect it and the signal combination names it, since no metadata signal can ([§4.1](#41-working-against-the-frozen-dataset)) |
 
@@ -558,5 +565,4 @@ This is the phase that delivers the stated goal, and the easiest to under-scope.
 - [vLLM: Tool Calling](https://docs.vllm.ai/en/stable/features/tool_calling/) (`--enable-auto-tool-choice`, `--tool-call-parser`) and [Structured Outputs](https://developers.redhat.com/articles/2025/06/03/structured-outputs-vllm-guiding-ai-responses). The second is background for the [§8](#8-risks) row on tool-argument constraining, not something this suite does; Ollama has no equivalent today.
 - [mcp-eval](https://mcp-eval.ai/) (metric taxonomy, path efficiency, OTel)
 - [promptfoo MCP provider](https://www.promptfoo.dev/docs/providers/mcp/) and [MCP security testing](https://www.promptfoo.dev/docs/red-team/mcp-security-testing/)
-- [vitest-evals](https://vitest-evals.sentry.dev/docs/) (the runner adopted in [§5.3.3](#533-runner-and-results-store)), in particular its [custom harness API](https://vitest-evals.sentry.dev/docs/harnesses/custom/) and the [harness-first RFC](https://github.com/getsentry/vitest-evals/blob/main/docs/harness-first-rfc.md) that explains what a harness owns
-- [Evalite](https://www.evalite.dev/) and [mcp-evals](https://www.npmjs.com/package/mcp-evals), the runners considered and not chosen
+- [vitest-evals](https://vitest-evals.sentry.dev/docs/), [Evalite](https://www.evalite.dev/) and [mcp-evals](https://www.npmjs.com/package/mcp-evals), the runners considered and not chosen. The [vitest-evals harness-first RFC](https://github.com/getsentry/vitest-evals/blob/main/docs/harness-first-rfc.md) still describes the split this plan keeps between the loop and the runner around it.

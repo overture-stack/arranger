@@ -500,6 +500,22 @@ _Priority: low. No use case yet. `modules/graphql-router`._
 
 Let one export request carry several files and answer them as one archive. The rules that hold for one file hold for each: every file in the request is validated before any output, so a request with one invalid file is refused whole; each file's filter is composed with the router's access-control filter; and the archive streams with backpressure and stops paging when the client disconnects. Until then, a request holding more than one file is refused with "files must be an array holding exactly one file object: this version exports one file per request." The archive format and library are open; `tar-stream`, still a dependency, is one candidate.
 
+### MCP host: client, host core and terminal chat
+
+_Priority: not yet set. Plan drafted, pending review; nothing implemented._
+
+Two published modules, `modules/mcp-client` and `modules/mcp-host-core`, that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and a notebook UI in its own repository. First step, as its own change: raise the SDK's `client`, `server` and `core` packages to 2.3.0 together, and `node` to its latest.
+
+[Detail: components, phases, decisions and open questions](docs/mcp-host-plan.md)
+
+### MCP evaluation harness
+
+_Priority: not yet set. Plan drafted; nothing implemented. Builds on the MCP host item above._
+
+`apps/mcp-cli eval`: runs a changing `apps/mcp-server` against a frozen dataset and a pinned model, so a change is kept or reverted on evidence. Contract checks in `integration-tests/mcp-server` gate CI; model-driven runs report but never gate.
+
+[Detail: metrics, case set, fingerprint, manifest and phases](docs/mcp-platform-testing.md)
+
 ## Components
 
 The `modules/components` package carries significant legacy weight and has accumulated several years of organic growth. The items below can be approached incrementally; none require a big-bang rewrite; but the Emotion replacement decision should be made before extending the theming infrastructure.
