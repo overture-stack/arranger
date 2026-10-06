@@ -409,15 +409,6 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Fix:** After fetching each catalogue's introspection, check its `status`; if `failed`, either throw (matching the function's existing "throw on any problem" contract) or downgrade to a `logger.warn` listing which catalogues are down and their `error.code`/`error.message`, rather than treating a `failed` catalogue identically to a missing one. Needs the schema fix above first (or an inline check against the raw response) since the current `catalogueIntrospectionSchema` can't represent a `failed` response at all.
 **Standalone:** mostly yes; sequence after the schema fix above so it isn't done against data Zod would otherwise strip
 
-### `MCP_HOST` is parsed and validated but never actually used to bind the server, and the SDK's own Host-header protection silently misfires as a result
-
-**File:** `apps/mcp-server/src/server.ts:37-38`; `apps/mcp-server/src/http/app.ts:80`
-**Severity:** high
-**Kind:** bug/security
-**Issue:** `config.mcp.host` is destructured at `server.ts:37` (confirmed directly), but the very next line calls `app.listen(port, () => {...})` with no host argument, so the server always binds to all interfaces regardless of `MCP_HOST` (documented default `0.0.0.0` per `.env.schema`/`README.md`). An operator setting `MCP_HOST=127.0.0.1` specifically to restrict exposure (e.g. behind a sidecar) has that setting silently ignored. Compounding this, `createHttpApp` calls `createMcpExpressApp()` with no arguments at all (`http/app.ts:80`); per the MCP SDK's own source, an omitted `host` defaults to `'127.0.0.1'`, which makes the SDK silently apply `localhostHostValidation()`, Host-header validation that only accepts `localhost`/`127.0.0.1`/`[::1]`. Since the real bind address is (by default) `0.0.0.0`, network-reachable, this means: (1) a real client whose `Host` header isn't literally `localhost`/`127.0.0.1` (a Kubernetes Service DNS name, an ingress hostname) gets a 403 "Invalid Host" rejection from this middleware; and (2) the SDK's own protective warning about binding `0.0.0.0` without DNS-rebinding protection never fires, because the SDK is never told the true host, so there's no signal that `allowedHosts` should be configured. This is invisible in the integration-test suite specifically because `integration-tests/mcp-server/test/startMcpServer.ts:38` calls `app.listen(port, host, ...)` correctly and substitutes `127.0.0.1` for `0.0.0.0` when building the test's connection URL, so tests always present a `Host` header that happens to pass.
-**Fix:** Thread `config.mcp.host` through to both call sites: `app.listen(port, host, callback)` in `server.ts`, and `createMcpExpressApp({ host, allowedHosts })` in `createHttpApp` (accepting `allowedHosts` as a new, documented env var for non-localhost deployments), matching what the integration test harness already does correctly.
-**Standalone:** yes.
-
 ### `get_catalogue_fields`'s tool description and README promise a per-field `description` that doesn't exist anywhere in the pipeline
 
 **File:** `apps/mcp-server/src/mcp/tools.ts:58`; `apps/mcp-server/README.md:15`
@@ -548,7 +539,7 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Severity:** medium (fails open in the surface an operator would use to detect that something else failed)
 **Kind:** fail-open default
 **Issue:** Zero catalogue statuses yields `HEALTHY`, so `/ready` answers 200 for a server that knows nothing about its own catalogues. Separately, `buildServerDetails` defaults a catalogue carrying no recorded status to `AVAILABLE`. Both resolve "I do not know" to "fine". Not reachable through the main startup path today, so it is latent rather than live, and it is the same defaulting pattern as the config-load and coercion findings, sitting in the endpoint that exists to report those.
-**Fix:** Treat an empty status map as unhealthy rather than healthy, and an unrecorded catalogue as unknown rather than available. Still open, and now narrower: `/ready` also gates on live engine reachability, so a server that knows nothing about its catalogues *and* cannot reach the engine already answers 503. The defaulting defect stands for the case where the engine is reachable and the status map is empty. See `.dev/roadmap.md` § Per-catalogue recovery in readiness reporting.
+**Fix:** Treat an empty status map as unhealthy rather than healthy, and an unrecorded catalogue as unknown rather than available. Still open, and now narrower: `/ready` also gates on live engine reachability, so a server that knows nothing about its catalogues _and_ cannot reach the engine already answers 503. The defaulting defect stands for the case where the engine is reachable and the status map is empty. See `.dev/roadmap.md` § Per-catalogue recovery in readiness reporting.
 **Standalone:** yes
 
 ### Two fixture documents share an `_id`, so `integration-tests/server` indexes three documents where the file declares four
@@ -1431,7 +1422,7 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Kind:** access-control prerequisite, reached through configuration rather than a query
 **Issue:** `displayValues` maps a field's raw values to display labels, and the obvious configuration fills it, since raw values are often identifiers. It is configuration, not query output, so the server-side filter, which narrows documents, does not apply to it. Where access control is keyed on a labelled field, the labels a principal receives have to be limited to the values that principal reaches.
 **Fix:** either suffices. An operator rule not to label a field that access control keys on, which costs nothing and has to reach `/docs` to be read. Or narrowing the map per principal: the configs resolver gains the request context and a per-request shaping hook ([auth roadmap Phase 1 item 9](docs/arranger-auth/roadmap.md)), and since which values a principal reaches comes from their grants, the Usher adapter supplies the narrowing.
-**Standalone:** the operator rule, yes; the hook is Phase 1 item 9. It does not depend on field-level restriction, since the field's *name* is public either way and only its values need narrowing.
+**Standalone:** the operator rule, yes; the hook is Phase 1 item 9. It does not depend on field-level restriction, since the field's _name_ is public either way and only its values need narrowing.
 
 ### Exports ignore a catalogue's configured `chunkSize`
 
