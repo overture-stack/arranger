@@ -55,14 +55,17 @@ const describeNode = (node: SqonNode, fields: SummaryFields, depth: number): str
 		return describeLeaf(node, fields);
 	}
 
+	// An empty group means every document; only at the root does it mean no filter at all.
 	if (node.content.length === 0) {
-		return 'no filters (matches every document)';
+		return depth === 0 ? 'no filters (matches every document)' : 'every document';
 	}
 
 	const parts = node.content.map((child) => describeNode(child, fields, depth + 1));
 
+	// A `not` negates each child, so without a pivot it excludes a document matching any of them; a
+	// pivoted one excludes a document where one nested object meets them all.
 	if (node.op === 'not') {
-		return `NOT (${parts.join(' AND ')})`;
+		return `NOT (${parts.join(node.pivot && node.pivot !== '.' ? ' AND ' : ' OR ')})`;
 	}
 
 	const joined = parts.join(node.op === 'or' ? ' OR ' : ' AND ');

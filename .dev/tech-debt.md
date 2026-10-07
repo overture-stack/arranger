@@ -338,6 +338,15 @@ Partially resolved 2026-09-01: `express` and `cors` are no longer declared by `a
 **Fix:** Pass `combination` into the gate and skip the same-field `in` check when `combination === 'or'`.
 **Standalone:** yes; one added parameter and one early-return check
 
+### `build_sqon`'s filter count must not depend on the order of same-field bounds
+
+**File:** `apps/mcp-server/src/mcp/buildSqonTool.ts` (filter-count reporting); `modules/sqon/src/builder/reduce.ts` (the reducer's range-bound merge)
+**Severity:** low (correctness of a reported count; the filter's meaning is unaffected)
+**Kind:** correctness defect
+**Issue:** The reducer merges a range bound only into the first clause it finds with the same field and operator (`findIndex`, not a scan of every candidate). When that first clause can't take the merge, a later pair of bounds that could have merged with each other instead stays as two separate clauses. `build_sqon`'s filter count can therefore exceed the true minimum depending on the order bounds arrive in, even though the built filter matches exactly the same documents either way.
+**Fix:** Either count meaningful constraints rather than emitted clauses on the `build_sqon` side, or have the reducer merge each bound into any compatible clause rather than only the first. The second is `modules/sqon`'s call if taken.
+**Standalone:** yes
+
 ### `integration-tests/mcp-server` is never typechecked
 
 **File:** `integration-tests/mcp-server/tsconfig.json`; `integration-tests/mcp-server/package.json` (`test` script)

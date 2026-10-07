@@ -140,6 +140,15 @@ const validateClause = (clause: SqonClauseInput, context: CatalogueQueryContext)
 		}
 	}
 
+	// An empty string bounds nothing, and the SQON builder refuses it, so it is reported here with the
+	// clause it belongs to.
+	if (RANGE_OPERATORS.has(canonicalOperator) && fieldType === 'date') {
+		const bounds = Array.isArray(value) ? value : [value];
+		if (bounds.some((bound) => bound === '')) {
+			return `operator "${operator}" on field "${fieldName}" (type "date") needs a date for every bound, not an empty string.`;
+		}
+	}
+
 	if (canonicalOperator === 'between' && Array.isArray(value)) {
 		const [min, max] = value;
 		if (typeof min === 'number' && typeof max === 'number' && min > max) {

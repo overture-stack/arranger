@@ -130,6 +130,22 @@ suite('summarizeSqon', () => {
 			assert.equal(summarizeSqon(sqon, fields), 'NOT (Age at Diagnosis is greater than 70)');
 		});
 
+		test('describes an unpivoted "not" of several clauses as excluding a document that matches any of them', () => {
+			const sqon = group('not', [leaf('in', 'study', ['A']), leaf('in', 'donor.sex', ['Male'])]);
+			assert.equal(summarizeSqon(sqon, fields), 'NOT (Study is "A" OR Biological Sex is "Male")');
+		});
+
+		test('describes a pivoted "not" as excluding a document where one nested object meets every clause', () => {
+			const sqon = {
+				...group('not', [leaf('in', 'donor.sex', ['Male']), leaf('gt', 'donor.age_at_diagnosis', 70)]),
+				pivot: 'donor',
+			} as SqonNode;
+			assert.equal(
+				summarizeSqon(sqon, fields),
+				'NOT (Biological Sex is "Male" AND Age at Diagnosis is greater than 70)',
+			);
+		});
+
 		test('describes a negated clause nested inside an "and" group', () => {
 			const sqon = group('and', [
 				leaf('in', 'donor.sex', ['Male']),

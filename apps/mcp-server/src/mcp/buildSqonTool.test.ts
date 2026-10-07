@@ -585,6 +585,68 @@ suite('build_sqon existingSqon', () => {
 		assert.equal(output.filterCount, 1);
 	});
 
+	// A later clause applies to the whole earlier filter, so it widens a branch only when the call
+	// combines the same way that filter's root does.
+	test('narrows an "or" built by an earlier call, rather than widening one of its branches', async () => {
+		const { output: first } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'or',
+			clauses: [inClause('study', ['A']), inClause('donor.sex', ['Female'])],
+		});
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['B'])],
+			existingSqon: first.sqon,
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [first.sqon, { op: 'in', content: { fieldName: 'study', value: ['B'] } }],
+		});
+	});
+
+	test('narrows an "or" holding an empty group, rather than widening its clause', async () => {
+		const existingSqon = {
+			op: 'or',
+			content: [
+				{ op: 'in', content: { fieldName: 'study', value: ['A'] } },
+				{ op: 'and', content: [] },
+			],
+		};
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('study', ['B'])],
+			existingSqon,
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'and',
+			content: [existingSqon, { op: 'in', content: { fieldName: 'study', value: ['B'] } }],
+		});
+	});
+
+	test('widens a branch of an "or" when the call also combines with "or"', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'or',
+			clauses: [inClause('study', ['B'])],
+			existingSqon: {
+				op: 'or',
+				content: [
+					{ op: 'in', content: { fieldName: 'study', value: ['A'] } },
+					{ op: 'in', content: { fieldName: 'donor.sex', value: ['Female'] } },
+				],
+			},
+		});
+		assert.deepEqual(output.sqon, {
+			op: 'or',
+			content: [
+				{ op: 'in', content: { fieldName: 'study', value: ['A', 'B'] } },
+				{ op: 'in', content: { fieldName: 'donor.sex', value: ['Female'] } },
+			],
+		});
+	});
+
 	test('preserves an existing multi-clause "and" as one branch when combining with "or"', async () => {
 		const { output } = await buildSqon({
 			catalogueId: 'participants',
@@ -625,6 +687,58 @@ suite('build_sqon existingSqon', () => {
 			content: [{ op: 'in', content: { fieldName: 'study', value: ['A'] } }],
 		});
 		assert.equal(output.clauseCount, 1);
+	});
+
+	// An empty group means every document, so folding a clause into an existingSqon keeps one wherever
+	// removing it would change what the filter matches.
+	const studyA = { op: 'in', content: { fieldName: 'study', value: ['A'] } };
+	const excludesEverything = 'NOT (Study is "A" OR every document) AND Biological Sex is "Male"';
+	const includesEverything = '(Study is "A" OR every document) AND Biological Sex is "Male"';
+	for (const [description, existingSqon, summary] of [
+		[
+			'an empty and beside a clause under not',
+			{ op: 'not', content: [studyA, { op: 'and', content: [] }] },
+			excludesEverything,
+		],
+		[
+			'an empty not beside a clause under not',
+			{ op: 'not', content: [studyA, { op: 'not', content: [] }] },
+			excludesEverything,
+		],
+		[
+			'an empty and beside a clause under or',
+			{ op: 'or', content: [studyA, { op: 'and', content: [] }] },
+			includesEverything,
+		],
+		[
+			'an empty or beside a clause under or',
+			{ op: 'or', content: [studyA, { op: 'or', content: [] }] },
+			includesEverything,
+		],
+	] as const) {
+		test(`keeps ${description} when folding a clause into an existingSqon`, async () => {
+			const { output } = await buildSqon({
+				catalogueId: 'participants',
+				combination: 'and',
+				clauses: [inClause('donor.sex', ['Male'])],
+				existingSqon,
+			});
+			assert.deepEqual(output.sqon, {
+				op: 'and',
+				content: [existingSqon, { op: 'in', content: { fieldName: 'donor.sex', value: ['Male'] } }],
+			});
+			assert.equal(output.summary, summary);
+		});
+	}
+
+	test('describes an empty group inside a filter as every document, not as the absence of a filter', async () => {
+		const { output } = await buildSqon({
+			catalogueId: 'participants',
+			combination: 'and',
+			clauses: [inClause('donor.sex', ['Male'])],
+			existingSqon: { op: 'or', content: [studyA, { op: 'or', content: [] }] },
+		});
+		assert.equal(output.summary, '(Study is "A" OR every document) AND Biological Sex is "Male"');
 	});
 
 	// The alias is normalized before the catalogue check, not just before the fold: an existing SQON
@@ -1186,6 +1300,21 @@ suite('build_sqon clause validation', () => {
 		assert.ok(message.includes('clauses[2]: '));
 		assert.ok(!message.includes('clauses[1]: '));
 	});
+
+	for (const [operator, value] of [
+		['gt', ''],
+		['between', ['', '2024-01-01']],
+	] as const) {
+		test(`reports an empty ${operator} bound on a date field against its clause`, async () => {
+			const message = await expectError({
+				catalogueId: 'participants',
+				combination: 'and',
+				clauses: [{ fieldName: 'donor.enrolled_on', operator, value }],
+			});
+			assert.ok(message.includes('clauses[0]: '));
+			assert.ok(!message.includes('Unexpected error'));
+		});
+	}
 });
 
 suite('build_sqon response', () => {

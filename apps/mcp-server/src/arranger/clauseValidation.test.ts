@@ -151,6 +151,21 @@ suite('validateClauses', () => {
 			assert.ok(errors[0].includes('ascending order'));
 		});
 
+		for (const [operator, value] of [
+			['gt', ''],
+			['between', ['', '2024-01-01']],
+		] as const) {
+			test(`rejects an empty ${operator} bound on a date field`, () => {
+				const errors = validate({
+					fieldName: 'donor.enrolled_on',
+					operator,
+					value: value as SqonClauseInput['value'],
+				});
+				assert.equal(errors.length, 1);
+				assert.ok(errors[0].includes('needs a date for every bound, not an empty string'));
+			});
+		}
+
 		test('does not check ordering for date bounds, which are not compared numerically', () => {
 			const errors = validate({
 				fieldName: 'donor.enrolled_on',
