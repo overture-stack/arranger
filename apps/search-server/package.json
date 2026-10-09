@@ -24,6 +24,7 @@
 	"dependencies": {
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
 		"@overture-stack/arranger-types": "file:../../modules/types",
+		"@overture-stack/arranger-usher-adapter": "file:../../modules/usher-adapter",
 		"@overture-stack/sqon": "file:../../modules/sqon",
 		"cors": "^2.8.5",
 		"dotenv": "^16.0.3",

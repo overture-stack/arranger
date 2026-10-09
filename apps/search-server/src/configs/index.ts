@@ -6,7 +6,7 @@ import { resolveConfigsLocation } from './configsLocation.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
 import { type LegacyNetworkEnv, resolveLegacyNetwork } from './legacyNetwork.js';
-import type { AllServerConfigs, CataloguesMap } from './types/index.js';
+import type { AllServerConfigs, CataloguesMap, UsherRegistrations } from './types/index.js';
 
 const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath,
@@ -16,15 +16,16 @@ const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath: string;
 	configsFromEnv: AllServerConfigs;
 	currentDirectory: string;
-}): Promise<CataloguesMap> => {
+}): Promise<{ catalogues: CataloguesMap; usherRegistrations: UsherRegistrations }> => {
 	const usedIds = new Set<string>();
+	const usherRegistrations: UsherRegistrations = {};
 	const resolvedBase = path.resolve(currentDirectory, catalogueConfigsPath);
 	const entries = await fs.promises.readdir(resolvedBase, { withFileTypes: true });
 	const hasJsonFiles = (entries: fs.Dirent[]) => entries.some((e) => e.isFile() && e.name.endsWith('.json'));
 	const getSubdirectories = (entries: fs.Dirent[]) => entries.filter((e) => e.isDirectory());
 
 	if (hasJsonFiles(entries)) {
-		const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
+		const [configsPath, aggregatedConfigs, usherRegistration] = await getConfigFromFiles({
 			// FIXME: TypeScript doesn't believe this won't be undefined.
 			baseConfig: catalogs.fromEnv || {},
 			catalogueConfigsPath,
@@ -40,7 +41,8 @@ const buildCataloguesFromFolder = async ({
 		console.log(`    Registered catalogue "${catalogueId}"`);
 
 		return {
-			[catalogueId]: aggregatedConfigs,
+			catalogues: { [catalogueId]: aggregatedConfigs },
+			usherRegistrations: usherRegistration === undefined ? {} : { [catalogueId]: usherRegistration },
 		};
 	}
 
@@ -49,7 +51,7 @@ const buildCataloguesFromFolder = async ({
 
 	if (subdirectories.length === 0) {
 		console.log('No JSON files or subdirectories found. Using env defaults.');
-		return {};
+		return { catalogues: {}, usherRegistrations };
 	}
 
 	console.log(`  - Found ${subdirectories.length} catalogue directories in '${catalogueConfigsPath}'`);
@@ -59,7 +61,7 @@ const buildCataloguesFromFolder = async ({
 		console.log(`  - Loading catalogue from '${subPath}'...`);
 
 		try {
-			const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
+			const [configsPath, aggregatedConfigs, usherRegistration] = await getConfigFromFiles({
 				// FIXME: TypeScript doesn't believe this won't be undefined.
 				baseConfig: catalogs.fromEnv || {}, // FIXME why is this necessary?
 				catalogueConfigsPath: subPath,
@@ -74,6 +76,9 @@ const buildCataloguesFromFolder = async ({
 			});
 
 			cataloguesMap[catalogueId] = aggregatedConfigs;
+			if (usherRegistration !== undefined) {
+				usherRegistrations[catalogueId] = usherRegistration;
+			}
 			console.log(`    Registered catalogue "${catalogueId}"`);
 		} catch (err) {
 			console.log(`  Error loading catalogue from ${dir.name}:`, (err as Error).message);
@@ -89,11 +94,12 @@ const buildCataloguesFromFolder = async ({
 		});
 
 		return {
-			[catalogueId]: catalogs.fromEnv || {},
+			catalogues: { [catalogueId]: catalogs.fromEnv || {} },
+			usherRegistrations,
 		};
 	}
 
-	return cataloguesMap;
+	return { catalogues: cataloguesMap, usherRegistrations };
 };
 
 /** Reads each catalogue's 3.0 network configuration as 3.1's, warning about each one that sets it. */
@@ -123,7 +129,7 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 
 	try {
 		// TODO: this function should do all the multicatalogue config parsing
-		const catalogueConfigs = await buildCataloguesFromFolder({
+		const { catalogues: catalogueConfigs, usherRegistrations } = await buildCataloguesFromFolder({
 			catalogueConfigsPath,
 			configsFromEnv,
 			currentDirectory: location.currentDirectory,
@@ -132,6 +138,7 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 		const aggregatedConfigs = {
 			...configsFromEnv,
 			catalogs: resolveLegacyNetworks(catalogueConfigs, legacyNetwork),
+			usherRegistrations,
 		};
 
 		// TODO: some form of config validation and logging for it
@@ -151,7 +158,11 @@ const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Pr
 
 		configsFromEnv.enableDebug && console.log(`\n  DEBUG: ${err}\n`);
 		console.log('  - No catalogue config directory found. Defaulting to config values from the environment...');
-		return { ...configsFromEnv, catalogs: resolveLegacyNetworks(configsFromEnv.catalogs, legacyNetwork) };
+		return {
+			...configsFromEnv,
+			catalogs: resolveLegacyNetworks(configsFromEnv.catalogs, legacyNetwork),
+			usherRegistrations: {},
+		};
 	}
 };
 

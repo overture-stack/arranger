@@ -30,10 +30,38 @@ const readFileAsync = (dirname: string, filename: string, encoding: FileEncoding
 		console.log('error?', error);
 	});
 
+/**
+ * The file holding a catalogue's registration with Usher's bridge. Read on its own and never merged
+ * into the catalogue's configuration, since the GraphQL router has no use for it.
+ */
+export const USHER_REGISTRATION_FILE = 'usher.json';
+
 const isDataFile = (fileName: string) => {
 	const fileNameParts = fileName.split('.');
 
 	return fileNameParts[fileNameParts.length - 1]?.toLowerCase() === 'json';
+};
+
+const isConfigurationFile = (fileName: string) => isDataFile(fileName) && fileName !== USHER_REGISTRATION_FILE;
+
+/** The catalogue's registration as its `usher.json` holds it, parsed, or undefined where there is none. */
+const readUsherRegistration = async (configsPath: string): Promise<unknown> => {
+	const text = await fs.promises.readFile(path.join(configsPath, USHER_REGISTRATION_FILE), 'utf8').catch((error) => {
+		if (error?.code === 'ENOENT') {
+			return undefined;
+		}
+		throw error;
+	});
+
+	if (text === undefined) {
+		return undefined;
+	}
+
+	try {
+		return JSON.parse(text);
+	} catch {
+		throw new Error(`Could not parse configuration file "${USHER_REGISTRATION_FILE}" in "${configsPath}"`);
+	}
 };
 
 const getConfigFromFiles: ConfigsFromFilesFn = async ({
@@ -50,12 +78,16 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 	const filenames = await readDirectoryAsync(configsPath);
 	const files = (
 		await Promise.all(
-			(filenames as string[]).filter(isDataFile).map((filename) => readFileAsync(configsPath, filename, 'utf8')),
+			(filenames as string[])
+				.filter(isConfigurationFile)
+				.map((filename) => readFileAsync(configsPath, filename, 'utf8')),
 		)
 	).filter((file): file is [string, string] => file !== undefined);
 
+	const usherRegistration = await readUsherRegistration(configsPath);
+
 	if (files.length === 0) {
-		return [configsPath, { ...baseConfig }];
+		return [configsPath, { ...baseConfig }, usherRegistration];
 	}
 
 	const configsFromFiles = files.reduce<Record<string, unknown>>((configsAcc, [fileName, fileData]) => {
@@ -77,7 +109,7 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 	}
 
 	// Into a fresh object, so the environment's configuration, shared by every catalogue, is never written to.
-	return [configsPath, merge({}, baseConfig, configs)];
+	return [configsPath, merge({}, baseConfig, configs), usherRegistration];
 };
 
 export default getConfigFromFiles;

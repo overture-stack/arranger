@@ -289,6 +289,30 @@ suite('search-server image: the export row limit', () => {
 		assert.equal(hundred.configs.catalogs.fromEnv.downloads.maxRows, 100, hundred.errorOutput);
 		assert.equal(zero.configs.catalogs.fromEnv.downloads.maxRows, 0, zero.errorOutput);
 	});
+
+	test('reads an unset DOWNLOAD_MAX_ROWS as 100 rows with access enforcement on, and as no limit with it off', async () => {
+		// Given an image with no row limit set, its access enforcement on in either spelling, or off
+		const [enabled, enabledAsOne, disabled] = await Promise.all([
+			readConfigs({ ENABLE_ACCESS_ENFORCEMENT: 'true' }),
+			readConfigs({ ENABLE_ACCESS_ENFORCEMENT: '1' }),
+			readConfigs({ ENABLE_ACCESS_ENFORCEMENT: 'false' }),
+		]);
+
+		// Then access control bounds an export by default, and its absence leaves 3.0's unbounded default
+		assert.equal(enabled.configs.catalogs.fromEnv.downloads.maxRows, 100, enabled.errorOutput);
+		assert.equal(enabledAsOne.configs.catalogs.fromEnv.downloads.maxRows, 100, enabledAsOne.errorOutput);
+		assert.equal(disabled.configs.catalogs.fromEnv.downloads.maxRows, 0, disabled.errorOutput);
+	});
+
+	test('keeps an explicit DOWNLOAD_MAX_ROWS with access enforcement on, 0 meaning every row', async () => {
+		const [bounded, unbounded] = await Promise.all([
+			readConfigs({ DOWNLOAD_MAX_ROWS: '250', ENABLE_ACCESS_ENFORCEMENT: 'true' }),
+			readConfigs({ DOWNLOAD_MAX_ROWS: '0', ENABLE_ACCESS_ENFORCEMENT: 'true' }),
+		]);
+
+		assert.equal(bounded.configs.catalogs.fromEnv.downloads.maxRows, 250, bounded.errorOutput);
+		assert.equal(unbounded.configs.catalogs.fromEnv.downloads.maxRows, 0, unbounded.errorOutput);
+	});
 });
 
 suite('search-server image: an ENABLE_ADMIN value 3.0 read as off', () => {

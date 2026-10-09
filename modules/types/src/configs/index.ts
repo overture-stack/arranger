@@ -156,7 +156,17 @@ export type NetworkConfig<Context> = {
 	[configArrangerNetworkProperties.LOCAL_NODE]?: BaseNodeConfig;
 };
 
-export type GetServerSideFilterFn<Context> = (context: Context) => SqonNode;
+/** The read path of a filter callback's evaluation, one name per call site. */
+export type FilterReadPath = 'aggregations' | 'export' | 'hits' | 'network' | 'sets';
+
+/** What a GraphQL router tells a filter callback about the read in progress. */
+export type FilterCallDetails = { readPath: FilterReadPath };
+
+/**
+ * Derives the server-side filter for one read from the request's context. The router passes the read
+ * path as the second argument, ignored by a callback taking one argument.
+ */
+export type GetServerSideFilterFn<Context> = (context: Context, details?: FilterCallDetails) => SqonNode;
 
 export type SearchEngineType = 'elasticsearch' | 'opensearch';
 

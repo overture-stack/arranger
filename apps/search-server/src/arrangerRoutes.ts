@@ -11,16 +11,21 @@ import { type CatalogueStatusDetail, catalogueStatuses as CATALOGUE_STATUS } fro
 import findCatalogueByIdentifier from '#catalogues/findCatalogueByIdentifier.js';
 import type { CataloguesMap } from '#configs/types/index.js';
 
+/** Called with each catalogue's index mapping, as its GraphQL router fetched it. */
+export type CatalogueMappingHook = (catalogueId: string, mappingFromIndex: Record<string, unknown>) => void;
+
 export const buildCatalogueRouter = async ({
 	catalogueConfigs,
 	catalogueId,
 	enableDebug,
 	esClient,
+	onIndexMapping,
 }: {
 	catalogueConfigs: CataloguesMap[string];
 	catalogueId: string;
 	enableDebug: boolean;
 	esClient?: SearchClient;
+	onIndexMapping?: CatalogueMappingHook;
 }): Promise<ExpressRouter> => {
 	const { getServerSideFilter, ...configs } = catalogueConfigs;
 	return arrangerRouter({
@@ -28,6 +33,10 @@ export const buildCatalogueRouter = async ({
 		configs: { enableDebug, ...configs },
 		esClient,
 		getServerSideFilter,
+		...(onIndexMapping && {
+			onIndexMapping: (mappingFromIndex: Record<string, unknown>) =>
+				onIndexMapping(catalogueId, mappingFromIndex),
+		}),
 	});
 };
 
@@ -62,11 +71,14 @@ export default async ({
 	catalogs,
 	enableDebug,
 	esClient,
+	onIndexMapping,
 }: {
 	buildCatalogueRouterFn?: typeof buildCatalogueRouter;
 	catalogs: CataloguesMap;
 	enableDebug: boolean;
 	esClient?: SearchClient;
+	/** Called with each catalogue's index mapping once its router fetched it; never for one failing first. */
+	onIndexMapping?: CatalogueMappingHook;
 }): Promise<{
 	catalogueRouters: Record<string, ExpressRouter>;
 	catalogueStatuses: Record<string, CatalogueStatusDetail>;
@@ -81,7 +93,7 @@ export default async ({
 
 	const settledResults = await Promise.allSettled(
 		catalogueEntries.map(([catalogueId, catalogueConfigs]) =>
-			buildCatalogueRouterFn({ catalogueConfigs, catalogueId, enableDebug, esClient }),
+			buildCatalogueRouterFn({ catalogueConfigs, catalogueId, enableDebug, esClient, onIndexMapping }),
 		),
 	);
 
