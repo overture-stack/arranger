@@ -11,6 +11,7 @@ import {
 	clientQueriesOver,
 	dropIndices,
 	type Filter,
+	group,
 	pivotedGroupOver,
 	type QueryFields,
 	readersFor,
@@ -87,13 +88,28 @@ const closeAll = async (routers: Record<string, Served>): Promise<void> => {
 
 const FULL_GRANT: Filter = () => clause('in', 'resource', RESOURCES);
 
-const FULL_GRANT_VARIANTS = ['an allow-everything filter', 'a filter granting every resource'];
+/**
+ * Every resource granted through clauses some records meet more often than others, as a narrowing granting
+ * categories is: resource A's records holding a category meet both branches, and the rest meet one.
+ */
+const FULL_GRANT_THROUGH_CLAUSES: Filter = () =>
+	group('or', [
+		group('and', [clause('in', 'resource', ['A']), clause('in', 'category', ['x', 'y', 'z'])]),
+		clause('in', 'resource', RESOURCES),
+	]);
+
+const FULL_GRANT_VARIANTS = [
+	'an allow-everything filter',
+	'a filter granting every resource',
+	'a filter granting every resource, some records through more clauses than others',
+];
 
 /** One router with no access control, and one per way of granting everything, all on the same indices. */
 const startParityRouters = async (esIndex: string, setsIndex: string): Promise<Record<string, Served>> => ({
 	none: await startCatalogue(esIndex, setsIndex),
 	[FULL_GRANT_VARIANTS[0]]: await startCatalogue(esIndex, setsIndex, includeEverything as Filter),
 	[FULL_GRANT_VARIANTS[1]]: await startCatalogue(esIndex, setsIndex, FULL_GRANT),
+	[FULL_GRANT_VARIANTS[2]]: await startCatalogue(esIndex, setsIndex, FULL_GRANT_THROUGH_CLAUSES),
 });
 
 suite('a principal holding every grant sees exactly what no access control shows', { concurrency: false }, () => {
