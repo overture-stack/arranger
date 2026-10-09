@@ -1,6 +1,6 @@
 # MCP Host: Plan
 
-**Status:** plan approved 2026-10-07. Nothing implemented yet.
+**Status:** plan approved 2026-10-07. Phase 0: SDK upgraded; spikes not started.
 
 **Goal:** a TypeScript stack that connects to MCP servers, runs a model through a tool-calling loop, and puts every confirmation in front of a person (or, for evaluations, a scripted policy).
 
@@ -12,7 +12,7 @@ Three consumers of one shared MCP Host Core:
 
 "Host" is used in the MCP specification's sense: the application that owns the model and holds one MCP client per connected server.
 
-**SDK baseline:** `@modelcontextprotocol/client`, `server` and `core` at 2.3.0 or later, raised together, and `@modelcontextprotocol/node` at its latest release (2.1.1). The repository installs 2.0.0 today. SDK claims below were read from the 2.3.1 source ([§4.3](#43-sdk-evidence)).
+**SDK baseline:** `@modelcontextprotocol/client`, `server` and `core` at 2.3.0 or later, raised together (installed: 2.3.1), and `@modelcontextprotocol/node` at 2.1.1. SDK claims below were read from the 2.3.1 source ([§4.3](#43-sdk-evidence)).
 
 Background, including why existing chat hosts cannot drive `apps/mcp-server`: [atlas: MCP clients for a 2026-07-28-only server](atlas/mcp-client-landscape.md).
 
@@ -88,9 +88,9 @@ Background, including why existing chat hosts cannot drive `apps/mcp-server`: [a
 | Capabilities         | `elicitation: { form: {} }`, only when the host supplies an input resolver. Never `sampling` or `roots`, which `2026-07-28` deprecates and no Arranger tool uses.                                                                                                           |
 | Requests             | `tools/call`, `prompts/get` and `resources/read` go through the confirmation loop below. List requests pass straight through.                                                                                                                                               |
 | Cancellation         | Each call takes an `AbortSignal`; the SDK sends `notifications/cancelled`.                                                                                                                                                                                                  |
-| Timeouts             | The SDK's timeout covers each request leg. Waiting for a person happens between legs, so a separate per-question timeout answers `cancel` when it expires.                                                                                                                  |
+| Timeouts             | The SDK's timeout covers each request leg. Waiting for a person, between legs, has no timer here: it ends when the resolver settles or the call is aborted. Host-core owns that timeout ([§2.2](#events)).                                                                  |
 
-**Hash canonicalization.** Results carry fields that are not surface: `_meta` (which SHOULD include `io.modelcontextprotocol/serverInfo`, the server's name and version), `ttlMs`, `cacheScope` and `nextCursor`. The hash strips them, sorts object keys, and keeps list order. List order is part of what the model sees, and keeping it lets `surfaceStability` catch nondeterministic ordering.
+**Hash canonicalization.** The snapshot is built from named fields: `supportedVersions`, `capabilities` and `instructions` from `server/discover`, and each list's items. Result-level fields that are not surface never enter it: `_meta` (which SHOULD include `io.modelcontextprotocol/serverInfo`, the server's name and version), `ttlMs`, `cacheScope` and `nextCursor`. Items keep their own `_meta`, since hosts act on it, and stripping every `_meta` key would also delete an input-schema property of that name. The hash sorts object keys and keeps list order. List order is part of what the model sees, and keeping it lets `surfaceStability` catch nondeterministic ordering.
 
 **Why re-reads bypass the cache.** The SDK client caches list results by default, and `apps/mcp-server` marks its lists fresh for an hour. Without `'refresh'`, a long conversation, a shared cache store, or a reconnect through `prior` would keep a pre-redeploy surface and hash. Nothing re-reads during a run, so the cache would save little.
 
@@ -252,7 +252,7 @@ Each event carries a run id, sequence number and timestamp.
 | `tool_result`                            | Call id, outcome, `isError`, content, structured content, wire time, waiting time          | All                       |
 | `done`                                   | Why the run ended, and totals                                                              | All                       |
 
-**Answers come back by id** through `respond(id, answer)`, for approvals and confirmations alike, whether from a terminal, a script or a WebSocket. It is idempotent and returns `accepted`, `unknown`, `already_answered` or `timed_out`. `pending()` lists what is still open, for a UI that reconnects. Approvals and confirmations each take an optional timeout: an approval that times out counts as denied, and a confirmation is answered `cancel`.
+**Answers come back by id** through `respond(id, answer)`, for approvals and confirmations alike, whether from a terminal, a script or a WebSocket. It is idempotent and returns `accepted`, `unknown`, `already_answered` or `timed_out`. `pending()` lists what is still open, for a UI that reconnects. Approvals and confirmations each take an optional timeout: an approval that times out counts as denied, and a confirmation is answered `cancel`, which `mcp-client` sends like any other answer. Only host-core keeps these clocks, so `respond`, `pending()` and the events always match what the server was sent. A second clock in `mcp-client` could fire first and leave a question listed as pending whose answer goes nowhere.
 
 #### Conversation State
 
@@ -334,18 +334,32 @@ In the CRE repository. This plan requires that it renders events as notebook cel
 
 ### Phase 0: Spikes
 
-Each can change the design, except S2, which confirms it.
+First, **upgrade `client`, `server` and `core` to 2.3.0 or later together**, since each pins `core` exactly, and `node` to 2.1.1 (done). S2 and S5 test behaviour read from the 2.3.1 source, so they run on it.
 
-- **S1: schema conversion.** Convert all five Arranger tools' input schemas, including `execute_query`'s unconstrained `sqon`, to Ollama's tool format. Confirm the team's models call them correctly. Check for `$ref`.
+Each spike can change the design, except S2, which confirms it.
+
+- **S1: schema conversion.** Send all five Arranger tools' input schemas, including `execute_query`'s unconstrained `sqon`, as OpenAI-style tools through Ollama's `/v1/chat/completions`, the path the provider uses. Confirm the models below call them correctly. Check for `$ref`.
 - **S2: `callTool()` against `request()`.** Confirm `callTool(..., { allowInputRequired: true })` fails on `execute_query`'s `input_required` reply with `tools/list` cached, and `request()` completes the round trip.
 - **S3: streamed usage from Ollama.** Check whether `stream_options: { include_usage: true }` returns exact usage at the end of a stream on `/v1/chat/completions`. If not, streamed runs report usage as unknown.
-- **S4: malformed tool calls.** Collect real examples from the team's models: malformed calls returned, calls written as prose, and any the serving stack refuses with an HTTP error (unverified for Ollama).
+- **S4: malformed tool calls.** Collect real examples from the models below: malformed calls returned, calls written as prose, and any the serving stack refuses with an HTTP error (unverified for Ollama). Whether it also covers reasoning output is open ([§5](#5-open-questions), question 5).
 - **S5: a refused confirmation.** Restart a loopback `apps/mcp-server` without `MCP_REQUEST_STATE_SECRET` between question and answer, and record what the client surfaces. The source says `-32602` with `data.reason: 'invalid_request_state'`.
+
+**Models for S1, S3 and S4.** Each spike runs on a local Ollama first. A result is confirmed on the team's shared Ollama server only once it is solid, since time there is coordinated across the team.
+
+| Where             | Model                    | Why                                                                                                  |
+| ----------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Local             | `gemma4:e4b`             | Small, and tested with LM Studio before the SDK v2 upgrade. `gemma4:12b` is the step up.             |
+| Local             | `qwen3:14b`              | Recommended for tool calling. Thinks before answering.                                               |
+| Local             | `granite4.1:4b`          | Recommended for tool calling.                                                                        |
+| Shared, suggested | `gpt-oss:20b`            | Trained for tool calling. Thinks before answering, so it also tests [question 5](#5-open-questions). |
+| Shared, suggested | `mistral-small3.1` (24B) | Tool support from another model family, without thinking.                                            |
+| Shared, suggested | `gpt-oss:120b`           | The large tier: shows whether a failure on `gpt-oss:20b` comes from model size.                      |
+
+The shared server's other chat models suit tool calls less: `gemma3`, `medgemma` and `llama3:70b-instruct` have no tool support in Ollama.
 
 ### Phase 1: MCP Client
 
-- **Raise `client`, `server` and `core` to 2.3.0 or later together**, since each pins `core` exactly, and `node` to 2.1.1. The server's upgrade lands as its own change in the next `rc`, with a changelog entry and passing server and integration tests, before any eval baseline exists.
-- `modules/mcp-client` ([§2.1](#21-mcp-client)), tested against an in-process v2 server with a short-lived `requestState`: confirmation rounds including one with no questions, `input_required` on `prompts/get`, a refused state, `rounds_exceeded`, cancellation, `output_invalid`, a re-read that bypasses the cache, opting in to change notifications, and a hash unchanged by a version bump, cache fields or `_meta`.
+- `modules/mcp-client` ([§2.1](#21-mcp-client)), tested against an in-process v2 server with a short-lived `requestState`: confirmation rounds including one with no questions, `input_required` on `prompts/get`, a refused state, `rounds_exceeded`, cancellation, `output_invalid`, a re-read that bypasses the cache, opting in to change notifications, and a hash unchanged by a version bump, cache fields or result-level `_meta`.
 
 ### Phase 2: MCP Host Core
 
@@ -453,6 +467,7 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 4. **Where `eval` is built**, decided when Phase 4 resumes. Either:
     - **in `mcp-cli`, in the CRE repository**, as §2.3 describes. `mcp-host-core` stays unpublished, but local mode, the rebuild before a run and the build identity all need a path to an Arranger checkout; `sqonEquivalence` uses the published `@overture-stack/sqon` rather than the version the server under test runs; and running against this repository's commits in CI needs a cross-repository trigger; or
     - **as `apps/mcp-eval`, in this repository**, beside the server it measures, so local mode, the rebuild and commit attribution work as the harness plan designs them. `mcp-host-core` is then published from the CRE repository, with an API that has to stay stable.
+5. **Whether S4 also covers reasoning output.** `qwen3:14b` and `gpt-oss:20b` think before answering. Ollama's `/v1/chat/completions` returns their reasoning in a non-standard `reasoning` field, on messages and streamed chunks, and reads `reasoning` back from assistant messages it is sent. Ollama's source shows this; its documentation does not. The provider's final response, the events and the conversation state have no field for it. Covering it in S4 would show whether the models call tools better when their reasoning is sent back, and so whether saved conversations must keep it, before notebooks fix their format.
 
 ---
 
@@ -464,5 +479,6 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 - [atlas: MCP clients for a 2026-07-28-only server](atlas/mcp-client-landscape.md) §5.
 - `.dev/roadmap.md`: entries for this plan and the harness.
 - `.dev/tech-debt.md`: confirmation state bound to the OAuth client rather than the user ([§2.4](#24-cre-server)).
+- `CHANGELOG.md`: the SDK upgrade.
 
-**When the work lands:** `CHANGELOG.md` for the SDK upgrade (Phase 1), `AGENTS.md` § Structure for the new workspaces, and `apps/mcp-server/README.md` § Chatting with an LLM (Phase 3).
+**When the work lands:** `AGENTS.md` § Structure for the new workspaces, and `apps/mcp-server/README.md` § Chatting with an LLM (Phase 3).
