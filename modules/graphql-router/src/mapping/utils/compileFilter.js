@@ -10,6 +10,18 @@ const isProperSqon = (sqon) => !!(sqon && sqon.op);
 // names on purpose: a deployment author can only act through `getServerSideFilter`, so translate there.
 
 /**
+ * The caller's filter as a query applies it: absent where client filters are disabled, or where it
+ * names no operator.
+ *
+ * @param {object} args
+ * @param {object} [args.clientSideFilter] The caller's filter, as parsed.
+ * @param {boolean} [args.disableClientFilters] Whether the deployment ignores callers' filters.
+ * @returns {object | undefined} The filter to apply, or undefined where none applies.
+ */
+export const applicableClientFilter = ({ clientSideFilter, disableClientFilters = false }) =>
+	!disableClientFilters && isProperSqon(clientSideFilter) ? clientSideFilter : undefined;
+
+/**
  * Composes the caller's filter with the deployment's access-control filter.
  *
  * Only the server-side filter is validated: a client filter restricting nothing is an ordinary
@@ -26,10 +38,10 @@ const isProperSqon = (sqon) => !!(sqon && sqon.op);
  */
 export default ({ clientSideFilter, disableClientFilters = false, serverSideFilter }) => {
 	const checkedServerSideFilter = requireServerSideFilter(serverSideFilter);
-	const applicableClientFilter = !disableClientFilters && isProperSqon(clientSideFilter);
+	const clientFilter = applicableClientFilter({ clientSideFilter, disableClientFilters });
 
 	return {
-		content: applicableClientFilter ? [clientSideFilter, checkedServerSideFilter] : [checkedServerSideFilter],
+		content: clientFilter ? [clientFilter, checkedServerSideFilter] : [checkedServerSideFilter],
 		op: 'and',
 	};
 };
