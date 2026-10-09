@@ -262,7 +262,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 		const { esClient } = context;
 		const { extendedFields } = type;
-		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'hits' });
 
 		const query = buildQuery({
 			caller: 'resolveHits',

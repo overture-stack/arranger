@@ -81,6 +81,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	esClient: customEsClient = undefined,
 	getServerSideFilter,
 	graphqlOptions = {},
+	onIndexMapping,
 }: {
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. Falls back to `documentType` when not provided. */
 	catalogueId?: string;
@@ -93,6 +94,11 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	esClient?: SearchClient;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
+	/**
+	 * Called once with a copy of the index mapping the router fetched, before the router resolves, so a
+	 * host can check fields against it. A throw fails this router's construction.
+	 */
+	onIndexMapping?: (mappingFromIndex: Record<string, unknown>) => void;
 }): Promise<Router> => {
 	// A router given only a path would start with no configuration, so that case is refused; beside
 	// `configs`, the path is ignored and the router builds from them.
@@ -149,6 +155,8 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			searchClient: esClient,
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});
+
+		onIndexMapping?.(structuredClone(mappingFromIndex));
 
 		const resolvedFields = resolveCatalogueFields(
 			mappingFromIndex,
