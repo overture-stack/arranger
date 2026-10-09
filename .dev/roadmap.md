@@ -516,6 +516,14 @@ _Priority: not yet set. Plan drafted; nothing implemented. Builds on the MCP hos
 
 [Detail: metrics, case set, fingerprint, manifest and phases](docs/mcp-platform-testing.md)
 
+### Catalogue field mapping for third-party genomics visualization libraries
+
+_Priority: not yet set. Sketched generically as a future requirement; nothing implemented._
+
+Several cBioPortal-originated visualization components (`oncoprintjs`, `react-mutation-mapper`) are published as standalone, backend-agnostic libraries: they render whatever data shape they're given, with no dependency on cBioPortal's own API. OICR/softeng's own `oncojs` org covers similar ground (`oncogrid`, `lolliplot`, `survivalplot`), a decade behind on its core dependencies but a candidate worth modernizing rather than only reaching outside. Using any of these against Arranger's own data needs a per-catalogue configuration mapping that catalogue's actual field names onto the library's expected concepts (chromosome, start position, protein change, and so on), since Arranger's own field metadata (`displayName`, `isArray`, `type`, `unit`) carries no domain-semantic typing today. Consumer is the notebook UI (`cre-ui`) from the MCP host plan above.
+
+[Detail: the concept vocabulary, confirmed and unconfirmed data shapes, and open questions](docs/visualization-data-mapping.md)
+
 ## Components
 
 The `modules/components` package carries significant legacy weight and has accumulated several years of organic growth. The items below can be approached incrementally; none require a big-bang rewrite; but the Emotion replacement decision should be made before extending the theming infrastructure.
