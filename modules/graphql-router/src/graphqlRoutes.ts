@@ -20,10 +20,13 @@ import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_CONTROL_QUERY_TOO_LARGE_CODE,
+	ACCESS_CONTROL_UNAVAILABLE_CODE,
 	type AccessControlError,
 	type AccessControlQueryTooLargeError,
+	type AccessControlUnavailableError,
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
+	isAccessControlUnavailableError,
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import fallbackConfigs, { initializeSets } from '#config/index.js';
@@ -298,6 +301,11 @@ const maskAccessControlError = (error: GraphQLError, accessControlError: AccessC
 	});
 };
 
+// The callback's refusal to serve the request yet: its own code, and the text written for the client
+// by its thrower, never the configuration failure's, and nothing logged here, since nothing is misconfigured.
+const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavailableError): GraphQLFormattedError =>
+	answerWith({ code: ACCESS_CONTROL_UNAVAILABLE_CODE, error, message: unavailable.message });
+
 const answerQueryTooLarge = (error: GraphQLError, tooLarge: AccessControlQueryTooLargeError): GraphQLFormattedError => {
 	console.error('access_control.query_too_large', {
 		catalogue: tooLarge.catalogue,
@@ -343,6 +351,10 @@ const answerServerProblem = (error: GraphQLError, label?: string): GraphQLFormat
 const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError => {
 	// Widened, so each check narrows it on its own: every refusal class has Error's shape.
 	const originalError: unknown = error.originalError;
+
+	if (isAccessControlUnavailableError(originalError)) {
+		return answerUnavailable(error, originalError);
+	}
 
 	if (isAccessControlQueryTooLargeError(originalError)) {
 		return answerQueryTooLarge(error, originalError);
@@ -447,6 +459,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 					// After the spread: an external context must not be able to switch this off.
 					disableClientFilters,
+
+					// After the spreads, so neither an application's locals nor an external context can replace
+					// it: the request's own object, whose hidden members a copy would drop.
+					locals: res.locals,
 				};
 			};
 

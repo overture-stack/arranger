@@ -71,7 +71,7 @@ export const saveSet =
 		const { nested_fieldNames: nestedFieldNames, index, config } = catalogueType;
 		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
 		const { esClient } = context;
-		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' });
 
 		const query = buildQuery({
 			caller: 'resolveSets',

@@ -485,7 +485,7 @@ suite('search-server image: ENABLE_ACCESS_CONTROL set to false or 0', { concurre
 
 suite('search-server image: ENABLE_ACCESS_CONTROL set to true or 1', { concurrency: 4 }, () => {
 	['true', '1', 'TRUE', ' True ', '\t1\n'].forEach((rawValue) => {
-		test(`refuses to start, saying this build has no Usher adapter, given ${valueLabel(rawValue)}`, async () => {
+		test(`refuses to start without the Usher configuration access control needs, naming it, given ${valueLabel(rawValue)}`, async () => {
 			const run = await runImage({ enableAccessControl: rawValue });
 
 			assertRefusedAtStartup(run);

@@ -3,8 +3,10 @@ export type { ArrangerBaseContext } from './types.js';
 export {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_CONTROL_QUERY_TOO_LARGE_CODE,
+	ACCESS_CONTROL_UNAVAILABLE_CODE,
 	AccessControlError,
 	AccessControlQueryTooLargeError,
+	AccessControlUnavailableError,
 } from './accessControl/AccessControlError.js';
 export { default as getDefaultServerSideFilter } from './accessControl/getDefaultServerSideFilter.js';
 export { default as includeEverything } from './accessControl/includeEverything.js';

@@ -1,9 +1,9 @@
-import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+import type { FilterReadPath, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import type { SqonNode } from '@overture-stack/sqon';
 
 import noopFn from '#utils/noops.js';
 
-import { AccessControlError } from './AccessControlError.js';
+import { AccessControlError, isAccessControlUnavailableError } from './AccessControlError.js';
 
 const describeType = (value: unknown): string => (value === null ? 'null' : typeof value);
 
@@ -59,13 +59,20 @@ export const assertFilterCallback = ({
 const invokeFilterCallback = <Context>({
 	context,
 	getServerSideFilter,
+	readPath,
 }: {
 	context: Context;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
+	readPath: FilterReadPath;
 }): SqonNode => {
 	try {
-		return getServerSideFilter(context);
+		return getServerSideFilter(context, { readPath });
 	} catch (error) {
+		// A refusal to serve the request yet is the callback's answer, not a failure to evaluate it.
+		if (isAccessControlUnavailableError(error)) {
+			throw error;
+		}
+
 		throw new AccessControlError('The getServerSideFilter callback threw, so no filter could be applied.', {
 			cause: error,
 		});
@@ -73,21 +80,26 @@ const invokeFilterCallback = <Context>({
 };
 
 /**
- * Calls a filter callback against `context`, turning a throw or a returned promise or other thenable
- * into an `AccessControlError` whose cause is what was thrown or returned.
+ * Calls a filter callback against `context` for one read path, turning a throw or a returned promise
+ * or other thenable into an `AccessControlError` whose cause is what was thrown or returned. An
+ * `AccessControlUnavailableError` it throws passes through as it is.
  *
  * @param context the request context the callback derives its filter from.
  * @param getServerSideFilter the callback to evaluate.
+ * @param readPath the read the filter is for, passed to the callback as `{ readPath }`.
  * @throws {AccessControlError} when the callback throws or returns a thenable.
+ * @throws {AccessControlUnavailableError} when the callback refuses to serve the request yet.
  */
 export const evaluateFilterCallback = <Context>({
 	context,
 	getServerSideFilter,
+	readPath,
 }: {
 	context: Context;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
+	readPath: FilterReadPath;
 }): SqonNode => {
-	const filter = invokeFilterCallback({ context, getServerSideFilter });
+	const filter = invokeFilterCallback({ context, getServerSideFilter, readPath });
 
 	if (isThenable(filter)) {
 		// Handled so a rejection cannot surface as an unhandled one; the refusal already carries the thenable.

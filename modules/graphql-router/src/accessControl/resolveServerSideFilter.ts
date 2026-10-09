@@ -21,7 +21,7 @@ const checkedFilterFrom = <Context>({
 }: {
 	context: Context;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
-}): SqonNode => requireServerSideFilter(evaluateFilterCallback({ context, getServerSideFilter }));
+}): SqonNode => requireServerSideFilter(evaluateFilterCallback({ context, getServerSideFilter, readPath: 'export' }));
 
 /**
  * The server-side filter an export applies: the router's recorded filter, narrowed by the caller's when
