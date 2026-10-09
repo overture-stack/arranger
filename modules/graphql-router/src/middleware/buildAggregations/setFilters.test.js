@@ -22,6 +22,11 @@ const lookupsIn = (node) =>
 const aggregationsFor = (aggregationsFilterThemselves) =>
 	buildAggregations({
 		aggregationsFilterThemselves,
+		clientSideQuery: buildQuery({
+			filters: SET_FILTER,
+			nestedFieldNames: NESTED_FIELD_NAMES,
+			setsIndex: SETS_INDEX,
+		}),
 		graphqlFields: {
 			donors__gender: {
 				buckets: {
@@ -31,7 +36,6 @@ const aggregationsFor = (aggregationsFilterThemselves) =>
 			},
 		},
 		nestedFieldNames: NESTED_FIELD_NAMES,
-		query: buildQuery({ filters: SET_FILTER, nestedFieldNames: NESTED_FIELD_NAMES, setsIndex: SETS_INDEX }),
 		setsIndex: SETS_INDEX,
 		sqon: SET_FILTER,
 	});

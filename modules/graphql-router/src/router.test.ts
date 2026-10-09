@@ -699,17 +699,18 @@ suite("a restricting filter reaches the search engine on each of the router's re
 	});
 
 	test("aggregations count only permitted documents, including the facet on the filter's own field", async () => {
-		// Given a router built with a filter on study, whose facet on study ignores the search query
+		// Given a router built with a filter on study, and no client filter naming study
 		const { engine, router } = await buildRouter({ getServerSideFilter: STUDY_A });
 
 		// When both facets are requested
 		const response = await postGraphQL(router, AGGREGATIONS_QUERY);
 
-		// Then the study facet went through a global aggregation, and both facets count only permitted documents
+		// Then the study facet counted within the search query, where the filter applies whole, and both
+		// facets count only permitted documents
 		const aggregationSearch = engine.searches.find((search) => search.body?.aggs);
 		assert.ok(
-			Object.keys(aggregationSearch?.body?.aggs ?? {}).some((name) => name.endsWith(':global')),
-			'precondition: the facet on the filtered field is computed outside the search query',
+			!Object.keys(aggregationSearch?.body?.aggs ?? {}).some((name) => name.endsWith(':global')),
+			'precondition: with no client filter on it, the facet on the filtered field is computed within the search query',
 		);
 		assert.deepEqual(response.body.data.donor.aggregations.study.buckets, [{ doc_count: 3, key: 'A' }]);
 		assert.deepEqual(
@@ -720,13 +721,19 @@ suite("a restricting filter reaches the search engine on each of the router's re
 
 	test("a client filter on the filter's own field cannot lift it from that field's facet", async () => {
 		// Given the same router, and a client filter asking for study B
-		const { router } = await buildRouter({ getServerSideFilter: STUDY_A });
+		const { engine, router } = await buildRouter({ getServerSideFilter: STUDY_A });
 		const filters = { content: [{ content: { fieldName: 'study', value: ['B'] }, op: 'in' }], op: 'and' };
 
 		// When both facets are requested under that filter
 		const response = await postGraphQL(router, AGGREGATIONS_QUERY, { filters });
 
-		// Then the study facet still shows only study A, and the other facet shows nothing
+		// Then the study facet, computed outside the search query, still shows only study A, and the other
+		// facet shows nothing
+		const aggregationSearch = engine.searches.find((search) => search.body?.aggs);
+		assert.ok(
+			Object.keys(aggregationSearch?.body?.aggs ?? {}).some((name) => name.endsWith(':global')),
+			"precondition: the client filter on the facet's field moves that facet outside the search query",
+		);
 		assert.deepEqual(response.body.data.donor.aggregations.study.buckets, [{ doc_count: 3, key: 'A' }]);
 		assert.deepEqual(response.body.data.donor.aggregations.donor_id.buckets, []);
 	});

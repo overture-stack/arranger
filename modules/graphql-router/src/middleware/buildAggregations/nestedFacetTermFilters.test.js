@@ -27,10 +27,10 @@ const donorFacetTermFilters = ({ aggregationsFilterThemselves, nestingPrefix, sq
 	findAggregation(
 		buildAggregations({
 			aggregationsFilterThemselves,
+			clientSideQuery: {},
 			graphqlFields: { donors__donor_id: { buckets: { key: {} } } },
 			nestedFieldNames: NESTED_FIELD_NAMES,
 			nestingPrefix,
-			query: {},
 			serverSideQuery: {},
 			sqon: { content: [sqon], op: 'and' },
 		}),

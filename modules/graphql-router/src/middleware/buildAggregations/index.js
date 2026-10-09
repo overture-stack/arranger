@@ -74,11 +74,11 @@ function getNestedPathsInField({ fieldName = '', nestedFieldNames = [] }) {
 }
 
 /**
- * Re-applies the access-control filter after field-removal strips it along with the caller's own
- * filter on the aggregated field, the two being indistinguishable once `compileFilter` merges them.
- * Duplicate clauses on other fields are harmless: same result, and `boost: 0` leaves scoring alone.
+ * The access-control filter, whole, beside the caller's filter less the aggregated field. Only the
+ * caller's filter loses that field's clauses: removing one from the access filter could drop an
+ * alternative of an `or`, and count fewer documents than the principal may see.
  */
-function reapplyServerFilter({ cleanedQuery, serverSideQuery }) {
+function composeWithServerFilter({ cleanedQuery, serverSideQuery }) {
 	if (!serverSideQuery || !Object.keys(serverSideQuery).length) {
 		return cleanedQuery;
 	}
@@ -89,26 +89,27 @@ function reapplyServerFilter({ cleanedQuery, serverSideQuery }) {
 }
 
 function wrapWithFilters({
+	aggregation,
+	aggregationsFilterThemselves,
+	clientSideQuery,
 	esFieldName,
 	fieldName,
-	query,
 	serverSideQuery,
-	aggregationsFilterThemselves,
-	aggregation,
 }) {
 	if (!aggregationsFilterThemselves) {
-		const cleanedQuery = removeFieldFromQuery({ fieldName: esFieldName, query });
+		const cleanedQuery = removeFieldFromQuery({ fieldName: esFieldName, query: clientSideQuery });
 		// TODO: better way to figure out that the field wasn't found
 		// `removeFieldFromQuery` returns a bool that arrived empty unchanged, so only a clause on the
-		// aggregated field makes the cleaned query differ and calls for the global wrapper.
-		if (!isEqual(cleanedQuery || {}, query || {})) {
+		// aggregated field makes the cleaned query differ and calls for the global wrapper. Otherwise
+		// the facet counts within the search query, the access-control filter included.
+		if (!isEqual(cleanedQuery || {}, clientSideQuery || {})) {
 			return createGlobalAggregation({
 				fieldName,
 				// A `global` aggregation ignores the search query, so anything that must still
 				// constrain this one has to be restated here, access control included.
 				aggregation: createFilteredAggregation({
 					fieldName,
-					filter: reapplyServerFilter({ cleanedQuery, serverSideQuery }),
+					filter: composeWithServerFilter({ cleanedQuery, serverSideQuery }),
 					aggregation,
 				}),
 			});
@@ -124,14 +125,31 @@ function wrapWithFilters({
  * path (`esFieldName`) and `nestedFieldNames`/`sqon` used to build the query DSL; every response
  * key (bucket names, `:missing`/`:nested_filtered` suffixes) stays built from the clean `fieldName`
  * so `flattenAggregations` and the GraphQL layer above it need no awareness of the prefix at all.
+ *
+ * `clientSideQuery` is the caller's filter compiled alone, from which a facet not filtering itself
+ * removes its own field; `serverSideQuery` is the access-control filter compiled alone, which such a
+ * facet restates whole.
+ *
+ * @param {object} args
+ * @param {boolean} args.aggregationsFilterThemselves Whether a facet's own field filters it.
+ * @param {object} [args.clientSideQuery] The caller's filter, compiled alone.
+ * @param {boolean} [args.disableClientFilters] Whether the deployment ignores callers' filters.
+ * @param {object} args.graphqlFields The requested aggregations, as `graphql-fields` reads them.
+ * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`.
+ * @param {string} [args.nestingPrefix] Prefix applied to field names before compilation.
+ * @param {Record<string, string>} [args.rawPathsByGraphqlFlatName] Each flattened GraphQL name's ES path.
+ * @param {object} [args.serverSideQuery] The access-control filter, compiled alone.
+ * @param {string} [args.setsIndex] The catalogue's own sets index.
+ * @param {object | null} [args.sqon] The caller's filter, as a SQON.
+ * @returns {object} The aggregations, keyed by name.
  */
 const buildAggregations = ({
 	aggregationsFilterThemselves,
+	clientSideQuery,
 	disableClientFilters = false,
 	graphqlFields,
 	nestedFieldNames: rawNestedFieldNames,
 	nestingPrefix,
-	query,
 	rawPathsByGraphqlFlatName = {},
 	serverSideQuery,
 	setsIndex,
@@ -189,9 +207,9 @@ const buildAggregations = ({
 			wrapWithFilters({
 				aggregation,
 				aggregationsFilterThemselves,
+				clientSideQuery,
 				esFieldName,
 				fieldName,
-				query,
 				serverSideQuery,
 			}),
 		);

@@ -8,7 +8,7 @@ import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/
 import type { SchemaTypesDefinition } from '#schema/types.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
-import compileFilter from './utils/compileFilter.js';
+import compileFilter, { applicableClientFilter } from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
 
 export type Bucket = {
@@ -100,12 +100,22 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		});
 
 		/**
-		 * Compiled on its own, and kept apart from `query`, because aggregations wrapped in an ES
-		 * `global` aggregation ignore the search query entirely and have their constraints rebuilt
-		 * from the query minus the aggregated field's clauses. That rebuild cannot tell the caller's
-		 * filter from the access-control filter once `compileFilter` has merged them, so it drops
-		 * both. Passing the server-side half separately is what lets `buildAggregations` put it back.
+		 * Each half compiled on its own, and kept apart from `query`, because aggregations wrapped in an
+		 * ES `global` aggregation ignore the search query and have their constraints rebuilt: the
+		 * caller's filter less the aggregated field's clauses, beside the access-control filter whole.
+		 * Once `compileFilter` has merged them, the rebuild could not tell one from the other.
 		 */
+		const clientSideQuery = buildQuery({
+			caller: 'resolveAggregations',
+			nestedFieldNames,
+			nestingPrefix,
+			filters: applicableClientFilter({
+				clientSideFilter: filters,
+				disableClientFilters: context.disableClientFilters,
+			}),
+			setsIndex: type.setsIndex,
+		});
+
 		const serverSideQuery = buildQuery({
 			caller: 'resolveAggregations',
 			nestedFieldNames,
@@ -121,8 +131,8 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		 */
 		const graphqlFields = getFields(graphqlResolveInfo, {}, { processArguments: true });
 		const aggs = buildAggregations({
+			clientSideQuery,
 			disableClientFilters: context.disableClientFilters,
-			query,
 			serverSideQuery,
 			setsIndex: type.setsIndex,
 			sqon: filters,

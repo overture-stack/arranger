@@ -55,6 +55,12 @@ These change behaviour that only the 3.1 release candidates had, so a deployment
 
 - **A fresh install of an earlier 3.1 prerelease picks up this release's `@overture-stack/sqon` and `@overture-stack/arranger-types`**: the published `@overture-stack/arranger-graphql-router` 1.0.0-rc.6 and `@overture-stack/arranger-components` 3.1.0-rc.3 depend on both at `^1.0.0-rc.5`, which admits later prereleases. An install with no lockfile, or with one regenerated, therefore brings in the SQON and Zod changes recorded here without the router or components being upgraded. Commit the lockfile, or pin exact versions, to take them with the upgrade instead.
 
+### Fixed since the 3.1 release candidates
+
+These correct behaviour that only the 3.1 release candidates had, so a deployment upgrading from 3.0.x meets none of them.
+
+- **A facet that does not filter itself counts every document the server-side filter permits**: the release candidates removed the facet's own field from the server-side filter as well as from the caller's filter, so a filter holding a bare clause on that field inside an `or` lost that alternative, and the facet counted fewer documents than a search returned. The server-side filter now applies whole.
+
 ---
 
 ### Architecture
@@ -109,7 +115,7 @@ These change behaviour that only the 3.1 release candidates had, so a deployment
 
 ### Access control
 
-- **The server-side filter is now applied on every read path**: record queries, aggregations, the export route, and federated queries. It was previously composed per call site, which meant a read path could be added without it. `buildAggregations` re-applies the filter after the field-removal step that facets require, the export route composes it through the same `compileFilter` as GraphQL reads, and federated queries forward it to remote nodes in the outgoing query variables.
+- **The server-side filter is now applied on every read path**: record queries, aggregations, the export route, and federated queries. It was previously composed per call site, which meant a read path could be added without it. a facet that does not filter itself removes its own field's clauses from the caller's filter alone and restates the server-side filter whole, the export route composes it through the same `compileFilter` as GraphQL reads, and federated queries forward it to remote nodes in the outgoing query variables.
 
 - **Federation forwards the filter rather than enforcing it.** A remote node applies the SQON it receives; a node that ignores it applies nothing, and the querying node cannot detect that. Treat federated results as trusted only to the extent the remote nodes are.
 
