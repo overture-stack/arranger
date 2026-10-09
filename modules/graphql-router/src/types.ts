@@ -30,6 +30,11 @@ export type ArrangerBaseContext = {
 	/** When true, `compileFilter` drops the caller's filter. */
 	disableClientFilters?: boolean;
 	esClient: SearchClient;
+	/**
+	 * The request's own `res.locals`, the same object rather than a copy, so a member attached by a host
+	 * and hidden from copies stays readable by a filter callback.
+	 */
+	locals?: Record<PropertyKey, unknown>;
 	request: RequestContextProps;
 };
 export type GraphQLEndpointMiddleware<TSource = any, TContext = any, TArgs = any> =

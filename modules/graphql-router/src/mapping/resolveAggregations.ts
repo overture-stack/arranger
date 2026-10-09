@@ -85,7 +85,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const { esClient } = context;
 
-		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'aggregations' });
 
 		const query = buildQuery({
 			caller: 'resolveAggregations',

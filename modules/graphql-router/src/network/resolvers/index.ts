@@ -113,7 +113,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 			filters: compileFilter({
 				clientSideFilter: remainingArgs.filters,
 				disableClientFilters: context.disableClientFilters,
-				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
+				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter, readPath: 'network' }),
 			}),
 		};
 

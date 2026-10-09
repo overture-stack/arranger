@@ -10,6 +10,7 @@ import {
 	type RuntimeFeatureFlagConfigs,
 	type SearchEngineType,
 } from '@overture-stack/arranger-types/configs';
+import type { BridgeCore, BridgeLogger } from '@overture-stack/usher-express-bridge';
 
 import {
 	type serverNetworkConfigExtendedProperties,
@@ -61,6 +62,15 @@ export type ExternalNetworkConfig = Partial<{
 }> &
 	NetworkConfig<ArrangerBaseContext>;
 
+/**
+ * The Usher bridge a host hands the image, with the logger it writes to, in place of one built from the
+ * environment. Read only while ENABLE_ACCESS_CONTROL is true.
+ */
+export type UsherSeam = Readonly<{ bridge: BridgeCore; logger: BridgeLogger }>;
+
+/** Each catalogue's registration with Usher's bridge, as its `usher.json` holds it, by catalogue id. */
+export type UsherRegistrations = Record<string, unknown>;
+
 export type ExternalConfigs = Partial<
 	{
 		[serverConfigProperties.CONFIGS_PATH]: string;
@@ -71,6 +81,7 @@ export type ExternalConfigs = Partial<
 		setsIndex: string;
 		setsType: string;
 		[configRootProperties.NETWORK_AGGREGATION]: ExternalNetworkConfig;
+		usher: UsherSeam;
 	} & BaseServerConfigs &
 		AllFeatureFlagConfigs &
 		HealthConfigs
@@ -79,4 +90,8 @@ export type ExternalConfigs = Partial<
 export type AllServerConfigs = {
 	catalogs: CataloguesMap;
 	health: HealthConfigs;
+	/** Whether ENABLE_ACCESS_CONTROL asks for the Usher adapter. */
+	usherAccessControl: boolean;
+	/** Each catalogue's `usher.json`, for those holding one. */
+	usherRegistrations?: UsherRegistrations;
 } & BaseServerConfigs;

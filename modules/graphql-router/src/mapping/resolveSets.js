@@ -78,7 +78,7 @@ export const saveSet =
 			filters: compileFilter({
 				clientSideFilter: sqon,
 				disableClientFilters: context.disableClientFilters,
-				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
+				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' }),
 			}),
 			setsIndex,
 		});

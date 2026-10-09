@@ -76,12 +76,40 @@ Unlike the flags above, these apply to the whole server process, not to an indiv
 | --- | --- | --- |
 | Unset | No access control, unless a host application passes its own `filters` option, which then applies | `access control source: defaulted (unset)`, or `access control source: configured by host` when such filters apply |
 | `false` or `0` | No access control, stated explicitly: every catalogue's router is given `includeEverything`, the filter that keeps every document | `access control source: explicit (set to false)` |
-| `true` or `1` | Requires the Usher adapter and its configuration, which this build does not include, so the server refuses to start | `access_control.startup_refused`, saying so |
+| `true` or `1` | The Usher adapter applies access control to every catalogue; see [With access control on](#with-access-control-on) | `access control source: Usher adapter` |
 | Anything else, an empty value included | The server refuses to start | `access_control.startup_refused`, quoting the value |
 
 Values are trimmed and read in any case. Unlike every other flag on this page, an unrecognized value refuses startup instead of taking the default, since a mistyped value taking the default could leave access control off unnoticed.
 
-A host application that starts the server with its own `filters` option cannot also set `ENABLE_ACCESS_CONTROL=false`: the two contradict each other, so the server refuses to start. Leave the variable unset to apply those filters.
+A host application that starts the server with its own `filters` option cannot also set `ENABLE_ACCESS_CONTROL`: with `false` the two contradict each other, and with `true` a `filters` option does not stand in for the Usher adapter, so the server refuses to start either way. Leave the variable unset to apply those filters.
+
+### With access control on
+
+`ENABLE_ACCESS_CONTROL=true` applies the Usher adapter: Usher's bridge resolves each request's credential, and every catalogue's router filters each read by the bridge's result for that catalogue. The server refuses to start, naming what it lacks, unless:
+
+- **every catalogue has a `usher.json` beside its `base.json`**, holding that catalogue's registration with the bridge: its resource field, its category field and each category's mapped value, or `{ "kind": "open" }` for a catalogue open by configuration. The bridge checks the registration when the server starts, and the adapter checks each named field against the index: a keyword, outside any nested mapping;
+- **no catalogue configures network search**, which access control does not serve yet;
+- **the bridge's configuration is set**:
+
+| Variable | Holds |
+| --- | --- |
+| `USHER_APPLICATION_KEY` | The application key, a secret, injected from the secrets store and never written into a values file |
+| `USHER_AUDIENCE` | The audience of the tokens issued for this application by Usher's controller |
+| `USHER_CONTROLLER_URL` | The controller's base URL, `https`, or plain `http` to loopback only |
+| `USHER_EVENT_SOURCE` | This deployment's event source, a URI reference, the same on every replica |
+| `USHER_ISSUER` | The issuer named in Usher's tokens |
+| `USHER_PAYLOAD_VERSIONS` | Optional: the payload versions read by the bridge, as a comma list, `1` when unset |
+
+A refusal names each variable missing or malformed, never its value.
+
+Once running:
+
+- **The liveness route never depends on the bridge.** Readiness answers `503` while the bridge has not yet completed its first check, since it answers every request `503` until then, and otherwise follows the catalogues' status as without access control.
+- **A catalogue that fails to load serves nothing**, and is reported `failed` as without access control, while the others serve normally.
+- **An unset `DOWNLOAD_MAX_ROWS` bounds every export at 100 rows.** An explicit value applies as written, `0` meaning every row.
+- **A signed-in principal unconfirmed by the bridge is served the open tier alone** on searches and facets, and the response carries `Usher-Suspended: true`, readable by a browser, so an interface can say its results are reduced. Its exports and saved sets are refused for now: `503` with `Retry-After` on an export, and a GraphQL error coded `ACCESS_CONTROL_UNAVAILABLE` on saving a set.
+- **Each request carries an identifier generated on the server**, named in the access-control events logged for it: `access_control.permitted`, `access_control.denied` and `access_control.unavailable`.
+
 
 ---
 

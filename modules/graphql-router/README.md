@@ -55,6 +55,7 @@ const router = await arrangerRouter(options);
 | `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                       |
 | `esClient`            | `SearchClient`           | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
 | `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter that limits each read, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
+| `onIndexMapping` | `(mappingFromIndex) => void` | Optional: called once with a copy of the index mapping the router fetched, before the router resolves, so a host can check fields against it. A throw fails the router's construction. |
 | `configsSource`       | `string`                 | **Deprecated**, not read: pass `configs` instead. Passed with no `configs`, construction rejects; beside them, it is ignored with a warning. |
 
 ---
@@ -252,13 +253,17 @@ Note `fieldName`, not `field`. A content clause using any other key does not des
 
 `user` stands for whatever the deployment's own authentication established. Set it on `res.locals` in middleware mounted before the router, and the callback reads it on every read path: it receives the application's own `res.locals` keys beneath the router's, which sit under `res.locals.arranger`, so a key the router or `graphqlOptions.context` also sets takes their value. `req.context` is a deprecated view of `res.locals.arranger`; see the [migration guide](../../docs/reference/08-Migration/v3.1.md#per-request-state-res-locals).
 
+**The callback also learns which read it serves, and gets the request's own store.** Its second argument is `{ readPath }`, one of `hits`, `aggregations`, `sets` for saving a set, `export` and `network`, so one callback can answer each read differently; a callback taking one argument ignores it. `context.locals` is the request's own `res.locals`, the same object rather than a copy, so a member attached by an earlier middleware and hidden from copies stays readable there. Neither an application's `res.locals` keys nor `graphqlOptions.context` can replace it, and an export route passing `ctx: res.locals` gives the callback the same.
+
 The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "The server could not apply its access control because of a problem in its configuration, not in this request.", while the full message and its cause are logged on the server under `access_control.evaluation_failed`.
+
+**A callback may refuse a request for now** by throwing an `AccessControlUnavailableError`, from the package root, given the text meant for the client and its `retryAfterSeconds`. A GraphQL client then receives that text with `extensions.code` `ACCESS_CONTROL_UNAVAILABLE`, and no data for the field, at the status of any execution error; the router's `/download` answers `503` with the text and `Retry-After`. Nothing is logged as `access_control.evaluation_failed`, since nothing is misconfigured, so the callback records the refusal itself.
 
 ### How the filter applies
 
 The returned filter is composed with any client-provided SQON, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, set, network search and export queries.
 
-Aggregations are worth one note, because they are the case where "the filter is applied" is easy to assume and hard to see. A facet does not apply the caller's own filter on the field it is aggregating, so that selecting a value does not collapse that facet to the single value chosen. That exemption is for the caller's filter only; the server-side filter is re-applied to every aggregation, including one on the same field it restricts. So a facet on an access-controlled field shows only the values visible to that caller.
+Aggregations are worth one note, because they are the case where "the filter is applied" is easy to assume and hard to see. A facet does not apply the caller's own filter on the field it is aggregating, so that selecting a value does not collapse that facet to the single value chosen. That exemption is for the caller's filter only; the server-side filter applies whole to every aggregation, including one on the same field it restricts. So a facet on an access-controlled field shows only the values visible to that caller.
 
 In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
 
@@ -301,10 +306,11 @@ On a context built some other way, pass the filter function this deployment's ro
 | Error | Means | Answer |
 | --- | --- | --- |
 | `InvalidExportRequestError`, from `./download` | The request broke a rule. Its message names the rule broken where there is one, and never a value carried by the request, so it is written for the client | `400`, with the error's message |
+| `AccessControlUnavailableError`, from the package root | The callback refused to serve the request for now. Its message is written for the client | `503`, with the error's message, and `Retry-After` set to its `retryAfterSeconds` |
 | `AccessControlError`, from the package root | The deployment's access control could not be applied to the request | `500`, with a fixed text saying the problem is in the server's configuration, not in the request |
 | Anything else | A server fault, such as a failed search | `500`, with a fixed text saying the problem is on the server, not in the request |
 
-Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s message is written for the client; any other error's message, and every error's cause, is written for the log.
+Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s or an `AccessControlUnavailableError`'s message is written for the client; any other error's message, and every error's cause, is written for the log.
 
 ### Joining the output to the response
 
@@ -329,6 +335,10 @@ const failureText = (error) => {
 		return error.message;
 	}
 
+	if (error?.name === 'AccessControlUnavailableError') {
+		return error.message;
+	}
+
 	return error?.name === 'AccessControlError'
 		? ACCESS_CONTROL_FAILURE_MESSAGE
 		: 'The export failed because of a problem on the server, not in the request.';
@@ -346,8 +356,13 @@ app.post('/export', express.json(), async (req, res) => {
 		});
 	} catch (error) {
 		console.error('export.failed', error);
+		if (error?.name === 'AccessControlUnavailableError') {
+			res.set('Retry-After', String(error.retryAfterSeconds));
+		}
 		res
-			.status(error instanceof InvalidExportRequestError ? 400 : 500)
+			.status(
+				error instanceof InvalidExportRequestError ? 400 : error?.name === 'AccessControlUnavailableError' ? 503 : 500,
+			)
 			.type('text/plain')
 			.set('X-Content-Type-Options', 'nosniff')
 			.send(failureText(error));

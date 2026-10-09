@@ -270,7 +270,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 			filters: compileFilter({
 				clientSideFilter: filters || { op: 'and', content: [] },
 				disableClientFilters: context.disableClientFilters,
-				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
+				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter, readPath: 'hits' }),
 			}),
 			setsIndex: type.setsIndex,
 		});

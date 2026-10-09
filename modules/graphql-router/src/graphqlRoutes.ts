@@ -19,8 +19,11 @@ import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql
 
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
+	ACCESS_CONTROL_UNAVAILABLE_CODE,
 	type AccessControlError,
+	type AccessControlUnavailableError,
 	isAccessControlError,
+	isAccessControlUnavailableError,
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import fallbackConfigs, { initializeSets } from '#config/index.js';
@@ -247,13 +250,24 @@ const maskAccessControlError = (error: GraphQLError, accessControlError: AccessC
 // graphql-js's `formatError`/`error.toJSON()`, which assumes a GraphQLError prototype.
 // TODO: evaluate whether this is needed after switching away from Apollo
 const FIELD_SUGGESTION_SUFFIX = / Did you mean .+\?$/i;
+// The callback's refusal to serve the request yet: its own code, and the text written for the client
+// by its thrower, never the configuration failure's, and nothing logged here, since nothing is misconfigured.
+const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavailableError): GraphQLFormattedError => ({
+	extensions: { code: ACCESS_CONTROL_UNAVAILABLE_CODE },
+	locations: error.locations,
+	message: unavailable.message,
+	path: error.path,
+});
+
 const formatError = (error: GraphQLError): GraphQLFormattedError =>
-	isAccessControlError(error.originalError)
-		? maskAccessControlError(error, error.originalError)
-		: {
-				...error,
-				message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
-			};
+	isAccessControlUnavailableError(error.originalError)
+		? answerUnavailable(error, error.originalError)
+		: isAccessControlError(error.originalError)
+			? maskAccessControlError(error, error.originalError)
+			: {
+					...error,
+					message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
+				};
 
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	disableClientFilters = false,
@@ -321,6 +335,10 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 					// After the spread: an external context must not be able to switch this off.
 					disableClientFilters,
+
+					// After the spreads, so neither an application's locals nor an external context can replace
+					// it: the request's own object, whose hidden members a copy would drop.
+					locals: res.locals,
 				};
 			};
 

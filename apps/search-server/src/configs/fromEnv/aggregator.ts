@@ -11,7 +11,7 @@ import configsFromLocalEnv from './localEnvs.js';
  * any catalogue loads when ENABLE_ACCESS_CONTROL cannot be honoured.
  *
  * @param externalConfigs the host's programmatic options.
- * @throws {Error} when ENABLE_ACCESS_CONTROL is true or unrecognized, or false alongside a filters option.
+ * @throws {Error} when ENABLE_ACCESS_CONTROL is unrecognized, or set alongside a filters option.
  */
 const configsAggregator = (
 	externalConfigs: ExternalConfigs = {},
@@ -71,6 +71,7 @@ const configsAggregator = (
 			readyPath,
 		},
 		serverPort,
+		usherAccessControl: enableAccessControl.setting === 'enabled',
 	});
 
 	return aggregatedEnvConfigs;

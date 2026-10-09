@@ -48,6 +48,12 @@ const parseSearchEngine = (value: string | undefined): SearchEngineType | undefi
 	return undefined;
 };
 
+const enableAccessControl = parseEnableAccessControl(env.ENABLE_ACCESS_CONTROL);
+
+// With access control on, an export is bounded unless the deployment says otherwise, since a file is
+// the read most easily taken further; without it, unset means every row, as in 3.0.
+const defaultDownloadMaxRows = enableAccessControl.setting === 'enabled' ? 100 : 0;
+
 /** The image's configuration as the environment sets it, read once, when this module is first imported. */
 const configsFromEnv = {
 	allowedCorsOrigins: env.ALLOWED_CORS_ORIGINS?.split(',')
@@ -93,7 +99,7 @@ const configsFromEnv = {
 			},
 			[configRootProperties.DOWNLOADS]: {
 				[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: stringToBool(env.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS),
-				[downloadProperties.MAX_ROWS]: stringToNumber(env.DOWNLOAD_MAX_ROWS, 0),
+				[downloadProperties.MAX_ROWS]: stringToNumber(env.DOWNLOAD_MAX_ROWS, defaultDownloadMaxRows),
 				[downloadProperties.STREAM_BUFFER_SIZE]: stringToNumber(env.DOWNLOAD_STREAM_BUFFER_SIZE, 2000),
 			},
 			[configRootProperties.SETS]: {
@@ -102,7 +108,7 @@ const configsFromEnv = {
 			},
 		},
 	},
-	enableAccessControl: parseEnableAccessControl(env.ENABLE_ACCESS_CONTROL),
+	enableAccessControl,
 	[configFeatureFlagProperties.ENABLE_ADMIN]: enableAdmin,
 	[configFeatureFlagProperties.ENABLE_DEBUG]: stringToBool(env.ENABLE_DEBUG),
 	[configFeatureFlagProperties.ENABLE_LOGS]: stringToBool(env.ENABLE_LOGS),

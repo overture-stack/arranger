@@ -33,7 +33,7 @@ const resourceFacetFor = (clientSideFilter: object | null): EsNode =>
 		sqon: clientSideFilter,
 	});
 
-/** The field names every terms or range query in `node` tests, wherever it sits. */
+/** The field names tested by every terms or range query in `node`, wherever it sits. */
 const fieldNamesIn = (node: unknown): string[] => {
 	if (Array.isArray(node)) {
 		return node.flatMap(fieldNamesIn);

@@ -2,8 +2,12 @@ import { finished, pipeline, Transform } from 'node:stream';
 
 import { Router, urlencoded } from 'express';
 
-import { ACCESS_CONTROL_FAILURE_MESSAGE, isAccessControlError } from '#accessControl/AccessControlError.js';
-import { arrangerLocalsOf, requestStateOf } from '#utils/context.js';
+import {
+	ACCESS_CONTROL_FAILURE_MESSAGE,
+	isAccessControlError,
+	isAccessControlUnavailableError,
+} from '#accessControl/AccessControlError.js';
+import { arrangerLocalsOf, exportStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
 import noopFn from '#utils/noops.js';
@@ -100,7 +104,7 @@ const requireValidParams = (params) => {
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
  */
 export const dataStream = async ({ ctx: givenContext, getServerSideFilter, params }) => {
-	const ctx = requestStateOf(givenContext);
+	const ctx = exportStateOf(givenContext);
 	const {
 		chunkSize: defaultChunkSize,
 		fileName: defaultFileName,
@@ -160,6 +164,12 @@ const failureResponseFor = (error) => {
 		return { event: 'download.invalid_request', log: console.warn, status: 400, text: error.message };
 	}
 
+	// The callback's refusal to serve the request yet, with the text written for the client by its thrower. The
+	// callback logs it, and nothing is misconfigured, so it raises no alert here.
+	if (isAccessControlUnavailableError(error)) {
+		return { retryAfterSeconds: error.retryAfterSeconds, status: 503, text: error.message };
+	}
+
 	return isAccessControlError(error)
 		? {
 				event: 'download.failed',
@@ -172,9 +182,15 @@ const failureResponseFor = (error) => {
 };
 
 const sendFailure = ({ error, res }) => {
-	const { event, log, reason, status, text } = failureResponseFor(error);
+	const { event, log, reason, retryAfterSeconds, status, text } = failureResponseFor(error);
 
-	log(event, error, ...(reason ? [{ reason }] : []));
+	if (log) {
+		log(event, error, ...(reason ? [{ reason }] : []));
+	}
+
+	if (Number.isSafeInteger(retryAfterSeconds) && retryAfterSeconds >= 0) {
+		res.set('Retry-After', String(retryAfterSeconds));
+	}
 
 	if (reason === 'access_control') {
 		// Also the event GraphQL and network search log for the same failure, so one alert covers every
@@ -249,7 +265,7 @@ const download = ({ enableAdmin = false } = {}) => {
 	router.post('/', async (req, res) => {
 		try {
 			const { contentType, exportTotals, output, responseFileName } = await dataStream({
-				ctx: requestStateOf(res.locals),
+				ctx: res.locals,
 				params: paramsFrom(req.body),
 			});
 

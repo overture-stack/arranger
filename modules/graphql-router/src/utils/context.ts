@@ -102,6 +102,19 @@ export const requestStateOf = (context: unknown): Record<PropertyKey, unknown> =
 };
 
 /**
+ * What an export runs under: the state `requestStateOf` gives, carrying the request's own store as
+ * `locals`, so a filter callback reads it there as on a GraphQL read. Accepts `res.locals` itself, or a
+ * context already carrying `locals`, which keeps its own.
+ *
+ * @param context `res.locals`, or a context assembled for the export.
+ */
+export const exportStateOf = (context: unknown): Record<PropertyKey, unknown> => {
+	const state = requestStateOf(context);
+
+	return isRecord(context) && !('locals' in state) ? { ...state, locals: context } : state;
+};
+
+/**
  * Returns middleware that merges `patch` into the request context.
  *
  * @deprecated Write to `res.locals` instead. `req.context` is a view of `res.locals.arranger`.

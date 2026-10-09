@@ -1,0 +1,42 @@
+{
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
+	},
+	"dependencies": {
+		"@overture-stack/arranger-graphql-router": "file:../graphql-router",
+		"@overture-stack/sqon": "file:../sqon"
+	},
+	"description": "Applies Usher's access decisions to Arranger's GraphQL routers as server-side filters",
+	"devDependencies": {
+		"@types/node": "^24.19.1",
+		"tsx": "^4.22.3"
+	},
+	"engines": {
+		"node": ">=24.0.0"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"main": "dist/index.js",
+	"name": "@overture-stack/arranger-usher-adapter",
+	"private": true,
+	"repository": {
+		"directory": "modules/usher-adapter",
+		"type": "git",
+		"url": "git+https://github.com/overture-stack/arranger.git"
+	},
+	"scripts": {
+		"build": "tsc --project tsconfig.release.json",
+		"test": "tsx --test"
+	},
+	"type": "module",
+	"types": "dist/index.d.ts",
+	"version": "0.0.0-dev"
+}

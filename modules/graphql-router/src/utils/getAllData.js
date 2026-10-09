@@ -12,7 +12,7 @@ import compileFilter from '#mapping/utils/compileFilter.js';
 import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
-import { requestStateOf } from '#utils/context.js';
+import { exportStateOf } from '#utils/context.js';
 
 /**
  * An export refused for what its caller sent rather than for a fault on the server. The message names
@@ -180,7 +180,7 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  *   of such entries, or the filter cannot be compiled.
  */
 export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, maxRows = null, sort = [], sqon }) => {
-	const ctx = requestStateOf(givenContext);
+	const ctx = exportStateOf(givenContext);
 	const serverSideFilter = resolveServerSideFilter({ context: ctx, getServerSideFilter });
 	const { configs, esClient } = ctx;
 	// A caller's own chunkSize wins, and is checked as the caller's input. Otherwise the catalogue's

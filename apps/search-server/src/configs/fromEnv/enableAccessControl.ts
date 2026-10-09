@@ -18,7 +18,7 @@ export type EnableAccessControlSetting =
  */
 export type ImageAccessControl = {
 	getServerSideFilter?: ExternalConfigs['filters'];
-	source: 'configured by host' | 'defaulted (unset)' | 'explicit (set to false)';
+	source: 'configured by host' | 'defaulted (unset)' | 'explicit (set to false)' | 'Usher adapter';
 };
 
 const recognizedSettings = new Map<string, 'disabled' | 'enabled'>([
@@ -44,7 +44,12 @@ export const parseEnableAccessControl = (rawValue: string | undefined): EnableAc
 	return setting ? { setting } : { rawValue, setting: 'unrecognized' };
 };
 
-const startupRefusal = (reason: string): Error => {
+/**
+ * Logs `reason` as one line under `access_control.startup_refused`, and returns the error refusing startup.
+ *
+ * @param reason fixed text naming what is wrong, never a value it found.
+ */
+export const startupRefusal = (reason: string): Error => {
 	console.error('access_control.startup_refused', reason);
 	return new Error(reason);
 };
@@ -56,7 +61,9 @@ const startupRefusal = (reason: string): Error => {
  *
  * @param enableAccessControl the parsed ENABLE_ACCESS_CONTROL.
  * @param filters the host's programmatic filters option.
- * @throws {Error} when ENABLE_ACCESS_CONTROL is true or unrecognized, or false alongside a filters option.
+ * With ENABLE_ACCESS_CONTROL true, every catalogue's callback comes from the Usher adapter instead,
+ * so none is chosen here.
+ * @throws {Error} when ENABLE_ACCESS_CONTROL is unrecognized, or set alongside a filters option.
  */
 export const resolveImageAccessControl = ({
 	enableAccessControl,
@@ -82,8 +89,12 @@ export const resolveImageAccessControl = ({
 	}
 
 	if (enableAccessControl.setting === 'enabled') {
+		if (filters === undefined) {
+			return { source: 'Usher adapter' };
+		}
+
 		throw startupRefusal(
-			'ENABLE_ACCESS_CONTROL is true, which requires the Usher adapter and its configuration, and this build includes neither, so the server will not start without the access control it was asked for.',
+			'ENABLE_ACCESS_CONTROL is true, which applies the Usher adapter, and a filters option does not stand in for it. Leave filters out, or unset ENABLE_ACCESS_CONTROL to apply those filters instead.',
 		);
 	}
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mock, suite, test } from 'node:test';
+import { text as textOf } from 'node:stream/consumers';
 import { format } from 'node:util';
 
 import { tableDefaults, tableProperties } from '@overture-stack/arranger-types/configs/constants';
@@ -11,6 +12,7 @@ import fallbackCatalogConfigs from '#config/constants.js';
 import * as packageRoot from '#index.js';
 import type { SearchClient } from '#searchClient/index.js';
 
+import { dataStream } from './download/index.js';
 import { FALLBACK_LABEL } from './graphqlRoutes.js';
 import arrangerRouter, { mergeConfigs, resolveLabel } from './router.js';
 
@@ -1025,5 +1027,215 @@ suite('a configsSource, which the router no longer reads', () => {
 		assert.equal(warnings.length, 1, warnings.join('\n'));
 		assert.match(warnings[0] ?? '', /"configsSource" is not read/);
 		assert.doesNotMatch(warnings[0] ?? '', /removed|until|future/);
+	});
+});
+
+const HIDDEN_MEMBER = 'hiddenFromCopies';
+
+/** An app attaching a member to res.locals hidden from copies, as an access layer attaches its result, ahead of `router`. */
+const appHidingAMember = (router: Router) => {
+	const stores: object[] = [];
+	const app = express()
+		.use((_req, res, next) => {
+			Object.defineProperty(res.locals, HIDDEN_MEMBER, { enumerable: false, value: 'attached' });
+			stores.push(res.locals);
+			next();
+		})
+		.use(router);
+
+	return { app, stores };
+};
+
+const exportFrom = (app: express.Express) =>
+	request(app)
+		.post('/download')
+		.type('form')
+		.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+
+type FilterCall = { hidden: unknown; readPath: unknown; store: unknown };
+
+/** A callback permitting everything, recording for each call the read path named and the store given. */
+const recordingCallback = () => {
+	const calls: FilterCall[] = [];
+	const getServerSideFilter = (context: unknown, details?: { readPath?: unknown }) => {
+		const locals = (context as { locals?: Record<string, unknown> } | undefined)?.locals;
+		calls.push({ hidden: locals?.[HIDDEN_MEMBER], readPath: details?.readPath, store: locals });
+		return packageRoot.includeEverything(context);
+	};
+
+	return { calls, getServerSideFilter };
+};
+
+suite("a filter callback, on each of the router's read paths", () => {
+	test("is told its read path and given the request's own store, a member hidden from copies included", async () => {
+		// Given a callback recording each call, behind an app attaching a hidden member to res.locals
+		const { calls, getServerSideFilter } = recordingCallback();
+		const { router } = await buildRouter({
+			configs: { ...CATALOGUE_CONFIGS, network: { localNode: { displayName: 'local node' } } },
+			getServerSideFilter,
+		});
+		const { app, stores } = appHidingAMember(router);
+
+		// When hits, aggregations, a saved set, an export and network search are each requested
+		await request(app).post('/graphql').send({ query: HITS_QUERY });
+		await request(app).post('/graphql').send({ query: AGGREGATIONS_QUERY });
+		await request(app).post('/graphql').send({ query: SAVE_SET_MUTATION });
+		await exportFrom(app);
+		await request(app).post('/graphql').send({ query: NETWORK_QUERY });
+
+		// Then the read paths named are those five, and every call read the hidden member from its request's own store
+		assert.deepEqual([...new Set(calls.map(({ readPath }) => String(readPath)))].sort(), [
+			'aggregations',
+			'export',
+			'hits',
+			'network',
+			'sets',
+		]);
+		assert.deepEqual(
+			calls.filter(({ hidden, store }) => hidden !== 'attached' || !stores.includes(store as object)),
+			[],
+		);
+	});
+
+	test("gives an application's own export route, passing ctx: res.locals, the request's own store", async () => {
+		// Given a callback recording each call, and an application export route after the router
+		const { calls, getServerSideFilter } = recordingCallback();
+		const { router } = await buildRouter({ getServerSideFilter });
+		const { app, stores } = appHidingAMember(router);
+		app.post('/own-export', express.json(), async (req, res) => {
+			const { output } = await dataStream({ ctx: res.locals, params: req.body });
+			res.type('text/plain').send(await textOf(output));
+		});
+
+		// When the application route exports
+		const response = await request(app).post('/own-export').send(DONOR_EXPORT_PARAMS);
+
+		// Then the export ran, and its callback read the hidden member from that request's own store
+		assert.equal(response.status, 200, response.text);
+		assert.deepEqual(
+			calls.map(({ hidden, readPath, store }) => [readPath, hidden, stores.includes(store as object)]),
+			[['export', 'attached', true]],
+		);
+	});
+
+	test("keeps the request's own store when an external context names locals", async () => {
+		// Given a router whose external GraphQL context offers a store of its own
+		const { calls, getServerSideFilter } = recordingCallback();
+		const { router } = await buildRouter({
+			getServerSideFilter,
+			graphqlOptions: { context: () => ({ locals: { [HIDDEN_MEMBER]: 'replaced' } }) },
+		});
+
+		// When hits are requested behind the app attaching the hidden member
+		await request(appHidingAMember(router).app).post('/graphql').send({ query: HITS_QUERY });
+
+		// Then the callback still read the request's own store
+		assert.deepEqual(
+			calls.map(({ hidden }) => hidden),
+			['attached'],
+		);
+	});
+});
+
+suite('a filter callback refusing to serve a request yet', () => {
+	const REFUSAL_TEXT = 'Access could not be confirmed. Try again shortly.';
+
+	/** Refuses saving a set and exporting with the unavailable refusal, and permits every other read. */
+	const refusingWrites = (context: unknown, details?: { readPath?: unknown }) => {
+		if (details?.readPath === 'export' || details?.readPath === 'sets') {
+			throw new packageRoot.AccessControlUnavailableError(REFUSAL_TEXT, { retryAfterSeconds: 7 });
+		}
+
+		return packageRoot.includeEverything(context);
+	};
+
+	const evaluationFailuresIn = (lines: string[]) =>
+		lines.filter((line) => line.includes('access_control.evaluation_failed'));
+
+	test('answers saving a set with the unavailable code and its text, no data, nothing stored and no evaluation failure logged', async () => {
+		// Given a router whose callback refuses writes for now
+		const { engine, router } = await buildRouter({ getServerSideFilter: refusingWrites });
+
+		// When a set is saved
+		const { lines, result: response } = await withConsoleCaptured(() => postGraphQL(router, SAVE_SET_MUTATION));
+
+		// Then the one error carries the unavailable code and the callback's text, and nothing reached the engine
+		assert.deepEqual(
+			response.body.errors.map(({ extensions, message }: { extensions?: { code?: string }; message: string }) => [
+				extensions?.code,
+				message,
+			]),
+			[[packageRoot.ACCESS_CONTROL_UNAVAILABLE_CODE, REFUSAL_TEXT]],
+		);
+		assert.equal(response.body.data?.saveSet ?? null, null);
+		assert.deepEqual(engine.storedSets, []);
+		assert.deepEqual(evaluationFailuresIn(lines), []);
+	});
+
+	test('answers an export 503 with Retry-After and its text, before any search, logging no evaluation failure', async () => {
+		// Given the same router
+		const { engine, router } = await buildRouter({ getServerSideFilter: refusingWrites });
+
+		// When an export is requested
+		const { lines, result: response } = await withConsoleCaptured(() => exportFrom(express().use(router)));
+
+		// Then it is refused for now, with the callback's text and wait, before the engine is asked anything
+		assert.equal(response.status, 503);
+		assert.equal(response.headers['retry-after'], '7');
+		assert.equal(response.text, REFUSAL_TEXT);
+		assert.deepEqual(engine.searches, []);
+		assert.deepEqual(evaluationFailuresIn(lines), []);
+	});
+
+	test('serves the reads it does not refuse', async () => {
+		const { router } = await buildRouter({ getServerSideFilter: refusingWrites });
+
+		const response = await postGraphQL(router, HITS_QUERY);
+
+		assert.equal(response.body.errors, undefined);
+		assert.equal(response.body.data.donor.hits.total, DOCUMENTS.length);
+	});
+});
+
+suite("arrangerRouter's onIndexMapping hook", () => {
+	test('hands the host a copy of the fetched index mapping, before the router resolves', async () => {
+		// Given a hook recording the mapping handed to it, then altering its copy
+		const received: unknown[] = [];
+		const { router } = await buildRouter({
+			onIndexMapping: (mapping: Record<string, unknown>) => {
+				received.push(structuredClone(mapping));
+				delete mapping.study;
+			},
+		});
+
+		// When the router is built, Then the hook saw the fetched mapping once
+		assert.deepEqual(received, [MAPPING]);
+
+		// And the router still serves the field deleted from the host's copy
+		const response = await postGraphQL(router, AGGREGATIONS_QUERY);
+		assert.equal(response.body.errors, undefined, JSON.stringify(response.body.errors));
+		assert.ok(response.body.data.donor.aggregations.study.buckets.length > 0);
+	});
+
+	test("fails the router's construction when the hook throws", async () => {
+		// Given a hook refusing the mapping
+		const { result: failure } = await withConsoleCaptured(() =>
+			arrangerRouter({
+				configs: CATALOGUE_CONFIGS,
+				esClient: createSearchEngine().client,
+				onIndexMapping: () => {
+					throw new Error('study is not mapped as a keyword');
+				},
+			}).then(
+				() => undefined,
+				(error: unknown) => error,
+			),
+		);
+
+		// Then construction rejects, carrying the hook's refusal
+		assert.equal(
+			messageChainOf(failure),
+			'Failed to initialize Arranger server <- study is not mapped as a keyword',
+		);
 	});
 });
