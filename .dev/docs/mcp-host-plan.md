@@ -98,7 +98,7 @@ Background, including why existing chat hosts cannot drive `apps/mcp-server`: [a
 
 **No stdio.** Every target server speaks HTTP, and a cre-server must never spawn a process named in user configuration. If `chat` later needs stdio, it arrives as an opt-in `cre-server` does not expose.
 
-**One user per instance.** An instance holds one user's credential and is never shared. A response-cache store shared between instances must set `cachePartition` to the user's identity. Reconnecting is cheap: `connect(transport, { prior })` reuses a saved `server/discover` result for the same user.
+**One user per instance, one credential per server.** An instance holds one user's credential for its one server, and is never shared; a credential for one server never reaches another, so an Overture token never reaches a third party ([MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §4). A response-cache store shared between instances must set `cachePartition` to the user's identity. Reconnecting is cheap: `connect(transport, { prior })` reuses a saved `server/discover` result for the same user.
 
 #### The Confirmation Loop
 
@@ -352,14 +352,14 @@ The harness in [MCP platform testing](mcp-platform-testing.md), which owns the m
 In the CRE repository. This plan requires that it:
 
 - runs one host-core instance per conversation;
-- gives each `mcp-client` the signed-in user's credential, never a shared service credential, which would make the MCP server a confused deputy ([MCP platform testing](mcp-platform-testing.md) §5.4.1);
+- gives each `mcp-client` the signed-in user's credential, never a shared service credential, which would make the MCP server a confused deputy ([MCP platform testing](mcp-platform-testing.md) §5.4.1); for an Arranger-backed server, that token's audience names the MCP server, which exchanges it for the search server's ([MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §3);
 - lets only that user answer the instance's approvals and confirmations, including in a shared notebook;
 - keeps model credentials off the browser;
 - streams events over WebSocket or SSE, takes answers as `respond` calls, and reads `pending()` after a reconnect;
 - saves state and events per notebook;
 - takes MCP servers from operator configuration only, never from user input, which would let users reach internal addresses;
 - leaves change notifications off;
-- decides through its approval policy whether a call that follows another server's output needs approval.
+- decides through its approval policy whether a call that follows another server's output needs approval, following the decision on data crossing connections ([§5](#5-open-questions), question 7).
 
 ### 2.5 CRE UI
 
@@ -509,6 +509,7 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
     - **as `apps/mcp-eval`, in this repository**, beside the server it measures, so local mode, the rebuild and commit attribution work as the harness plan designs them. `mcp-host-core` is then published from the CRE repository, with an API that has to stay stable.
 5. **Reasoning output** (settled by Q5, [results](mcp-host/phase0-results.md#q5-sending-reasoning-back)). Ollama's `/v1` returns a thinking model's reasoning in a non-standard `reasoning` field and reads it back from assistant messages. Sending it back cost a median of 81 to 538 prompt tokens per earlier turn, with no consistent effect on the next call. So the final response, `model_response` and the conversation state keep `reasoning` as an optional field, since a saved notebook cannot regain it, and the provider sends it back only when configured to, off by default.
 6. **What a run does after an empty reply.** A malformed call gets a tool message, which needs a call id; an `empty_reply` has none ([S4](mcp-host/phase0-results.md#s4-malformed-tool-calls)). Either the run ends with `done` naming the parse failure, which `eval` counts and `chat` shows; or host-core asks once more without changing the conversation, which recovers a sampled failure but hides it unless the event is shown. `eval` is unaffected either way, since `parseFailures` counts the event.
+7. **Data crossing connections in one session**, to be decided in [MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §6. Once controlled data enters the model's context, a later call to another server can carry it out, or a third party's injected text can make the host read more. The options there (refuse external calls after a controlled read, confirm each call that leaves a connection, or never have both kinds of server live together) all act through host-core's approval policy, and the first and third need each server's configuration to say whether it serves controlled data, which `trusted` does not. Settle it before Phase 2 fixes the approval policy and server configuration.
 
 ---
 
