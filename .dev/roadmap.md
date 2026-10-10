@@ -502,17 +502,17 @@ Let one export request carry several files and answer them as one archive. The r
 
 ### MCP host: client, host core and terminal chat
 
-_Priority: not yet set. Plan drafted, pending review; nothing implemented._
+_Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; shared-server confirmation outstanding. Phase 1 (`modules/mcp-client`) can start._
 
-Two published modules, `modules/mcp-client` and `modules/mcp-host-core`, that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and a notebook UI in its own repository. First step, as its own change: raise the SDK's `client`, `server` and `core` packages to 2.3.0 together, and `node` to its latest.
+One published module (`modules/mcp-client`) and one private module (`modules/mcp-host-core`), that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and a notebook UI in its own repository.
 
 [Detail: components, phases, decisions and open questions](docs/mcp-host-plan.md)
 
 ### MCP evaluation harness
 
-_Priority: not yet set. Plan drafted; nothing implemented. Builds on the MCP host item above._
+_Priority: not yet set. Plan drafted; nothing implemented. Deferred 2026-10-07 in favour of the CRE. Builds on the MCP host item above._
 
-`apps/mcp-cli eval`: runs a changing `apps/mcp-server` against a frozen dataset and a pinned model, so a change is kept or reverted on evidence. Contract checks in `integration-tests/mcp-server` gate CI; model-driven runs report but never gate.
+`eval`, built in the CRE repository or in this one (undecided): runs a changing `apps/mcp-server` against a frozen dataset and a pinned model, so a change is kept or reverted on evidence. Contract checks in `integration-tests/mcp-server` gate CI; model-driven runs report but never gate.
 
 [Detail: metrics, case set, fingerprint, manifest and phases](docs/mcp-platform-testing.md)
 

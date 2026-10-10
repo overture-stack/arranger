@@ -1,8 +1,8 @@
 # MCP Server Platform Testing: Plan
 
-**Status:** plan only. Nothing here is implemented. Last updated 2026-10-05.
+**Status:** plan only. Nothing here is implemented. Deferred as of 2026-10-07 in favour of completing the CRE sooner ([MCP host plan](mcp-host-plan.md), Phase 4). Last updated 2026-10-08.
 
-**Built on the [MCP host plan](mcp-host-plan.md), which is pending review.** The harness runs as `apps/mcp-cli eval` on that plan's modules. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
+**Built on the [MCP host plan](mcp-host-plan.md), approved 2026-10-07.** The harness runs as `eval` on that plan's modules. Where `eval` is built is open (host plan §5, question 4): as an `mcp-cli` subcommand in the CRE repository, or as `apps/mcp-eval` in this repository. This plan describes the first, as the host plan does. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
 
 **Goal:** a fixed harness, fixed dataset, and a pinned model configuration, run against a changing `apps/mcp-server`, producing numbers that justify a decision to keep or revert a change.
 
@@ -217,7 +217,7 @@ These are computed across the _phrasings_ of one intent:
 
 **Tokens** come from the serving stack: `prompt_tokens` and `completion_tokens` on each response, and a tokenize endpoint for text the model has not been sent yet. Ollama exposes `/api/tokenize`, as does vLLM at `/tokenize`; where an engine has no such endpoint, load the model's tokenizer locally, pinned to the same revision.
 
-- **★ `staticSurfaceTokens`**: tokenize the tool definitions and server instructions in the form host-core sends them to the model. L1 builds that text with host-core's exported serialization from the raw SDK client's responses. The serving stack's chat template renders it further, so the count is a stable proxy for the real cost rather than the exact figure, which is what a budget gate needs. A host-core formatting change therefore moves the gate as a server change does, which is intended: both change what every session pays. No generation, no variance, so this is the CI budget gate. Because it is the only hard gate, its unit comes from an artifact outside this repository. Two rules keep that from turning the gate into a false-failure generator: the pinned tokenizer identity ([§2](#2-what-is-being-pinned)) is asserted before the budget is compared, and a mismatch **fails with its own message** ("tokenizer changed, re-baseline required") rather than as a budget breach. A tokenizer change is a deliberate re-baseline, the same as a serving-config change ([§7](#7-implementation-plan), Phase 6), not a build failing on an empty diff. Express the budget as headroom against the recorded baseline rather than an absolute figure, for the same reason.
+- **★ `staticSurfaceTokens`**: tokenize the MCP surface as the server sends it: the raw SDK client's responses, in the canonical form the surface hash uses ([§2](#2-what-is-being-pinned)), through `mcp-client`'s exported canonicalization. A host formats that text before the model sees it, and the serving stack's chat template renders it further, so the count is a stable proxy for the real cost rather than the exact figure, which is what a budget gate needs. Counting the raw surface keeps the gate free of `mcp-host-core`, which leaves this repository (host plan Phase 5), so only a server change moves it. `eval` can still report the count in host-core's model-facing form as an L2 figure. No generation, no variance, so this is the CI budget gate. Because it is the only hard gate, its unit comes from an artifact outside this repository. Two rules keep that from turning the gate into a false-failure generator: the pinned tokenizer identity ([§2](#2-what-is-being-pinned)) is asserted before the budget is compared, and a mismatch **fails with its own message** ("tokenizer changed, re-baseline required") rather than as a budget breach. A tokenizer change is a deliberate re-baseline, the same as a serving-config change ([§7](#7-implementation-plan), Phase 6), not a build failing on an empty diff. Express the budget as headroom against the recorded baseline rather than an absolute figure, for the same reason.
 - **`contextFraction`**: the same figures from `staticSurfaceTokens` as a share of the served context window. A `get_catalogue_fields` response on a wide catalogue is a rounding error for a large model and a third of a small model's window, and only the fraction makes that visible.
 - **`runTokens`**: `prompt_tokens` plus `completion_tokens` across turns. With prefix caching on, the prompt-token figure may or may not reflect cache reuse depending on the engine, so record the engine's cache statistics and report a cache-independent figure.
 - **`toolResultTokens`**: p50 and max per tool. This is where `execute_query` result compaction and `get_catalogue_fields` verbosity show up.
@@ -356,7 +356,7 @@ Most of that list is what any MCP host needs. The [MCP host plan](mcp-host-plan.
 
 ### 5.3 Recommendation
 
-Six thin layers, each independently swappable, all env-var configurable. L1 stays in the existing integration tests. L2 and L3 run as `apps/mcp-cli eval`, on the [MCP host plan](mcp-host-plan.md)'s modules. The two things worth getting right on day one are the record format and the manifest, because everything downstream is replaceable and those two are not.
+Six thin layers, each independently swappable, all env-var configurable. L1 stays in the existing integration tests. L2 and L3 run as `eval`, on the [MCP host plan](mcp-host-plan.md)'s modules. The two things worth getting right on day one are the record format and the manifest, because everything downstream is replaceable and those two are not.
 
 #### 5.3.1 MCP client and tool-calling loop
 
@@ -375,8 +375,8 @@ Host-core's OpenAI-compatible provider, pointed at `LLM_BASE_URL`, keeps the har
 
 #### 5.3.3 Runner and results store
 
-- **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them. Both apply the host plan's exported pure functions (`mcp-client`'s surface hash, `mcp-host-core`'s model-facing serialization) to the raw SDK client's responses, so the suite still bypasses this stack's connection path.
-- **L2 and L3** run as `apps/mcp-cli eval`, through its subcommands `run`, `judge`, `agreement`, `compare` and `bootstrap-expectations` ([MCP host plan](mcp-host-plan.md) §2.3).
+- **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them. Both apply `mcp-client`'s exported pure functions (the surface canonicalization and hash) to the raw SDK client's responses, so the suite still bypasses this stack's connection path and depends on nothing that leaves this repository.
+- **L2 and L3** run as `eval`, through its subcommands `run`, `judge`, `agreement`, `compare` and `bootstrap-expectations` ([MCP host plan](mcp-host-plan.md) §2.3).
     - Invoked explicitly, never from `npm test`. These are budgeted experiments, not tests, and should not sit where they can fail a build by accident.
 
 **How the split works.** Host-core runs one phrasing as one run and emits its events. `eval` owns the runner around it: it loads the case set, fingerprints Arranger, loops an intent's phrasings, and writes the records and the manifest.
@@ -409,7 +409,7 @@ The outcome metrics are per-case binary results, paired across baseline and cand
 
 Both are supported, selected by `MCP_MODE`. The surface hash works identically in either, since it is computed from the listing responses rather than from source.
 
-**Local.** Starts the built `apps/mcp-server` as a child process, after the rebuild in [§5.4.2](#542-rebuild-before-local-runs), pointed at the external Arranger rather than a locally started one. It does not import the server's source as `startMcpServerForTest` does, which would pull that source into `apps/mcp-cli`'s build. Fast iteration, exact commit attribution, and per-call timing without network noise. This is the default for development and CI.
+**Local.** Starts the built `apps/mcp-server` as a child process, after the rebuild in [§5.4.2](#542-rebuild-before-local-runs), pointed at the external Arranger rather than a locally started one. It does not import the server's source as `startMcpServerForTest` does, which would pull that source into `eval`'s build. Built in the CRE repository, `eval` needs a path to an Arranger checkout for this, for the rebuild in §5.4.2, and for the build identity; this is part of what host plan question 4 weighs. Fast iteration, exact commit attribution, and per-call timing without network noise. This is the default for development and CI.
 
 **Remote.** Connects to a deployed MCP server over Streamable HTTP, which is what testing a real deployment and whatever auth sits in front of it requires. Two things block it:
 
@@ -424,7 +424,7 @@ Both are supported, selected by `MCP_MODE`. The surface hash works identically i
 
 ## 6. Configuration contract
 
-Per the repo convention in `AGENTS.md`, one module in `apps/mcp-cli` reads `process.env`, validates with Zod, and exposes a typed config object. `chat` shares it. Nothing else touches `process.env`; the host plan's modules take every setting as a parameter. The app also needs an `.env.schema` documenting every variable, since that file is the reference for whoever runs this next and is easy to forget.
+Per the repo convention in `AGENTS.md`, one module in the app that hosts `eval` reads `process.env`, validates with Zod, and exposes a typed config object. If that app is `mcp-cli`, `chat` shares it. Nothing else touches `process.env`; the host plan's modules take every setting as a parameter. The app also needs an `.env.schema` documenting every variable, since that file is the reference for whoever runs this next and is easy to forget.
 
 **Arranger (upstream)**
 
@@ -491,9 +491,9 @@ Each spike can invalidate a design assumption, so all of them come before case a
 
 ### Phase 2: harness
 
-This is the host plan's Phase 4, after its `mcp-client` and `mcp-host-core` phases.
+This is the host plan's Phase 4, after its `mcp-client` and `mcp-host-core` phases. It is deferred, and built wherever the host plan's question 4 settles.
 
-- The config module and `.env.schema` in `apps/mcp-cli`, shared with `chat`.
+- The config module and `.env.schema` in the app that hosts `eval`, shared with `chat` if that app is `mcp-cli`.
 - `fingerprint.ts`: Arranger-side dataset and configuration fingerprinting.
 - The runner: runs each phrasing as one host-core run with greedy sampling ([§1.2](#12-greedy-sampling-and-measurements)), the case's budget and its elicitation policy, looping an intent's phrasings together.
 - The tokenizer client ([§3.4](#34-measuring-tokens-and-time)).
@@ -530,7 +530,7 @@ This is the phase that delivers the stated goal, and the easiest to under-scope.
 - **Nightly and on manual dispatch:** one phrasing per intent, to catch breakage cheaply.
 - **Weekly or pre-release:** every phrasing on the robustness subset ([§3.7](#37-how-many-phrasings-per-intent)), plus the judge layer. Results as artifacts, with a summary comment when dispatched from a PR.
 - **Do not hardcode Elasticsearch.** The existing suite already takes `SEARCH_ENGINE`, and the OpenSearch-first migration wants integration suites runnable per engine. The harness talks to Arranger rather than the engine, which mostly insulates it, but the fingerprint logic should not assume ES-specific responses.
-- **Typecheck from the start.** `integration-tests/mcp-server` is still never typechecked (open tech-debt); `apps/mcp-cli` should have `strict` on and a real `tsc` step rather than repeating that.
+- **Typecheck from the start.** `integration-tests/mcp-server` is still never typechecked (open tech-debt); the app that hosts `eval` should have `strict` on and a real `tsc` step rather than repeating that.
 
 ### Phase 6: maintenance
 
