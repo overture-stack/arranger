@@ -1,0 +1,68 @@
+{
+	"name": "@overture-stack/arranger-mcp-client",
+	"description": "One connection to one MCP server over Streamable HTTP, with a manual confirmation loop (see README: no stable release yet)",
+	"version": "0.0.0-dev",
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
+	},
+	"repository": {
+		"directory": "modules/mcp-client",
+		"type": "git",
+		"url": "git+https://github.com/overture-stack/arranger.git"
+	},
+	"main": "dist/index.cjs",
+	"types": "dist/index.d.ts",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "wireit",
+		"clear:dist": "rm -rf dist",
+		"test": "tsx --test",
+		"test:watch": "npm test -- --watch",
+		"typecheck": "tsc --noEmit",
+		"watch": "WIREIT_WATCH=true npm run build"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/client": "^2.3.1"
+	},
+	"devDependencies": {
+		"@modelcontextprotocol/node": "^2.1.1",
+		"@modelcontextprotocol/server": "^2.3.1",
+		"@tsconfig/node22": "^22.0.0",
+		"@types/node": "^22.19.13",
+		"tsup": "^6.7.0",
+		"tsx": "^4.19.2",
+		"typescript": "^5.8.2",
+		"zod": "^4.2.0"
+	},
+	"imports": {
+		"#*": "./src/*"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"wireit": {
+		"build": {
+			"command": "tsup",
+			"files": [
+				"src/**/*.ts",
+				"!src/**/*.test.ts",
+				"!src/testing/**"
+			],
+			"output": [
+				"dist/**"
+			]
+		}
+	}
+}

@@ -1,6 +1,6 @@
 # MCP Host: Plan
 
-**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](mcp-host/phase0-results.md)); confirmation on the shared server outstanding.
+**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](mcp-host/phase0-results.md)); confirmation on the shared server outstanding. Phase 1: done.
 
 **Goal:** a TypeScript stack that connects to MCP servers, runs a model through a tool-calling loop, and puts every confirmation in front of a person (or, for evaluations, a scripted policy).
 
@@ -77,28 +77,31 @@ Background, including why existing chat hosts cannot drive `apps/mcp-server`: [a
 
 `modules/mcp-client`. A host creates one instance per server.
 
-| Concern              | What `mcp-client` does                                                                                                                                                                                                                                                                                                                |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Transport            | Streamable HTTP only.                                                                                                                                                                                                                                                                                                                 |
-| Protocol revision    | `{ pin: '2026-07-28' }` only. The SDK's default, `'legacy'`, is refused by `apps/mcp-server`, so it is never passed through. `'auto'` arrives in Phase 5 if the CRE UI needs it, with a test against a 2025-era server.                                                                                                               |
-| Auth                 | Static headers, or an SDK `AuthProvider`: `token()` before every request, and on a 401 `onUnauthorized()` and one retry. OAuth providers pass through.                                                                                                                                                                                |
-| Surface snapshot     | On connect and at the start of each run: the `server/discover` result (versions, capabilities, instructions), read through `client.discover()`, which is never cached, and the tool, resource, resource template and prompt lists, read with `cacheMode: 'refresh'`. The server's name and version are recorded beside it, not in it. |
-| Surface hash         | SHA-256 over the canonicalized snapshot (rule below). The canonicalization and the hash are exported as pure functions, so L1 (the harness's contract tests in `integration-tests/mcp-server`) can hash a raw SDK client's responses and count their tokens.                                                                          |
-| Change notifications | Off by default. A server's configuration can opt in.                                                                                                                                                                                                                                                                                  |
-| Capabilities         | `elicitation: { form: {} }`, only when the host supplies an input resolver. Never `sampling` or `roots`, which `2026-07-28` deprecates and no Arranger tool uses.                                                                                                                                                                     |
-| Requests             | `tools/call`, `prompts/get` and `resources/read` go through the confirmation loop below. List requests pass straight through.                                                                                                                                                                                                         |
-| Cancellation         | Each call takes an `AbortSignal`. Aborting closes the request's stream (`2026-07-28` HTTP sends no `notifications/cancelled`), and the server's handler sees the abort. The SDK reports an abort like a timeout, so `cancelled` comes from the caller's own signal.                                                                   |
-| Timeouts             | The SDK's timeout covers each request leg. Waiting for a person, between legs, has no timer here: it ends when the resolver settles or the call is aborted. Host-core owns that timeout ([§2.2](#events)).                                                                                                                            |
+| Concern              | What `mcp-client` does                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Transport            | Streamable HTTP only.                                                                                                                                                                                                                                                                                                                                                                            |
+| Protocol revision    | `{ pin: '2026-07-28' }` only. The SDK's default, `'legacy'`, is refused by `apps/mcp-server`, so it is never passed through. `'auto'` arrives in Phase 5 if the CRE UI needs it, with a test against a 2025-era server.                                                                                                                                                                          |
+| Auth                 | Static headers, or an SDK `AuthProvider`: `token()` before every request, and on a 401 `onUnauthorized()` and one retry. Refused over plain HTTP to anything but a loopback address, unless the caller opts in. The SDK's interactive OAuth flow is not exposed: a host supplies tokens through `token()`.                                                                                       |
+| Surface snapshot     | On connect and at the start of each run: the `server/discover` result (versions, capabilities, instructions), read through `client.discover()`, which is never cached, and the tool, resource, resource template and prompt lists, read with `cacheMode: 'refresh'`. A list the server does not advertise is recorded as empty. The server's name and version are recorded beside it, not in it. |
+| Surface hash         | SHA-256 over the canonicalized snapshot (rule below). The canonicalization and the hash are exported as pure functions, so L1 (the harness's contract tests in `integration-tests/mcp-server`) can hash a raw SDK client's responses and count their tokens.                                                                                                                                     |
+| Change notifications | Off by default. A server's configuration can opt in. `mcp-client` reports which list changed; host-core re-reads the surface between turns.                                                                                                                                                                                                                                                      |
+| Background errors    | Errors the SDK raises outside any call, such as a change-notification stream that failed to open, go to the host's `onError`.                                                                                                                                                                                                                                                                    |
+| Capabilities         | `elicitation: { form: {} }`, only when the host supplies an input resolver. Never `sampling` or `roots`, which `2026-07-28` deprecates and no Arranger tool uses.                                                                                                                                                                                                                                |
+| Requests             | `tools/call`, `prompts/get` and `resources/read` go through the confirmation loop below. List requests pass straight through.                                                                                                                                                                                                                                                                    |
+| Cancellation         | Each call takes an `AbortSignal`. Aborting closes the request's stream (`2026-07-28` HTTP sends no `notifications/cancelled`), and the server's handler sees the abort. The SDK reports an abort like a timeout, so `cancelled` comes from the caller's own signal.                                                                                                                              |
+| Timeouts             | The SDK's timeout covers each request leg. Waiting for a person, between legs, has no timer here: it ends when the resolver settles or the call is aborted. Host-core owns that timeout ([§2.2](#events)).                                                                                                                                                                                       |
 
 **Hash canonicalization.** The snapshot is built from named fields: `supportedVersions`, `capabilities` and `instructions` from `server/discover`, and each list's items. Result-level fields that are not surface never enter it: `_meta` (which SHOULD include `io.modelcontextprotocol/serverInfo`, the server's name and version), `ttlMs`, `cacheScope` and `nextCursor`. Items keep their own `_meta`, since hosts act on it, and stripping every `_meta` key would also delete an input-schema property of that name. The hash sorts object keys and keeps list order. List order is part of what the model sees, and keeping it lets `surfaceStability` catch nondeterministic ordering.
 
-**Why re-reads bypass the cache.** The SDK client caches list results by default, and `apps/mcp-server` marks its lists fresh for an hour. Without `'refresh'`, a long conversation, a shared cache store, or a reconnect through `prior` would keep a pre-redeploy surface and hash. Nothing re-reads during a run, so the cache would save little.
+**Why re-reads bypass the cache.** The SDK client caches list results by default, and `apps/mcp-server` marks its lists fresh for an hour. Without `'refresh'`, a long conversation would keep a pre-redeploy surface and hash. Nothing re-reads during a run, so the cache would save little.
 
 **Why change notifications are off.** On `2026-07-28`, the SDK receives list changes only over a `subscriptions/listen` stream, which it holds open for the life of the client once change handlers are configured. With one client per conversation per server, that is one open stream per conversation. `apps/mcp-server`'s lists never change. `chat` may opt in for servers whose lists do; `cre-server` should not.
 
 **No stdio.** Every target server speaks HTTP, and a cre-server must never spawn a process named in user configuration. If `chat` later needs stdio, it arrives as an opt-in `cre-server` does not expose.
 
-**One user per instance, one credential per server.** An instance holds one user's credential for its one server, and is never shared; a credential for one server never reaches another, so an Overture token never reaches a third party ([MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §4). A response-cache store shared between instances must set `cachePartition` to the user's identity. Reconnecting is cheap: `connect(transport, { prior })` reuses a saved `server/discover` result for the same user.
+**One user per instance, one credential per server.** An instance holds one user's credential for its one server, and is never shared; a credential for one server never reaches another, so an Overture token never reaches a third party ([MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §4).
+
+**No `connect(transport, { prior })`.** It skips `server/discover`, which the snapshot on connect reads anyway, since a saved result can predate a redeploy.
 
 #### The Confirmation Loop
 
@@ -106,10 +109,11 @@ On `2026-07-28`, a server that needs a confirmation answers with an `input_requi
 
 1. Send the request with `client.request()` and `allowInputRequired: true`.
 2. A complete result ends the loop.
-3. Pass each `elicitation/create` entry in `inputRequests` to the host's resolver. Any other method fails the call.
-4. Resend a round that carries `requestState` but no questions after 250 ms, as the SDK does.
-5. Retry with the `inputResponses` and the `requestState` echoed byte for byte.
-6. Stop after `maxRounds` (10, as in the SDK). Rounds without questions count.
+3. Report the round to the call's `onRound` observer, including a round without questions.
+4. Pass each form-mode `elicitation/create` entry to the host's resolver, a round's questions together. Any other request fails the call as `input_failed` before anything is asked. A compliant server never sends one: it refuses a request the client did not declare, with `-32021`.
+5. Resend a round that carries `requestState` but no questions after 250 ms, as the SDK does.
+6. Retry with this round's `inputResponses` and the `requestState` echoed byte for byte, even an empty one.
+7. Stop after `maxRounds` retries (10, as in the SDK). Rounds without questions count.
 
 ```ts
 type InputResolver = (request: {
@@ -123,28 +127,31 @@ type InputResolver = (request: {
 }) => Promise<ElicitResult>;
 ```
 
-**Why manual mode:** it makes `requestState` visible, so the transcript records it and a later version can restore a pending confirmation ([§5](#5-open-questions), question 2), and it turns each round into an event. Routing a question to its call does not need it: each client has one call in flight.
+**Why manual mode:** it makes `requestState` visible, so the transcript records it and a later version can restore a pending confirmation ([§5](#5-open-questions), question 2), and it turns each round into an event, through `onRound`. That runs before any question is asked, so host-core holds the pending state while it waits; if it throws, the call is `input_failed`. Routing a question to its call does not need manual mode: each client has one call in flight.
 
 **Why `request()`, not `callTool()`.** `execute_query`, the tool that asks for confirmation, declares an `outputSchema`. With `tools/list` cached, `callTool()` checks the reply's `structuredContent` against it, and an `input_required` reply has none, so it throws `-32600`; without the cache, it returns the reply mistyped as a `CallToolResult`. S2 confirmed both ([results](mcp-host/phase0-results.md#s2-calltool-against-request)). `request()` skips two things `callTool()` does:
 
-- output-schema validation, which `mcp-client` does itself on the final result with the SDK's `fromJsonSchema`, as `callTool()` does;
+- output-schema validation, which `mcp-client` does itself on the final result, compiling each snapshot's schemas with a fresh Ajv instance so that none accumulate. A schema over 64 KiB or 32 levels deep is not compiled, since it comes from the server. Unlike `callTool()`, which refuses before sending, a schema that cannot be compiled still lets the tool run, and its result is `output_invalid`;
 - `Mcp-Param-*` header mirroring, which no Arranger tool needs and the first release omits.
 
 **On a 2025-era connection** (once `'auto'` ships), questions arrive as real `elicitation/create` requests. One registered handler routes each to the call in flight. Such a question is a live request, so it can never be saved with a conversation.
 
 #### Outcomes
 
-Every call resolves with one outcome and never throws. Each outcome carries wire time and waiting time separately.
+Every call resolves with one outcome and never throws. Each carries wire time, waiting time (in the resolver) and the round count.
 
-| Outcome                | Meaning                                                                             |
-| ---------------------- | ----------------------------------------------------------------------------------- |
-| `result`               | The tool ran. Includes `isError: true`.                                             |
-| `output_invalid`       | The tool ran, but its `structuredContent` failed the tool's `outputSchema`.         |
-| `rejected`             | A JSON-RPC error, with its code, message and data.                                  |
-| `input_state_rejected` | The server refused the echoed `requestState`. Carries how long the question waited. |
-| `rounds_exceeded`      | Still asking after `maxRounds`.                                                     |
-| `cancelled`            | The caller's signal aborted the call.                                               |
-| `transport_error`      | A request leg got no answer: network, HTTP status, or authentication.               |
+| Outcome                | Meaning                                                                                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `result`               | The tool ran. Includes `isError: true`.                                                                                                                                                                                                                       |
+| `output_invalid`       | The tool ran, but its `structuredContent` failed the tool's `outputSchema`, or the schema does not compile.                                                                                                                                                   |
+| `rejected`             | A JSON-RPC error, with its code, message and data.                                                                                                                                                                                                            |
+| `input_state_rejected` | The server refused the echoed `requestState`. Carries how long the question waited.                                                                                                                                                                           |
+| `input_failed`         | The client could not answer, so the call did not run: `unsupported_request` or `resolver_error`.                                                                                                                                                              |
+| `rounds_exceeded`      | Still asking after `maxRounds`.                                                                                                                                                                                                                               |
+| `cancelled`            | The caller's signal aborted the call, including while the resolver waited.                                                                                                                                                                                    |
+| `transport_error`      | A request leg got no usable answer. `kind` names the cause: `timeout`, `http`, `unauthorized`, `closed`, `network`, `invalid_result` (a reply the SDK could not decode), `not_connected`, or `unknown`, which includes an unexpected error inside the client. |
+
+**An undecodable reply is a `transport_error`**, not `rejected`: whether the tool ran is unknown.
 
 **Not "expired".** The server refuses an expired, forged or wrongly bound `requestState` with the same `-32602` error, and also refuses every earlier state after a restart without `MCP_REQUEST_STATE_SECRET`. The client cannot know which. The UI can say "probably expired" when the wait exceeded the server's window, 600 seconds for `apps/mcp-server`.
 
@@ -197,9 +204,10 @@ A **turn** is one `generate()` call. A run:
 | `output_invalid`                               | The result did not match the tool's declared output           |
 | `rejected`                                     | The server rejected the call, with its message                |
 | `input_state_rejected`                         | The confirmation was no longer accepted; the call did not run |
+| `input_failed`                                 | The confirmation could not be answered; the call did not run  |
 | `rounds_exceeded`                              | The server kept asking for input; the call was abandoned      |
 | `cancelled`                                    | The user cancelled the call                                   |
-| `transport_error`                              | The server could not be reached; the outcome is unknown       |
+| `transport_error`                              | No usable answer came back; whether the call ran is unknown   |
 | Approval denied                                | The user declined the call                                    |
 | Malformed call (counts against the call limit) | The call could not be parsed                                  |
 | Not run, after a limit or cancellation         | The run stopped before this call                              |
@@ -398,7 +406,7 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 
 ### Phase 1: MCP Client
 
-- `modules/mcp-client` ([§2.1](#21-mcp-client)), tested against an in-process v2 server with a short-lived `requestState`: confirmation rounds including one with no questions, `input_required` on `prompts/get`, a refused state, `rounds_exceeded`, cancellation, `output_invalid`, a re-read that bypasses the cache, opting in to change notifications, and a hash unchanged by a version bump, cache fields or result-level `_meta`.
+**Done.** `modules/mcp-client` ([§2.1](#21-mcp-client)), tested against an in-process v2 server with a short-lived `requestState`: confirmation rounds including one with no questions, `input_required` on `prompts/get`, a refused state, `rounds_exceeded`, cancellation, `output_invalid`, a re-read that bypasses the cache, opting in to change notifications, and a hash unchanged by a version bump, cache fields or result-level `_meta`. The unsupported-request path, which a compliant server cannot reach, is tested against a scripted one.
 
 ### Phase 2: MCP Host Core
 
@@ -420,7 +428,7 @@ Phases 1 to 4 of [MCP platform testing](mcp-platform-testing.md), on host-core e
 
 ### Phase 5: Publish `mcp-client` and Migrate to CRE Repository
 
-Publish `mcp-client` under the `rc` dist-tag. Add a second provider and `'auto'` negotiation if the CRE UI needs them.
+Publish `mcp-client` under the `rc` dist-tag, once the two `modules/mcp-client` hardening entries in `.dev/tech-debt.md` are fixed. Add a second provider and `'auto'` negotiation if the CRE UI needs them.
 
 **Packaging:** the `mcp-client` module follows `modules/sqon`: dual ESM and CommonJS through `tsup`, `wireit` builds, `0.0.0-dev` on `main`, `rc` from `release-test`.
 
@@ -477,32 +485,38 @@ None of the "Required" cells conflict. The harness needs exact usage but no stre
 
 Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK repository.
 
-| Claim used above                                                                                                         | Where                                                                                               |
-| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Version negotiation defaults to `'legacy'`; a pin fails on anything else                                                 | `packages/client/src/client/versionNegotiation.ts`                                                  |
-| The automatic handler's context does not identify the call                                                               | `synthesizeInputRequestContext`, `packages/core-internal/src/shared/inputRequiredEngine.ts`         |
-| `autoFulfill: false` applies to the whole client; rounds without questions wait 250 ms, max 10 rounds                    | `packages/client/src/client/client.ts`, `packages/core-internal/src/shared/inputRequiredDriver.ts`  |
-| `callTool()` validates `structuredContent` against a cached `outputSchema`; `request()` does not, nor mirror headers     | `Client.callTool`, `packages/client/src/client/client.ts`                                           |
-| A refused `requestState` gets `-32602`, `data.reason: 'invalid_request_state'`, whatever the cause                       | `packages/server/src/server/server.ts`                                                              |
-| List changes arrive only over an auto-opened `subscriptions/listen` stream on `2026-07-28`                               | `packages/client/src/client/client.ts`; `McpServer` defaults in `packages/server/src/server/mcp.ts` |
-| The client caches list results by default (`cacheMode: 'use'`); `'refresh'` bypasses it                                  | `packages/client/src/client/client.ts`                                                              |
-| Results carry `_meta` (SHOULD include `io.modelcontextprotocol/serverInfo`); list results carry `ttlMs` and `cacheScope` | `packages/core-internal/src/types/spec.types.2026-07-28.ts`                                         |
-| `@modelcontextprotocol/node` is at 2.1.1, with `server` as a caret peer dependency                                       | `packages/middleware/node/package.json`                                                             |
-| `connect(transport, { prior })` reuses a saved `server/discover` result                                                  | `ConnectOptions`, `packages/client/src/client/client.ts`                                            |
-| `AuthProvider`: `token()` per request, one retry after `onUnauthorized()`                                                | `packages/client/src/client/auth.ts`                                                                |
-| An abort on a `2026-07-28` HTTP stream closes it without `notifications/cancelled`, and rejects like a timeout           | `packages/core-internal/src/shared/protocol.ts`                                                     |
-| Sampling, roots and logging deprecated as of `2026-07-28` (SEP-2577); elicitation is not                                 | `packages/core-internal/src/types/spec.types.2026-07-28.ts`                                         |
-| Tool names may use `.` and run to 128 characters                                                                         | `packages/core-internal/src/shared/toolNameValidation.ts`                                           |
-| 2.2.0 list pagination fix; 2.3.0 same-origin redirects                                                                   | `packages/client/CHANGELOG.md`                                                                      |
-| `examples/cli-client` is private, and has no usage, streaming, malformed-call text or name-length handling               | `examples/cli-client`                                                                               |
-| Licence: Apache-2.0 for new contributions, MIT for those not relicensed; no NOTICE file                                  | `LICENSE`                                                                                           |
+| Claim used above                                                                                                                                              | Where                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Version negotiation defaults to `'legacy'`; a pin fails on anything else                                                                                      | `packages/client/src/client/versionNegotiation.ts`                                                  |
+| The automatic handler's context does not identify the call                                                                                                    | `synthesizeInputRequestContext`, `packages/core-internal/src/shared/inputRequiredEngine.ts`         |
+| `autoFulfill: false` applies to the whole client; rounds without questions wait 250 ms, max 10 rounds                                                         | `packages/client/src/client/client.ts`, `packages/core-internal/src/shared/inputRequiredDriver.ts`  |
+| `callTool()` validates `structuredContent` against a cached `outputSchema`; `request()` does not, nor mirror headers                                          | `Client.callTool`, `packages/client/src/client/client.ts`                                           |
+| A refused `requestState` gets `-32602`, `data.reason: 'invalid_request_state'`, whatever the cause                                                            | `packages/server/src/server/server.ts`                                                              |
+| List changes arrive only over an auto-opened `subscriptions/listen` stream on `2026-07-28`                                                                    | `packages/client/src/client/client.ts`; `McpServer` defaults in `packages/server/src/server/mcp.ts` |
+| The client caches list results by default (`cacheMode: 'use'`); `'refresh'` bypasses it                                                                       | `packages/client/src/client/client.ts`                                                              |
+| Results carry `_meta` (SHOULD include `io.modelcontextprotocol/serverInfo`); list results carry `ttlMs` and `cacheScope`                                      | `packages/core-internal/src/types/spec.types.2026-07-28.ts`                                         |
+| `@modelcontextprotocol/node` is at 2.1.1, with `server` as a caret peer dependency                                                                            | `packages/middleware/node/package.json`                                                             |
+| `connect(transport, { prior })` reuses a saved `server/discover` result                                                                                       | `ConnectOptions`, `packages/client/src/client/client.ts`                                            |
+| `AuthProvider`: `token()` per request, one retry after `onUnauthorized()`                                                                                     | `packages/client/src/client/auth.ts`                                                                |
+| An abort on a `2026-07-28` HTTP stream closes it without `notifications/cancelled`, and rejects like a timeout                                                | `packages/core-internal/src/shared/protocol.ts`                                                     |
+| Sampling, roots and logging deprecated as of `2026-07-28` (SEP-2577); elicitation is not                                                                      | `packages/core-internal/src/types/spec.types.2026-07-28.ts`                                         |
+| Tool names may use `.` and run to 128 characters                                                                                                              | `packages/core-internal/src/shared/toolNameValidation.ts`                                           |
+| 2.2.0 list pagination fix; 2.3.0 same-origin redirects                                                                                                        | `packages/client/CHANGELOG.md`                                                                      |
+| `examples/cli-client` is private, and has no usage, streaming, malformed-call text or name-length handling                                                    | `examples/cli-client`                                                                               |
+| List methods return an empty list, without a request, for a capability the server does not advertise                                                          | `packages/client/src/client/client.ts`                                                              |
+| A failed `fetch` reaches the caller unwrapped                                                                                                                 | `packages/core-internal/src/shared/protocol.ts`                                                     |
+| `fromJsonSchema()` without a validator shares one Ajv instance per process, and Ajv keeps every schema it compiles, serving one with an `$id` from that cache | `packages/client/src/fromJsonSchema.ts`, `packages/core-internal/src/validators/ajvProvider.ts`     |
+| Only the list methods and `readResource()` read the response cache, and `'refresh'` skips the read                                                            | `_serveFromCache`, `packages/client/src/client/client.ts`                                           |
+| A server refuses an embedded input request the client's capabilities do not declare, with `-32021`                                                            | `packages/server/src/server/server.ts`                                                              |
+| `cacheHints` sets `ttlMs` and `cacheScope`; `handler.notify` publishes list changes                                                                           | `packages/server/src/server/server.ts`, `packages/server/src/server/createMcpHandler.ts`            |
+| Licence: Apache-2.0 for new contributions, MIT for those not relicensed; no NOTICE file                                                                       | `LICENSE`                                                                                           |
 
 ---
 
 ## 5. Open Questions
 
 1. **Which models the UI offers at launch.** OpenAI-compatible endpoints only, which covers the team's Ollama, or hosted providers too? This decides whether Phase 5 needs a second provider.
-2. **Whether a later version restores a run waiting on a confirmation**, such as after a browser is closed mid-question. Manual mode records the `requestState`, but restoring also needs the call's arguments, the round, the question and a way back into a run mid-call. The answer must arrive within the server's window, and it is impossible on a 2025-era connection.
+2. **Whether a later version restores a run waiting on a confirmation**, such as after a browser is closed mid-question. Manual mode records the `requestState`, but restoring also needs the call's arguments, the round, the question and a way back into a run mid-call. The answer must arrive within the server's window, and it is impossible on a 2025-era connection. Re-entering a call needs an addition to `mcp-client`: an option to send a saved round's answers and `requestState` as the first request.
 3. **Transcript retention.** `chat` transcripts, `eval` records and saved notebooks all contain real dataset records. The harness plan leaves open whether they may be kept, and where; the question now covers all three. It must be settled before `eval` keeps records (Phase 4); until then `chat --transcript` warns before writing.
 4. **Where `eval` is built**, decided when Phase 4 resumes. Either:
     - **in `mcp-cli`, in the CRE repository**, as §2.3 describes. `mcp-host-core` stays unpublished, but local mode, the rebuild before a run and the build identity all need a path to an Arranger checkout; `sqonEquivalence` uses the published `@overture-stack/sqon` rather than the version the server under test runs; and running against this repository's commits in CI needs a cross-repository trigger; or
@@ -523,4 +537,6 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 - `.dev/tech-debt.md`: confirmation state bound to the OAuth client rather than the user ([§2.4](#24-cre-server)).
 - `CHANGELOG.md`: the SDK upgrade.
 
-**When the work lands:** `AGENTS.md` § Structure for the new workspaces, and `apps/mcp-server/README.md` § Chatting with an LLM (Phase 3).
+**Updated with Phase 1:** `AGENTS.md` § Structure, for `modules/mcp-client`.
+
+**When the work lands:** `AGENTS.md` § Structure for `mcp-host-core` and `mcp-cli`, and `apps/mcp-server/README.md` § Chatting with an LLM (Phase 3).
