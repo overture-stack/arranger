@@ -71,6 +71,15 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Use a comparator that returns `0` for equal keys (e.g. compare stringified keys with `===`/`<` rather than always branching to `-1`/`1`), or sort by a stable, collision-free key. Add a dedicated test file for `builder/utils.ts` covering mixed-type arrays.
 **Standalone:** yes.
 
+### `modules/sqon` tests are never typechecked, and carry 38 type errors
+
+**File:** `modules/sqon/package.json` (`test` script); `src/builder/*.test.ts`, `src/jsonSchema/jsonSchema.test.ts`
+**Severity:** low (the tests pass, and the shipped source typechecks)
+**Kind:** test infrastructure gap
+**Issue:** `npx tsc --noEmit -p modules/sqon` reports 38 errors, all in tests. Most are SQON literals whose `op` widens to `string` where `SqonNode` needs `'and' | 'or' | 'not'`, or JSON Schema values read as `unknown`. Nothing reports them: `tsx --test` strips types unchecked, and the tsup build never reaches a test file.
+**Fix:** Type the literals (`as const`, or the package's builders), narrow the schema reads, and add a `typecheck` script like `modules/mcp-client`'s.
+**Standalone:** yes
+
 ---
 
 ## modules/mcp-client
