@@ -432,7 +432,7 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **File:** `apps/mcp-server/src/mcp/tools.ts:71` (`get_catalogue_fields`); `apps/mcp-server/src/mcp/resources.ts:19,36,65`
 **Severity:** low (no defect; a recurring token cost on the payloads most often read by a model)
 **Kind:** avoidable overhead
-**Issue:** These sites serialize with `JSON.stringify(data, null, 2)`, so every response carries newlines and two spaces per nesting level. No human reads a tool result, and a model parses compact JSON exactly as well, so the whitespace buys nothing on the `get_catalogue_fields` path. Measured on a synthesized catalogue introspection body of 47 fields, that count taken from `integration-tests/server/test/assets/model_centric_1.mappings.json` rather than from any mcp-server fixture: 7063 characters pretty against 4896 compact, a 31 percent reduction. The MCP specification has a tool that returns `structuredContent` also return the serialized JSON as a text block for backwards compatibility, so the same payload ships twice and the saving applies on both, roughly 4300 characters per call on a tool invoked by a model before nearly every query.
+**Issue:** These sites serialize with `JSON.stringify(data, null, 2)`, so every response carries newlines and two spaces per nesting level. No human reads a tool result, and a model parses compact JSON exactly as well, so the whitespace buys nothing on the `get_catalogue_fields` path. Measured on a synthesized catalogue introspection body of 47 fields, that count taken from `integration-tests/server/test/assets/model_centric_1.mappings.json` rather than from any mcp-server fixture: 7063 characters pretty against 4896 compact, a 31 percent reduction. The MCP specification has a tool that returns `structuredContent` also return the serialized JSON as a text block for backwards compatibility, so the same payload ships twice and the saving applies on both, roughly 4300 characters per call on a tool invoked by a model before nearly every query. The MCP host plan's Phase 0 measured it in tokens: on a 10-field synthetic catalogue, 718 prompt tokens pretty against 376 compact, 48 percent less ([results](docs/mcp-host/phase0-results.md#context-length)).
 **Fix:** Drop the indent argument at `tools.ts:71`, which is read only by a model. The three `resources.ts` sites are a judgement call rather than an obvious win, since a client may render a resource for a person to read, and indentation is the only thing making that legible. Decide those deliberately rather than sweeping the pattern.
 
 **Do not change `executeQueryTool.ts:199`.** It looks identical and is not: that call formats the GraphQL variables inside `server.server.elicitInput()`, the confirmation prompt read by a person before a query runs. Its indentation is the feature. A regex sweep of `JSON.stringify(.*null, 2)` breaks it, which is why this entry names sites individually rather than describing a pattern.
@@ -446,6 +446,33 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. A backend registered as one OAuth client, as the notebook UI's would be ([MCP host plan](docs/mcp-host-plan.md) §2.4), serves all its users under one `clientId`, so a confirmation issued to one would verify for another.
 **Fix:** Bind to the user as well. The SDK's `AuthInfo` has no user field, so the token verifier puts the token's `sub` claim in `authInfo.extra` for `bind` to read. Encode the parts rather than joining with `\0`, as the comment above `bind` requires. Test that a state minted for one subject fails for another under the same client.
 **Standalone:** no; the subject exists only once the endpoint authenticates callers, so do this with that work (the "MCP endpoint has no authentication" entry above)
+
+### The comment on `bind` says the seam verifies only on `tools/call`
+
+**File:** `apps/mcp-server/src/mcp/requestState.ts` (the comment above `bind` in `createConfirmationCodec`)
+**Severity:** low (a wrong comment; behaviour is correct)
+**Kind:** stale comment
+**Issue:** The comment says the method part of the binding "separates nothing today" because "the seam verifies only on `tools/call`". SDK 2.3.1 also verifies on `prompts/get` and `resources/read` (`INPUT_REQUIRED_CAPABLE_METHODS`), so the method part already stops a `tools/call` state being replayed on either.
+**Fix:** Reword the comment to say so. The note that the principal part separates nothing until auth lands stays.
+**Standalone:** yes; a comment change
+
+### `execute_query`'s `sqon` has no type, so a stringified `build_sqon` result passes schema validation
+
+**File:** `apps/mcp-server/src/mcp/executeQueryTool.ts` (`sqon` in the input schema)
+**Severity:** medium (a model can fail every query this way; the server refuses rather than misbehaves)
+**Kind:** model-facing contract gap
+**Issue:** `sqon` is `zod.unknown()`, so clients see no `type` and models see `any`. In the MCP host plan's Phase 0, `gemma4:12b` passed the whole `build_sqon` result, as a JSON string, in four of five `execute_query` steps ([results](docs/mcp-host/phase0-results.md#do-models-call-the-tools-correctly)). Only the server's validation catches it, with "Invalid SQON at root: Invalid input", which names neither mistake. The description also lacks a space ("input.For").
+**Fix:** Declare `sqon` an object, so a string fails schema validation. Make the SQON error name both observed mistakes: a string, and the whole `build_sqon` result instead of its `sqon` field. Fix the space. Measure wording changes with the evaluation harness once it exists, since the text is model-facing.
+**Standalone:** yes
+
+### `build_sqon` requires `combination` even for one clause
+
+**File:** `apps/mcp-server/src/mcp/buildSqonTool.ts` (input schema)
+**Severity:** low (one rejected call, then the model resends; costs a round trip)
+**Kind:** model-facing friction
+**Issue:** `combination` is required even with one clause and no `existingSqon`, where it joins nothing. In Phase 0, `gemma4:12b` and `qwen3:14b` both omitted it there and were refused ([results](docs/mcp-host/phase0-results.md#do-models-call-the-tools-correctly)).
+**Fix:** Default it to `and` in that case; keep it required otherwise.
+**Standalone:** yes
 
 ## apps/search-server
 
