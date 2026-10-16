@@ -7,7 +7,7 @@ One connection to one MCP server over Streamable HTTP, for an MCP host. It wraps
 - resolves every call with an outcome instead of throwing;
 - snapshots the server's surface, with a hash that ignores its version and cache hints.
 
-No stable release yet. Design: [MCP Host Plan](../../.dev/docs/mcp-host-plan.md) §2.1.
+No stable release yet. Design: [MCP Host Plan](../../.dev/docs/mcp-host/mcp-host-plan.md) §2.1.
 
 ## Usage
 

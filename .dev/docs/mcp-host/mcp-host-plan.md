@@ -1,20 +1,20 @@
 # MCP Host: Plan
 
-**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](mcp-host/phase0-results.md)); confirmation on the shared server outstanding. Phase 1: done.
+**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the shared server outstanding. Phase 1: done.
 
 **Goal:** a TypeScript stack that connects to MCP servers, runs a model through a tool-calling loop, and puts every confirmation in front of a person (or, for evaluations, a scripted policy).
 
 Three consumers of one shared MCP Host Core:
 
 1. a command line interface (CLI) terminal chat (TUI);
-2. the evaluation harness in [MCP Platform Testing](mcp-platform-testing.md);
+2. the evaluation harness in [MCP Platform Testing](../mcp-platform-testing.md);
 3. the Conversational Research Environment (CRE), a notebook-style research UI.
 
 "Host" is used in the MCP specification's sense: the application that owns the model and holds one MCP client per connected server.
 
 **SDK baseline:** `@modelcontextprotocol/client`, `server` and `core` at 2.3.0 or later, raised together (installed: 2.3.1), and `@modelcontextprotocol/node` at 2.1.1. SDK claims below were read from the 2.3.1 source ([§4.3](#43-sdk-evidence)).
 
-Background, including why existing chat hosts cannot drive `apps/mcp-server`: [atlas: MCP clients for a 2026-07-28-only server](atlas/mcp-client-landscape.md).
+Background, including why existing chat hosts cannot drive `apps/mcp-server`: [atlas: MCP clients for a 2026-07-28-only server](../atlas/mcp-client-landscape.md).
 
 ---
 
@@ -99,7 +99,7 @@ Background, including why existing chat hosts cannot drive `apps/mcp-server`: [a
 
 **No stdio.** Every target server speaks HTTP, and a cre-server must never spawn a process named in user configuration. If `chat` later needs stdio, it arrives as an opt-in `cre-server` does not expose.
 
-**One user per instance, one credential per server.** An instance holds one user's credential for its one server, and is never shared; a credential for one server never reaches another, so an Overture token never reaches a third party ([MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §4).
+**One user per instance, one credential per server.** An instance holds one user's credential for its one server, and is never shared; a credential for one server never reaches another, so an Overture token never reaches a third party ([MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §4).
 
 **No `connect(transport, { prior })`.** It skips `server/discover`, which the snapshot on connect reads anyway, since a saved result can predate a redeploy.
 
@@ -129,7 +129,7 @@ type InputResolver = (request: {
 
 **Why manual mode:** it makes `requestState` visible, so the transcript records it and a later version can restore a pending confirmation ([§5](#5-open-questions), question 2), and it turns each round into an event, through `onRound`. That runs before any question is asked, so host-core holds the pending state while it waits; if it throws, the call is `input_failed`. Routing a question to its call does not need manual mode: each client has one call in flight.
 
-**Why `request()`, not `callTool()`.** `execute_query`, the tool that asks for confirmation, declares an `outputSchema`. With `tools/list` cached, `callTool()` checks the reply's `structuredContent` against it, and an `input_required` reply has none, so it throws `-32600`; without the cache, it returns the reply mistyped as a `CallToolResult`. S2 confirmed both ([results](mcp-host/phase0-results.md#s2-calltool-against-request)). `request()` skips two things `callTool()` does:
+**Why `request()`, not `callTool()`.** `execute_query`, the tool that asks for confirmation, declares an `outputSchema`. With `tools/list` cached, `callTool()` checks the reply's `structuredContent` against it, and an `input_required` reply has none, so it throws `-32600`; without the cache, it returns the reply mistyped as a `CallToolResult`. S2 confirmed both ([results](phase0-results.md#s2-calltool-against-request)). `request()` skips two things `callTool()` does:
 
 - output-schema validation, which `mcp-client` does itself on the final result, compiling each snapshot's schemas with a fresh Ajv instance so that none accumulate. A schema over 64 KiB or 32 levels deep is not compiled, since it comes from the server. Unlike `callTool()`, which refuses before sending, a schema that cannot be compiled still lets the tool run, and its result is `output_invalid`;
 - `Mcp-Param-*` header mirroring, which no Arranger tool needs and the first release omits.
@@ -168,7 +168,7 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 - **Request:** model, system prompt, messages, tools; temperature, top-p, seed, maximum output tokens; `responseFormat`, a JSON Schema the output must match (for the judge); and `extra`, engine-specific fields such as top-k, passed through. All of it is recorded in `model_request`.
 - **Final response:** text; reasoning, when the model returns any ([§5](#5-open-questions), question 5); well-formed tool calls; any malformed tool call with its raw text; exact token usage as the serving stack reported it; stop reason, reported model id, duration.
 
-**On Ollama, an unparseable call usually comes back as an empty reply, not an error.** In Phase 0, 4 of 376 responses ended on `stop` with no content and no call, though the model had generated tokens ([S4](mcp-host/phase0-results.md#s4-malformed-tool-calls)). The provider reports these as `empty_reply`, separate from malformed calls, since the dropped text is never seen.
+**On Ollama, an unparseable call usually comes back as an empty reply, not an error.** In Phase 0, 4 of 376 responses ended on `stop` with no content and no call, though the model had generated tokens ([S4](phase0-results.md#s4-malformed-tool-calls)). The provider reports these as `empty_reply`, separate from malformed calls, since the dropped text is never seen.
 
 **Start from the SDK's `examples/cli-client`.** It has a provider seam, OpenAI, Anthropic, Gemini and scripted providers, and an agent loop. Its seam lacks exact usage, malformed-call text and streaming, and its OpenAI provider runs an unparseable call with `{}` as its arguments. Adapted code keeps the SDK's licence notices.
 
@@ -182,9 +182,9 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 
 **A stream that ends without a `finish_reason` is a `model_error`:** Ollama's `/v1` drops an error raised mid-stream and just stops (read from source, not yet observed).
 
-**Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](mcp-host/phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size.
+**Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size.
 
-`eval` does not stream; `chat` and the UI do, and still get exact usage ([S3](mcp-host/phase0-results.md#s3-streamed-usage-from-ollama)).
+`eval` does not stream; `chat` and the UI do, and still get exact usage ([S3](phase0-results.md#s3-streamed-usage-from-ollama)).
 
 #### Agent Loop
 
@@ -238,13 +238,13 @@ When the run ends for either reason, `done` names the context window. Shortening
 
 ##### Replies cut off at the output limit
 
-A reply that ends on `finish_reason: length` with no tool call ran out of room, usually while reasoning: `qwen3:14b` and `gemma4:12b` each did once in 29 S1 steps ([S1](mcp-host/phase0-results.md#do-models-call-the-tools-correctly)). It emits `output_limit`.
+A reply that ends on `finish_reason: length` with no tool call ran out of room, usually while reasoning: `qwen3:14b` and `gemma4:12b` each did once in 29 S1 steps ([S1](phase0-results.md#do-models-call-the-tools-correctly)). It emits `output_limit`.
 
 - **With visible text:** the text is kept, marked as cut off, and the run ends. The user can ask the model to continue.
 - **With none:** host-core retries once if the consumer allows it (`chat`, UI; not `eval`, where a retry would hide the failure). The retry adds "Your previous reply reached the output limit before you answered. Answer briefly, or call a tool directly." and lowers the reasoning effort where the provider supports it. The failed attempt stays in the events, not the conversation state. The retry counts as a turn.
 - **If the retry is cut off too,** the run ends, and the consumer suggests splitting the question.
 
-`done` names the output limit. A retry gets an answer more often than not, but not necessarily a right one: on the step where `qwen3:14b` ran out of room, 3 of 5 sampled attempts made a call, and 1 was correct ([S4](mcp-host/phase0-results.md#s4-malformed-tool-calls)).
+`done` names the output limit. A retry gets an answer more often than not, but not necessarily a right one: on the step where `qwen3:14b` ran out of room, 3 of 5 sampled attempts made a call, and 1 was correct ([S4](phase0-results.md#s4-malformed-tool-calls)).
 
 **Starting from a prompt:** a run can start from a trusted server's prompt, seeding the conversation with its messages and roles. `eval` needs this for the `query_arranger` entrypoint. If the prompt cannot be fetched, the run ends before any model call, with `done` naming the failure.
 
@@ -254,9 +254,9 @@ A reply that ends on `finish_reason: length` with no tool call ran out of room, 
 - **Routing** reads the registry's map, never the string.
 - **Arguments are re-encoded by Ollama** with object keys sorted, so transcripts record them as received, and comparisons of passed-on values ignore key order.
 - **Collisions** are checked on every rebuild. One at the start of a run fails it; one found later leaves both tools out and is reported in `tools_changed`.
-- **Schemas:** MCP `inputSchema` passes through. Ollama rejects nothing: it keeps a property's `type`, `description`, `enum`, `anyOf`, `properties`, `required` and everything under `items`, and drops the rest, which for the Arranger tools loses only the root `$schema` and bounds the descriptions restate ([S1](mcp-host/phase0-results.md#s1-schema-conversion)).
+- **Schemas:** MCP `inputSchema` passes through. Ollama rejects nothing: it keeps a property's `type`, `description`, `enum`, `anyOf`, `properties`, `required` and everything under `items`, and drops the rest, which for the Arranger tools loses only the root `$schema` and bounds the descriptions restate ([S1](phase0-results.md#s1-schema-conversion)).
 - **Rebuilt** at the start of each run, and between turns for servers that opt in to change notifications.
-- **The model-facing surface**, the tool definitions and labelled instructions in the provider's request format (OpenAI-style for the first provider), comes from an exported pure function, so `eval` can tokenize it. L1 does not use it: it counts the raw MCP surface instead, so this repository's PR gate does not depend on `mcp-host-core` once it moves ([MCP platform testing](mcp-platform-testing.md) §3.4). The serving stack's chat template renders it further, so its token count is a stable proxy for the real cost, not the exact figure.
+- **The model-facing surface**, the tool definitions and labelled instructions in the provider's request format (OpenAI-style for the first provider), comes from an exported pure function, so `eval` can tokenize it. L1 does not use it: it counts the raw MCP surface instead, so this repository's PR gate does not depend on `mcp-host-core` once it moves ([MCP platform testing](../mcp-platform-testing.md) §3.4). The serving stack's chat template renders it further, so its token count is a stable proxy for the real cost, not the exact figure.
 
 #### Approval Policy
 
@@ -325,7 +325,7 @@ A model-neutral, serializable message history that a consumer saves and hands ba
 
 #### `eval`
 
-The harness in [MCP platform testing](mcp-platform-testing.md), which owns the metrics, case format, fingerprint and manifest. `eval` owns its runner; `vitest-evals` is not used (that plan's §5.2).
+The harness in [MCP platform testing](../mcp-platform-testing.md), which owns the metrics, case format, fingerprint and manifest. `eval` owns its runner; `vitest-evals` is not used (that plan's §5.2).
 
 **Where `eval` is built is open** ([§5](#5-open-questions), question 4). This section describes it as an `mcp-cli` subcommand, which after Phase 5 puts it in the CRE repository.
 
@@ -360,7 +360,7 @@ The harness in [MCP platform testing](mcp-platform-testing.md), which owns the m
 In the CRE repository. This plan requires that it:
 
 - runs one host-core instance per conversation;
-- gives each `mcp-client` the signed-in user's credential, never a shared service credential, which would make the MCP server a confused deputy ([MCP platform testing](mcp-platform-testing.md) §5.4.1); for an Arranger-backed server, that token's audience names the MCP server, which exchanges it for the search server's ([MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §3);
+- gives each `mcp-client` the signed-in user's credential, never a shared service credential, which would make the MCP server a confused deputy ([MCP platform testing](../mcp-platform-testing.md) §5.4.1); for an Arranger-backed server, that token's audience names the MCP server, which exchanges it for the search server's ([MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §3);
 - lets only that user answer the instance's approvals and confirmations, including in a shared notebook;
 - keeps model credentials off the browser;
 - streams events over WebSocket or SSE, takes answers as `respond` calls, and reads `pending()` after a reconnect;
@@ -383,7 +383,7 @@ First, **upgrade `client`, `server` and `core` to 2.3.0 or later together**, sin
 
 Each spike can change the design, except S2, which confirms it.
 
-**Done on local Ollama, 2026-10-09** ([results](mcp-host/phase0-results.md)). S2 and S5 confirmed the design. S1, S3, S4 and an added S2b (cancellation) changed it, as §2 now states, and found the silent truncation that [Context window](#context-window) handles. Still to do: confirm on the shared server, with the same scripts and `--base-url`.
+**Done on local Ollama, 2026-10-09** ([results](phase0-results.md)). S2 and S5 confirmed the design. S1, S3, S4 and an added S2b (cancellation) changed it, as §2 now states, and found the silent truncation that [Context window](#context-window) handles. Still to do: confirm on the shared server, with the same scripts and `--base-url`.
 
 - **S1: schema conversion.** Send all five Arranger tools' input schemas, including `execute_query`'s unconstrained `sqon`, as OpenAI-style tools through Ollama's `/v1/chat/completions`, the path the provider uses. Confirm the models below call them correctly. Check for `$ref`.
 - **S2: `callTool()` against `request()`.** Confirm `callTool(..., { allowInputRequired: true })` fails on `execute_query`'s `input_required` reply with `tools/list` cached, and `request()` completes the round trip.
@@ -421,7 +421,7 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 
 ### Phase 4: MCP CLI `eval` (Deferred)
 
-Phases 1 to 4 of [MCP platform testing](mcp-platform-testing.md), on host-core events. Its spikes R2 to R7 still apply, and R1 is the end-to-end run.
+Phases 1 to 4 of [MCP platform testing](../mcp-platform-testing.md), on host-core events. Its spikes R2 to R7 still apply, and R1 is the end-to-end run.
 
 > [!NOTE]
 > As of 2026-10-07, work on the `eval` harness will be deferred in favour of completing the CRE sooner. Where it is built is decided when it resumes ([§5](#5-open-questions), question 4).
@@ -442,15 +442,15 @@ Move `mcp-host-core` and `mcp-cli` (with `chat`; `eval` is not built yet) to the
 
 Component-level decisions are stated with their reasons in [§2](#2-components). These span the plan:
 
-| Decision                                     | Why                                                                                                                                                                                                   |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| One shared stack for chat, harness and UI    | Separate implementations would drift.                                                                                                                                                                 |
-| The `mcp-client` module is published         | The CRE repository depends on it.                                                                                                                                                                     |
-| A connection layer separate from the runtime | `mcp-client` knows nothing about models, so it can be tested and reused alone. The runtime is shared by the CLI and the CRE server.                                                                   |
-| `chat` and `eval` in one app                 | They share configuration, providers, servers and the transcript format. An evaluation is a chat with scripted answers and scoring. Provisional: [§5](#5-open-questions), question 4.                  |
-| Start in this repository                     | When the CRE repository is ready, `mcp-host-core` and `mcp-cli` move there. Until then, they can be built within this repo alongside the `mcp-client`.                                                |
-| Own the loop rather than adopt a framework   | The Vercel AI SDK hides the exact usage and tool-call fields the harness reads. LangChain's MCP adapter re-runs a call's first round on resume ([research record](atlas/mcp-client-landscape.md) §3). |
-| SDK 2.3.0 or later (`node` 2.1.1)            | 2.3.0 stops following redirects to other origins; 2.2.0 made list calls read every page.                                                                                                              |
+| Decision                                     | Why                                                                                                                                                                                                      |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One shared stack for chat, harness and UI    | Separate implementations would drift.                                                                                                                                                                    |
+| The `mcp-client` module is published         | The CRE repository depends on it.                                                                                                                                                                        |
+| A connection layer separate from the runtime | `mcp-client` knows nothing about models, so it can be tested and reused alone. The runtime is shared by the CLI and the CRE server.                                                                      |
+| `chat` and `eval` in one app                 | They share configuration, providers, servers and the transcript format. An evaluation is a chat with scripted answers and scoring. Provisional: [§5](#5-open-questions), question 4.                     |
+| Start in this repository                     | When the CRE repository is ready, `mcp-host-core` and `mcp-cli` move there. Until then, they can be built within this repo alongside the `mcp-client`.                                                   |
+| Own the loop rather than adopt a framework   | The Vercel AI SDK hides the exact usage and tool-call fields the harness reads. LangChain's MCP adapter re-runs a call's first round on resume ([research record](../atlas/mcp-client-landscape.md) §3). |
+| SDK 2.3.0 or later (`node` 2.1.1)            | 2.3.0 stops following redirects to other origins; 2.2.0 made list calls read every page.                                                                                                                 |
 
 ### 4.2 What Each Consumer Needs
 
@@ -521,9 +521,9 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 4. **Where `eval` is built**, decided when Phase 4 resumes. Either:
     - **in `mcp-cli`, in the CRE repository**, as §2.3 describes. `mcp-host-core` stays unpublished, but local mode, the rebuild before a run and the build identity all need a path to an Arranger checkout; `sqonEquivalence` uses the published `@overture-stack/sqon` rather than the version the server under test runs; and running against this repository's commits in CI needs a cross-repository trigger; or
     - **as `apps/mcp-eval`, in this repository**, beside the server it measures, so local mode, the rebuild and commit attribution work as the harness plan designs them. `mcp-host-core` is then published from the CRE repository, with an API that has to stay stable.
-5. **Reasoning output** (settled by Q5, [results](mcp-host/phase0-results.md#q5-sending-reasoning-back)). Ollama's `/v1` returns a thinking model's reasoning in a non-standard `reasoning` field and reads it back from assistant messages. Sending it back cost a median of 81 to 538 prompt tokens per earlier turn, with no consistent effect on the next call. So the final response, `model_response` and the conversation state keep `reasoning` as an optional field, since a saved notebook cannot regain it, and the provider sends it back only when configured to, off by default.
-6. **What a run does after an empty reply.** A malformed call gets a tool message, which needs a call id; an `empty_reply` has none ([S4](mcp-host/phase0-results.md#s4-malformed-tool-calls)). Either the run ends with `done` naming the parse failure, which `eval` counts and `chat` shows; or host-core asks once more without changing the conversation, which recovers a sampled failure but hides it unless the event is shown. `eval` is unaffected either way, since `parseFailures` counts the event.
-7. **Data crossing connections in one session**, to be decided in [MCP host: connection authentication](arranger-auth/mcp-host-connections.md) §6. Once controlled data enters the model's context, a later call to another server can carry it out, or a third party's injected text can make the host read more. The options there (refuse external calls after a controlled read, confirm each call that leaves a connection, or never have both kinds of server live together) all act through host-core's approval policy, and the first and third need each server's configuration to say whether it serves controlled data, which `trusted` does not. Settle it before Phase 2 fixes the approval policy and server configuration.
+5. **Reasoning output** (settled by Q5, [results](phase0-results.md#q5-sending-reasoning-back)). Ollama's `/v1` returns a thinking model's reasoning in a non-standard `reasoning` field and reads it back from assistant messages. Sending it back cost a median of 81 to 538 prompt tokens per earlier turn, with no consistent effect on the next call. So the final response, `model_response` and the conversation state keep `reasoning` as an optional field, since a saved notebook cannot regain it, and the provider sends it back only when configured to, off by default.
+6. **What a run does after an empty reply.** A malformed call gets a tool message, which needs a call id; an `empty_reply` has none ([S4](phase0-results.md#s4-malformed-tool-calls)). Either the run ends with `done` naming the parse failure, which `eval` counts and `chat` shows; or host-core asks once more without changing the conversation, which recovers a sampled failure but hides it unless the event is shown. `eval` is unaffected either way, since `parseFailures` counts the event.
+7. **Data crossing connections in one session**, to be decided in [MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §6. Once controlled data enters the model's context, a later call to another server can carry it out, or a third party's injected text can make the host read more. The options there (refuse external calls after a controlled read, confirm each call that leaves a connection, or never have both kinds of server live together) all act through host-core's approval policy, and the first and third need each server's configuration to say whether it serves controlled data, which `trusted` does not. Settle it before Phase 2 fixes the approval policy and server configuration.
 
 ---
 
@@ -531,8 +531,8 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 
 **Already updated:**
 
-- [MCP platform testing](mcp-platform-testing.md) builds the harness on this plan, and records its deferral, the L1 token gate counting the raw surface, and `eval`'s open location. If this plan changes, its §5 and §7 change too.
-- [atlas: MCP clients for a 2026-07-28-only server](atlas/mcp-client-landscape.md) §5.
+- [MCP platform testing](../mcp-platform-testing.md) builds the harness on this plan, and records its deferral, the L1 token gate counting the raw surface, and `eval`'s open location. If this plan changes, its §5 and §7 change too.
+- [atlas: MCP clients for a 2026-07-28-only server](../atlas/mcp-client-landscape.md) §5.
 - `.dev/roadmap.md`: entries for this plan and the harness.
 - `.dev/tech-debt.md`: confirmation state bound to the OAuth client rather than the user ([§2.4](#24-cre-server)).
 - `CHANGELOG.md`: the SDK upgrade.

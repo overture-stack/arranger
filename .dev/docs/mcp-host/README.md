@@ -1,6 +1,6 @@
 # MCP Host: Phase 0 Spikes
 
-Research spikes for the [MCP host plan](../mcp-host-plan.md) §3 Phase 0. None of this is product code.
+Research spikes for the [MCP host plan](mcp-host-plan.md) §3 Phase 0. None of this is product code.
 
 - **[`phase0-results.md`](phase0-results.md):** what the spikes found and what each changed in the plan. Start here.
 - **[`scripts/`](scripts):** the code behind those results, kept so the model spikes can be rerun on the shared Ollama server. When Phase 1 and the evaluation harness start, the useful parts move into their tests.
