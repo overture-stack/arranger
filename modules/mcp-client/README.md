@@ -39,16 +39,17 @@ A tool's result is checked against its `outputSchema` from the latest snapshot. 
 
 ## Options
 
-| Option                | Meaning                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `url`, `clientInfo`   | The server's endpoint; this host's name and version.                                                    |
-| `auth`                | `{ headers }`, or `{ provider }` for an SDK `AuthProvider`. Refused over plain HTTP except to loopback. |
-| `allowInsecureHttp`   | Allows `auth` over plain HTTP to another host anyway.                                                   |
-| `inputResolver`       | Answers each question with an `ElicitResult`.                                                           |
-| `changeNotifications` | Off by default. `{ onChange }` reports which list changed; then call `refreshSurface()`.                |
-| `onError`             | Receives errors raised outside any call, such as a change stream that failed to open.                   |
-| `requestTimeoutMs`    | Per request leg; defaults to the SDK's 60 s. Waiting on the resolver is not timed.                      |
-| `maxRounds`           | Retries after the original request; defaults to 10.                                                     |
+| Name                  | Description                                                                                                                                         | Type                                                                | Required     | Default                           |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------ | --------------------------------- |
+| `url`                 | The server's Streamable HTTP endpoint.                                                                                                              | `string \| URL`                                                     | **Required** |                                   |
+| `clientInfo`          | This host's name and version, sent to the server.                                                                                                   | `{ name: string; version: string }`                                 | **Required** |                                   |
+| `auth`                | Static headers, or an SDK `AuthProvider`, which supplies a token per request and retries once on a 401. Refused over plain HTTP except to loopback. | `{ headers: Record<string, string> } \| { provider: AuthProvider }` | Optional     | None                              |
+| `allowInsecureHttp`   | Allows `auth` over plain HTTP to a non-loopback host, which exposes the credential on the network.                                                  | `boolean`                                                           | Optional     | `false`                           |
+| `inputResolver`       | Answers each server question with an `ElicitResult`. Without it, the client does not declare `elicitation`, so servers ask nothing.                 | `InputResolver`                                                     | Optional     | None                              |
+| `changeNotifications` | Reports which list changed, over a stream held open for the client's life. The list is not re-read: call `refreshSurface()`.                        | `{ onChange: (change: SurfaceChange) => void }`                     | Optional     | None, so no stream is opened      |
+| `onError`             | Receives errors raised outside any call, such as a change stream that failed to open. Anything it throws is ignored.                                | `(error: Error) => void`                                            | Optional     | None, so those errors are dropped |
+| `requestTimeoutMs`    | Timeout per request leg. Waiting on the resolver is not timed.                                                                                      | `number`                                                            | Optional     | `60_000`, the SDK's default       |
+| `maxRounds`           | Retries allowed after the original request.                                                                                                         | `number`                                                            | Optional     | `10`                              |
 
 ## Outcomes
 
