@@ -55,6 +55,8 @@ Background, including why existing chat hosts cannot drive `apps/mcp-server`: [a
                MCP servers (apps/mcp-server)
 ```
 
+Diagrams of this design, from the system context to each request's flow: [MCP Host: Architecture](architecture.md).
+
 **Rules for every component:**
 
 1. **Dependencies point down only.** `mcp-client` depends on the SDK, `mcp-host-core` on `mcp-client` and the model provider's library, and the apps on `mcp-host-core`.
