@@ -87,7 +87,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 ### Output validation must bound its running time for a server's schema
 
 **File:** `modules/mcp-client/src/outputValidation.ts`
-**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before `cre-server` connects to servers other than Arranger's
+**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
 **Kind:** hardening
 **Issue:** A tool's `outputSchema` comes from the server, and validating `structuredContent` against it must finish within a bounded time whatever the schema says. The size and depth limits bound compiling, not validating.
 **Fix:** Run validation under a time limit, for example in a worker, or configure Ajv's regular expressions with a linear-time engine. Report a validation that does not finish as `output_invalid`. Test that it ends within the limit.
@@ -96,7 +96,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 ### Responses from a server must have a size limit
 
 **File:** `modules/mcp-client/src/client.ts` (the transport)
-**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before `cre-server` connects to servers other than Arranger's
+**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
 **Kind:** hardening
 **Issue:** A response body must be bounded before the SDK parses it, for list results and call results alike.
 **Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.
@@ -474,7 +474,7 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **File:** `apps/mcp-server/src/mcp/requestState.ts` (`createConfirmationCodec`, its `bind`)
 **Severity:** low (no effect until the endpoint authenticates callers; the query digest still binds a confirmation to one query)
 **Kind:** design gap
-**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. A backend registered as one OAuth client, as the notebook UI's would be ([MCP host plan](docs/mcp-host/mcp-host-plan.md) §2.4), serves all its users under one `clientId`, so a confirmation issued to one would verify for another.
+**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. The CRE desktop app is one OAuth public client, shared by every installed copy ([MCP host plan](docs/mcp-host/mcp-host-plan.md) §2.4). Every user of it has the same `clientId`, so a confirmation issued to one user would verify for another.
 **Fix:** Bind to the user as well. The SDK's `AuthInfo` has no user field, so the token verifier puts the token's `sub` claim in `authInfo.extra` for `bind` to read. Encode the parts rather than joining with `\0`, as the comment above `bind` requires. Test that a state minted for one subject fails for another under the same client.
 **Standalone:** no; the subject exists only once the endpoint authenticates callers, so do this with that work (the "MCP endpoint has no authentication" entry above)
 
