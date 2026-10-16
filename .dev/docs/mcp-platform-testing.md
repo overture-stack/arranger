@@ -1,8 +1,8 @@
 # MCP Server Platform Testing: Plan
 
-**Status:** plan only. Nothing here is implemented. Deferred as of 2026-10-07 in favour of completing the CRE sooner ([MCP host plan](mcp-host-plan.md), Phase 4). Last updated 2026-10-08.
+**Status:** plan only. Nothing here is implemented. Deferred as of 2026-10-07 in favour of completing the CRE sooner ([MCP host plan](mcp-host/mcp-host-plan.md), Phase 4). Last updated 2026-10-08.
 
-**Built on the [MCP host plan](mcp-host-plan.md), approved 2026-10-07.** The harness runs as `eval` on that plan's modules. Where `eval` is built is open (host plan §5, question 4): as an `mcp-cli` subcommand in the CRE repository, or as `apps/mcp-eval` in this repository. This plan describes the first, as the host plan does. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
+**Built on the [MCP host plan](mcp-host/mcp-host-plan.md), approved 2026-10-07.** The harness runs as `eval` on that plan's modules. Where `eval` is built is open (host plan §5, question 4): as an `mcp-cli` subcommand in the CRE repository, or as `apps/mcp-eval` in this repository. This plan describes the first, as the host plan does. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
 
 **Goal:** a fixed harness, fixed dataset, and a pinned model configuration, run against a changing `apps/mcp-server`, producing numbers that justify a decision to keep or revert a change.
 
@@ -98,7 +98,7 @@ Everything here goes into a **run manifest** written alongside every results fil
 
 **MCP surface and build.**
 
-- **The surface hash**: the `server/discover` result, which carries the instructions, plus `tools/list`, `resources/list`, `resources/templates/list`, and `prompts/list`. This is the thing under test, so its hash is the change identifier. `mcp-client` exports the function that computes it, and the [MCP host plan](mcp-host-plan.md#21-mcp-client) states its canonicalization: `_meta`, cache hints and cursors are stripped, keys sorted, list order kept. The server's identity is therefore excluded, and recorded as build identity below, so a version bump alone does not change the hash.
+- **The surface hash**: the `server/discover` result, which carries the instructions, plus `tools/list`, `resources/list`, `resources/templates/list`, and `prompts/list`. This is the thing under test, so its hash is the change identifier. `mcp-client` exports the function that computes it, and the [MCP host plan](mcp-host/mcp-host-plan.md#21-mcp-client) states its canonicalization: `_meta`, cache hints and cursors are stripped, keys sorted, list order kept. The server's identity is therefore excluded, and recorded as build identity below, so a version bump alone does not change the hash.
 - Mode, and the build identity that comes with it: local mode gives the git SHA of `apps/mcp-server` plus hashes of every rebuilt `modules/*`; remote mode gives whatever version is reported by the server ([§5.4.1](#541-local-versus-remote-mcp-server)).
 
 **Harness.**
@@ -309,7 +309,7 @@ budget:
 tiers                   which model tiers this case runs on (default: all)
 ```
 
-**There is no `timeout` policy.** A client-side timeout reaches the server as `cancel`, and `execute_query` treats every answer but `accept` as declined, so it would score exactly like `decline`. Waiting out the server's 600-second window instead would cost over 10 minutes per case. `mcp-client`'s own tests cover a refused confirmation ([MCP host plan](mcp-host-plan.md#phase-1-mcp-client)).
+**There is no `timeout` policy.** A client-side timeout reaches the server as `cancel`, and `execute_query` treats every answer but `accept` as declined, so it would score exactly like `decline`. Waiting out the server's 600-second window instead would cost over 10 minutes per case. `mcp-client`'s own tests cover a refused confirmation ([MCP host plan](mcp-host/mcp-host-plan.md#phase-1-mcp-client)).
 
 **Why `params` exists, and what it guards.** Four `execute_query` inputs are model-settable and change the structured result: `aggregationsFilterThemselves` and `includeMissing` change the buckets, `first` and `offset` change which primary keys come back. An exact assertion is only defined against fixed values, so `result` is derived under recorded ones and the scorer compares what the run actually used. **Each parameter voids exactly the sub-assertion it can move, and nothing else:**
 
@@ -336,7 +336,7 @@ Source intents from real failures rather than imagination. Every hit-or-miss SQO
 
 No framework does what this suite needs end to end: fingerprint an external Arranger, open an MCP session in either local or remote mode, advertise and answer elicitation on a script, bridge MCP tool schemas to the serving API's tool format, run the loop with budgets, separate parser failures from server rejections, and assert Arranger semantics like SQON equivalence.
 
-Most of that list is what any MCP host needs. The [MCP host plan](mcp-host-plan.md) builds it once, as `mcp-client` and `mcp-host-core`, for this harness, a terminal chat and the notebook UI. What is left here is the Arranger-specific work and a small runner. Host-core's events already are the transcript, so a runner framework adds little ([§5.3.3](#533-runner-and-results-store)).
+Most of that list is what any MCP host needs. The [MCP host plan](mcp-host/mcp-host-plan.md) builds it once, as `mcp-client` and `mcp-host-core`, for this harness, a terminal chat and the notebook UI. What is left here is the Arranger-specific work and a small runner. Host-core's events already are the transcript, so a runner framework adds little ([§5.3.3](#533-runner-and-results-store)).
 
 ### 5.2 Tools considered
 
@@ -356,11 +356,11 @@ Most of that list is what any MCP host needs. The [MCP host plan](mcp-host-plan.
 
 ### 5.3 Recommendation
 
-Six thin layers, each independently swappable, all env-var configurable. L1 stays in the existing integration tests. L2 and L3 run as `eval`, on the [MCP host plan](mcp-host-plan.md)'s modules. The two things worth getting right on day one are the record format and the manifest, because everything downstream is replaceable and those two are not.
+Six thin layers, each independently swappable, all env-var configurable. L1 stays in the existing integration tests. L2 and L3 run as `eval`, on the [MCP host plan](mcp-host/mcp-host-plan.md)'s modules. The two things worth getting right on day one are the record format and the manifest, because everything downstream is replaceable and those two are not.
 
 #### 5.3.1 MCP client and tool-calling loop
 
-Built by the [MCP host plan](mcp-host-plan.md), not by the harness:
+Built by the [MCP host plan](mcp-host/mcp-host-plan.md), not by the harness:
 
 - `mcp-client` holds the MCP session, pinned to `2026-07-28`, and runs the confirmation rounds.
 - `mcp-host-core` runs the loop with its budgets, classifies malformed tool calls, and emits the events this suite stores as its transcript, including exact usage per model call.
@@ -376,7 +376,7 @@ Host-core's OpenAI-compatible provider, pointed at `LLM_BASE_URL`, keeps the har
 #### 5.3.3 Runner and results store
 
 - **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them. Both apply `mcp-client`'s exported pure functions (the surface canonicalization and hash) to the raw SDK client's responses, so the suite still bypasses this stack's connection path and depends on nothing that leaves this repository.
-- **L2 and L3** run as `eval`, through its subcommands `run`, `judge`, `agreement`, `compare` and `bootstrap-expectations` ([MCP host plan](mcp-host-plan.md) §2.3).
+- **L2 and L3** run as `eval`, through its subcommands `run`, `judge`, `agreement`, `compare` and `bootstrap-expectations` ([MCP host plan](mcp-host/mcp-host-plan.md) §2.3).
     - Invoked explicitly, never from `npm test`. These are budgeted experiments, not tests, and should not sit where they can fail a build by accident.
 
 **How the split works.** Host-core runs one phrasing as one run and emits its events. `eval` owns the runner around it: it loads the case set, fingerprints Arranger, loops an intent's phrasings, and writes the records and the manifest.

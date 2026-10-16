@@ -71,6 +71,37 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Use a comparator that returns `0` for equal keys (e.g. compare stringified keys with `===`/`<` rather than always branching to `-1`/`1`), or sort by a stable, collision-free key. Add a dedicated test file for `builder/utils.ts` covering mixed-type arrays.
 **Standalone:** yes.
 
+### `modules/sqon` tests are never typechecked, and carry 38 type errors
+
+**File:** `modules/sqon/package.json` (`test` script); `src/builder/*.test.ts`, `src/jsonSchema/jsonSchema.test.ts`
+**Severity:** low (the tests pass, and the shipped source typechecks)
+**Kind:** test infrastructure gap
+**Issue:** `npx tsc --noEmit -p modules/sqon` reports 38 errors, all in tests. Most are SQON literals whose `op` widens to `string` where `SqonNode` needs `'and' | 'or' | 'not'`, or JSON Schema values read as `unknown`. Nothing reports them: `tsx --test` strips types unchecked, and the tsup build never reaches a test file.
+**Fix:** Type the literals (`as const`, or the package's builders), narrow the schema reads, and add a `typecheck` script like `modules/mcp-client`'s.
+**Standalone:** yes
+
+---
+
+## modules/mcp-client
+
+### Output validation must bound its running time for a server's schema
+
+**File:** `modules/mcp-client/src/outputValidation.ts`
+**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
+**Kind:** hardening
+**Issue:** A tool's `outputSchema` comes from the server, and validating `structuredContent` against it must finish within a bounded time whatever the schema says. The size and depth limits bound compiling, not validating.
+**Fix:** Run validation under a time limit, for example in a worker, or configure Ajv's regular expressions with a linear-time engine. Report a validation that does not finish as `output_invalid`. Test that it ends within the limit.
+**Standalone:** yes
+
+### Responses from a server must have a size limit
+
+**File:** `modules/mcp-client/src/client.ts` (the transport)
+**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
+**Kind:** hardening
+**Issue:** A response body must be bounded before the SDK parses it, for list results and call results alike.
+**Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.
+**Standalone:** yes
+
 ---
 
 ## build tooling
@@ -443,7 +474,7 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **File:** `apps/mcp-server/src/mcp/requestState.ts` (`createConfirmationCodec`, its `bind`)
 **Severity:** low (no effect until the endpoint authenticates callers; the query digest still binds a confirmation to one query)
 **Kind:** design gap
-**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. A backend registered as one OAuth client, as the notebook UI's would be ([MCP host plan](docs/mcp-host-plan.md) §2.4), serves all its users under one `clientId`, so a confirmation issued to one would verify for another.
+**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. The CRE desktop app is one OAuth public client, shared by every installed copy ([MCP host plan](docs/mcp-host/mcp-host-plan.md) §2.4). Every user of it has the same `clientId`, so a confirmation issued to one user would verify for another.
 **Fix:** Bind to the user as well. The SDK's `AuthInfo` has no user field, so the token verifier puts the token's `sub` claim in `authInfo.extra` for `bind` to read. Encode the parts rather than joining with `\0`, as the comment above `bind` requires. Test that a state minted for one subject fails for another under the same client.
 **Standalone:** no; the subject exists only once the endpoint authenticates callers, so do this with that work (the "MCP endpoint has no authentication" entry above)
 
