@@ -15,7 +15,7 @@ Which clients can drive `apps/mcp-server`, why legacy-era clients are refused, a
     - MCP Inspector v2, which has no model.
 - **Plausible but unconfirmed:** Claude Code pointed at Ollama. See [§2](#2-client-landscape).
 - **LangChain's `langchain.mcp` also works**, with a resume shape that is easy to get wrong and a replay behaviour worth knowing. See [§3](#3-langchain-langchainmcp).
-- **Our own host is a small amount of code on the v2 TS client.** The client can fulfil `input_required` rounds through a registered `elicitation/create` handler, but keeps the `requestState` inside the SDK, so the [MCP host plan](../mcp-host-plan.md) drives the rounds itself to record it. See [§5](#5-building-our-own-host-on-the-v2-ts-client).
+- **Our own host is a small amount of code on the v2 TS client.** The client can fulfil `input_required` rounds through a registered `elicitation/create` handler, but keeps the `requestState` inside the SDK, so the [MCP host plan](../mcp-host/mcp-host-plan.md) drives the rounds itself to record it. See [§5](#5-building-our-own-host-on-the-v2-ts-client).
 
 ---
 
@@ -164,7 +164,7 @@ A bare `{"confirm": True}`, or a bare `{"action": ..., "content": ...}` without 
 
 **Consequences for a host:**
 
-- **Confirmation UI:** in automatic mode the handler is the whole seam, `(message, requestedSchema) => Promise<ElicitResult>`: a terminal prompt in a CLI, a dialog in a UI. The [MCP host plan](../mcp-host-plan.md) uses manual mode instead.
+- **Confirmation UI:** in automatic mode the handler is the whole seam, `(message, requestedSchema) => Promise<ElicitResult>`: a terminal prompt in a CLI, a dialog in a UI. The [MCP host plan](../mcp-host/mcp-host-plan.md) uses manual mode instead.
 - **Nothing held open** while the user decides. The limit is the `requestState` lifetime, 600 seconds (`CONFIRMATION_TTL_SECONDS` in `apps/mcp-server/src/mcp/requestState.ts`). The server refuses an expired, forged or wrongly bound state identically, so a client can only say a confirmation probably expired.
 - **Version pin:** `versionNegotiation: { mode: { pin: '2026-07-28' } }`, since the default is `'legacy'`.
 - **Starting points:** `integration-tests/mcp-server/test/mcpClient.ts` has the connect, pin and handler pieces, and the SDK's `examples/cli-client` is a fuller reference host.
