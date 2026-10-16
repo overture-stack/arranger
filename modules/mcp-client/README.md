@@ -1,13 +1,16 @@
 # @overture-stack/arranger-mcp-client
 
-One connection to one MCP server over Streamable HTTP, for an MCP host. It wraps the SDK's `Client` (`@modelcontextprotocol/client` 2.3.1 or later), and:
+One connection to one MCP server over Streamable HTTP, for an MCP host. It wraps the MCP SDK's `Client` (`@modelcontextprotocol/client` 2.3.1 or later), and:
 
 - speaks protocol revision `2026-07-28` only;
 - drives server confirmations (`input_required`) itself, so the host sees each round's `requestState`;
 - resolves every call with an outcome instead of throwing;
 - snapshots the server's surface, with a hash that ignores its version and cache hints.
 
-No stable release yet. Design: [MCP Host Plan](../../.dev/docs/mcp-host/mcp-host-plan.md) §2.1.
+No stable release yet.
+
+- Design: [MCP Host Plan](../../.dev/docs/mcp-host/mcp-host-plan.md) §2.1
+- Architecture: [`mcp-client` Architecture](docs/architecture.md)
 
 ## Usage
 
