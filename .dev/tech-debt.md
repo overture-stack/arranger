@@ -1716,6 +1716,24 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Fix:** Pass `endpoint: 'graphql'` in `buildNetworkQueryFetchArgs`, and test the resolved URL with the default fetcher.
 **Standalone:** yes
 
+### Bar chart labels every zero "Too few", including a true zero
+
+**File:** `modules/charts/src/components/charts/Bar/View.tsx:136-142`; `modules/charts/src/components/charts/Tooltip.tsx` (the "Too few" text)
+**Severity:** medium (a chart misstates the data it shows)
+**Kind:** bug
+**Issue:** Every bar with a value of 0 is drawn as a stub and its tooltip reads "Too few", with no way to turn this off. That reading fits a count an upstream step replaced with 0. It is wrong for a true zero, such as a numeric `ranges` bucket matching no documents ("> 65": 0), where the chart tells a viewer that data exists and is withheld.
+**Fix:** Make the treatment opt-in through a `BarChart` prop, so a true zero renders as zero, and fold the configurable increment from the `SUPPRESSION_INCREMENT_VALUE` entry above into the same prop. Choosing the default is a compatibility decision: on keeps every existing deployment's rendering, off corrects it for deployments that never replace counts. Once a true zero can render, the zero case in "Tooltip pluralization threshold excludes zero" reaches Bar too.
+**Standalone:** yes
+
+### React 19 support in `modules/charts` waits on a Nivo upgrade
+
+**File:** `modules/charts/package.json` (`react` and `react-dom` peers `^17.0.0 || ^18.0.0`; `@nivo/*` `^0.88.0`)
+**Severity:** low (`modules/components`' own React 19 support is blocked on the `recompose` removal anyway)
+**Kind:** dependency
+**Issue:** `modules/components` lists React 19 in its peer range and `modules/charts` does not. Widening the range alone would be false: `@nivo/core` and `@nivo/bar` 0.88 declare `react >= 16.14.0 < 19.0.0`, while Nivo 0.99.0, current as of 2026-10-09, declares `^16.14 || ^17.0 || ^18.0 || ^19.0`.
+**Fix:** Upgrade the four `@nivo/*` packages together to a release supporting React 19, checking the Bar, Sunburst and NetworkNodes views against the release notes in between, then widen the `react`, `react-dom` and `@types/*` peers to match `modules/components`.
+**Standalone:** yes
+
 ## modules/components
 
 ### `LiveAdvancedFacetView`/`MatchBoxState` bypass `DataContext` entirely, and are currently unreachable

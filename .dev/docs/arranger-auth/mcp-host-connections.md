@@ -24,6 +24,23 @@ The MCP authorization spec forbids token passthrough: a token issued for the MCP
 
 Per-person tokens the host holds on the user's behalf, for a connection to something outside Overture entirely, with consent, storage, refresh, and revocation to design. Firm rule, not negotiable per-connection: an Overture token never reaches a third party, and a third party's token never reaches Overture.
 
+**cBioPortal, as checked on 2026-10-09.** Its hosted MCP servers, the database server at `https://mcp.cbioportal.org/db/mcp` and the navigator at `https://mcp.cbioportal.org/navigator/mcp`, require sign-in. The database server publishes protected-resource metadata, as the MCP authorization specification asks, naming cBioPortal's own authorization server, `https://mcp.cbioportal.org/`, which signs people in with Google, its only provider so far. A token it issues is valid at cBioPortal's servers alone.
+
+The host's first connection for a person, traced:
+
+1. The host calls the MCP server without a cBioPortal token, and receives a 401 pointing at its metadata.
+2. The host reads the metadata and finds cBioPortal's authorization server.
+3. The host registers itself there as a client, automatically, on first contact.
+4. The person signs in through the browser with Google, and approves.
+5. cBioPortal's authorization server issues a token for its MCP server, and the host stores it under the person's host account.
+6. Later cBioPortal calls carry that token, and Overture calls carry the person's Overture tokens. Neither is ever sent in place of the other.
+
+Neither Usher nor Keycloak takes part. Usher governs Overture's data and accepts no outside token, and Keycloak signs the person in to Overture alone. Keycloak could offer Google as a way to sign in to Overture too, a convenience that still leaves two sign-ins and two tokens, since cBioPortal accepts only its own authorization server's tokens.
+
+What the host needs for it: discovery, automatic client registration, the browser sign-in with PKCE, encrypted per-person token storage, refresh, and a way for the person to disconnect. cBioPortal records the person's Google email and account ID on every tool call, so connecting also tells cBioPortal who asked what; see §6.
+
+Sources: [cBioPortal MCP documentation](https://docs.cbioportal.org/ai-integrations/mcp/), [the database server's discovery document](https://mcp.cbioportal.org/.well-known/oauth-protected-resource/db/mcp).
+
 ## 5. A remote or separate Usher instance
 
 Token-level trust between two Usher instances is the federation question, and it hasn't been decided yet (network search is itself refused under access control until that lands). Until it does, this plan treats a remote Usher-governed server exactly like any other external OAuth resource under §4: its own sign-in, its own identity provider, no assumed trust with the host's own Usher instance. **Developer decision:** the federation posture, when it's time to revisit this section.
