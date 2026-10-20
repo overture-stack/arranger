@@ -1,6 +1,6 @@
 # MCP Host: Phase 0 Spike Results
 
-Evidence for the [MCP host plan](../mcp-host-plan.md) §3 Phase 0. The plan states the design; this records what the spikes found.
+Evidence for the [MCP host plan](mcp-host-plan.md) §3 Phase 0. The plan states the design; this records what the spikes found.
 
 **Setup:** MCP SDK 2.3.1; Ollama 0.34.3 on a 24 GiB Apple M5 Pro with `OLLAMA_CONTEXT_LENGTH=16384`; models `gemma4:e4b`, `gemma4:12b`, `qwen3:14b` and `granite4.1:8b`. Not yet confirmed on the shared server. Tool results come from the real tools run against a synthetic catalogue, so no dataset records are involved. The [README](README.md) lists the scripts; their raw output, in `results/`, is not committed.
 
@@ -96,7 +96,7 @@ Otherwise, failures repeat S1's: `gemma4:12b` stringified `sqon` in all 20 of it
 
 ## Q5: sending reasoning back
 
-Plan [question 5](../mcp-host-plan.md#5-open-questions). A thinking model's call runs against the real tool; then its next step is sent twice, with and without its earlier `reasoning`, same seed ([`q5.ts`](scripts/q5.ts)). Temperature 0.7, six seeds per goal.
+Plan [question 5](mcp-host-plan.md#5-open-questions). A thinking model's call runs against the real tool; then its next step is sent twice, with and without its earlier `reasoning`, same seed ([`q5.ts`](scripts/q5.ts)). Temperature 0.7, six seeds per goal.
 
 | Run                                                 | Model        | Correct, with | Correct, without | Only with / only without | Cost of sending it back (prompt tokens) |
 | --------------------------------------------------- | ------------ | ------------- | ---------------- | ------------------------ | --------------------------------------- |

@@ -1,12 +1,22 @@
-# MCP Host: Phase 0 Spikes
+# MCP Host
 
-Research spikes for the [MCP host plan](../mcp-host-plan.md) §3 Phase 0. None of this is product code.
+Design documents for the MCP host: the stack that connects to MCP servers, runs a model through a tool-calling loop, and puts each confirmation in front of a person.
 
-- **[`phase0-results.md`](phase0-results.md):** what the spikes found and what each changed in the plan. Start here.
-- **[`scripts/`](scripts):** the code behind those results, kept so the model spikes can be rerun on the shared Ollama server. When Phase 1 and the evaluation harness start, the useful parts move into their tests.
+- **[`mcp-host-plan.md`](mcp-host-plan.md):** the plan, with each component, phase, decision and open question. Start here.
+- **[`architecture.md`](architecture.md):** diagrams of the plan, from the system context to each request's flow.
+- **[`phase0-results.md`](phase0-results.md):** what the Phase 0 spikes found, and what each changed in the plan.
+
+The client's own internals are documented beside its code, in [`modules/mcp-client/docs/architecture.md`](../../../modules/mcp-client/docs/architecture.md).
+
+## Phase 0 Spikes
+
+Research spikes for the plan's §3 Phase 0. None of this is product code.
+
+- **[`phase0-results.md`](phase0-results.md):** what the spikes found and what each changed in the plan. Read it before the scripts.
+- **[`scripts/`](scripts):** the code behind those results, kept so the model spikes can be rerun on the shared Ollama server. When the evaluation harness starts, the useful parts move into its tests.
 - **`results/`:** raw output, recreated by the scripts and not committed (see the root `.gitignore`).
 
-## Running the scripts
+### Running the scripts
 
 Run each from the repository root with `npx tsx`. They run `apps/mcp-server` in-process with Arranger stubbed, so nothing else needs to be running. `LOG_LEVEL=fatal` quiets the server's logging.
 
@@ -14,7 +24,7 @@ Scripts that call a model need Ollama started with `OLLAMA_CONTEXT_LENGTH=16384`
 
 Run `s2s5.ts` first: it writes `results/tools.json`, which `s3.ts` and `s1Keywords.ts` read.
 
-## Spike scripts
+### Spike scripts
 
 | Script                                       | Spike   | What it does                                                                                                                                                     | Time, four local models    |
 | -------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
@@ -42,7 +52,7 @@ LOG_LEVEL=fatal npx tsx .dev/docs/mcp-host/scripts/q5.ts --from get_catalogue_fi
 
 For the shared server, add `--base-url <server>/v1` and that server's `--models`. When rerunning S4, keep Ollama's own output (`ollama serve 2>&1 | tee ollama.log`): it logs a warning when it drops a `gemma4` tool call, the confirmation Phase 0 could not get locally.
 
-## Shared modules
+### Shared modules
 
 Used by the scripts above; none runs on its own.
 
