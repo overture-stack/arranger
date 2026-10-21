@@ -171,10 +171,11 @@ const paramsFrom = (body) => {
 };
 
 // An invalid request is answered with the rule it broke: each rule's message is fixed text naming the
-// field at fault, never a value the client sent. Any other failure names only whose problem it is.
+// field at fault, never a value the client sent, and is logged at info as the client's own mistake. Any
+// other failure names only whose problem it is.
 const failureResponseFor = (error) => {
 	if (error instanceof InvalidExportRequestError) {
-		return { event: 'download.invalid_request', log: console.warn, status: 400, text: error.message };
+		return { event: 'download.invalid_request', log: console.info, status: 400, text: error.message };
 	}
 
 	// The callback's refusal to serve the request yet, answered with the router's text.
@@ -214,7 +215,7 @@ const unreadableBodyResponseFor = (error) =>
 	isClientErrorStatus(error?.status)
 		? {
 				event: 'download.invalid_request',
-				log: console.warn,
+				log: console.info,
 				status: error.status,
 				text: BODY_RULES.get(error.type) ?? UNREADABLE_BODY_TEXT,
 			}

@@ -87,12 +87,13 @@ A host application that starts the server with its own `filters` option cannot a
 
 `ENABLE_ACCESS_CONTROL=true` applies the Usher adapter: Usher's bridge resolves each request's credential, and every catalogue's router filters each read by the bridge's result for that catalogue. The server refuses to start, naming what it lacks, unless:
 
-- **every catalogue has a `usher.json` beside its `base.json`**, holding that catalogue's registration with the bridge: its resource field, its category field and each category's mapped value, or `{ "kind": "open" }` for a catalogue open by configuration. The bridge checks the registration when the server starts, and the adapter checks each named field against the index: a keyword, outside any nested mapping;
+- **every catalogue has a `usher.json` beside its `base.json`**, holding that catalogue's registration with the bridge: its resource field, and each category it defines as the SQON condition a record meets to carry it, or `{ "kind": "open" }` for a catalogue open by configuration. Each registration is checked when the server starts, as [Checking each catalogue at startup](#checking-each-catalogue-at-startup) describes;
 - **no catalogue configures network search**, which access control does not serve yet;
 - **the bridge's configuration is set**:
 
 | Variable | Holds |
 | --- | --- |
+| `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` | Optional: the most clauses the bridge lets one principal's filter hold, a positive integer, the bridge's own `1024` when unset |
 | `USHER_APPLICATION_KEY` | The application key, a secret, injected from the secrets store and never written into a values file |
 | `USHER_AUDIENCE` | The audience of the tokens issued for this application by Usher's controller |
 | `USHER_CONTROLLER_URL` | The controller's base URL, `https`, or plain `http` to loopback only |
@@ -101,6 +102,26 @@ A host application that starts the server with its own `filters` option cannot a
 | `USHER_PAYLOAD_VERSIONS` | Optional: the payload versions read by the bridge, as a comma list, `1` when unset |
 
 A refusal names each variable missing or malformed, never its value.
+
+#### Checking each catalogue at startup
+
+Before the server listens, the Usher adapter checks every catalogue that loaded, in three steps, each running only once the one before it passed for that catalogue. Startup is refused, with one `access_control.startup_refused` listing every reason across every catalogue, when:
+
+| Step | Refused when |
+| --- | --- |
+| The registration | It breaks a rule of Usher's registration format |
+| The index mapping | The resource field is not a keyword outside any nested mapping, or a field a category's condition reads is absent, nested, or not a keyword, date or numeric field, or a condition's value is not in its field's form |
+| The index | Some record holds more than one value in the resource field, the search engine refuses a condition's query, or the search engine fails to answer any of these checks |
+
+Each reason names the catalogue and the field or category at fault, never a value from a condition or a record. Three events are logged beside these:
+
+- **`access_control.condition_refused`**, at error, once for each condition the search engine refuses, carrying the engine's explanation, which can quote a value from the condition, so it stays in the server's log;
+- **`access_control.startup_check_failed`**, at error, once for each check the search engine fails to answer, carrying the check and the engine's cause, which can quote a value, so it stays in the server's log;
+- **`access_control.category_matches_no_record`**, at warn, for a category whose condition matches no record, a resource's own category counted within that resource. Startup proceeds.
+
+A category declared absent is not checked against the index. The [adapter's README](https://github.com/overture-stack/arranger/blob/main/modules/usher-adapter/README.md#what-startup-checks) lists every rule.
+
+The search engine role the server uses needs, on each catalogue's index, `indices:admin/validate/query` to validate the conditions, search to count records, and inline Painless scripts allowed to count the records holding more than one value in the resource field. Raise `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
 
 Once running:
 

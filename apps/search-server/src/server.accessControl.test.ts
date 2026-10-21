@@ -29,37 +29,59 @@ const refusing: ProxyHandler<() => unknown> = {
 };
 const ENGINE_DOWN = new Proxy(() => undefined, refusing) as unknown as SearchClient;
 
+/** A search's answer counting `total` records exactly, every shard answering in time. */
+const countedAnswer = (total: number) => ({
+	body: { _shards: { failed: 0 }, hits: { hits: [], total: { relation: 'eq', value: total } }, timed_out: false },
+});
+
 /**
- * An engine answering only what startup and the readiness probe ask, its index holding the fields the
- * registrations name, so every catalogue loads with no engine running.
+ * An engine answering only what startup, its checks of each catalogue's index and the readiness probe
+ * ask, its index holding the fields the registrations name, so every catalogue loads with no engine
+ * running. Every condition is valid and matches one record, and `recordsHoldingSeveralValues` records
+ * hold more than one value in the resource field.
  */
-const ENGINE_UP = {
-	cat: { aliases: async () => ({ body: [] }) },
-	indices: {
-		create: async () => ({ body: { acknowledged: true } }),
-		exists: async () => ({ body: true, statusCode: 200 }),
-		getMapping: async ({ index }: { index: string }) => ({
-			body: {
-				[index]: {
-					mappings: {
-						properties: {
-							data_category: { type: 'keyword' },
-							name: { type: 'keyword' },
-							study_id: { type: 'keyword' },
+const engineUp = ({ recordsHoldingSeveralValues = 0 }: Readonly<{ recordsHoldingSeveralValues?: number }> = {}) =>
+	({
+		cat: { aliases: async () => ({ body: [] }) },
+		indices: {
+			create: async () => ({ body: { acknowledged: true } }),
+			exists: async () => ({ body: true, statusCode: 200 }),
+			getMapping: async ({ index }: { index: string }) => ({
+				body: {
+					[index]: {
+						mappings: {
+							properties: {
+								data_category: { type: 'keyword' },
+								name: { type: 'keyword' },
+								study_id: { type: 'keyword' },
+							},
 						},
 					},
 				},
-			},
-		}),
-	},
-} as unknown as SearchClient;
+			}),
+			validateQuery: async () => ({ body: { valid: true } }),
+		},
+		search: async ({ body }: { body?: { query?: { script?: unknown } } }) =>
+			countedAnswer(body?.query?.script === undefined ? 1 : recordsHoldingSeveralValues),
+	}) as unknown as SearchClient;
 
-/** A bridge in `mode`, recording what it was registered with, how often it resolved and whether it was started. */
+const ENGINE_UP = engineUp();
+
+/**
+ * A bridge in `mode`, recording what it was registered with, how often it resolved and whether it was
+ * started and stopped. No call outlives its own promise, so its stop settles at once.
+ */
 const recordingBridge = (mode: BridgeMode = 'normal') => {
-	const state: { registered: Readonly<Record<string, KeyRegistration>>[]; resolved: number; started: number } = {
+	const state: {
+		registered: Readonly<Record<string, KeyRegistration>>[];
+		resolved: number;
+		started: number;
+		stopped: number;
+	} = {
 		registered: [],
 		resolved: 0,
 		started: 0,
+		stopped: 0,
 	};
 	const core: BridgeCore = {
 		applyNotice: () => undefined,
@@ -77,7 +99,9 @@ const recordingBridge = (mode: BridgeMode = 'normal') => {
 		start: async () => {
 			state.started += 1;
 		},
-		stop: () => undefined,
+		stop: async () => {
+			state.stopped += 1;
+		},
 	};
 	return { core, state };
 };
@@ -90,8 +114,9 @@ const OPEN_CATALOGUE = 'catalogue-k8';
 const UNREGISTERED_CATALOGUE = 'missing-catalogue-k9';
 
 const RECORD_REGISTRATION: KeyRegistration = {
-	categoryFieldName: 'data_category',
-	categoryValues: { 'global.controlled': 'controlled' },
+	categories: {
+		global: { 'global.controlled': { content: { fieldName: 'data_category', value: ['controlled'] }, op: 'in' } },
+	},
 	kind: 'record',
 	resourceFieldName: 'study_id',
 	resources: ['HEART_STUDY', 'LUNG_COHORT'],
@@ -195,7 +220,7 @@ suite('search-server image: startup with access control on', { concurrency: fals
 				describeRefusal(error).includes(UNREGISTERED_CATALOGUE) &&
 				describeRefusal(error).includes('usher.json'),
 		);
-		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0 });
+		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
 	});
 
 	const NETWORK = {
@@ -231,9 +256,42 @@ suite('search-server image: startup with access control on', { concurrency: fals
 				(error: unknown) =>
 					describeRefusal(error).includes(NAMED_CATALOGUE) && /network search/iu.test(describeRefusal(error)),
 			);
-			assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0 });
+			assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
 		});
 	}
+
+	test('refuses startup for a catalogue whose resource field holds several values in some record, naming it, before the bridge is registered with or started', async (context) => {
+		// Given a registered catalogue whose index holds two records with more than one value in the resource field
+		context.mock.method(console, 'error', () => undefined);
+		const configs = await writeCatalogues(path.join(workspace, 'several-values'), {
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+		});
+		const bridge = recordingBridge();
+
+		// When the image starts, Then it refuses, naming the catalogue, the field and the count, and the bridge
+		// was neither registered with nor started
+		await assert.rejects(
+			() => startImage(configs, bridge.core, { engine: engineUp({ recordsHoldingSeveralValues: 2 }) }),
+			(error: unknown) =>
+				describeRefusal(error).includes(NAMED_CATALOGUE) &&
+				describeRefusal(error).includes('study_id') &&
+				describeRefusal(error).includes('2 records'),
+		);
+		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
+	});
+
+	test('stops the bridge once when the server closes', async () => {
+		// Given an image started over a registered catalogue that loaded
+		const configs = await writeCatalogues(path.join(workspace, 'closing'), {
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+		});
+		const bridge = recordingBridge();
+		const server = await startImage(configs, bridge.core, { engine: ENGINE_UP });
+
+		// When the server closes, Then the bridge was stopped once
+		await new Promise((resolve) => server.close(resolve));
+		assert.equal(bridge.state.stopped, 1);
+	});
 
 	test('answers its liveness route while the bridge answers unavailable', async () => {
 		// Given a registered catalogue, and a bridge still waiting for its first check, so it answers unavailable

@@ -5,8 +5,7 @@ import {
 	SQON_OP_ALIASES,
 	type SqonFieldOp,
 } from '@overture-stack/sqon';
-
-import type { DraftRecordKeyRegistration } from './draftRegistration.js';
+import type { RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
 
 type FoundField = Readonly<{ format: unknown; kind: 'found'; type: unknown }>;
 
@@ -368,7 +367,7 @@ const resourceCategoryProblemsOf = (catalogue: string, mapping: unknown, resourc
 };
 
 /**
- * Every reason access cannot be enforced on a draft record registration, against the catalogue's index
+ * Every reason access cannot be enforced on a record registration, against the catalogue's index
  * mapping as the GraphQL router fetched it. The resource field must be a keyword, a multi-field's keyword
  * subfield included, outside any nested mapping. Each field a condition names, in the global categories and
  * in every resource's own, must resolve through the mapping's properties or a field's multi-fields, lie
@@ -390,12 +389,13 @@ const resourceCategoryProblemsOf = (catalogue: string, mapping: unknown, resourc
  * rather than data, and names a value only by its position, never by what it holds.
  *
  * @param catalogueId the catalogue's key.
- * @param registration what the catalogue is to register, read from its file unvalidated.
+ * @param registration what the catalogue is to register, read defensively, so a part it cannot read is a
+ *   reason rather than a throw.
  * @param mapping the catalogue's index mapping, its properties at the root.
  */
 export const conditionProblemsOf = (
 	catalogueId: string,
-	registration: DraftRecordKeyRegistration,
+	registration: RecordKeyRegistration,
 	mapping: unknown,
 ): string[] => {
 	const catalogue = `catalogue "${catalogueId}"`;
