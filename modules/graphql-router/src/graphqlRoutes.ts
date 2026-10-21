@@ -21,6 +21,7 @@ import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_CONTROL_QUERY_TOO_LARGE_CODE,
 	ACCESS_CONTROL_UNAVAILABLE_CODE,
+	ACCESS_CONTROL_UNAVAILABLE_MESSAGE,
 	type AccessControlError,
 	type AccessControlQueryTooLargeError,
 	type AccessControlUnavailableError,
@@ -301,10 +302,16 @@ const maskAccessControlError = (error: GraphQLError, accessControlError: AccessC
 	});
 };
 
-// The callback's refusal to serve the request yet: its own code, and the text written for the client
-// by its thrower, never the configuration failure's, and nothing logged here, since nothing is misconfigured.
-const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavailableError): GraphQLFormattedError =>
-	answerWith({ code: ACCESS_CONTROL_UNAVAILABLE_CODE, error, message: unavailable.message });
+// The callback's refusal to serve the request yet: its own code and the router's text, never the configuration
+// failure's, logged as neither an evaluation failure nor at error, since nothing is misconfigured.
+const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavailableError): GraphQLFormattedError => {
+	console.warn('access_control.unavailable_answered', unavailable.message, {
+		path: error.path,
+		retryAfterSeconds: unavailable.retryAfterSeconds,
+	});
+
+	return answerWith({ code: ACCESS_CONTROL_UNAVAILABLE_CODE, error, message: ACCESS_CONTROL_UNAVAILABLE_MESSAGE });
+};
 
 const answerQueryTooLarge = (error: GraphQLError, tooLarge: AccessControlQueryTooLargeError): GraphQLFormattedError => {
 	console.error('access_control.query_too_large', {

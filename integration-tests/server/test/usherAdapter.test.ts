@@ -14,7 +14,10 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import express, { type RequestHandler } from 'express';
 
-import arrangerRouter, { ACCESS_CONTROL_FAILURE_MESSAGE } from '../../../modules/graphql-router/src/index.js';
+import arrangerRouter, {
+	ACCESS_CONTROL_FAILURE_MESSAGE,
+	ACCESS_CONTROL_UNAVAILABLE_MESSAGE,
+} from '../../../modules/graphql-router/src/index.js';
 import { EVENTS, UNAVAILABLE_GRAPHQL_CODE } from '../../../modules/usher-adapter/src/fixtures/arrangerNames.js';
 import {
 	ABSENT_CATEGORIES_REGISTRATION,
@@ -875,7 +878,7 @@ suite('the failure cases', { concurrency: false }, () => {
 				assert.deepEqual(sorted(suspended[0].ids), sorted(ROWS.anonymousBaselineOn.visible));
 			});
 
-			test(`its export answers 503 with the bridge's text and Retry-After, before any row is read`, async (context) => {
+			test(`its export answers 503 with the GraphQL router's text and Retry-After, before any row is read`, async (context) => {
 				// Given a suspended principal
 				host.bridge.setMode(mode);
 				const errors = context.mock.method(console, 'error', () => undefined);
@@ -885,10 +888,10 @@ suite('the failure cases', { concurrency: false }, () => {
 					postExport(host.targetFor('records', SIGNED_IN)),
 				);
 
-				// Then the answer is the bridge's own unavailable answer, nothing reached the engine, and the
-				// refusal is logged as unavailable, never as a configuration fault
+				// Then the answer is the GraphQL router's unavailable answer with the bridge's wait, nothing reached
+				// the engine, and the refusal is logged as unavailable, never as a configuration fault
 				assert.equal(answer.status, 503);
-				assert.equal(answer.data, ANSWERS.unavailable);
+				assert.equal(answer.data, ACCESS_CONTROL_UNAVAILABLE_MESSAGE);
 				assert.equal(answer.headers['retry-after'], String(RETRY_AFTER_SECONDS));
 				assert.match(String(answer.headers['content-type']), /^text\/plain/);
 				assert.equal(answer.headers['x-content-type-options'], 'nosniff');
@@ -917,7 +920,7 @@ suite('the failure cases', { concurrency: false }, () => {
 					postGraphql(host.targetFor('records', SIGNED_IN), SAVE_SET_MUTATION, { sqon: {} }),
 				);
 
-				// Then one error carries the unavailable code and the bridge's text, no data, and nothing
+				// Then one error carries the unavailable code and the GraphQL router's text, no data, and nothing
 				// reached the engine, neither a search nor a write
 				assert.deepEqual(
 					answer.data.errors.map(
@@ -926,7 +929,7 @@ suite('the failure cases', { concurrency: false }, () => {
 							message,
 						],
 					),
-					[[UNAVAILABLE_GRAPHQL_CODE, ANSWERS.unavailable]],
+					[[UNAVAILABLE_GRAPHQL_CODE, ACCESS_CONTROL_UNAVAILABLE_MESSAGE]],
 				);
 				assert.equal(answer.data.data?.saveSet ?? null, null);
 				assert.deepEqual(calls, []);
