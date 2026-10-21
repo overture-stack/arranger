@@ -1,6 +1,6 @@
 # MCP Host: Plan
 
-**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the development team's shared server outstanding. Phase 1: done. Since 2026-10-16, the CRE is a standalone Electron desktop app, with host-core in its main process ([§2.4](#24-cre-main-process)).
+**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the development team's shared server outstanding. Phase 1: done. Phase 2: can start; only how a conversation keeps servers apart waits on [§5](#5-open-questions) question 4. Since 2026-10-16, the CRE is a standalone Electron desktop app, with host-core in its main process ([§2.4](#24-cre-main-process)).
 
 **Recommended, pending the team:** no release of the CRE claims support for controlled data until this plan's security-relevant items, including the open questions below, are settled and built. The CRE is a tool the person configures: they choose its MCP servers and its model, and whether the records they read may reach those is theirs to judge under their own agreements. An Overture deployment, an organization's running Overture platform, is one kind of server it may connect to, never a requirement. Usher, Overture's access enforcement system, sorts data into three tiers: open data anyone may read, registered data any signed-in person may read, and controlled data only people granted access to that dataset may read. For an Overture deployment holding controlled data, the gate is its operator's: it registers neither the CRE with its sign-in service nor an MCP server of its own until then, so the CRE reaches only its open data, anonymously, even where registered data sits alongside it. A deployment holding nothing controlled is unaffected.
 
@@ -289,7 +289,7 @@ In Phase 0, resending an empty reply's request with the same seed reproduced it 
 | Without the consumer | No run starts; the policy is required                         | Never asked: `elicitation` is not declared               |
 | Events               | `approval_required`, `approval_answered`                      | `input_required`, `input_answered`                       |
 
-The policy sees the run's earlier tool calls, so a consumer can require approval for a call that follows another server's output.
+The policy sees the conversation's earlier tool calls, across runs, each with its server, so a consumer can require approval for a call that follows another server's output. What else it needs, such as a per-server boundary label, waits on [§5](#5-open-questions) question 4.
 
 **Invariants:** host-core never answers a server confirmation itself and ships no "approve everything" resolver. The model never sees the question, only the tool message.
 
@@ -484,6 +484,8 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 ### Phase 2: MCP Host Core
 
 `modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider's stream handling (fragments split across reads, a missing `finish_reason`, HTTP errors, abort), every row of the tool-message table, a `model_error`, an empty reply and its retry, refusing a second concurrent run, approval and confirmation timeouts, and a conversation that gets the "abandoned" tool message when it continues past a pending confirmation.
+
+The approval policy's inputs and the server configuration's fields wait on [§5](#5-open-questions) question 4. Everything else can be built first. [Data crossing connections](data-crossing-options.md) §6 lists what Phase 2 builds whichever option is chosen.
 
 The module is `"private": true`, so Jenkins's `npm publish -w` loop over `modules/*` skips it with a warning, as npm 11 does for any private workspace. That assumes the Jenkins agent's npm behaves the same, which is unchecked (`.dev/tech-debt.md`).
 

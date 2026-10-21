@@ -77,13 +77,13 @@ The rules behind the boundaries:
 
 The open lines, and what settles each:
 
-| Open item                   | Open because                                                                             | Settled in                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| host-core to a third party  | No server's data may reach another server's requests; how the app enforces that is open. | [Plan §5](mcp-host-plan.md#5-open-questions) question 4, [connections](../arranger-auth/mcp-host-connections.md) §6 |
-| mcp-client to a third party | Consent, storage, refresh and revocation of per-person tokens are not designed.          | [Connections](../arranger-auth/mcp-host-connections.md) §4                                                          |
-| apps/mcp-server to Keycloak | Today `apps/mcp-server` calls the search server with no credential.                      | [Connections](../arranger-auth/mcp-host-connections.md) §3                                                          |
-| search server to Usher      | The Usher adapter is planned, not built.                                                 | [Arranger auth](../arranger-auth/index.md)                                                                          |
-| `eval` inside apps/mcp-cli  | `eval` may instead be built as `apps/mcp-eval` in this repository.                       | [Plan §5](mcp-host-plan.md#5-open-questions) question 3                                                             |
+| Open item                   | Open because                                                                             | Settled in                                                                                                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| host-core to a third party  | No server's data may reach another server's requests; how the app enforces that is open. | [Plan §5](mcp-host-plan.md#5-open-questions) question 4, [connections](../arranger-auth/mcp-host-connections.md) §6; options weighed in [data crossing connections](data-crossing-options.md) |
+| mcp-client to a third party | Consent, storage, refresh and revocation of per-person tokens are not designed.          | [Connections](../arranger-auth/mcp-host-connections.md) §4                                                                                                                                    |
+| apps/mcp-server to Keycloak | Today `apps/mcp-server` calls the search server with no credential.                      | [Connections](../arranger-auth/mcp-host-connections.md) §3                                                                                                                                    |
+| search server to Usher      | The Usher adapter is planned, not built.                                                 | [Arranger auth](../arranger-auth/index.md)                                                                                                                                                    |
+| `eval` inside apps/mcp-cli  | `eval` may instead be built as `apps/mcp-eval` in this repository.                       | [Plan §5](mcp-host-plan.md#5-open-questions) question 3                                                                                                                                       |
 
 ## Instances and concurrency
 
