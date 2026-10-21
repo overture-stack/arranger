@@ -77,14 +77,14 @@ The rules behind the boundaries:
 
 The open lines, and what settles each:
 
-| Open item                   | Open because                                                                                 | Settled in                                                                                                          |
-| --------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| cre-backend's process       | Electron's main process, or a Node sidecar under Tauri.                                      | [Plan §5](mcp-host-plan.md#5-open-questions) question 9                                                             |
-| host-core to a third party  | After controlled data enters the model's context, a call to another server can carry it out. | [Plan §5](mcp-host-plan.md#5-open-questions) question 7, [connections](../arranger-auth/mcp-host-connections.md) §6 |
-| mcp-client to a third party | Consent, storage, refresh and revocation of per-person tokens are not designed.              | [Connections](../arranger-auth/mcp-host-connections.md) §4                                                          |
-| apps/mcp-server to Keycloak | Today `apps/mcp-server` calls the search server with no credential.                          | [Connections](../arranger-auth/mcp-host-connections.md) §3                                                          |
-| search server to Usher      | The Usher adapter is planned, not built.                                                     | [Arranger auth](../arranger-auth/index.md)                                                                          |
-| `eval` inside apps/mcp-cli  | `eval` may instead be built as `apps/mcp-eval` in this repository.                           | [Plan §5](mcp-host-plan.md#5-open-questions) question 4                                                             |
+| Open item                   | Open because                                                                                                                                          | Settled in                                                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| cre-backend's process       | Electron's main process, or a Node sidecar under Tauri.                                                                                               | [Plan §5](mcp-host-plan.md#5-open-questions) question 9                                                                   |
+| host-core to a third party  | After controlled data enters the model's context, a call to another server can carry it out, and another server's text can steer reads from Overture. | [Plan §5](mcp-host-plan.md#5-open-questions) question 7; options in [data crossing connections](data-crossing-options.md) |
+| mcp-client to a third party | Consent, storage, refresh and revocation of per-person tokens are not designed.                                                                       | [Connections](../arranger-auth/mcp-host-connections.md) §4                                                                |
+| apps/mcp-server to Keycloak | Today `apps/mcp-server` calls the search server with no credential.                                                                                   | [Connections](../arranger-auth/mcp-host-connections.md) §3                                                                |
+| search server to Usher      | The Usher adapter is planned, not built.                                                                                                              | [Arranger auth](../arranger-auth/index.md)                                                                                |
+| `eval` inside apps/mcp-cli  | `eval` may instead be built as `apps/mcp-eval` in this repository.                                                                                    | [Plan §5](mcp-host-plan.md#5-open-questions) question 4                                                                   |
 
 ## Instances and concurrency
 

@@ -524,7 +524,7 @@ Let one export request carry several files and answer them as one archive. The r
 
 ### MCP host: client, host core and terminal chat
 
-_Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; shared-server confirmation outstanding. Phase 1 (`modules/mcp-client`): done. Phase 2 (`modules/mcp-host-core`) waits on the plan's open question 7._
+_Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; shared-server confirmation outstanding. Phase 1 (`modules/mcp-client`): done. Phase 2 (`modules/mcp-host-core`): ready to start; only its approval policy's inputs and server configuration wait on open question 7 ([options for the team](docs/mcp-host/data-crossing-options.md))._
 
 One module to be published (`modules/mcp-client`, private until Phase 5) and one private module (`modules/mcp-host-core`), that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and a notebook UI in its own repository.
 
