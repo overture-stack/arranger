@@ -1,4 +1,6 @@
-import { AccessControlQueryTooLargeError, type ReadPath } from '#accessControl/AccessControlError.js';
+import type { FilterReadPath } from '@overture-stack/arranger-types/configs';
+
+import { AccessControlQueryTooLargeError } from '#accessControl/AccessControlError.js';
 import { isIncludeEverythingFilter } from '#accessControl/includeEverything.js';
 import { InvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import { CLAUSE_LIMIT_RULE, findClauseLimitRefusal } from '#searchClient/clauseLimit.js';
@@ -31,7 +33,7 @@ export const catalogueSearch =
 	}: {
 		catalogue: string;
 		esClient: SearchClient;
-		readPath: ReadPath;
+		readPath: FilterReadPath;
 		serverSideFilter: unknown;
 	}) =>
 	async (params: SearchClientSearchParams): Promise<SearchClientSearchResponse> => {

@@ -1,3 +1,5 @@
+import type { FilterReadPath } from '@overture-stack/arranger-types/configs';
+
 /**
  * Access control could not be evaluated for a request: a filter callback threw or returned a thenable;
  * its filter was absent, or held an empty combination, an `all` with no values, a range with no bound,
@@ -30,9 +32,10 @@ export const isAccessControlError = (error: unknown): error is AccessControlErro
 
 /**
  * A filter callback's refusal to serve a request yet, as distinct from a configuration failure. The
- * GraphQL endpoint answers it with `ACCESS_CONTROL_UNAVAILABLE_CODE` and its `message`, and the export
- * route with `503`, its `message` and `Retry-After`, so its `message` is written for the client. It is
- * never logged as `access_control.evaluation_failed`, since nothing is misconfigured.
+ * GraphQL endpoint answers it with `ACCESS_CONTROL_UNAVAILABLE_CODE` and `ACCESS_CONTROL_UNAVAILABLE_MESSAGE`,
+ * and the export route with `503`, that text and `Retry-After`, each logging its `message` on the server as
+ * `access_control.unavailable_answered`. It is never logged as `access_control.evaluation_failed`, since
+ * nothing is misconfigured.
  */
 export class AccessControlUnavailableError extends Error {
 	override name = 'AccessControlUnavailableError';
@@ -41,7 +44,7 @@ export class AccessControlUnavailableError extends Error {
 	readonly retryAfterSeconds: number;
 
 	/**
-	 * @param message the text a client is answered with.
+	 * @param message why the request cannot be served yet, logged on the server.
 	 * @param options `retryAfterSeconds`, the wait a client is told, and an optional `cause`.
 	 */
 	constructor(message: string, { cause, retryAfterSeconds }: { cause?: unknown; retryAfterSeconds: number }) {
@@ -54,6 +57,13 @@ export class AccessControlUnavailableError extends Error {
 export const ACCESS_CONTROL_UNAVAILABLE_CODE = 'ACCESS_CONTROL_UNAVAILABLE';
 
 /**
+ * The only text a client is given for an `AccessControlUnavailableError`, exported so an integration's own
+ * export route can answer the same.
+ */
+export const ACCESS_CONTROL_UNAVAILABLE_MESSAGE =
+	'The server cannot apply its access control to this request yet. Try the request again later.';
+
+/**
  * Whether `error` is an `AccessControlUnavailableError`, recognized by its name so one raised by
  * another copy of this module counts too.
  *
@@ -61,9 +71,6 @@ export const ACCESS_CONTROL_UNAVAILABLE_CODE = 'ACCESS_CONTROL_UNAVAILABLE';
  */
 export const isAccessControlUnavailableError = (error: unknown): error is AccessControlUnavailableError =>
 	error instanceof Error && error.name === 'AccessControlUnavailableError';
-
-/** A read of the router's, as an `AccessControlQueryTooLargeError` names it: one name per read path. */
-export type ReadPath = 'aggregations' | 'export' | 'hits' | 'network' | 'sets';
 
 /** The GraphQL error code an `AccessControlQueryTooLargeError` is answered with. */
 export const ACCESS_CONTROL_QUERY_TOO_LARGE_CODE = 'ACCESS_CONTROL_QUERY_TOO_LARGE';
@@ -85,7 +92,7 @@ export class AccessControlQueryTooLargeError extends Error {
 	readonly clauseLimit: number | undefined;
 
 	/** The read the engine refused. */
-	readonly readPath: ReadPath;
+	readonly readPath: FilterReadPath;
 
 	/**
 	 * @param details the catalogue, the read path, the engine's clause limit where known, and the engine's
@@ -100,7 +107,7 @@ export class AccessControlQueryTooLargeError extends Error {
 		catalogue: string;
 		cause?: unknown;
 		clauseLimit: number | undefined;
-		readPath: ReadPath;
+		readPath: FilterReadPath;
 	}) {
 		super(
 			`The search engine refused this request to catalogue "${catalogue}" as larger than it accepts once the catalogue's access filter was applied.`,

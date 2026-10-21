@@ -1226,7 +1226,9 @@ suite("a filter callback, on each of the router's read paths", () => {
 });
 
 suite('a filter callback refusing to serve a request yet', () => {
-	const REFUSAL_TEXT = 'Access could not be confirmed. Try again shortly.';
+	const REFUSAL_TEXT = 'Grants could not be read from the token service at 10.0.0.5.';
+	const UNAVAILABLE_MESSAGE =
+		'The server cannot apply its access control to this request yet. Try the request again later.';
 
 	/** Refuses saving a set and exporting with the unavailable refusal, and permits every other read. */
 	const refusingWrites = (context: unknown, details?: { readPath?: unknown }) => {
@@ -1240,39 +1242,51 @@ suite('a filter callback refusing to serve a request yet', () => {
 	const evaluationFailuresIn = (lines: string[]) =>
 		lines.filter((line) => line.includes('access_control.evaluation_failed'));
 
-	test('answers saving a set with the unavailable code and its text, no data, nothing stored and no evaluation failure logged', async () => {
+	/** The lines logging the router's unavailable answer and carrying the thrower's message. */
+	const unavailableAnswersIn = (lines: string[]) =>
+		lines.filter((line) => line.includes('access_control.unavailable_answered') && line.includes(REFUSAL_TEXT));
+
+	test("answers saving a set with the unavailable code and the router's text, no data, nothing stored and no evaluation failure logged", async () => {
 		// Given a router whose callback refuses writes for now
 		const { engine, router } = await buildRouter({ getServerSideFilter: refusingWrites });
 
 		// When a set is saved
 		const { lines, result: response } = await withConsoleCaptured(() => postGraphQL(router, SAVE_SET_MUTATION));
 
-		// Then the one error carries the unavailable code and the callback's text, and nothing reached the engine
+		// Then the one error carries the unavailable code and the router's fixed text, nothing reached the
+		// engine, and the thrower's message is logged on the server
 		assert.deepEqual(
 			response.body.errors.map(({ extensions, message }: { extensions?: { code?: string }; message: string }) => [
 				extensions?.code,
 				message,
 			]),
-			[[packageRoot.ACCESS_CONTROL_UNAVAILABLE_CODE, REFUSAL_TEXT]],
+			[[packageRoot.ACCESS_CONTROL_UNAVAILABLE_CODE, UNAVAILABLE_MESSAGE]],
 		);
 		assert.equal(response.body.data?.saveSet ?? null, null);
 		assert.deepEqual(engine.storedSets, []);
 		assert.deepEqual(evaluationFailuresIn(lines), []);
+		assert.equal(unavailableAnswersIn(lines).length, 1, JSON.stringify(lines));
 	});
 
-	test('answers an export 503 with Retry-After and its text, before any search, logging no evaluation failure', async () => {
+	test("answers an export 503 with Retry-After and the router's text, before any search, logging no evaluation failure", async () => {
 		// Given the same router
 		const { engine, router } = await buildRouter({ getServerSideFilter: refusingWrites });
 
 		// When an export is requested
 		const { lines, result: response } = await withConsoleCaptured(() => exportFrom(express().use(router)));
 
-		// Then it is refused for now, with the callback's text and wait, before the engine is asked anything
+		// Then it is refused for now, with the router's fixed text and the callback's wait, before the engine is
+		// asked anything, and the thrower's message is logged on the server
 		assert.equal(response.status, 503);
 		assert.equal(response.headers['retry-after'], '7');
-		assert.equal(response.text, REFUSAL_TEXT);
+		assert.equal(response.text, UNAVAILABLE_MESSAGE);
 		assert.deepEqual(engine.searches, []);
 		assert.deepEqual(evaluationFailuresIn(lines), []);
+		assert.equal(unavailableAnswersIn(lines).length, 1, JSON.stringify(lines));
+	});
+
+	test('exports the fixed text from the package root, so an integration can answer the same', () => {
+		assert.equal(packageRoot.ACCESS_CONTROL_UNAVAILABLE_MESSAGE, UNAVAILABLE_MESSAGE);
 	});
 
 	test('serves the reads it does not refuse', async () => {

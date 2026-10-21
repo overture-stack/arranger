@@ -138,7 +138,7 @@ These correct behaviour that only the 3.1 release candidates had, so a deploymen
 
 - **A filter callback is told its read path, and reads the request's own store**: the router passes `{ readPath }` as `getServerSideFilter`'s second argument, one of `hits`, `aggregations`, `sets`, `export` and `network`, and on every read path the context's `locals` is the request's own `res.locals`, the same object rather than a copy. A callback taking one argument is unaffected.
 
-- **New `AccessControlUnavailableError`**: a callback throws it, with text meant for the client and `retryAfterSeconds`, to refuse a request for now. GraphQL answers it with `extensions.code` `ACCESS_CONTROL_UNAVAILABLE`, exported as `ACCESS_CONTROL_UNAVAILABLE_CODE`, and that text; `/download` answers `503` with the text and `Retry-After`. Neither logs `access_control.evaluation_failed`.
+- **New `AccessControlUnavailableError`**: a callback throws it, with a message for the server log and `retryAfterSeconds`, to refuse a request for now. GraphQL answers it with `extensions.code` `ACCESS_CONTROL_UNAVAILABLE`, exported as `ACCESS_CONTROL_UNAVAILABLE_CODE`, and the router's fixed text, exported as `ACCESS_CONTROL_UNAVAILABLE_MESSAGE`; `/download` answers `503` with that text and `Retry-After`. Each logs the thrower's message as `access_control.unavailable_answered`, and neither logs `access_control.evaluation_failed`.
 
 - **New `onIndexMapping` option on `arrangerRouter`**: called once with a copy of the fetched index mapping before the router resolves, so a host can check fields against it; a throw fails the router's construction.
 

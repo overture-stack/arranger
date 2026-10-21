@@ -6,7 +6,7 @@ import express from 'express';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import type supertest from 'supertest';
 
-import { AccessControlQueryTooLargeError } from '#accessControl/AccessControlError.js';
+import { AccessControlQueryTooLargeError, AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
 import includeEverything from '#accessControl/includeEverything.js';
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { createEndpoint } from '#graphqlRoutes.js';
@@ -89,10 +89,13 @@ const buildApp = async () => {
 const MASKED_MESSAGE =
 	'The server could not apply its access control because of a problem in its configuration, not in this request.';
 const SERVER_PROBLEM_MESSAGE = 'The request failed because of a problem on the server, not in the request.';
+const UNAVAILABLE_MESSAGE =
+	'The server cannot apply its access control to this request yet. Try the request again later.';
 const CLAUSE_LIMIT_RULE = 'The filter must compile to no more clauses than the search engine accepts.';
 const INVALID_OPERATOR_RULE = 'Each filter node must name an operator SQON defines, such as and, or, not, in or gte.';
 const SECRET_DETAIL = 'token service unreachable at 10.0.0.5';
 const ENGINE_FAILURE = 'engine unavailable at 10.0.0.9';
+const UNAVAILABLE_DETAIL = 'token service paused at 10.0.0.5';
 /** An ordinary error that merely talks about filters and access control, which masking by message text would catch. */
 const FILTER_WORDED_FAILURE = 'compileFilter: the client filter is not a valid sqon, so access control was not reached';
 
@@ -241,6 +244,12 @@ const accessControlSchema = new GraphQLSchema({
 			refusalFromAnotherCopy: {
 				resolve: () => {
 					throw new AccessControlErrorFromAnotherCopy(SECRET_DETAIL);
+				},
+				type: GraphQLString,
+			},
+			unavailable: {
+				resolve: () => {
+					throw new AccessControlUnavailableError(UNAVAILABLE_DETAIL, { retryAfterSeconds: 7 });
 				},
 				type: GraphQLString,
 			},
@@ -667,6 +676,12 @@ const assertNodeAnswered = (
 	details.forEach((detail) => assert.ok(!bodyText.includes(detail), `the response carried "${detail}": ${bodyText}`));
 };
 
+/** Refuses every read but network search's own, so the local node's reads meet `refuse` and the search itself runs. */
+const refusingTheLocalNode =
+	(refuse: () => never) =>
+	(context: unknown, details?: { readPath?: unknown }): unknown =>
+		details?.readPath === 'network' ? STUDY_A(context) : refuse();
+
 suite("network search answers each node's failure as the GraphQL endpoint answers it", () => {
 	test("answers a local node's search engine failure with fixed text naming the server, logging it with the node", async () => {
 		// Given a router with a working callback over a search engine that fails every search
@@ -694,6 +709,37 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 			),
 			`expected a network.node_failed line naming the node and carrying the detail, got ${JSON.stringify(lines)}`,
 		);
+	});
+
+	test("answers a local node's callback refusing to serve the request yet with the router's fixed text, logging the thrower's message", async () => {
+		// Given a router whose callback refuses the local node's reads for now
+		const app = await buildRouterApp({
+			getServerSideFilter: refusingTheLocalNode(() => {
+				throw new AccessControlUnavailableError(UNAVAILABLE_DETAIL, { retryAfterSeconds: 7 });
+			}),
+		});
+
+		// When network search is queried for hits and aggregations
+		const { lines, result: response } = await postQuery(app, NETWORK_NODES_AND_HITS_QUERY);
+
+		// Then the local node reports the router's text for each read, and the log carries the thrower's message and the node
+		assertNodeAnswered(response, {
+			details: [UNAVAILABLE_DETAIL],
+			name: 'local node',
+			reads: 2,
+			text: UNAVAILABLE_MESSAGE,
+		});
+		assert.equal(
+			lines.filter(
+				(line) =>
+					line.includes('access_control.unavailable_answered') &&
+					line.includes(UNAVAILABLE_DETAIL) &&
+					line.includes('local node'),
+			).length,
+			2,
+			JSON.stringify(lines),
+		);
+		assert.ok(!lines.some((line) => line.includes('access_control.evaluation_failed')), JSON.stringify(lines));
 	});
 
 	test("answers a local node's read past the clause limit under a restricting filter with the refusal's text, logging it with the node", async () => {
@@ -1034,6 +1080,31 @@ suite("a search engine's failure is answered as a problem on the server", () => 
 
 		// Then each is answered with the one fixed text
 		assert.deepEqual(answers, [[SERVER_PROBLEM_MESSAGE], [SERVER_PROBLEM_MESSAGE], [SERVER_PROBLEM_MESSAGE]]);
+	});
+});
+
+suite("a filter callback's refusal to serve the request yet, on the GraphQL endpoint", () => {
+	test("answers with the router's fixed text and the unavailable code, and logs the thrower's message", async () => {
+		// Given an endpoint whose field meets a callback's refusal to serve the request yet
+		const app = await buildDebugApp();
+
+		// When that field is queried
+		const { lines, result: response } = await postQuery(app, '{ unavailable }');
+
+		// Then the client is given the router's text and code, and the server log carries the thrower's message
+		const { bodyText, errors } = graphQLErrorsOf(response);
+		assert.deepEqual(
+			errors.map(({ extensions, message }) => [extensions?.code, message]),
+			[['ACCESS_CONTROL_UNAVAILABLE', UNAVAILABLE_MESSAGE]],
+		);
+		assert.ok(!bodyText.includes(UNAVAILABLE_DETAIL), `the response carried "${UNAVAILABLE_DETAIL}": ${bodyText}`);
+		assert.ok(
+			lines.some(
+				(line) => line.includes('access_control.unavailable_answered') && line.includes(UNAVAILABLE_DETAIL),
+			),
+			`expected an access_control.unavailable_answered line carrying the message, got ${JSON.stringify(lines)}`,
+		);
+		assert.ok(!lines.some((line) => line.includes('access_control.evaluation_failed')));
 	});
 });
 

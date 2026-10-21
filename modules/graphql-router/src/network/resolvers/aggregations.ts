@@ -4,8 +4,10 @@ import graphqlFields from 'graphql-fields';
 
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
+	ACCESS_CONTROL_UNAVAILABLE_MESSAGE,
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
+	isAccessControlUnavailableError,
 } from '#accessControl/AccessControlError.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
@@ -36,9 +38,9 @@ type SuccessResponse = Record<string, { hits: Hits; aggregations: NetworkAggrega
 
 /**
  * What a node's `errors` reports for `error`, each kind answered as the GraphQL endpoint answers it and logged on
- * the server naming the node: an access-control failure with its fixed text, a read the engine refused once the
- * catalogue's access filter was applied with its own fixed text, a filter breaking a rule with that rule, and
- * anything else as a problem on the server.
+ * the server naming the node: a refusal to serve the request yet and an access-control failure with their fixed
+ * texts, a read the engine refused once the catalogue's access filter was applied with its own fixed text, a
+ * filter breaking a rule with that rule, and anything else as a problem on the server.
  *
  * @param details what else the server log records of a failure of any other kind, such as the node's catalogue.
  */
@@ -51,6 +53,14 @@ const nodeErrorMessageFor = ({
 	error: unknown;
 	nodeName: string;
 }): string => {
+	if (isAccessControlUnavailableError(error)) {
+		console.warn('access_control.unavailable_answered', error.message, {
+			node: nodeName,
+			retryAfterSeconds: error.retryAfterSeconds,
+		});
+		return ACCESS_CONTROL_UNAVAILABLE_MESSAGE;
+	}
+
 	if (isAccessControlQueryTooLargeError(error)) {
 		console.error('access_control.query_too_large', {
 			catalogue: error.catalogue,

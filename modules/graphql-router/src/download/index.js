@@ -4,6 +4,7 @@ import { Router, urlencoded } from 'express';
 
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
+	ACCESS_CONTROL_UNAVAILABLE_MESSAGE,
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
@@ -176,10 +177,14 @@ const failureResponseFor = (error) => {
 		return { event: 'download.invalid_request', log: console.warn, status: 400, text: error.message };
 	}
 
-	// The callback's refusal to serve the request yet, with the text written for the client by its thrower. The
-	// callback logs it, and nothing is misconfigured, so it raises no alert here.
+	// The callback's refusal to serve the request yet, answered with the router's text.
 	if (isAccessControlUnavailableError(error)) {
-		return { retryAfterSeconds: error.retryAfterSeconds, status: 503, text: error.message };
+		return {
+			reason: 'access_control_unavailable',
+			retryAfterSeconds: error.retryAfterSeconds,
+			status: 503,
+			text: ACCESS_CONTROL_UNAVAILABLE_MESSAGE,
+		};
 	}
 
 	if (isAccessControlQueryTooLargeError(error)) {
@@ -238,6 +243,14 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 			catalogue: error.catalogue,
 			clauseLimit: error.clauseLimit,
 			readPath: error.readPath,
+			route: 'download',
+		});
+	}
+
+	if (reason === 'access_control_unavailable') {
+		// The event GraphQL logs for the same answer. Nothing is misconfigured, so it raises no alert.
+		console.warn('access_control.unavailable_answered', error.message, {
+			retryAfterSeconds: error.retryAfterSeconds,
 			route: 'download',
 		});
 	}

@@ -1761,9 +1761,11 @@ suite('download', () => {
 	});
 
 	suite('a filter callback refusing to serve the export yet', () => {
-		const REFUSAL_TEXT = 'Access could not be confirmed. Try again shortly.';
+		const REFUSAL_TEXT = 'Grants could not be read from the token service at 10.0.0.5.';
+		const UNAVAILABLE_MESSAGE =
+			'The server cannot apply its access control to this request yet. Try the request again later.';
 
-		test('answers 503 in plain text, carrying the refusal and its Retry-After, before any engine request', async () => {
+		test("answers 503 in plain text, carrying the router's fixed text and the refusal's Retry-After, before any engine request", async () => {
 			// Given a router whose callback refuses exports for now and serves every other read
 			const getServerSideFilter = (context, details) => {
 				if (details?.readPath === 'export') {
@@ -1774,14 +1776,24 @@ suite('download', () => {
 			};
 
 			await withArranger({ getServerSideFilter }, async ({ engine, server }) => {
-				// When the stock form is posted
-				const response = await postDownload(server, paramsWithFile());
+				const consoleCapture = captureConsole();
 
-				// Then it is answered 503 in plain text with nosniff, with the refusal's text and wait, and no search
-				assertPlainTextError(response, 503);
-				assert.equal(response.text, REFUSAL_TEXT);
-				assert.equal(response.headers['retry-after'], '7');
-				assert.equal(engine.requests.length, 0);
+				try {
+					// When the stock form is posted
+					const response = await postDownload(server, paramsWithFile());
+
+					// Then it is answered 503 in plain text with nosniff, with the router's text and the refusal's
+					// wait, and no search, and the refusal's own message is logged on the server
+					assertPlainTextError(response, 503, [REFUSAL_TEXT]);
+					assert.equal(response.text, UNAVAILABLE_MESSAGE);
+					assert.equal(response.headers['retry-after'], '7');
+					assert.equal(engine.requests.length, 0);
+					assert.deepEqual(consoleCapture.eventsAt('warn'), ['access_control.unavailable_answered']);
+					assert.ok(consoleCapture.loggedText().includes(REFUSAL_TEXT));
+					assert.deepEqual(consoleCapture.eventsAt('error'), []);
+				} finally {
+					consoleCapture.restore();
+				}
 			});
 		});
 	});
