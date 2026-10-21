@@ -41,6 +41,16 @@ export type SearchClientIndicesExistsParams = { index: string | string[] };
 export type SearchClientIndicesOpenParams = { index: string | string[] };
 export type SearchClientIndicesPutMappingsParams = { index: string; body: Record<string, any> };
 export type SearchClientIndicesPutSettingsParams = { body: Record<string, any> };
+/**
+ * Asks the engine whether `body.query` is a query it would run against `index`; `explain` adds its
+ * reasons when not, and `all_shards` asks every shard rather than one chosen at random.
+ */
+export type SearchClientIndicesValidateQueryParams = {
+	all_shards?: boolean;
+	body: { query: Record<string, any> };
+	explain?: boolean;
+	index: string | string[];
+};
 export type SearchClientBulkParams = { body: Record<string, any>[] };
 export type SearchClientCreateParams = { id: string; index: string; body: Record<string, any> };
 export type SearchClientDeleteParams = { index: string; id: string };
@@ -69,6 +79,13 @@ export type SearchClientIndicesCreateResponseBody = SearchClientAcknowledgedShar
 };
 export type SearchClientIndicesGetMappingResponseBody = Record<string, { mappings: any }>;
 export type SearchClientIndicesOpenResponseBody = SearchClientAcknowledgedShardsResponseBody | { task?: string };
+/** The engine's verdict on a query; with `explain`, `error` and each index's explanation say why it is not valid. */
+export type SearchClientIndicesValidateQueryResponseBody = {
+	_shards?: ShardData;
+	error?: string;
+	explanations?: { error?: string; index?: string; valid: boolean }[];
+	valid: boolean;
+};
 export type SearchClientShardDataResponseBody = {
 	_shards: ShardData;
 };
@@ -107,11 +124,14 @@ type SearchClientAggregationsResponse = SearchClientBaseResponse & {
 	};
 };
 
+/** How many records a search matched: exact when `relation` is "eq", a lower bound when "gte", or a bare number when the engine reports totals as integers. */
+export type SearchClientTotalHits = number | { relation: 'eq' | 'gte'; value: number };
 export type SearchClientSearchBody = {
 	_shards: ShardData;
 	aggregations?: Record<string, any>;
 	hits?: {
 		hits: { _id: string; _index: string; _source?: any }[];
+		total?: SearchClientTotalHits;
 	};
 	timed_out: boolean;
 	took: number;
@@ -147,6 +167,9 @@ export type SearchClientIndicesPutSettingsResponse = SearchClientBaseResponseTyp
 export type SearchClientIndicesPutMappingResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
 export type SearchClientIndicesOpenResponse = SearchClientBaseResponseType<SearchClientIndicesOpenResponseBody>;
 export type SearchClientIndicesRefreshResponse = SearchClientBaseResponseType<SearchClientShardDataResponseBody>;
+/** The engine's answer to `indices.validateQuery`. */
+export type SearchClientIndicesValidateQueryResponse =
+	SearchClientBaseResponseType<SearchClientIndicesValidateQueryResponseBody>;
 export type SearchClientCatAliasesResponse = SearchClientBaseResponseType<SearchClientCatAliasesResponseBody>;
 export type SearchClientBulkResponse = SearchClientBaseResponseType<SearchClientBulkResponseBody>;
 export type SearchClientCreateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
@@ -199,6 +222,10 @@ export type SearchClient = {
 			input: SearchClientIndicesRefreshParams,
 			options?: SearchClientOptions,
 		) => Promise<SearchClientIndicesRefreshResponse>;
+		validateQuery: (
+			input: SearchClientIndicesValidateQueryParams,
+			options?: SearchClientOptions,
+		) => Promise<SearchClientIndicesValidateQueryResponse>;
 	};
 	cat: {
 		aliases: (

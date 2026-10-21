@@ -19,8 +19,10 @@ import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import refuseDisabledDownloads from '#download/disableDownloads.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
+import { createIndexProbe, type IndexProbe } from '#indexProbe.js';
 import { getIndexMapping } from '#searchClient/index.js';
 import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
+import getNestedFields from '#mapping/getNestedFields.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext } from '#types.js';
@@ -96,9 +98,10 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	graphqlOptions?: Record<string, unknown>; // FIXME
 	/**
 	 * Called once with a copy of the index mapping the router fetched, before the router resolves, so a
-	 * host can check fields against it. A throw fails this router's construction.
+	 * host can check fields against it, and with a probe for the checks the mapping cannot answer. The
+	 * probe stays usable after the hook returns. A throw fails this router's construction.
 	 */
-	onIndexMapping?: (mappingFromIndex: Record<string, unknown>) => void;
+	onIndexMapping?: (mappingFromIndex: Record<string, unknown>, indexProbe: IndexProbe) => void;
 }): Promise<Router> => {
 	// A router given only a path would start with no configuration, so that case is refused; beside
 	// `configs`, the path is ignored and the router builds from them.
@@ -156,7 +159,15 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});
 
-		onIndexMapping?.(structuredClone(mappingFromIndex));
+		onIndexMapping?.(
+			structuredClone(mappingFromIndex),
+			createIndexProbe({
+				index: configs[configRootProperties.ES_INDEX],
+				nestedFieldNames: getNestedFields(mappingFromIndex),
+				nestingPrefix: configs[configOptionalProperties.NESTING_PREFIX],
+				searchClient: esClient,
+			}),
+		);
 
 		const resolvedFields = resolveCatalogueFields(
 			mappingFromIndex,

@@ -52,6 +52,10 @@ export function wrapOpenSearchClient(openSearchClient: Client): SearchClient {
 				const output = await openSearchClient.indices.refresh(input, options);
 				return output;
 			},
+			validateQuery: async (input, options) => {
+				const output = await openSearchClient.indices.validateQuery(input, options);
+				return output;
+			},
 		},
 		cat: {
 			aliases: async (input, options) => {
