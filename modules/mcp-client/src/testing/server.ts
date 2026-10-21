@@ -77,8 +77,8 @@ export const startTestServer = async (options: TestServerOptions = {}) => {
 	const executed: string[] = [];
 	const probes: ProbeRecord[] = [];
 	const requests: RecordedRequest[] = [];
-	/** Read by each request's server instance, so a test can change the surface between requests. */
-	const state = { extraTools: [] as string[] };
+	/** Read by each request's server instance, so a test can change the surface, or the server's version, between requests, as a redeploy would. */
+	const state = { extraTools: [] as string[], version: undefined as string | undefined, prompts: true };
 
 	// Built once: the factory runs per request, and a codec built inside it would verify under another key.
 	const codec = createRequestStateCodec<RoundState>({ key: randomBytes(32), ttlSeconds: options.ttlSeconds ?? 600 });
@@ -87,7 +87,7 @@ export const startTestServer = async (options: TestServerOptions = {}) => {
 		const cacheHint =
 			options.listTtlMs === undefined ? undefined : { ttlMs: options.listTtlMs, cacheScope: 'private' as const };
 		const server = new McpServer(
-			{ name: options.name ?? 'mcp-client-test-server', version: options.version ?? '1.0.0' },
+			{ name: options.name ?? 'mcp-client-test-server', version: state.version ?? options.version ?? '1.0.0' },
 			{
 				requestState: { verify: codec.verify },
 				...(options.instructions !== undefined && { instructions: options.instructions }),
@@ -214,28 +214,30 @@ export const startTestServer = async (options: TestServerOptions = {}) => {
 			async (uri, { id }) => ({ contents: [{ uri: uri.href, text: `item ${String(id)}` }] }),
 		);
 
-		server.registerPrompt(
-			'confirm_prompt',
-			{
-				description: 'Asks for confirmation before returning its messages.',
-				argsSchema: zod.object({ topic: zod.string() }),
-			},
-			async ({ topic }, ctx) => {
-				const confirmed = acceptedContent(ctx.mcpReq.inputResponses, 'confirm', confirmContent);
-				if (!confirmed) {
-					return inputRequired({
-						inputRequests: {
-							confirm: inputRequired.elicit({
-								message: `Start on ${topic}?`,
-								requestedSchema: CONFIRM_SCHEMA,
-							}),
-						},
-						requestState: await codec.mint({ step: 1 }),
-					});
-				}
-				return { messages: [{ role: 'user', content: { type: 'text', text: `About ${topic}` } }] };
-			},
-		);
+		if (state.prompts) {
+			server.registerPrompt(
+				'confirm_prompt',
+				{
+					description: 'Asks for confirmation before returning its messages.',
+					argsSchema: zod.object({ topic: zod.string() }),
+				},
+				async ({ topic }, ctx) => {
+					const confirmed = acceptedContent(ctx.mcpReq.inputResponses, 'confirm', confirmContent);
+					if (!confirmed) {
+						return inputRequired({
+							inputRequests: {
+								confirm: inputRequired.elicit({
+									message: `Start on ${topic}?`,
+									requestedSchema: CONFIRM_SCHEMA,
+								}),
+							},
+							requestState: await codec.mint({ step: 1 }),
+						});
+					}
+					return { messages: [{ role: 'user', content: { type: 'text', text: `About ${topic}` } }] };
+				},
+			);
+		}
 
 		return server;
 	};

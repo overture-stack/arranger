@@ -2,6 +2,7 @@ export {
 	McpClient,
 	type McpClientOptions,
 	PROTOCOL_REVISION,
+	ReconnectRequiredError,
 	type SurfaceChange,
 	type SurfaceChangeKind,
 	type SurfaceRecord,

@@ -38,6 +38,8 @@ await client.close();
 
 `connect` and `refreshSurface` throw on failure; `callTool`, `getPrompt` and `readResource` never do.
 
+`refreshSurface` throws `ReconnectRequiredError`, naming the lists, when a redeploy advertises a list the client did not see at connect. The SDK checks capabilities as they stood at connect, so it would read that list as empty; connect a new client instead. Whenever `refreshSurface` throws, `surface` keeps the previous snapshot.
+
 A tool's result is checked against its `outputSchema` from the latest snapshot. If that schema is larger than `MAX_OUTPUT_SCHEMA_BYTES`, nests deeper than `MAX_OUTPUT_SCHEMA_DEPTH`, or does not compile, the tool still runs, but each result is `output_invalid`.
 
 ## Options
