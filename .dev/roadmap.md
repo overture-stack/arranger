@@ -86,6 +86,16 @@ Arranger has no notion of who is querying or what they may see; server-side filt
 
 [Detail: the open design questions, the Usher-owned decisions, and the `nestingPrefix` field-level incompatibility](docs/atlas/roadmap/auth-and-access-control.md#auth-and-fieldrecord-level-access-control)
 
+### Browser portals and token custody for controlled-data deployments
+
+_Priority: not yet set. Team decision needed; no code written._
+
+Arranger's components call the search server directly from the browser (`modules/components/src/DataContext`), so a portal built on them (Stage, the iMicroSeq portal, the Ontario Hereditary Cancer Research Network's researcher interface) that passes the person's token to the page is a client that cannot keep a secret. Under Usher's delegated-access rules (`.dev/design/delegated-access.md` in Usher's repository), such a client receives no token at all in a deployment holding controlled data, Usher's most restricted tier, until that kind of client is decided.
+
+**Recommended:** the portal's own backend holds the token and calls the search server itself, so the page never sees it, the backend-for-frontend pattern, the first and strongest of the three in RFC 10017, OAuth 2.0 for Browser-Based Applications. A token kept off the page is also out of reach of any script injected into it; such a script can still send requests through the backend while the page is open, but cannot take the token away. Route the components' GraphQL queries through the backend (configuration: `apiUrl`, `customFetcher`), and give the components a download path that can carry a custom request header, which RFC 10017 §6.1.3.3.2 has a backend-for-frontend require of every request as its defence against cross-site request forgery, so one defence covers every route, rather than having the backend's download route defend itself separately with `SameSite=Strict` cookies and an `Origin` check.
+
+**Team decision:** adopting backend-held tokens for portals in deployments holding controlled data, which affects Stage, the iMicroSeq portal and the Ontario Hereditary Cancer Research Network's researcher interface, each to be checked against its current wiring, and which of the two download-defence approaches above to take.
+
 ### Transport layer abstraction
 
 _Priority: long-term. Depends on core module extraction._
@@ -261,6 +271,18 @@ _Priority: mixed per sub-item. One of six shipped (`build_sqon`, v1 2026-08-10, 
 Six improvements making Arranger a well-behaved upstream for an MCP server layer. Open: schema cache invalidation signal (ETag/schema hash, `high`), SQON documentation in schema descriptions, field descriptions in the generated schema, making invisible query defaults SDL-visible (research), and the accumulated `/docs` gap for the MCP surface.
 
 Full detail, including `build_sqon`'s as-built scope and the deferred TOON evaluation: [atlas: MCP integration readiness](docs/atlas/roadmap/mcp-integration-readiness.md).
+
+### MCP server Kubernetes deployment readiness
+
+_Priority: not yet set. Design complete; nothing built._
+
+`apps/mcp-server` builds into a Docker image (`docker/Dockerfile.jenkins`, `mcp-server` stage, exposes port 3100) but has no liveness/readiness endpoint for Kubernetes probes, and no Helm values or manifest exist in `overture/infra`.
+
+**Design:** `GET /ping` (liveness: 200 while the process serves HTTP) and `GET /ready` (readiness: 503 until startup's Arranger validation has succeeded once, then 200), both the search server's own paths, answered ahead of the Host and Origin guards with a bare status and no data, since the kubelet, the Kubernetes agent on each node that runs the probes, sends the pod's own IP as a probe's Host header unless the probe sets one, which no `MCP_ALLOWED_HOSTS` list can name. Startup listens first and retries the Arranger validation with back-off rather than exiting, so a cluster restart doesn't crash-loop pods while Arranger is still coming up; until validation succeeds once, the MCP endpoint itself also answers 503 with `Retry-After`, not only `/ready`, since a port-forward or a pod-to-pod call reaches a pod without passing through the Service's own readiness check. After startup, readiness does not follow Arranger: if it did, one search-server outage would remove every replica from the Service at once, instead of clients seeing the tools' own errors.
+
+`MCP_REQUEST_STATE_SECRET` is one value of at least 32 bytes shared by every replica, read from one Kubernetes Secret through `secretKeyRef`, since any replica may verify a confirmation another one signed. This deployment fills that Secret from Vault through VSO, the Vault Secrets Operator, with the VaultStaticSecret's `rolloutRestartTargets` naming the Deployment so a rotated key reaches every pod; rotation refuses confirmations in flight for at most their 10-minute lifetime plus the rollout, rare enough to accept without also verifying against the previous key.
+
+**Deployment waits for:** the fix in the open `catalogueId` validation entry in `tech-debt.md`.
 
 ### GraphQL large integer type
 
