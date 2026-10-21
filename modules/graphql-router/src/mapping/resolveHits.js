@@ -9,7 +9,7 @@ import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, applyNestingPrefixToFieldNames, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
 import compileFilter from './utils/compileFilter.js';
-import esSearch from './utils/esSearch.js';
+import { catalogueSearch } from './utils/esSearch.js';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 	Object.entries(mapping).forEach(([k, v]) => {
@@ -262,6 +262,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 		const { esClient } = context;
 		const { extendedFields } = type;
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
 
 		const query = buildQuery({
 			caller: 'resolveHits',
@@ -270,7 +271,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 			filters: compileFilter({
 				clientSideFilter: filters || { op: 'and', content: [] },
 				disableClientFilters: context.disableClientFilters,
-				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
+				serverSideFilter,
 			}),
 			setsIndex: type.setsIndex,
 		});
@@ -323,12 +324,18 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 		const sourceFields = nestingPrefix
 			? [nestingPrefix]
 			: [
-					...((fields.edges && Object.keys(fields.edges.node || {}).map((name) => rawTopLevelNames[name] ?? name)) ||
+					...((fields.edges &&
+						Object.keys(fields.edges.node || {}).map((name) => rawTopLevelNames[name] ?? name)) ||
 						[]),
 					...Object.values(copyToSourceFields),
 				];
 
-		const searchResult = await esSearch(esClient)({
+		const searchResult = await catalogueSearch({
+			catalogue: type.label ?? type.name,
+			esClient,
+			readPath: 'hits',
+			serverSideFilter,
+		})({
 			index: type.index,
 			size: applyResultsWindow(first, type.config?.table?.maxResultsWindow),
 			from: offset,
@@ -374,7 +381,9 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 						// An application's own res.locals keys reach the context, so `warnings` may hold anything.
 						context.warnings = [...(Array.isArray(context.warnings) ? context.warnings : []), ...summaries];
 						summaries.forEach((summary) =>
-							console.warn(`  WARNING [${summary.catalogue}/${summary.operationName}]: ${summary.message}`),
+							console.warn(
+								`  WARNING [${summary.catalogue}/${summary.operationName}]: ${summary.message}`,
+							),
 						);
 					}
 					return results;

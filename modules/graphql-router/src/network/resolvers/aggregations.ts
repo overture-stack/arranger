@@ -2,8 +2,13 @@ import type { CustomizeRemoteRequestFn } from '@overture-stack/arranger-types/co
 import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
 import graphqlFields from 'graphql-fields';
 
-import { ACCESS_CONTROL_FAILURE_MESSAGE, isAccessControlError } from '#accessControl/AccessControlError.js';
+import {
+	ACCESS_CONTROL_FAILURE_MESSAGE,
+	isAccessControlError,
+	isAccessControlQueryTooLargeError,
+} from '#accessControl/AccessControlError.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
+import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import { AggregationAccumulator, type NetworkAggregationsMap } from '#network/aggregations/AggregationAccumulator.js';
 import { fetchData } from '#network/resolvers/fetch.js';
 import { createNetworkQuery } from '#network/resolvers/query.js';
@@ -11,6 +16,7 @@ import { type Hits } from '#network/types/hits.js';
 import type { NetworkLocalNode, NetworkRemoteNode } from '#network/types/setup.js';
 import type { RequestedFieldsMap } from '#network/utils/gql.js';
 import type { ArrangerBaseContext } from '#types.js';
+import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
 
 export const CONNECTION_STATUS = {
 	OK: 'OK',
@@ -29,24 +35,44 @@ export type NetworkNodeResponseData = {
 type SuccessResponse = Record<string, { hits: Hits; aggregations: NetworkAggregationsMap }>;
 
 /**
- * What a node's `errors` reports for `error`: an access-control failure only as the fixed public text,
- * its detail logged on the server, and any other error as its own message.
+ * What a node's `errors` reports for `error`, each kind answered as the GraphQL endpoint answers it and logged on
+ * the server naming the node: an access-control failure with its fixed text, a read the engine refused once the
+ * catalogue's access filter was applied with its own fixed text, a filter breaking a rule with that rule, and
+ * anything else as a problem on the server.
+ *
+ * @param details what else the server log records of a failure of any other kind, such as the node's catalogue.
  */
 const nodeErrorMessageFor = ({
+	details,
 	error,
-	fallback,
 	nodeName,
 }: {
+	details: Record<string, unknown>;
 	error: unknown;
-	fallback: string;
 	nodeName: string;
 }): string => {
+	if (isAccessControlQueryTooLargeError(error)) {
+		console.error('access_control.query_too_large', {
+			catalogue: error.catalogue,
+			clauseLimit: error.clauseLimit,
+			node: nodeName,
+			readPath: error.readPath,
+		});
+		return error.message;
+	}
+
 	if (isAccessControlError(error)) {
 		console.error('access_control.evaluation_failed', error.message, { cause: error.cause, node: nodeName });
 		return ACCESS_CONTROL_FAILURE_MESSAGE;
 	}
 
-	return error instanceof Error ? error.message : fallback;
+	if (isInvalidFilterError(error)) {
+		console.info('network.invalid_request', { cause: error.cause, message: error.message, node: nodeName });
+		return error.message;
+	}
+
+	console.error('network.node_failed', error, { ...details, node: nodeName });
+	return SERVER_PROBLEM_MESSAGE;
 };
 
 /**
@@ -101,9 +127,10 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 			const gqlResponseData = gqlQueryResult.data;
 			const response = await fetchData({
 				customRequestProps: customizeRemoteRequest?.({ context, remoteNode: config }),
-				url: config.graphqlUrl,
 				gqlQuery: gqlResponseData,
+				nodeName: config.displayName,
 				queryVariables,
+				url: config.graphqlUrl,
 			});
 
 			const nodeName = config.displayName;
@@ -134,15 +161,9 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 		} catch (error) {
 			// This is added as an extra protection. We do not expect to get here, all functions should be catching thrown errors
 			// and returning Results, but in case someting gets missed we want to capture the issue.
-
-			// Log the error and update the nodeInfo
-			console.error(
-				`[network/aggregationPipeline] - Error with network query while fetching data from '${config.displayName}' at graphqlUrl: ${config.graphqlUrl} - ${error}`,
-			);
-
 			const message = nodeErrorMessageFor({
+				details: { step: 'query', url: config.graphqlUrl },
 				error,
-				fallback: 'Unexpected error while fetching data from this node.',
 				nodeName: config.displayName,
 			});
 
@@ -202,14 +223,9 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 				localNodeStatusInfo.hits = hitsResult.total();
 			} catch (error: unknown) {
 				// Failed to resolve hits, set error status and keep hits as 0
-				console.error(
-					`[network/aggregationPipeline] - Error resolving hits on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
-				);
-
 				const errorMessage = nodeErrorMessageFor({
+					details: { catalogId: config.catalogId, step: 'hits' },
 					error,
-					fallback:
-						'Unexpected error while resolving total hits for this node, the final hits value will be reported as 0.',
 					nodeName: config.displayName,
 				});
 
@@ -252,13 +268,9 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 				aggregationAccumulator.resolve({ aggregations, hits });
 			} catch (error: unknown) {
 				// Failed to resolve aggregations, set error status
-				console.error(
-					`[network/aggregationPipeline] - Error resolving aggregations on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
-				);
-
 				const errorMessage = nodeErrorMessageFor({
+					details: { catalogId: config.catalogId, step: 'aggregations' },
 					error,
-					fallback: 'Unexpected error while resolving aggregations for this node.',
 					nodeName: config.displayName,
 				});
 

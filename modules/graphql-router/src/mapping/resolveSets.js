@@ -7,11 +7,11 @@ import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 
 import compileFilter from './utils/compileFilter.js';
-import esSearch from './utils/esSearch.js';
+import { catalogueSearch } from './utils/esSearch.js';
 
 const retrieveSetIds = async ({
-	esClient,
 	index, // searchIndex
+	searchCatalogue,
 	query,
 	path,
 	sort,
@@ -27,7 +27,7 @@ const retrieveSetIds = async ({
 			}),
 		};
 
-		const response = await esSearch(esClient)({
+		const response = await searchCatalogue({
 			index,
 			// `_id` is an ES meta field, never part of the document's own data, so it must never be
 			// prefixed even when the catalogue's real fields live under a nestingPrefix envelope.
@@ -67,9 +67,11 @@ const retrieveSetIds = async ({
 export const saveSet =
 	({ getServerSideFilter, setsIndex, types }) =>
 	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
-		const { nested_fieldNames: nestedFieldNames, index, config } = types.find(([, x]) => x.name === type)[1];
+		const catalogueType = types.find(([, x]) => x.name === type)[1];
+		const { nested_fieldNames: nestedFieldNames, index, config } = catalogueType;
 		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
 		const { esClient } = context;
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter });
 
 		const query = buildQuery({
 			caller: 'resolveSets',
@@ -78,17 +80,22 @@ export const saveSet =
 			filters: compileFilter({
 				clientSideFilter: sqon,
 				disableClientFilters: context.disableClientFilters,
-				serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter }),
+				serverSideFilter,
 			}),
 			setsIndex,
 		});
 
 		const ids = await retrieveSetIds({
-			esClient,
 			index,
 			query,
 			path,
 			nestingPrefix,
+			searchCatalogue: catalogueSearch({
+				catalogue: catalogueType.label ?? catalogueType.name,
+				esClient,
+				readPath: 'sets',
+				serverSideFilter,
+			}),
 			sort:
 				sort && sort.length
 					? sort

@@ -17,6 +17,7 @@ import arrangerRouter, { mergeConfigs, resolveLabel } from './router.js';
 type StoredDocument = { _id: string; _source: Record<string, string> };
 type SearchQuery = Record<string, any>;
 type SearchParameters = {
+	allow_partial_search_results?: boolean;
 	body?: { aggs?: Record<string, SearchQuery>; query?: SearchQuery; search_after?: string[] };
 	from?: number;
 	index: string;
@@ -974,6 +975,71 @@ suite("an application's own export route behind a callback reading res.locals", 
 		assert.equal(response.status, 500, JSON.stringify(response.body));
 		assert.deepEqual(response.body, { error: 'AccessControlError' });
 	});
+});
+
+const exportFrom = (app: express.Express) =>
+	request(app)
+		.post('/download')
+		.type('form')
+		.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+
+suite('a shard refusing a search fails the whole search where a server-side filter applies', () => {
+	/** Reads hits, aggregations, a saved set and an export, failing if any read is not served. */
+	const readEverySearchingPath = async (router: Router): Promise<void> => {
+		const { result: responses } = await withConsoleCaptured(() =>
+			Promise.all([
+				postGraphQL(router, HITS_QUERY),
+				postGraphQL(router, AGGREGATIONS_QUERY),
+				postGraphQL(router, SAVE_SET_MUTATION),
+			]),
+		);
+		const { result: exported } = await withConsoleCaptured(() => exportFrom(express().use(router)));
+
+		responses.forEach((response) => assert.equal(response.body.errors, undefined, JSON.stringify(response.body)));
+		assert.equal(exported.status, 200, exported.text);
+	};
+
+	/** What each search asked of the engine about partial results. */
+	const partialResultsOf = (searches: SearchParameters[]) =>
+		searches.map((search) =>
+			'allow_partial_search_results' in search ? search.allow_partial_search_results : 'left to the engine',
+		);
+
+	test('disallows partial results on the hits, aggregations, saved-set and export searches under a restricting filter', async () => {
+		// Given a router whose callback restricts every read
+		const { engine, router } = await buildRouter({ getServerSideFilter: STUDY_A });
+
+		// When every read path that searches the catalogue is read
+		await readEverySearchingPath(router);
+
+		// Then every search, one per read path at least, disallowed partial results
+		assert.ok(engine.searches.length >= 4, JSON.stringify(engine.searches));
+		assert.deepEqual([...new Set(partialResultsOf(engine.searches))], [false]);
+	});
+
+	for (const [description, settings] of [
+		['given no filter callback', {}],
+		[
+			'whose callback returns includeEverything for every read',
+			{ getServerSideFilter: packageRoot.includeEverything },
+		],
+		[
+			'whose callback returns includeEverything for every read, by a filter of its own',
+			{ getServerSideFilter: () => JSON.parse(JSON.stringify(packageRoot.includeEverything(undefined))) },
+		],
+	] as const) {
+		test(`leaves partial results to the engine on every search of a router ${description}`, async () => {
+			// Given a router restricting no record
+			const { engine, router } = await buildRouter(settings);
+
+			// When every read path that searches the catalogue is read
+			await readEverySearchingPath(router);
+
+			// Then no search said anything about partial results
+			assert.ok(engine.searches.length >= 4, JSON.stringify(engine.searches));
+			assert.deepEqual([...new Set(partialResultsOf(engine.searches))], ['left to the engine']);
+		});
+	}
 });
 
 suite('a configsSource, which the router no longer reads', () => {

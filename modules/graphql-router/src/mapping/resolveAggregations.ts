@@ -9,7 +9,7 @@ import type { SchemaTypesDefinition } from '#schema/types.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
 import compileFilter from './utils/compileFilter.js';
-import esSearch from './utils/esSearch.js';
+import { catalogueSearch } from './utils/esSearch.js';
 
 export type Bucket = {
 	doc_count: number;
@@ -140,7 +140,12 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			aggs,
 		};
 
-		const response = await esSearch(esClient)({
+		const response = await catalogueSearch({
+			catalogue: type.label ?? type.name,
+			esClient,
+			readPath: 'aggregations',
+			serverSideFilter,
+		})({
 			index: type.index,
 			size: 0,
 			_source: false,

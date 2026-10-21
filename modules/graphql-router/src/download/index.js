@@ -2,7 +2,11 @@ import { finished, pipeline, Transform } from 'node:stream';
 
 import { Router, urlencoded } from 'express';
 
-import { ACCESS_CONTROL_FAILURE_MESSAGE, isAccessControlError } from '#accessControl/AccessControlError.js';
+import {
+	ACCESS_CONTROL_FAILURE_MESSAGE,
+	isAccessControlError,
+	isAccessControlQueryTooLargeError,
+} from '#accessControl/AccessControlError.js';
 import { arrangerLocalsOf, requestStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
@@ -160,6 +164,16 @@ const failureResponseFor = (error) => {
 		return { event: 'download.invalid_request', log: console.warn, status: 400, text: error.message };
 	}
 
+	if (isAccessControlQueryTooLargeError(error)) {
+		return {
+			event: 'download.failed',
+			log: console.error,
+			reason: 'access_control_query_too_large',
+			status: 500,
+			text: error.message,
+		};
+	}
+
 	return isAccessControlError(error)
 		? {
 				event: 'download.failed',
@@ -180,6 +194,16 @@ const sendFailure = ({ error, res }) => {
 		// Also the event GraphQL and network search log for the same failure, so one alert covers every
 		// read path while an alert already counting failed downloads keeps firing.
 		console.error('access_control.evaluation_failed', error.message, { cause: error.cause, route: 'download' });
+	}
+
+	if (reason === 'access_control_query_too_large') {
+		// Also the event GraphQL logs for the same refusal, for the same reason.
+		console.error('access_control.query_too_large', {
+			catalogue: error.catalogue,
+			clauseLimit: error.clauseLimit,
+			readPath: error.readPath,
+			route: 'download',
+		});
 	}
 
 	res.status(status).type('text/plain').set('X-Content-Type-Options', 'nosniff').send(text);

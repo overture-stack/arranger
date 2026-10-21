@@ -1076,15 +1076,6 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Fix:** This will resolve naturally when Apollo is replaced (see [roadmap](roadmap.md#graphql-server-migration-away-from-apollo)). No need to fix in isolation.
 **Standalone:** no; tied to the Apollo migration in the roadmap
 
-### Error responses surfacing stack traces
-
-**File:** `modules/graphql-router/src/graphqlRoutes.ts` (error handling / Apollo error formatter)
-**Severity:** high (OWASP A09: Security Logging and Alerting Failures, A02: Security Misconfiguration)
-**Kind:** security bug
-**Issue:** Server error responses are including stack traces visible to API clients. Stack traces leak internal file paths, library versions, and implementation details that assist attackers. They should only appear in server logs, never in API responses.
-**Fix:** Strip stack traces from client-facing error responses in the GraphQL error formatter. Optionally surface them when `enableDebug` is true (server-side only) or when `enableAdmin` is active; but that dependency on the Admin model is TBD. Safe default: never send stacks to clients.
-**Standalone:** mostly yes; the stack stripping is a one-file fix. The question of whether debug mode re-enables stack visibility is the only part that touches the Admin design.
-
 ### `hasValidConfig` GraphQL resolver should be deprecated
 
 **File:** `modules/graphql-router/src/schema/Root.ts` (`hasValidConfig` resolver)
@@ -1169,8 +1160,8 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **File:** `modules/graphql-router/src/network/resolvers/aggregations.ts` (existing `// TODO: Response content is not validated` comment)
 **Severity:** low-medium (may be lower-risk in a deployment with known, matched versions, but nothing currently enforces that precondition, see the version-check entry above)
 **Kind:** missing validation
-**Issue:** `aggregationPipeline` reads a remote node's response assuming it matches the shape of the GraphQL query that was sent (`response.data[documentName]`), with no runtime check. If a remote node returns something unexpected (a different Arranger version, a misconfigured catalogue, a proxy in front of it returning an error page as a 200), this fails however indexing into an unexpected shape happens to fail, not with a clear error.
-**Fix:** Validate the response shape (a lightweight runtime check, not necessarily full schema validation) before feeding it into the accumulator; fail that one node with a clear `INVALID_DATA`-style status (matching the existing `CONNECTION_STATUS` pattern) rather than an unhandled shape mismatch. Worth doing even alongside the version check above, not instead of it: trust but verify, defensive validation here is cheap and catches cases version-checking alone wouldn't, a genuinely misconfigured node, or a proxy silently swallowing the real response.
+**Issue:** `aggregationPipeline` reads a remote node's response assuming it matches the shape of the GraphQL query that was sent (`response.data[documentName]`), with no runtime check. If a remote node returns something unexpected (a different Arranger version, a misconfigured catalogue, a proxy in front of it returning an error page as a 200), this fails however indexing into an unexpected shape happens to fail, not with a clear error. Two cases fail quietly instead: a remote node answering 200 with GraphQL `errors` and its document field null, and a node whose query could not be built, are both reported as `OK` with 0 hits, so a federated total silently leaves that node out.
+**Fix:** Validate the response shape (a lightweight runtime check, not necessarily full schema validation) before feeding it into the accumulator; fail that one node with a clear `INVALID_DATA`-style status (matching the existing `CONNECTION_STATUS` pattern) rather than an unhandled shape mismatch. Report both quiet cases as that node's `ERROR`, with one of the fixed texts in `network/remoteNodeFailure.ts`. Worth doing even alongside the version check above, not instead of it: trust but verify, defensive validation here is cheap and catches cases version-checking alone wouldn't, a genuinely misconfigured node, or a proxy silently swallowing the real response.
 **Standalone:** yes; self-contained validation added to the existing response-handling path
 
 ### `filterNodesByNodeId` has no tests
@@ -1200,12 +1191,12 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 
 ### No unit tests for network resolvers
 
-**Files:** `modules/graphql-router/src/network/resolvers/` (aggregations.ts, fetch.ts, networkNode.ts, response.ts)
+**Files:** `modules/graphql-router/src/network/resolvers/` (aggregations.ts, networkNode.ts, response.ts)
 **Severity:** medium
 **Kind:** missing test coverage
-**Issue:** Most of the network resolver layer has no tests. This is the core async multi-node query execution path: aggregation response resolving, remote node data fetching, network node response building, and response transformation. Bugs here affect all multi-catalogue network searches silently. `query.ts` (`createRemoteNodeGQLQuery`) has co-located tests (`query.test.ts`) and is not part of this gap.
-**Fix:** Unit tests with mocked network node responses. The pure transformation files (`response.ts`, `networkNode.ts`) can be tested directly. `fetch.ts` requires HTTP-level mocking (e.g. `undici MockAgent` or similar). Cover: single-node success; partial node failure (one down, others succeed); empty response; aggregation accumulation across nodes.
-**Standalone:** partial; transformation functions are standalone; `fetch.ts` depends on establishing the HTTP mock pattern first
+**Issue:** Most of the network resolver layer has no tests. This is the core async multi-node query execution path: aggregation response resolving, remote node data fetching, network node response building, and response transformation. Bugs here affect all multi-catalogue network searches silently. `query.ts` (`createRemoteNodeGQLQuery`) and `fetch.ts` have co-located tests and are not part of this gap.
+**Fix:** Unit tests with mocked network node responses. The pure transformation files (`response.ts`, `networkNode.ts`) can be tested directly. A remote node can be stood up with `network/remoteNodeStub.fixture.ts`, as `fetch.test.ts` does. Cover: single-node success; partial node failure (one down, others succeed); empty response; aggregation accumulation across nodes.
+**Standalone:** yes
 
 ### Network aggregation schema discovery depends on GraphQL introspection being open on remote nodes
 
@@ -1378,15 +1369,6 @@ With exactly one sibling filter those are equivalent, which is why the naive fix
 **Fix:** Add a structured log entry on set creation (`{ event: 'set_created', setId, userId, type, size, catalogue }` at minimum), independent of and ahead of the ABAC ownership work, so there's at least a trail of who created what before enforcement exists.
 **Standalone:** yes.
 
-### Remote-node fetch error handler assumes a GraphQL-shaped error body and can throw from inside its own `catch` block
-
-**File:** `modules/graphql-router/src/network/resolvers/fetch.ts:62-66`
-**Severity:** low-medium
-**Kind:** bug
-**Issue:** In the axios error branch, `errorResponse.response.data.errors.map((e) => e.message).join('\n')` is type-asserted, not runtime-checked. If a remote node or an intervening proxy returns a non-GraphQL error body on a non-2xx response (an HTML error page, plain text, a JSON object without `errors`, an empty 502/503/504 body), `.data.errors` is `undefined` and `.map` throws from inside this `catch` block, so the function's promise rejects instead of resolving to a `failure()` result. Contained by the outer `try/catch` in `aggregationPipeline` and the top-level `Promise.allSettled`, so it does not crash the whole network-aggregation request, but the specific, useful error message this branch exists to produce is lost, replaced by a generic fallback, precisely when a misbehaving/misconfigured remote node makes accurate diagnostics matter most. Narrower and more concrete than the already-logged "Remote node response content is not validated" entry, which covers the success path, not this error path.
-**Fix:** Validate the shape of `errorResponse.response.data` before accessing `.errors` (e.g. `Array.isArray(data?.errors) ? data.errors.map(...).join('\n') : JSON.stringify(data) ?? 'Unknown error'`), returning a `failure()` result unconditionally rather than risking a throw inside the `catch` block itself.
-**Standalone:** yes.
-
 ### Two small orphaned files
 
 **File:** `modules/graphql-router/src/es_rest/index.js` (tracked, zero bytes, referenced nowhere); `modules/graphql-router/src/utils/mapHits.js` (a 3-line re-export never imported by anything; the real, actually-used `mapHits` lives at `mapping/utils/mapHits.ts`)
@@ -1505,15 +1487,6 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Kind:** configuration correctness
 **Issue:** `getAllData` defaults its page size to `fallbackConfigs.downloads.chunkSize` (2000) and never reads `configs.config.downloads.chunkSize`, so `DOWNLOAD_STREAM_BUFFER_SIZE` and a catalogue's `downloads.chunkSize` have no effect on exports, although `docs/reference/06-defaults-and-limits.md` documents them.
 **Fix:** Default to the catalogue's configured value and fall back to the constant only when it is absent; test both.
-**Standalone:** yes
-
-### Network search answers only access-control failures with fixed text
-
-**File:** `modules/graphql-router/src/network/resolvers/aggregations.ts`
-**Severity:** low
-**Kind:** error handling
-**Issue:** Every node error should reach `nodes[].errors` as fixed text, as access-control failures already do; other errors from a local or remote node, and one thrown by a host's `customizeRemoteRequest`, still carry their own message.
-**Fix:** Answer every node error with fixed text naming only the node and an error class, and log the detail under an event name.
 **Standalone:** yes
 
 ### The download handshake trips the lint configuration, and its header write is unguarded

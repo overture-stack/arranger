@@ -1,7 +1,11 @@
 import { type NodeConfig, type RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
-import { isAxiosError } from 'axios';
 
 import { fetchGql } from '#network/gql.js';
+import {
+	REMOTE_NODE_FAILURE_TEXTS,
+	remoteNodeFailureDetailsOf,
+	remoteNodeFailureKindOf,
+} from '#network/remoteNodeFailure.js';
 import { type AggregationField, type NetworkRemoteNode } from '#network/types/setup.js';
 import { isFulfilledPromise } from '#network/utils/promise.js';
 
@@ -71,7 +75,8 @@ export type FetchAggregationResult =
  *
  * @param config - RemoteNodeConfig for network aggregation search
  * @returns On success, returns the NetworkAggregationNode including its NodeConfig and AggregationFields. This could return
- *          a failure result due to network error or unexpected response data format.
+ *          a failure result due to network error or unexpected response data format, whose message is fixed text naming
+ *          the kind of problem, the detail and the node's URL being logged on the server as `network.node_failed`.
  */
 const fetchNodeAggregations = async (config: RemoteNodeConfig): Promise<FetchAggregationResult> => {
 	const { graphqlUrl, documentType } = config;
@@ -113,11 +118,19 @@ const fetchNodeAggregations = async (config: RemoteNodeConfig): Promise<FetchAgg
 		console.error(
 			`  Check that the graphqlUrl and documentType '${documentType}' for this node are both correct.\n`,
 		);
-		if (isAxiosError(error)) {
-			return { result: 'NETWORK_ERROR', config, message: error.message };
-		}
-		const message = error instanceof Error ? error.message : `Unexpected error fetching node aggregations.`;
-		return { result: 'INVALID_DATA', config, message };
+		const kind = remoteNodeFailureKindOf(error);
+
+		console.error('network.node_failed', {
+			...remoteNodeFailureDetailsOf(error),
+			kind: kind ?? 'unreadable',
+			node: config.displayName,
+			step: 'schema',
+			url: graphqlUrl,
+		});
+
+		return kind
+			? { config, message: REMOTE_NODE_FAILURE_TEXTS[kind], result: 'NETWORK_ERROR' }
+			: { config, message: REMOTE_NODE_FAILURE_TEXTS.unreadable, result: 'INVALID_DATA' };
 	}
 };
 

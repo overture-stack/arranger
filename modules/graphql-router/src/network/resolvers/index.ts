@@ -7,6 +7,7 @@ import type {
 import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
+import { InvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import {
 	aggregationPipeline,
 	CONNECTION_STATUS,
@@ -98,7 +99,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		if ('filters' in args) {
 			const result = convertToSqon(args.filters);
 			if (!result.success) {
-				throw new Error(`Provided filter is not a valid sqon: ${result.data}`);
+				throw new InvalidFilterError('The filter must be a valid SQON.', { cause: result.data });
 			}
 		}
 		const { nodesFilter, ...remainingArgs } = args;

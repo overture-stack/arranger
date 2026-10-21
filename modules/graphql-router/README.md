@@ -262,6 +262,35 @@ Aggregations are worth one note, because they are the case where "the filter is 
 
 In multicatalogue mode the filter is global: it applies to all catalogues mounted under this router instance.
 
+Where the filter restricts any record, each search of record queries, aggregations, saved sets and exports sends `allow_partial_search_results: false`, so a shard refusing the search fails the whole read. A filter that is `includeEverything`'s, alone or as every member of an `and`, restricts no record, and its searches leave partial results to the engine.
+
+The search engine limits how many clauses a query may hold. Where it refuses a read past that limit and the filter restricts any record, the read fails with an `AccessControlQueryTooLargeError`, whose message names the catalogue, and the server logs `access_control.query_too_large` with the catalogue, the read path and the engine's limit. Where the filter restricts none, the refusal is the request's own mistake, answered with the rule its filter broke: "The filter must compile to no more clauses than the search engine accepts." See [GraphQL errors](#graphql-errors) and [Export routes](#export-routes) for how each is answered.
+
+---
+
+## GraphQL errors
+
+Each GraphQL error carries its `message`, its `locations` and `path` where it has them, and `extensions.code`, nothing more, debug mode included. Its detail, such as a stack or a search engine's report, is logged on the server.
+
+| Cause | `extensions.code` | `message` | Logged on the server as |
+| --- | --- | --- | --- |
+| The request's own mistake, such as a syntax or validation error, a variable of the wrong type, or batched operations the endpoint refuses | Apollo's own code, such as `GRAPHQL_PARSE_FAILED`, `GRAPHQL_VALIDATION_FAILED` or `BAD_USER_INPUT`, and `INTERNAL_SERVER_ERROR` for the few Apollo raises with no code of their own, such as refused batching | The error's own message, less any field-name suggestion | `graphql.invalid_request`, at info |
+| A filter breaking one of the router's rules, a SQON rule or the clause-limit rule above | `BAD_USER_INPUT` | The rule it broke | `graphql.invalid_request`, at info, with the rule's detail as its cause |
+| Access control cannot be evaluated, an `AccessControlError` | The error's own code, `INTERNAL_SERVER_ERROR` unless it carries another | "The server could not apply its access control because of a problem in its configuration, not in this request." | `access_control.evaluation_failed` |
+| The search engine refused the read past its clause limit once the catalogue's access filter was applied, an `AccessControlQueryTooLargeError` | `ACCESS_CONTROL_QUERY_TOO_LARGE` | The error's own message, naming the catalogue | `access_control.query_too_large` |
+| Anything else, a search engine's failure included | The error's own code, `INTERNAL_SERVER_ERROR` unless it carries another | "The request failed because of a problem on the server, not in the request." | `graphql.failed`, with the whole error and the catalogue |
+
+Network search answers each node's failures by the same rules, in that node's `errors`, logging a local node's server problem as `network.node_failed` and a filter's broken rule as `network.invalid_request`. A remote node's failure is answered with fixed text for its kind, and its URL, its own messages and the request's headers stay out of the answer:
+
+| A remote node | Its `errors` |
+| --- | --- |
+| Could not be reached | "This node could not be reached." |
+| Answered with an error status | "This node answered the request with errors." |
+| Took longer than the request allows, or the request was cancelled | "The request to this node was cancelled before it answered." |
+| Answered with data this server cannot read | "This node answered with data this server cannot read." |
+
+The server logs each as `network.node_failed`, with the node's name, its URL, the kind of failure and the node's own messages, and never the request's headers.
+
 ---
 
 ## Export routes
@@ -300,11 +329,12 @@ On a context built some other way, pass the filter function this deployment's ro
 
 | Error | Means | Answer |
 | --- | --- | --- |
-| `InvalidExportRequestError`, from `./download` | The request broke a rule. Its message names the rule broken where there is one, and never a value carried by the request, so it is written for the client | `400`, with the error's message |
+| `InvalidExportRequestError`, from `./download` | The request broke a rule, the clause-limit rule included where no server-side filter restricts any record. Its message names the rule broken where there is one, and never a value carried by the request, so it is written for the client | `400`, with the error's message |
 | `AccessControlError`, from the package root | The deployment's access control could not be applied to the request | `500`, with a fixed text saying the problem is in the server's configuration, not in the request |
+| `AccessControlQueryTooLargeError`, from the package root | The search engine refused the export's search past its clause limit once the catalogue's access filter was applied. Its message is fixed text naming the catalogue, so it is written for the client | `500`, with the error's message |
 | Anything else | A server fault, such as a failed search | `500`, with a fixed text saying the problem is on the server, not in the request |
 
-Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s message is written for the client; any other error's message, and every error's cause, is written for the log.
+Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s or an `AccessControlQueryTooLargeError`'s message is written for the client; any other error's message, and every error's cause, is written for the log. An `AccessControlQueryTooLargeError` carries `catalogue`, `readPath` and `clauseLimit`, which `/download` logs as `access_control.query_too_large`, the event GraphQL logs for the same refusal.
 
 ### Joining the output to the response
 
@@ -323,9 +353,10 @@ const app = express();
 
 app.use(await arrangerRouter({ configs }));
 
-// The rule broken for an invalid request, written for the client; fixed text for anything else.
+// The rule broken for an invalid request, and the refusal of a search past the engine's clause limit, both
+// written for the client; fixed text for anything else.
 const failureText = (error) => {
-	if (error instanceof InvalidExportRequestError) {
+	if (error instanceof InvalidExportRequestError || error?.name === 'AccessControlQueryTooLargeError') {
 		return error.message;
 	}
 
@@ -383,6 +414,10 @@ The filter callback that keeps every document, and its deprecated alias. See [Se
 ### `AccessControlError`
 
 What a read fails with when access control cannot be evaluated for it. See [Export routes](#export-routes).
+
+### `AccessControlQueryTooLargeError`, `ACCESS_CONTROL_QUERY_TOO_LARGE_CODE`
+
+What a read fails with when the search engine refuses it past its clause limit once the catalogue's access filter is applied, and the GraphQL error code it is answered with. See [GraphQL errors](#graphql-errors) and [Export routes](#export-routes).
 
 ### `resolveCatalogueFields(mapping, extendedFields)`
 

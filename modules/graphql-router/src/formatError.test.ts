@@ -1,15 +1,25 @@
 import assert from 'node:assert/strict';
 import { mock, suite, test } from 'node:test';
-import { format } from 'node:util';
+import { format, inspect } from 'node:util';
 
 import express from 'express';
-import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import { GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import request from 'supertest';
 
+import { AccessControlQueryTooLargeError } from '#accessControl/AccessControlError.js';
+import includeEverything from '#accessControl/includeEverything.js';
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { createEndpoint } from '#graphqlRoutes.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
+import buildQuery from '#middleware/buildQuery/index.js';
+import { SCHEMA_ANSWER, serveRemoteNode, unreachableRemoteNodeUrl } from '#network/remoteNodeStub.fixture.js';
 import arrangerRouter from '#router.js';
+import {
+	CLIENTS,
+	ONE_COMBINATION_PAST_THE_LIMIT,
+	UNPARSEABLE_DATE_BOUND,
+	WHOLE_QUERY_PAST_THE_LIMIT,
+} from '#searchClient/clauseLimit.fixture.js';
 import type { SearchClient } from '#searchClient/index.js';
 
 const schema = new GraphQLSchema({
@@ -77,12 +87,19 @@ const buildApp = async () => {
 
 const MASKED_MESSAGE =
 	'The server could not apply its access control because of a problem in its configuration, not in this request.';
+const SERVER_PROBLEM_MESSAGE = 'The request failed because of a problem on the server, not in the request.';
+const CLAUSE_LIMIT_RULE = 'The filter must compile to no more clauses than the search engine accepts.';
+const INVALID_OPERATOR_RULE = 'Each filter node must name an operator SQON defines, such as and, or, not, in or gte.';
 const SECRET_DETAIL = 'token service unreachable at 10.0.0.5';
 const ENGINE_FAILURE = 'engine unavailable at 10.0.0.9';
 /** An ordinary error that merely talks about filters and access control, which masking by message text would catch. */
 const FILTER_WORDED_FAILURE = 'compileFilter: the client filter is not a valid sqon, so access control was not reached';
 
-type GraphQLErrorBody = { extensions?: { exception?: { stacktrace?: string[] } }; message: string };
+type GraphQLErrorBody = {
+	extensions?: { code?: string; exception?: { stacktrace?: string[] } };
+	message: string;
+	path?: unknown[];
+};
 
 const CONSOLE_METHODS = ['debug', 'error', 'info', 'log', 'warn'] as const;
 
@@ -140,6 +157,19 @@ const assertMasked = ({ bodyText, errors }: { bodyText: string; errors: GraphQLE
 	assert.ok(!bodyText.includes('stacktrace'), `the response carried a stack trace: ${bodyText}`);
 };
 
+/** Asserts every error is answered as a problem on the server, carrying none of `detail`. */
+const assertServerProblem = (
+	{ bodyText, errors }: { bodyText: string; errors: GraphQLErrorBody[] },
+	detail: string,
+) => {
+	assert.ok(errors.length > 0, `expected an error, got ${bodyText}`);
+	errors.forEach((error) => {
+		assert.equal(error.message, SERVER_PROBLEM_MESSAGE);
+		assert.deepEqual(error.extensions, { code: 'INTERNAL_SERVER_ERROR' });
+	});
+	assert.ok(!bodyText.includes(detail), `the response carried "${detail}": ${bodyText}`);
+};
+
 /** An `AccessControlError` as another copy of this package raises it: the same name, from a different class. */
 class AccessControlErrorFromAnotherCopy extends Error {
 	override name = 'AccessControlError';
@@ -147,13 +177,18 @@ class AccessControlErrorFromAnotherCopy extends Error {
 
 /**
  * A schema whose fields reach compileFilter's own refusals and another copy's refusal, beside fields
- * failing for reasons unrelated to access control.
+ * failing for reasons unrelated to access control, the router's other answers, and fields that serve.
  */
 const accessControlSchema = new GraphQLSchema({
 	query: new GraphQLObjectType({
 		fields: {
 			absentFilter: {
 				resolve: () => compileFilter({ clientSideFilter: undefined, serverSideFilter: undefined }),
+				type: GraphQLString,
+			},
+			count: {
+				args: { first: { type: GraphQLInt } },
+				resolve: (_root, { first }) => String(first),
 				type: GraphQLString,
 			},
 			emptyFilter: {
@@ -167,9 +202,38 @@ const accessControlSchema = new GraphQLSchema({
 				},
 				type: GraphQLString,
 			},
+			engineReport: {
+				resolve: () => {
+					throw CLIENTS.Elasticsearch(UNPARSEABLE_DATE_BOUND);
+				},
+				type: GraphQLString,
+			},
 			filterWordedFailure: {
 				resolve: () => {
 					throw new Error(FILTER_WORDED_FAILURE);
+				},
+				type: GraphQLString,
+			},
+			health: {
+				resolve: () => 'ok',
+				type: GraphQLString,
+			},
+			invalidFilter: {
+				resolve: () =>
+					buildQuery({
+						filters: { content: { fieldName: 'study', value: ['A'] }, op: 'no-such-operator' },
+						nestedFieldNames: [],
+					}),
+				type: GraphQLString,
+			},
+			queryTooLarge: {
+				resolve: () => {
+					throw new AccessControlQueryTooLargeError({
+						catalogue: 'donor',
+						cause: CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT),
+						clauseLimit: 1024,
+						readPath: 'hits',
+					});
 				},
 				type: GraphQLString,
 			},
@@ -214,9 +278,11 @@ const compileFilterRefusalOf = (serverSideFilter: unknown): string => {
 const buildRouterApp = async ({
 	esClient = stubSearchClient(),
 	getServerSideFilter,
+	remoteNodes = [],
 }: {
 	esClient?: SearchClient;
 	getServerSideFilter: unknown;
+	remoteNodes?: { displayName: string; documentType: string; graphqlUrl: string }[];
 }) => {
 	const router = await withApolloDebugOn(() =>
 		withConsoleCaptured(() =>
@@ -225,7 +291,7 @@ const buildRouterApp = async ({
 					documentType: 'donor',
 					enableDebug: true,
 					esIndex: 'donor_index',
-					network: { localNode: { displayName: 'local node' } },
+					network: { localNode: { displayName: 'local node' }, remoteNodes },
 				},
 				esClient,
 				getServerSideFilter: getServerSideFilter as never,
@@ -346,30 +412,30 @@ suite("formatError masks compileFilter's refusals", () => {
 		);
 	});
 
-	test('leaves an error unrelated to access control unchanged, stack included under debug', async () => {
+	test('answers an error unrelated to access control with fixed text naming the server, logging its message', async () => {
 		// Given the same endpoint, whose third field fails for a reason unrelated to access control
 		const app = await buildDebugApp();
 
 		// When that field is queried
-		const { result: response } = await postQuery(app, '{ engineFailure }');
+		const { lines, result: response } = await postQuery(app, '{ engineFailure }');
 
-		// Then its message reaches the client as thrown, with the stack debug mode adds
-		const { errors } = graphQLErrorsOf(response);
-		assert.equal(errors[0]?.message, ENGINE_FAILURE);
-		assert.ok(Array.isArray(errors[0]?.extensions?.exception?.stacktrace));
+		// Then the client is told the problem is on the server, and the server log has the message
+		assertServerProblem(graphQLErrorsOf(response), ENGINE_FAILURE);
+		assert.ok(
+			lines.some((line) => line.includes('graphql.failed') && line.includes(ENGINE_FAILURE)),
+			`expected a graphql.failed line carrying the message, got ${JSON.stringify(lines)}`,
+		);
 	});
 
-	test('leaves an ordinary error unchanged even when its message talks about filters and access control', async () => {
+	test('answers an ordinary error worded like an access-control refusal as a problem on the server, by its kind', async () => {
 		// Given the same endpoint, whose fourth field throws a plain Error worded like an access-control refusal
 		const app = await buildDebugApp();
 
 		// When that field is queried
 		const { result: response } = await postQuery(app, '{ filterWordedFailure }');
 
-		// Then it is not masked, because masking follows the error's kind and not its wording
-		const { errors } = graphQLErrorsOf(response);
-		assert.equal(errors[0]?.message, FILTER_WORDED_FAILURE);
-		assert.ok(Array.isArray(errors[0]?.extensions?.exception?.stacktrace));
+		// Then it is answered as a server problem, since the answer follows the error's kind and not its wording
+		assertServerProblem(graphQLErrorsOf(response), FILTER_WORDED_FAILURE);
 	});
 });
 
@@ -465,7 +531,7 @@ suite("formatError masks filter callback failures on the router's read paths", (
 		responses.forEach(({ result: response }) => assertMasked(graphQLErrorsOf(response), 'compileFilter'));
 	});
 
-	test("leaves a search engine failure's error unchanged, stack included under debug", async () => {
+	test('answers a search engine failure with fixed text naming the server, logging its detail', async () => {
 		// Given a router with a working callback over a search engine that fails every search
 		const app = await buildRouterApp({
 			esClient: stubSearchClient({ searchFailure: new Error(ENGINE_FAILURE) }),
@@ -473,12 +539,14 @@ suite("formatError masks filter callback failures on the router's read paths", (
 		});
 
 		// When hits are queried
-		const { result: response } = await postQuery(app, READ_PATH_QUERIES.hits);
+		const { lines, result: response } = await postQuery(app, READ_PATH_QUERIES.hits);
 
-		// Then the engine's message reaches the client as thrown, with the stack debug mode adds
-		const { errors } = graphQLErrorsOf(response);
-		assert.equal(errors[0]?.message, ENGINE_FAILURE);
-		assert.ok(Array.isArray(errors[0]?.extensions?.exception?.stacktrace));
+		// Then the client is told the problem is on the server, and the server log has the engine's message
+		assertServerProblem(graphQLErrorsOf(response), ENGINE_FAILURE);
+		assert.ok(
+			lines.some((line) => line.includes('graphql.failed') && line.includes(ENGINE_FAILURE)),
+			`expected a graphql.failed line carrying the detail, got ${JSON.stringify(lines)}`,
+		);
 	});
 });
 
@@ -557,23 +625,489 @@ suite("network search reports a local node's access-control failure with fixed t
 			`expected an access_control.evaluation_failed line carrying the detail, got ${JSON.stringify(lines)}`,
 		);
 	});
+});
 
-	test("leaves a local node's search engine failure in its errors unchanged", async () => {
+type ConsoleCall = { args: unknown[]; method: (typeof CONSOLE_METHODS)[number] };
+
+/** Runs `work` with console output captured, returning each call's method and arguments. */
+const withConsoleCalls = async <Result>(
+	work: () => Promise<Result>,
+): Promise<{ calls: ConsoleCall[]; result: Result }> => {
+	const calls: ConsoleCall[] = [];
+	const mocks = CONSOLE_METHODS.map((method) =>
+		mock.method(console, method, (...args: unknown[]) => {
+			calls.push({ args, method });
+		}),
+	);
+
+	try {
+		return { calls, result: await work() };
+	} finally {
+		mocks.forEach((mocked) => mocked.mock.restore());
+	}
+};
+
+const QUERY_TOO_LARGE_MESSAGE =
+	'The search engine refused this request to catalogue "donor" as larger than it accepts once the catalogue\'s access filter was applied.';
+
+/** Network search's nodes with their hits, so the local node's hits and aggregations both run. */
+const NETWORK_NODES_AND_HITS_QUERY =
+	'{ network { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }';
+
+const nodeNamed = (response: request.Response, name: string): NetworkNodeBody | undefined =>
+	(response.body?.data?.network?.nodes as NetworkNodeBody[] | undefined)?.find((node) => node.name === name);
+
+/** Asserts the node reports `text` once for each read it failed, and the response carries none of `details`. */
+const assertNodeAnswered = (
+	response: request.Response,
+	{ details, name, reads, text }: { details: string[]; name: string; reads: number; text: string },
+) => {
+	const node = nodeNamed(response, name);
+	const bodyText = JSON.stringify(response.body);
+
+	assert.equal(response.body?.errors, undefined, bodyText);
+	assert.equal(node?.status, 'ERROR', bodyText);
+	assert.deepEqual(node?.errors.split(' | '), Array(reads).fill(text), bodyText);
+	details.forEach((detail) => assert.ok(!bodyText.includes(detail), `the response carried "${detail}": ${bodyText}`));
+};
+
+suite("network search answers each node's failure as the GraphQL endpoint answers it", () => {
+	test("answers a local node's search engine failure with fixed text naming the server, logging it with the node", async () => {
 		// Given a router with a working callback over a search engine that fails every search
 		const app = await buildRouterApp({
 			esClient: stubSearchClient({ searchFailure: new Error(ENGINE_FAILURE) }),
 			getServerSideFilter: STUDY_A,
 		});
 
-		// When network search is queried
-		const { result: response } = await postQuery(app, NETWORK_NODES_QUERY);
+		// When network search is queried for hits and aggregations
+		const { lines, result: response } = await postQuery(app, NETWORK_NODES_AND_HITS_QUERY);
 
-		// Then the local node reports the engine's own message
-		const localNode = localNodeOf(response);
-		assert.equal(localNode?.status, 'ERROR', JSON.stringify(response.body));
+		// Then the local node reports each failed read as a problem on the server, and the log names the node
+		assertNodeAnswered(response, {
+			details: [ENGINE_FAILURE],
+			name: 'local node',
+			reads: 2,
+			text: SERVER_PROBLEM_MESSAGE,
+		});
 		assert.ok(
-			localNode?.errors.includes(ENGINE_FAILURE),
-			`expected the engine's message, got ${JSON.stringify(localNode?.errors)}`,
+			lines.some(
+				(line) =>
+					line.includes('network.node_failed') &&
+					line.includes('local node') &&
+					line.includes(ENGINE_FAILURE),
+			),
+			`expected a network.node_failed line naming the node and carrying the detail, got ${JSON.stringify(lines)}`,
 		);
 	});
+
+	test("answers a local node's read past the clause limit under a restricting filter with the refusal's text, logging it with the node", async () => {
+		// Given a router with a restricting callback over an engine refusing every search past its clause limit
+		const app = await buildRouterApp({
+			esClient: stubSearchClient({ searchFailure: CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT) }),
+			getServerSideFilter: STUDY_A,
+		});
+
+		// When network search is queried for hits and aggregations
+		const { calls, result: response } = await withConsoleCalls(() =>
+			request(app).post('/graphql').send({ query: NETWORK_NODES_AND_HITS_QUERY }),
+		);
+
+		// Then the local node reports the refusal's text for each read, logged with the catalogue, read path, limit and node
+		assertNodeAnswered(response, {
+			details: ['maxClauseCount'],
+			name: 'local node',
+			reads: 2,
+			text: QUERY_TOO_LARGE_MESSAGE,
+		});
+		assert.deepEqual(
+			calls
+				.filter(({ args: [event] }) => event === 'access_control.query_too_large')
+				.map(({ args, method }) => [method, ...args]),
+			['hits', 'aggregations'].map((readPath) => [
+				'error',
+				'access_control.query_too_large',
+				{ catalogue: 'donor', clauseLimit: 1024, node: 'local node', readPath },
+			]),
+		);
+	});
+
+	test('answers a local node given a client filter breaking a rule of SQON with the rule it broke', async () => {
+		// Given a router with a restricting callback
+		const app = await buildRouterApp({ getServerSideFilter: STUDY_A });
+
+		// When network search is queried with a filter pivoting on a field that is not nested
+		const { result: response } = await withConsoleCaptured(() =>
+			request(app)
+				.post('/graphql')
+				.send({
+					query: `query ($filters: JSON) { network(filters: $filters) { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }`,
+					variables: {
+						filters: {
+							content: [{ content: { fieldName: 'study', value: ['A'] }, op: 'in' }],
+							op: 'and',
+							pivot: 'study',
+						},
+					},
+				}),
+		);
+
+		// Then the local node reports the rule for each read
+		assertNodeAnswered(response, {
+			details: [],
+			name: 'local node',
+			reads: 2,
+			text: "A filter's pivot must name a nested field of this catalogue; it requires the filter's conditions to hold for the same nested object.",
+		});
+	});
+
+	test("logs a local node's client filter breaking a rule of SQON at info, as network.invalid_request", async () => {
+		// Given a router with a restricting callback
+		const app = await buildRouterApp({ getServerSideFilter: STUDY_A });
+
+		// When network search is queried with a filter pivoting on a field that is not nested
+		const { calls } = await withConsoleCalls(() =>
+			request(app)
+				.post('/graphql')
+				.send({
+					query: `query ($filters: JSON) { network(filters: $filters) { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }`,
+					variables: {
+						filters: {
+							content: [{ content: { fieldName: 'study', value: ['A'] }, op: 'in' }],
+							op: 'and',
+							pivot: 'study',
+						},
+					},
+				}),
+		);
+
+		// Then each of its logs is at info, a client's ordinary mistake
+		const levels = calls.filter(({ args }) => args[0] === 'network.invalid_request').map(({ method }) => method);
+		assert.ok(levels.length > 0, JSON.stringify(calls));
+		assert.deepEqual([...new Set(levels)], ['info']);
+	});
+
+	test('answers a remote node nothing answered at startup as unreachable, never naming its URL', async () => {
+		// Given a router with a remote node at a URL nothing answers at
+		const url = await unreachableRemoteNodeUrl();
+		const app = await buildRouterApp({
+			getServerSideFilter: STUDY_A,
+			remoteNodes: [{ displayName: 'remote node', documentType: 'donor', graphqlUrl: url }],
+		});
+
+		// When network search is queried
+		const { result: response } = await postQuery(app, NETWORK_NODES_AND_HITS_QUERY);
+
+		// Then the remote node reports that it could not be reached
+		assertNodeAnswered(response, {
+			details: [url, '127.0.0.1'],
+			name: 'remote node',
+			reads: 1,
+			text: 'This node could not be reached.',
+		});
+	});
+
+	test('answers a remote node answering the query with errors as answering with errors, never quoting the node', async () => {
+		// Given a router with a remote node answering its schema at startup, then every query with an error of its own
+		const remoteDetail = 'index [donor_internal_7] is closed';
+		const remote = await serveRemoteNode((query, response) => {
+			if (query.includes('__type(')) {
+				response.json(SCHEMA_ANSWER);
+			} else {
+				response.status(400).json({ errors: [{ message: remoteDetail }] });
+			}
+		});
+
+		try {
+			const app = await buildRouterApp({
+				getServerSideFilter: STUDY_A,
+				remoteNodes: [{ displayName: 'remote node', documentType: 'donor', graphqlUrl: remote.url }],
+			});
+
+			// When network search is queried
+			const { lines, result: response } = await postQuery(app, NETWORK_NODES_AND_HITS_QUERY);
+
+			// Then the remote node reports that it answered with errors, and only the log carries its message and URL
+			assertNodeAnswered(response, {
+				details: [remoteDetail, remote.url],
+				name: 'remote node',
+				reads: 1,
+				text: 'This node answered the request with errors.',
+			});
+			assert.ok(
+				lines.some((line) => line.includes(remoteDetail) && line.includes(remote.url)),
+				JSON.stringify(lines),
+			);
+		} finally {
+			await remote.close();
+		}
+	});
+});
+
+const ANSWER_MEMBERS = ['extensions', 'locations', 'message', 'path'];
+
+/** Asserts each error holds no member beyond message, locations, path and extensions, and extensions only code. */
+const assertOnlyAnswerMembers = ({ bodyText, errors }: { bodyText: string; errors: GraphQLErrorBody[] }) => {
+	assert.ok(errors.length > 0, `expected an error, got ${bodyText}`);
+	errors.forEach((error) => {
+		assert.deepEqual(
+			Object.keys(error).filter((member) => !ANSWER_MEMBERS.includes(member)),
+			[],
+			JSON.stringify(error),
+		);
+		assert.deepEqual(Object.keys(error.extensions ?? {}), ['code'], JSON.stringify(error));
+		assert.equal(typeof error.extensions?.code, 'string', JSON.stringify(error));
+	});
+};
+
+/** The body of each request the endpoint answers with an error, one per kind of answer. */
+const REQUESTS_ANSWERED_WITH_AN_ERROR: [string, unknown][] = [
+	['a syntax error', { query: '{ health' }],
+	['a validation error', { query: '{ helth }' }],
+	[
+		'a variable of the wrong type',
+		{ query: 'query ($first: Int) { count(first: $first) }', variables: { first: 'many' } },
+	],
+	['batched operations the endpoint refuses', [{ query: '{ health }' }, { query: '{ health }' }]],
+	['a filter breaking a rule of SQON', { query: '{ invalidFilter }' }],
+	["a search engine's refusal", { query: '{ engineReport }' }],
+	['an unexpected error', { query: '{ engineFailure }' }],
+	['an access-control failure', { query: '{ absentFilter }' }],
+	["a read the engine refused once the catalogue's access filter was applied", { query: '{ queryTooLarge }' }],
+];
+
+suite('a GraphQL error carries only its message, locations, path and code', () => {
+	for (const [description, body] of REQUESTS_ANSWERED_WITH_AN_ERROR) {
+		test(`answers ${description} with no other member, even with debug on`, async () => {
+			// Given an endpoint built with Apollo's debug mode on
+			const app = await buildDebugApp();
+
+			// When the request is sent
+			const { result: response } = await withConsoleCaptured(() =>
+				request(app)
+					.post('/graphql')
+					.send(body as object),
+			);
+
+			// Then each error holds only the four members, and extensions only its code
+			assertOnlyAnswerMembers(graphQLErrorsOf(response));
+		});
+	}
+});
+
+suite("a request's own mistake keeps its message", () => {
+	test('answers a syntax error with its own message and code', async () => {
+		const { result: response } = await postQuery(await buildDebugApp(), '{ health');
+
+		const [error] = graphQLErrorsOf(response).errors;
+		assert.match(error?.message ?? '', /^Syntax Error: Expected Name, found <EOF>\.$/);
+		assert.deepEqual(error?.extensions, { code: 'GRAPHQL_PARSE_FAILED' });
+	});
+
+	test('answers a variable of the wrong type with its own message and code', async () => {
+		const app = await buildDebugApp();
+		const { result: response } = await withConsoleCaptured(() =>
+			request(app)
+				.post('/graphql')
+				.send({ query: 'query ($first: Int) { count(first: $first) }', variables: { first: 'many' } }),
+		);
+
+		const [error] = graphQLErrorsOf(response).errors;
+		assert.match(error?.message ?? '', /^Variable "\$first" got invalid value "many"; Int cannot represent/);
+		assert.deepEqual(error?.extensions, { code: 'BAD_USER_INPUT' });
+	});
+
+	test("logs a request's own mistake at info, as graphql.invalid_request", async () => {
+		const app = await buildDebugApp();
+		const { calls } = await withConsoleCalls(() => request(app).post('/graphql').send({ query: '{ health' }));
+
+		assert.deepEqual(
+			calls.filter(({ args }) => args[0] === 'graphql.invalid_request').map(({ method }) => method),
+			['info'],
+		);
+	});
+
+	test('answers batched operations the endpoint refuses with the rule, not as a problem on the server', async () => {
+		const app = await buildDebugApp();
+		const { result: response } = await withConsoleCaptured(() =>
+			request(app)
+				.post('/graphql')
+				.send([{ query: '{ health }' }, { query: '{ health }' }]),
+		);
+
+		assert.equal(response.status, 400);
+		assert.deepEqual(
+			graphQLErrorsOf(response).errors.map(({ message }) => message),
+			['Operation batching disabled.'],
+		);
+	});
+
+	test('answers a filter breaking a rule of SQON with the rule it broke and the BAD_USER_INPUT code', async () => {
+		// Given an endpoint whose field compiles a filter naming no operator SQON defines
+		const app = await buildDebugApp();
+
+		// When that field is queried
+		const { result: response } = await postQuery(app, '{ invalidFilter }');
+
+		// Then the client is told the rule
+		const { errors } = graphQLErrorsOf(response);
+		assert.deepEqual(
+			errors.map(({ extensions, message, path }) => [extensions?.code, message, path]),
+			[['BAD_USER_INPUT', INVALID_OPERATOR_RULE, ['invalidFilter']]],
+		);
+	});
+
+	test("answers a client filter breaking a rule of SQON on a router's read path with the rule it broke", async () => {
+		// Given a router with a restricting callback
+		const app = await buildRouterApp({ getServerSideFilter: STUDY_A });
+
+		// When hits are queried with a client filter naming no operator SQON defines
+		const { result: response } = await withConsoleCaptured(() =>
+			request(app)
+				.post('/graphql')
+				.send({
+					query: 'query ($filters: JSON) { donor { hits(filters: $filters) { total } } }',
+					variables: { filters: { content: { fieldName: 'study', value: ['A'] }, op: 'no-such-operator' } },
+				}),
+		);
+
+		// Then the client is told the rule, as its own mistake
+		assert.deepEqual(
+			graphQLErrorsOf(response).errors.map(({ extensions, message }) => [extensions?.code, message]),
+			[['BAD_USER_INPUT', INVALID_OPERATOR_RULE]],
+		);
+	});
+
+	test("answers network search given a filter that is not a SQON with the rule, as the request's own mistake", async () => {
+		// Given a router serving network search
+		const app = await buildRouterApp({ getServerSideFilter: STUDY_A });
+
+		// When network search is queried with a filter that is no SQON node
+		const { lines, result: response } = await withConsoleCaptured(() =>
+			request(app)
+				.post('/graphql')
+				.send({
+					query: 'query ($filters: JSON) { network(filters: $filters) { nodes { name } } }',
+					variables: { filters: { content: { fieldName: 'study', value: ['A'] }, op: 'no-such-operator' } },
+				}),
+		);
+
+		// Then the client is told the rule, as its own mistake, and the log carries what the SQON check found
+		assert.deepEqual(
+			graphQLErrorsOf(response).errors.map(({ extensions, message }) => [extensions?.code, message]),
+			[['BAD_USER_INPUT', 'The filter must be a valid SQON.']],
+		);
+		assert.ok(
+			lines.some((line) => line.includes('graphql.invalid_request') && line.includes('invalid_union')),
+			JSON.stringify(lines),
+		);
+	});
+});
+
+suite("a search engine's failure is answered as a problem on the server", () => {
+	test("answers the engine's own report with fixed text naming the server, and logs the report", async () => {
+		// Given an endpoint whose field fails with the engine's report of a date it could not parse
+		const app = await buildDebugApp();
+
+		// When that field is queried
+		const { lines, result: response } = await postQuery(app, '{ engineReport }');
+
+		// Then the client is told the problem is on the server, and the server log carries the report
+		assertServerProblem(graphQLErrorsOf(response), 'not-a-date');
+		assert.ok(
+			lines.some((line) => line.includes('graphql.failed') && line.includes('parse_exception')),
+			`expected a graphql.failed line carrying the report, got ${JSON.stringify(lines)}`,
+		);
+	});
+
+	test('answers the same fixed text whatever the failure says', async () => {
+		// Given two fields failing for different reasons
+		const app = await buildDebugApp();
+
+		// When each is queried
+		const answers = await Promise.all(
+			['{ engineFailure }', '{ engineReport }', '{ filterWordedFailure }'].map(async (query) => {
+				const { result: response } = await postQuery(app, query);
+				return graphQLErrorsOf(response).errors.map(({ message }) => message);
+			}),
+		);
+
+		// Then each is answered with the one fixed text
+		assert.deepEqual(answers, [[SERVER_PROBLEM_MESSAGE], [SERVER_PROBLEM_MESSAGE], [SERVER_PROBLEM_MESSAGE]]);
+	});
+});
+
+const CLAUSE_LIMIT_REFUSALS = {
+	'one combination past the limit, as Elasticsearch refuses it':
+		CLIENTS.Elasticsearch(ONE_COMBINATION_PAST_THE_LIMIT),
+	"OpenSearch's count across the whole query": CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT),
+};
+
+const READ_PATHS_SEARCHING_THE_CATALOGUE = [
+	['hits', READ_PATH_QUERIES.hits, ['donor', 'hits']],
+	['aggregations', READ_PATH_QUERIES.aggregations, ['donor', 'aggregations']],
+	['sets', READ_PATH_QUERIES['saved sets'], ['saveSet']],
+] as const;
+
+suite("the search engine's refusal of a read past its clause limit, on the GraphQL endpoint", () => {
+	for (const [refusalDescription, refusal] of Object.entries(CLAUSE_LIMIT_REFUSALS)) {
+		for (const [readPath, query, path] of READ_PATHS_SEARCHING_THE_CATALOGUE) {
+			test(`answers ${readPath} under a restricting filter with the access-control refusal naming the catalogue, for ${refusalDescription}`, async () => {
+				// Given a router with a restricting callback over an engine refusing every search past its clause limit
+				const app = await buildRouterApp({
+					esClient: stubSearchClient({ searchFailure: refusal }),
+					getServerSideFilter: STUDY_A,
+				});
+
+				// When the read path is queried
+				const { calls, result: response } = await withConsoleCalls(() =>
+					request(app).post('/graphql').send({ query }),
+				);
+
+				// Then the client is given the refusal's code and fixed text, and the server log names the
+				// catalogue, the read path and the limit
+				const { errors } = graphQLErrorsOf(response);
+				assert.deepEqual(
+					errors.map(({ extensions, message, path: errorPath }) => [extensions?.code, message, errorPath]),
+					[['ACCESS_CONTROL_QUERY_TOO_LARGE', QUERY_TOO_LARGE_MESSAGE, path]],
+				);
+				assert.deepEqual(
+					calls
+						.filter(({ args: [event] }) => event === 'access_control.query_too_large')
+						.map(({ args, method }) => [method, ...args]),
+					[
+						[
+							'error',
+							'access_control.query_too_large',
+							{ catalogue: 'donor', clauseLimit: 1024, path, readPath },
+						],
+					],
+				);
+			});
+		}
+	}
+
+	for (const [description, getServerSideFilter] of [
+		['given no filter callback', undefined],
+		['whose callback returns includeEverything for the request', includeEverything],
+	] as const) {
+		test(`answers hits on a router ${description} as the request's own mistake, stating the rule`, async () => {
+			// Given a router restricting no record over an engine refusing every search past its clause limit
+			const app = await buildRouterApp({
+				esClient: stubSearchClient({
+					searchFailure: CLAUSE_LIMIT_REFUSALS["OpenSearch's count across the whole query"],
+				}),
+				getServerSideFilter,
+			});
+
+			// When hits are queried
+			const { lines, result: response } = await postQuery(app, READ_PATH_QUERIES.hits);
+
+			// Then the client is told the rule its filter broke, and nothing is logged as access control
+			assert.deepEqual(
+				graphQLErrorsOf(response).errors.map(({ extensions, message }) => [extensions?.code, message]),
+				[['BAD_USER_INPUT', CLAUSE_LIMIT_RULE]],
+			);
+			assert.ok(!lines.some((line) => line.includes('access_control.query_too_large')), inspect(lines));
+		});
+	}
 });

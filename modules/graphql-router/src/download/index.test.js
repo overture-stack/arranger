@@ -7,8 +7,14 @@ import { inspect } from 'node:util';
 import express from 'express';
 import request from 'supertest';
 
+import includeEverything from '#accessControl/includeEverything.js';
 import { denyAllFilter, restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import arrangerRouter from '#router.js';
+import {
+	CLIENTS,
+	ONE_COMBINATION_PAST_THE_LIMIT,
+	WHOLE_QUERY_PAST_THE_LIMIT,
+} from '#searchClient/clauseLimit.fixture.js';
 import { wrapOpenSearchClient } from '#searchClient/index.js';
 
 import { dataStream, InvalidExportRequestError } from './index.js';
@@ -208,13 +214,14 @@ const compareSortKeys = (left, right, sort) => {
 
 /**
  * @param documents what the index holds.
- * @param failOnRequest the 1-based search that rejects with `failureMessage`.
+ * @param failOnRequest the 1-based search that rejects with `failure`, or an error carrying `failureMessage`.
  * @param holdFromRequest the 1-based search from which every search waits until `release` is called.
  * @param shardFailureOnRequest the 1-based search whose response reports a failed shard.
  */
 const createSearchEngine = ({
 	documents = DOCUMENTS,
 	failOnRequest,
+	failure,
 	failureMessage = 'search failed',
 	holdFromRequest = Infinity,
 	shardFailureOnRequest,
@@ -237,7 +244,7 @@ const createSearchEngine = ({
 		}
 
 		if (requestNumber === failOnRequest) {
-			throw new Error(failureMessage);
+			throw failure ?? new Error(failureMessage);
 		}
 
 		const { body = {} } = searchRequest;
@@ -431,9 +438,14 @@ const runRecordingProcessErrors = async (action) => {
 
 /** Silences the console, keeping everything written to it for `loggedText`. */
 const captureConsole = () => {
-	const spies = ['debug', 'error', 'info', 'log', 'warn'].map((method) => mock.method(console, method, () => {}));
+	const methods = ['debug', 'error', 'info', 'log', 'warn'];
+	const spies = methods.map((method) => mock.method(console, method, () => {}));
 
 	return {
+		/** The arguments of every call to `method`. */
+		callsAt: (method) => spies[methods.indexOf(method)].mock.calls.map((call) => call.arguments),
+		/** The event name, the first argument, of every call to `method`. */
+		eventsAt: (method) => spies[methods.indexOf(method)].mock.calls.map((call) => call.arguments[0]),
 		loggedText: () =>
 			spies
 				.flatMap((spy) => spy.mock.calls.flatMap((call) => call.arguments))
@@ -1517,6 +1529,134 @@ suite('download', () => {
 					} finally {
 						consoleCapture.restore();
 					}
+				});
+			});
+		}
+	});
+
+	suite('the search engine refusing an export past its clause limit', () => {
+		const QUERY_TOO_LARGE_MESSAGE =
+			'The search engine refused this request to catalogue "donor" as larger than it accepts once the catalogue\'s access filter was applied.';
+		const CLAUSE_LIMIT_RULE = 'The filter must compile to no more clauses than the search engine accepts.';
+
+		for (const [description, failure] of [
+			[
+				'one combination past the limit, as Elasticsearch refuses it',
+				CLIENTS.Elasticsearch(ONE_COMBINATION_PAST_THE_LIMIT),
+			],
+			["OpenSearch's count across the whole query", CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT)],
+		]) {
+			test(`answers 500 with fixed text naming the catalogue under a restricting filter, for ${description}`, async () => {
+				await withArranger(
+					{
+						failOnRequest: 1,
+						failure,
+						getServerSideFilter: restrictingFilter({ fieldName: 'study', values: ['A'] }),
+					},
+					async ({ server }) => {
+						// Given a router with a restricting callback, over an engine refusing the first search past its limit
+						const consoleCapture = captureConsole();
+
+						try {
+							// When the stock form is posted
+							const response = await postDownload(server, paramsWithFile());
+
+							// Then it answers 500 with the refusal's fixed text, and logs the catalogue, read path and limit
+							assertPlainTextError(response, 500, ['maxClauseCount']);
+							assert.equal(response.text, QUERY_TOO_LARGE_MESSAGE);
+							assert.deepEqual(
+								consoleCapture
+									.callsAt('error')
+									.filter(([event]) => event === 'access_control.query_too_large'),
+								[
+									[
+										'access_control.query_too_large',
+										{
+											catalogue: 'donor',
+											clauseLimit: 1024,
+											readPath: 'export',
+											route: 'download',
+										},
+									],
+								],
+							);
+							assert.ok(consoleCapture.eventsAt('error').includes('download.failed'));
+						} finally {
+							consoleCapture.restore();
+						}
+					},
+				);
+			});
+		}
+
+		for (const [description, getServerSideFilter] of [
+			['given no filter callback', undefined],
+			['whose callback returns includeEverything for the export', includeEverything],
+		]) {
+			test(`answers 400 with the rule on a router ${description}`, async () => {
+				await withArranger(
+					{ failOnRequest: 1, failure: CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT), getServerSideFilter },
+					async ({ server }) => {
+						// Given a router restricting no record, over an engine refusing the first search past its limit
+						const consoleCapture = captureConsole();
+
+						try {
+							// When the stock form is posted
+							const response = await postDownload(server, paramsWithFile());
+
+							// Then it answers 400 with the rule the request's filter broke, as the request's own mistake
+							assertPlainTextError(response, 400);
+							assert.equal(response.text, CLAUSE_LIMIT_RULE);
+							assert.deepEqual(consoleCapture.eventsAt('warn'), ['download.invalid_request']);
+							assert.deepEqual(consoleCapture.eventsAt('error'), []);
+						} finally {
+							consoleCapture.restore();
+						}
+					},
+				);
+			});
+		}
+	});
+
+	suite('partial results on the searches of an export', () => {
+		const PAGED_PARAMS = paramsWithFile({ chunkSize: 2 });
+
+		/** What each search asked of the engine about partial results. */
+		const partialResultsOf = (requests) =>
+			requests.map((searchRequest) =>
+				'allow_partial_search_results' in searchRequest
+					? searchRequest.allow_partial_search_results
+					: 'left to the engine',
+			);
+
+		test('disallows partial results on every page of an export under a restricting filter', async () => {
+			await withArranger(
+				{ getServerSideFilter: restrictingFilter({ fieldName: 'study', values: ['A'] }) },
+				async ({ engine, server }) => {
+					// When an export spanning several pages is posted
+					const response = await postDownload(server, PAGED_PARAMS);
+
+					// Then every page's search disallowed partial results
+					assert.equal(response.status, 200, response.text);
+					assert.ok(engine.requests.length > 1, 'the export should span several pages');
+					assert.deepEqual([...new Set(partialResultsOf(engine.requests))], [false]);
+				},
+			);
+		});
+
+		for (const [description, getServerSideFilter] of [
+			['given no filter callback', undefined],
+			['whose callback returns includeEverything for the export', includeEverything],
+		]) {
+			test(`leaves partial results to the engine on every page of an export on a router ${description}`, async () => {
+				await withArranger({ getServerSideFilter }, async ({ engine, server }) => {
+					// When an export spanning several pages is posted
+					const response = await postDownload(server, PAGED_PARAMS);
+
+					// Then no page's search said anything about partial results
+					assert.equal(response.status, 200, response.text);
+					assert.ok(engine.requests.length > 1, 'the export should span several pages');
+					assert.deepEqual([...new Set(partialResultsOf(engine.requests))], ['left to the engine']);
 				});
 			});
 		}

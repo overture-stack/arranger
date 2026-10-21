@@ -5,6 +5,7 @@ import { includeEverything } from '#index.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
 import buildQuery from '#middleware/buildQuery/index.js';
 
+import { isIncludeEverythingFilter } from './includeEverything.js';
 import { denyAllFilter, restrictingFilter } from './serverSideFilters.fixture.js';
 
 type StoredDocument = { _id: string; _source: Record<string, string | string[]> };
@@ -159,5 +160,37 @@ suite('accessControl/includeEverything', () => {
 			content: [{ content: { fieldName: '_id', value: [] }, op: 'in' }],
 			op: 'not',
 		});
+	});
+});
+
+suite('isIncludeEverythingFilter', () => {
+	test("recognizes includeEverything's filter, alone and as every member of an and", () => {
+		// Given includeEverything's filter as a callback returns it, a copy of it, and an and of two of them
+		const filters = [
+			includeEverything({}),
+			JSON.parse(JSON.stringify(includeEverything({}))),
+			{ content: [includeEverything({}), includeEverything({})], op: 'and' },
+		];
+
+		// When each is checked, Then each restricts no record
+		filters.forEach((filter) => assert.equal(isIncludeEverythingFilter(filter), true, JSON.stringify(filter)));
+	});
+
+	test('passes over a filter restricting any record, including an and holding one beside includeEverything', () => {
+		// Given filters that each restrict something, or are no filter at all
+		const filters = [
+			restrictingFilter({ fieldName: 'study', values: ['A'] })({}),
+			denyAllFilter('study')({}),
+			{
+				content: [includeEverything({}), restrictingFilter({ fieldName: 'study', values: ['A'] })({})],
+				op: 'and',
+			},
+			{ content: [includeEverything({})], op: 'or' },
+			{ content: [], op: 'and' },
+			undefined,
+		];
+
+		// When each is checked, Then none is taken for includeEverything's
+		filters.forEach((filter) => assert.equal(isIncludeEverythingFilter(filter), false, JSON.stringify(filter)));
 	});
 });

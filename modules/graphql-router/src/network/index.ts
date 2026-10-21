@@ -74,7 +74,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 	const connectedRemoteNodes = successfulRemoteNodeResults.map((result) => result.node);
 	const failedRemoteNodes = failedRemoteNodeResults.map((result) => ({
 		config: result.config,
-		error: `${result.result} - ${result.message}`,
+		error: result.message,
 	}));
 
 	/* ================== *

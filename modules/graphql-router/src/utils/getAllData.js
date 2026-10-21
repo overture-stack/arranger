@@ -6,12 +6,15 @@ import {
 	downloadProperties,
 } from '@overture-stack/arranger-types/configs/constants';
 
+import { AccessControlQueryTooLargeError } from '#accessControl/AccessControlError.js';
+import { isIncludeEverythingFilter } from '#accessControl/includeEverything.js';
 import { resolveServerSideFilter } from '#accessControl/resolveServerSideFilter.js';
 import fallbackConfigs from '#config/index.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
 import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
+import { CLAUSE_LIMIT_RULE, findClauseLimitRefusal } from '#searchClient/clauseLimit.js';
 import { requestStateOf } from '#utils/context.js';
 
 /**
@@ -19,7 +22,8 @@ import { requestStateOf } from '#utils/context.js';
  * what was wrong without repeating the value, since the value may have come from a client. The
  * `./download` entry point exports it so an integration can tell the outcomes apart as the router's
  * own `/download` does: this error is a bad request, answered with a 400, while an
- * `AccessControlError` is a refusal and any other error a server fault, both answered with a 500.
+ * `AccessControlError` or `AccessControlQueryTooLargeError` is a refusal and any other error a server
+ * fault, each answered with a 500.
  */
 export class InvalidExportRequestError extends Error {
 	name = 'InvalidExportRequestError';
@@ -99,14 +103,32 @@ const searchAfterLastOf = (hits) => {
 	throw new Error('A page of the export carried no sort values to continue after.');
 };
 
+// The engine's refusal of a query past its clause limit is the access filter's where one restricts any
+// record, and the caller's own filter's where none does.
+const searchFailureFor = ({ catalogue, cause, serverSideFilterApplies }) => {
+	const refusal = findClauseLimitRefusal(cause);
+
+	return refusal
+		? serverSideFilterApplies
+			? new AccessControlQueryTooLargeError({
+					catalogue,
+					cause,
+					clauseLimit: refusal.clauseLimit,
+					readPath: 'export',
+				})
+			: new InvalidExportRequestError(CLAUSE_LIMIT_RULE, { cause })
+		: new Error('The search engine failed to return a page of the export.', { cause });
+};
+
 // The engine's own failures are kept as the cause, for the server log: they can quote the caller's
 // sort fields or filter values, so they never become the message. `query` is sent even if it compiled
 // empty, which the engine refuses, where leaving it out would match every document.
 const pageSearcher =
-	({ esClient, index, query, sort }) =>
+	({ catalogue, esClient, index, query, serverSideFilterApplies, sort }) =>
 	async ({ searchAfter, size, trackTotalHits }) => {
 		const { body } = await esClient
 			.search({
+				...(serverSideFilterApplies ? { allow_partial_search_results: false } : {}),
 				body: {
 					query,
 					...(searchAfter ? { search_after: searchAfter } : {}),
@@ -117,7 +139,7 @@ const pageSearcher =
 				size,
 			})
 			.catch((cause) => {
-				throw new Error('The search engine failed to return a page of the export.', { cause });
+				throw searchFailureFor({ catalogue, cause, serverSideFilterApplies });
 			});
 
 		if ((body._shards?.failed ?? 0) === 0) {
@@ -159,7 +181,10 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  * search page, under the filter resolved from the context's access-control record and the caller's own
  * callback. `total` is capped at the row limit, `matchingTotal` is how many documents the filter matches,
  * and `truncated` says whether the limit cut the export short. Every refusal rejects the call before any
- * search, and a failed search or shard errors the stream.
+ * search, and a failed search or shard errors the stream. Where the resolved filter restricts any record, a
+ * shard refusing a search fails it, and the engine's refusal of a query past its clause limit errors the
+ * stream with an `AccessControlQueryTooLargeError`; where it restricts none, that refusal errors it with an
+ * `InvalidExportRequestError` stating the rule the caller's filter broke.
  *
  * @template Context
  * @param {object} args
@@ -238,7 +263,14 @@ export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, 
 			chunkSize: pageSize,
 			nestingPrefix,
 			rowLimit: rowLimitFor({ downloads: configs.config[configRootProperties.DOWNLOADS], maxRows }),
-			searchPage: pageSearcher({ esClient, index: configs.index, query, sort: esSort }),
+			searchPage: pageSearcher({
+				catalogue: configs.label ?? configs.name,
+				esClient,
+				index: configs.index,
+				query,
+				serverSideFilterApplies: !isIncludeEverythingFilter(serverSideFilter),
+				sort: esSort,
+			}),
 		}),
 	);
 };

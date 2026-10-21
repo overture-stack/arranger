@@ -27,3 +27,62 @@ export const ACCESS_CONTROL_FAILURE_MESSAGE =
  */
 export const isAccessControlError = (error: unknown): error is AccessControlError =>
 	error instanceof Error && error.name === 'AccessControlError';
+
+/** A read of the router's, as an `AccessControlQueryTooLargeError` names it: one name per read path. */
+export type ReadPath = 'aggregations' | 'export' | 'hits' | 'network' | 'sets';
+
+/** The GraphQL error code an `AccessControlQueryTooLargeError` is answered with. */
+export const ACCESS_CONTROL_QUERY_TOO_LARGE_CODE = 'ACCESS_CONTROL_QUERY_TOO_LARGE';
+
+/**
+ * The search engine refused a read as larger than it accepts once the catalogue's access filter was applied.
+ * Its `message` is fixed text naming the catalogue, written for the client. The GraphQL endpoint answers it
+ * with `ACCESS_CONTROL_QUERY_TOO_LARGE_CODE` and the export route with a 500, each logging
+ * `access_control.query_too_large` with the catalogue, the read path and the engine's clause limit, and an
+ * integration catching it from `getAllData` or `dataStream` should do the same.
+ */
+export class AccessControlQueryTooLargeError extends Error {
+	override name = 'AccessControlQueryTooLargeError';
+
+	/** The catalogue whose access filter the refused read applied. */
+	readonly catalogue: string;
+
+	/** The engine's clause limit, or undefined where its refusal names none. */
+	readonly clauseLimit: number | undefined;
+
+	/** The read the engine refused. */
+	readonly readPath: ReadPath;
+
+	/**
+	 * @param details the catalogue, the read path, the engine's clause limit where known, and the engine's
+	 *   refusal as `cause`.
+	 */
+	constructor({
+		catalogue,
+		cause,
+		clauseLimit,
+		readPath,
+	}: {
+		catalogue: string;
+		cause?: unknown;
+		clauseLimit: number | undefined;
+		readPath: ReadPath;
+	}) {
+		super(
+			`The search engine refused this request to catalogue "${catalogue}" as larger than it accepts once the catalogue's access filter was applied.`,
+			{ cause },
+		);
+		this.catalogue = catalogue;
+		this.clauseLimit = clauseLimit;
+		this.readPath = readPath;
+	}
+}
+
+/**
+ * Whether `error` is an `AccessControlQueryTooLargeError`, recognized by its name so one raised by another
+ * copy of this module counts too.
+ *
+ * @param error anything caught.
+ */
+export const isAccessControlQueryTooLargeError = (error: unknown): error is AccessControlQueryTooLargeError =>
+	error instanceof Error && error.name === 'AccessControlQueryTooLargeError';

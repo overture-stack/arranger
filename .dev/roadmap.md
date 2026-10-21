@@ -62,7 +62,7 @@ Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right mo
 
 The leading replacement candidate is **graphql-yoga** (maintained by The Guild, who also maintain `@graphql-tools`, already used in this repo). It runs on any JS runtime, integrates with Express without requiring it, supports the codebase's own schema-first approach, and is actively maintained. This is a research-confirmed candidate, not a final decision.
 
-Done when: Apollo is removed from `graphql-router`, the type errors currently masked in `graphqlRoutes.ts` are resolved, and the `buildContext` API has a clear, well-typed contract.
+Done when: Apollo is removed from `graphql-router`, the type errors currently masked in `graphqlRoutes.ts` are resolved, the `buildContext` API has a clear, well-typed contract, and every GraphQL error carries only its message, locations, path and code, the `formatError` suites (`modules/graphql-router/src/formatError.test.ts`) being that rule's contract.
 
 ### Arranger core module extraction
 

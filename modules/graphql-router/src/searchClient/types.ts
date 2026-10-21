@@ -19,11 +19,13 @@ export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
 export type SearchClientIndicesGetMappingParams = { index: string | string[] };
 export type SearchClientIndicesRefreshParams = { index: string | string[] };
 export type SearchClientIndicesCatAliasesParams = { error_trace?: boolean; format?: string };
+/** A search's parameters. `allow_partial_search_results: false` makes a shard refusing the search fail the whole search. */
 export type SearchClientSearchParams = {
+	_source?: boolean | string | string[];
+	allow_partial_search_results?: boolean;
+	body?: Record<string, any>;
 	index: string | string[];
 	size?: number;
-	body?: Record<string, any>;
-	_source?: boolean | string | string[];
 };
 export type SearchClientIndicesCreateParams = { index: string; body?: Record<string, any> };
 export type SearchClientIndicesCloseParams = {

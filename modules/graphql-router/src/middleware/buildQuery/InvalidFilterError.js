@@ -11,6 +11,6 @@ export class InvalidFilterError extends Error {
  * this module counts too.
  *
  * @param {unknown} error anything caught.
- * @returns {boolean}
+ * @returns {error is InvalidFilterError}
  */
 export const isInvalidFilterError = (error) => error instanceof Error && error.name === 'InvalidFilterError';

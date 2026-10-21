@@ -19,8 +19,11 @@ import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql
 
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
+	ACCESS_CONTROL_QUERY_TOO_LARGE_CODE,
 	type AccessControlError,
+	type AccessControlQueryTooLargeError,
 	isAccessControlError,
+	isAccessControlQueryTooLargeError,
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import fallbackConfigs, { initializeSets } from '#config/index.js';
@@ -29,6 +32,7 @@ import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/ex
 import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
 import { buildGraphqlNameRegistry } from '#mapping/utils/graphqlNameRegistry.js';
+import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
@@ -38,6 +42,7 @@ import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps }
 import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
+import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
 
 export { FALLBACK_LABEL, isFallbackLabel, logSeparator };
 
@@ -146,6 +151,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					customFields: '',
 					extendedFields,
 					index: configs?.[configRootProperties.ES_INDEX],
+					label,
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 					setsIndex,
 				},
@@ -221,39 +227,159 @@ const noSchemaHandler =
 		});
 	};
 
-// Built from scratch rather than spread from `error`, so neither the refusal's own message nor the
-// stack Apollo adds under debug can reach the client.
+const INTERNAL_SERVER_ERROR_CODE = 'INTERNAL_SERVER_ERROR';
+
+/** The code the router's own rule errors are answered with, which Apollo gives a request's own mistakes too. */
+const BAD_USER_INPUT_CODE = 'BAD_USER_INPUT';
+
+/** The codes Apollo gives a request's own mistakes, found before any resolver runs. */
+const REQUEST_MISTAKE_CODES: ReadonlySet<string> = new Set([
+	BAD_USER_INPUT_CODE,
+	'GRAPHQL_PARSE_FAILED',
+	'GRAPHQL_VALIDATION_FAILED',
+	'PERSISTED_QUERY_NOT_FOUND',
+	'PERSISTED_QUERY_NOT_SUPPORTED',
+]);
+
+/** Apollo's own fixed answers to a request it cannot run as an operation, which it raises with no code of their own. */
+const APOLLO_REQUEST_MISTAKE_MESSAGES: ReadonlySet<string> = new Set([
+	'GraphQL operations must contain a non-empty `query` or a `persistedQuery` extension.',
+	'Operation batching disabled.',
+	'provided sha does not match query',
+]);
+
+// graphql-js appends "Did you mean ...?" field-name suggestions to validation errors on a separate code path
+// from introspection, so they would describe the schema even when disableGraphQLIntrospection is true.
+// TODO: evaluate whether this is needed after switching away from Apollo
+const FIELD_SUGGESTION_SUFFIX = / Did you mean .+\?$/i;
+
+/** The code Apollo gave `error`, or the internal-error code where it holds none that is text. */
+const codeOf = (error: GraphQLError): string => {
+	const code = error.extensions?.code;
+
+	return typeof code === 'string' ? code : INTERNAL_SERVER_ERROR_CODE;
+};
+
+const isRequestMistake = (error: GraphQLError): boolean =>
+	REQUEST_MISTAKE_CODES.has(codeOf(error)) ||
+	(error.path === undefined && APOLLO_REQUEST_MISTAKE_MESSAGES.has(error.message));
+
+/**
+ * The formatted error a client is given: built from scratch, never spread from `error`, so it holds its message,
+ * the error's locations and path where it has them, and the code alone. Apollo hands this hook errors that are
+ * not all GraphQLErrors with a working `toJSON` (the batching-disabled rejection is a plain Error), so only the
+ * fields Apollo has already normalized onto `error` are read.
+ */
+const answerWith = ({
+	code,
+	error,
+	message,
+}: {
+	code: string;
+	error: GraphQLError;
+	message: string;
+}): GraphQLFormattedError => ({
+	extensions: { code },
+	...(error.locations && { locations: error.locations }),
+	message,
+	...(error.path && { path: error.path }),
+});
+
 const maskAccessControlError = (error: GraphQLError, accessControlError: AccessControlError): GraphQLFormattedError => {
 	console.error('access_control.evaluation_failed', accessControlError.message, {
 		cause: accessControlError.cause,
 		path: error.path,
 	});
 
-	return {
-		...(error.extensions?.code ? { extensions: { code: error.extensions.code } } : {}),
-		locations: error.locations,
+	return answerWith({
+		code: codeOf(error),
+		error,
 		message: ACCESS_CONTROL_FAILURE_MESSAGE,
-		path: error.path,
-	};
+	});
 };
 
-// graphql-js appends "Did you mean ...?" field-name suggestions to validation errors on a
-// separate code path from introspection, so they leak schema structure even when
-// disableGraphQLIntrospection is true.
-//
-// Not every error Apollo that runs through this hook is a GraphQLError with a working `toJSON`
-// (e.g. the batching-disabled rejection is a plain Error), so we build the formatted shape from
-// the enumerable fields Apollo has already normalized onto `error` rather than calling
-// graphql-js's `formatError`/`error.toJSON()`, which assumes a GraphQLError prototype.
-// TODO: evaluate whether this is needed after switching away from Apollo
-const FIELD_SUGGESTION_SUFFIX = / Did you mean .+\?$/i;
-const formatError = (error: GraphQLError): GraphQLFormattedError =>
-	isAccessControlError(error.originalError)
-		? maskAccessControlError(error, error.originalError)
-		: {
-				...error,
-				message: error.message.replace(FIELD_SUGGESTION_SUFFIX, ''),
-			};
+const answerQueryTooLarge = (error: GraphQLError, tooLarge: AccessControlQueryTooLargeError): GraphQLFormattedError => {
+	console.error('access_control.query_too_large', {
+		catalogue: tooLarge.catalogue,
+		clauseLimit: tooLarge.clauseLimit,
+		path: error.path,
+		readPath: tooLarge.readPath,
+	});
+
+	return answerWith({ code: ACCESS_CONTROL_QUERY_TOO_LARGE_CODE, error, message: tooLarge.message });
+};
+
+// A request's own mistake keeps its message, which graphql-js, Apollo or the router's rules write without the
+// server's detail. A rule's own detail, such as which part of a filter broke it, is its cause, logged only.
+const answerRequestMistake = ({
+	cause,
+	code,
+	error,
+}: {
+	cause?: unknown;
+	code: string;
+	error: GraphQLError;
+}): GraphQLFormattedError => {
+	const message = error.message.replace(FIELD_SUGGESTION_SUFFIX, '');
+
+	console.info('graphql.invalid_request', { ...(cause !== undefined && { cause }), code, message, path: error.path });
+
+	return answerWith({ code, error, message });
+};
+
+const answerServerProblem = (error: GraphQLError, label?: string): GraphQLFormattedError => {
+	console.error('graphql.failed', error.originalError ?? error, {
+		...(label && { catalogue: label }),
+		path: error.path,
+	});
+
+	return answerWith({
+		code: codeOf(error),
+		error,
+		message: SERVER_PROBLEM_MESSAGE,
+	});
+};
+
+const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError => {
+	// Widened, so each check narrows it on its own: every refusal class has Error's shape.
+	const originalError: unknown = error.originalError;
+
+	if (isAccessControlQueryTooLargeError(originalError)) {
+		return answerQueryTooLarge(error, originalError);
+	}
+
+	if (isAccessControlError(originalError)) {
+		return maskAccessControlError(error, originalError);
+	}
+
+	if (isInvalidFilterError(originalError)) {
+		return answerRequestMistake({ cause: originalError.cause, code: BAD_USER_INPUT_CODE, error });
+	}
+
+	if (isRequestMistake(error)) {
+		return answerRequestMistake({ code: codeOf(error), error });
+	}
+
+	return answerServerProblem(error, label);
+};
+
+/**
+ * Apollo's error formatter for one catalogue's endpoint. A formatter that throws is answered by Apollo with the
+ * thrown error itself, so a failure here is answered as a problem on the server too.
+ *
+ * @param label the catalogue's label, naming it in the server log.
+ */
+const formatErrorFor =
+	(label?: string) =>
+	(error: GraphQLError): GraphQLFormattedError => {
+		try {
+			return answerFor(error, label);
+		} catch (formattingError) {
+			console.error('graphql.format_failed', formattingError, { ...(label && { catalogue: label }) });
+
+			return { extensions: { code: INTERNAL_SERVER_ERROR_CODE }, message: SERVER_PROBLEM_MESSAGE };
+		}
+	};
 
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	disableClientFilters = false,
@@ -329,7 +455,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 				allowBatchedHttpRequests: enableGraphQLBatching,
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
-				formatError,
+				formatError: formatErrorFor(label),
 				introspection: !disableGraphQLIntrospection,
 				schema,
 				validationRules,

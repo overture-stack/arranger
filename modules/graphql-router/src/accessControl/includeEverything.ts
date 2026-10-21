@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 
 /**
@@ -20,5 +22,22 @@ const includeEverything: GetServerSideFilterFn<unknown> = () => ({
 	],
 	op: 'not',
 });
+
+/**
+ * Whether `filter` is the one `includeEverything` returns, alone or as every member of an `and`, so it
+ * restricts no record. Recognized by its shape, so a filter built by another copy of this package counts too.
+ *
+ * @param filter a server-side filter, as a callback returned it.
+ */
+export const isIncludeEverythingFilter = (filter: unknown): boolean =>
+	isDeepStrictEqual(filter, includeEverything(undefined)) ||
+	(typeof filter === 'object' &&
+		filter !== null &&
+		'op' in filter &&
+		filter.op === 'and' &&
+		'content' in filter &&
+		Array.isArray(filter.content) &&
+		filter.content.length > 0 &&
+		filter.content.every(isIncludeEverythingFilter));
 
 export default includeEverything;

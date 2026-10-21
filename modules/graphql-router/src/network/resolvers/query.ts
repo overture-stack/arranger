@@ -128,8 +128,7 @@ export const createNetworkQuery = (
 		`;
 		return success(gqlQuery);
 	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : 'Error thrown parsing gql query.';
 		console.error('createNetworkQuery generated invalid GQL', error);
-		return failure(message);
+		return failure('The query for this node could not be built.');
 	}
 };
