@@ -1,6 +1,7 @@
 import arrangerRouter, {
 	type ArrangerBaseContext,
 	classifyCatalogueFailureReason,
+	type IndexProbe,
 	logSeparator,
 	type SearchClient,
 } from '@overture-stack/arranger-graphql-router';
@@ -11,8 +12,15 @@ import { type CatalogueStatusDetail, catalogueStatuses as CATALOGUE_STATUS } fro
 import findCatalogueByIdentifier from '#catalogues/findCatalogueByIdentifier.js';
 import type { CataloguesMap } from '#configs/types/index.js';
 
-/** Called with each catalogue's index mapping, as its GraphQL router fetched it. */
-export type CatalogueMappingHook = (catalogueId: string, mappingFromIndex: Record<string, unknown>) => void;
+/**
+ * Called with each catalogue's index mapping, as its GraphQL router fetched it, and the probe its router
+ * built for the questions about the index the mapping cannot answer.
+ */
+export type CatalogueMappingHook = (
+	catalogueId: string,
+	mappingFromIndex: Record<string, unknown>,
+	indexProbe: IndexProbe,
+) => void;
 
 export const buildCatalogueRouter = async ({
 	catalogueConfigs,
@@ -34,8 +42,8 @@ export const buildCatalogueRouter = async ({
 		esClient,
 		getServerSideFilter,
 		...(onIndexMapping && {
-			onIndexMapping: (mappingFromIndex: Record<string, unknown>) =>
-				onIndexMapping(catalogueId, mappingFromIndex),
+			onIndexMapping: (mappingFromIndex: Record<string, unknown>, indexProbe: IndexProbe) =>
+				onIndexMapping(catalogueId, mappingFromIndex, indexProbe),
 		}),
 	});
 };
@@ -77,7 +85,7 @@ export default async ({
 	catalogs: CataloguesMap;
 	enableDebug: boolean;
 	esClient?: SearchClient;
-	/** Called with each catalogue's index mapping once its router fetched it; never for one failing first. */
+	/** Called with each catalogue's index mapping and probe once its router fetched it; never for one failing first. */
 	onIndexMapping?: CatalogueMappingHook;
 }): Promise<{
 	catalogueRouters: Record<string, ExpressRouter>;

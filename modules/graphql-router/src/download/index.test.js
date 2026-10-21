@@ -1442,7 +1442,8 @@ suite('download', () => {
 							requestsBefore,
 							'no engine request should be made',
 						);
-						assert.deepEqual(consoleCapture.eventsAt('warn'), ['download.invalid_request']);
+						assert.deepEqual(consoleCapture.eventsAt('info'), ['download.invalid_request']);
+						assert.deepEqual(consoleCapture.eventsAt('warn'), []);
 						assert.deepEqual(consoleCapture.eventsAt('error'), []);
 					} finally {
 						consoleCapture.restore();
@@ -1450,6 +1451,37 @@ suite('download', () => {
 
 					assert.equal((await request(arranger.server).get('/alive')).status, 200);
 				}));
+		}
+
+		for (const [description, send, status] of [
+			['params breaking a rule', (server) => postDownload(server, paramsWithFile({ chunkSize: 0 })), 400],
+			[
+				'a body larger than the route accepts',
+				(server) =>
+					postRawBody(server, {
+						body: `params=${'a'.repeat(200_000)}`,
+						headers: { 'content-type': FORM_CONTENT_TYPE },
+					}),
+				413,
+			],
+		]) {
+			test(`logs a refused request at info, as the client's own mistake to correct, for ${description}`, async () => {
+				// Given a router, and a request its sender has to correct
+				const consoleCapture = captureConsole();
+
+				try {
+					// When the request is sent
+					const response = await send(arranger.server);
+
+					// Then it is refused, and the refusal is logged once at info, never at warn or error
+					assertPlainTextError(response, status);
+					assert.deepEqual(consoleCapture.eventsAt('info'), ['download.invalid_request']);
+					assert.deepEqual(consoleCapture.eventsAt('warn'), []);
+					assert.deepEqual(consoleCapture.eventsAt('error'), []);
+				} finally {
+					consoleCapture.restore();
+				}
+			});
 		}
 
 		test('answers the same text for an invalid chunkSize, whatever the value', async () => {
@@ -1871,7 +1903,8 @@ suite('download', () => {
 							// Then it answers 400 with the rule the request's filter broke, as the request's own mistake
 							assertPlainTextError(response, 400);
 							assert.equal(response.text, CLAUSE_LIMIT_RULE);
-							assert.deepEqual(consoleCapture.eventsAt('warn'), ['download.invalid_request']);
+							assert.deepEqual(consoleCapture.eventsAt('info'), ['download.invalid_request']);
+							assert.deepEqual(consoleCapture.eventsAt('warn'), []);
 							assert.deepEqual(consoleCapture.eventsAt('error'), []);
 						} finally {
 							consoleCapture.restore();

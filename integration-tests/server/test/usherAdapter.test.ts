@@ -7,6 +7,7 @@ import {
 	ANSWERS,
 	createUsherMiddleware,
 	type KeyRegistration,
+	type RecordKeyRegistration,
 	RETRY_AFTER_SECONDS,
 	SUSPENDED_HEADER,
 } from '@overture-stack/usher-express-bridge';
@@ -21,12 +22,15 @@ import arrangerRouter, {
 import { EVENTS, UNAVAILABLE_GRAPHQL_CODE } from '../../../modules/usher-adapter/src/fixtures/arrangerNames.js';
 import {
 	ABSENT_CATEGORIES_REGISTRATION,
+	CATEGORY_CONDITIONS,
 	CATEGORY_FIELD,
+	categoryCondition,
 	CONTROLLED_ONLY_REGISTRATION,
 	EVERY_RECORD,
 	INDEX_MAPPING,
 	RECORDS,
 	RECORDS_REGISTRATION,
+	RESOURCE_FIELD,
 } from '../../../modules/usher-adapter/src/fixtures/catalogue.js';
 import {
 	createFakeBridge,
@@ -41,7 +45,7 @@ import {
 	type ResultRow,
 	ROWS,
 } from '../../../modules/usher-adapter/src/fixtures/results.js';
-import { createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
+import { type CatalogueIndex, createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
 import {
 	asUisSend,
 	clause,
@@ -90,12 +94,16 @@ const { everythingFor, exportOf, facetsFor, facetsOf, hitsOf, recordsFor, saveSe
 	idField: ID_FIELD,
 });
 
-const seed = (esIndex: string, records: readonly object[]): Promise<void> =>
+const seed = (
+	esIndex: string,
+	records: readonly object[],
+	properties: Readonly<Record<string, unknown>> = INDEX_MAPPING,
+): Promise<void> =>
 	seedIndex({
 		esClient,
 		esIndex,
 		idField: ID_FIELD,
-		mappings: { mappings: { properties: structuredClone(INDEX_MAPPING) } },
+		mappings: { mappings: { properties: structuredClone(properties) } },
 		records: records.map((record) => structuredClone(record) as Record<string, unknown>),
 	});
 
@@ -154,30 +162,32 @@ type UsherHost = Served &
 
 /**
  * Starts a host over `catalogues`: one GraphQL router per catalogue, mounted at its id, each given its
- * own callback and handing its index mapping to the adapter, which verifies every catalogue that
- * loaded before the host listens. The bridge's real layer is mounted ahead of the routers, or behind
- * them for the misconfigured host.
+ * own callback and handing its index mapping and probe to the adapter, which verifies every catalogue
+ * that loaded before the host listens. The bridge's real layer is mounted ahead of the routers, or behind
+ * them for the misconfigured host. A suite reading what startup logged passes its own recording logger.
  */
 const startUsherHost = async ({
 	catalogues,
 	downloads,
+	recording = createRecordingLogger(),
 	routersAheadOfBridge = false,
 	table,
 }: {
 	catalogues: Readonly<Record<string, Catalogue>>;
 	downloads?: Readonly<{ maxRows: number }>;
+	recording?: ReturnType<typeof createRecordingLogger>;
 	routersAheadOfBridge?: boolean;
 	table: FakeBridgeTable;
 }): Promise<UsherHost> => {
 	const bridge = createFakeBridge(table);
-	const { lines, logger } = createRecordingLogger();
+	const { lines, logger } = recording;
 	const { calls, client } = recordingSearchClient(esClient);
 	const accessControl = createUsherAccessControl({
 		bridge: bridge.core,
 		catalogues: Object.fromEntries(Object.entries(catalogues).map(([id, { registration }]) => [id, registration])),
 		logger,
 	});
-	const mappings: Record<string, unknown> = {};
+	const indices: Record<string, CatalogueIndex> = {};
 
 	const outcomes = await Promise.allSettled(
 		Object.entries(catalogues).map(async ([id, { esIndex, setsIndex }]) => ({
@@ -192,13 +202,13 @@ const startUsherHost = async ({
 				},
 				esClient: client,
 				getServerSideFilter: accessControl.filterFor(id),
-				onIndexMapping: (mappingFromIndex) => {
-					mappings[id] = mappingFromIndex;
+				onIndexMapping: (mapping, probe) => {
+					indices[id] = { mapping, probe };
 				},
 			}),
 		})),
 	);
-	accessControl.verify(mappings);
+	await accessControl.verify(indices);
 
 	const mounted = outcomes.flatMap((outcome) =>
 		outcome.status === 'fulfilled' ? [express.Router().use(`/${outcome.value.id}`, outcome.value.router)] : [],
@@ -1100,5 +1110,139 @@ suite('a catalogue that fails to load, beside one that loads', { concurrency: fa
 			await recordsFor(host.targetFor('records', 'heartControlledGrant'), null),
 			ROWS.heartControlledGrant.visible,
 		);
+	});
+});
+
+suite("startup checks against the catalogue's own index", { concurrency: false }, () => {
+	const esIndex = 'testing-usher-adapter-startup-checks';
+	const setsIndex = `${esIndex}-sets`;
+	const CATALOGUE = 'catalogue-k7';
+
+	/** The mapping beside a date field read as milliseconds alone, which no ISO 8601 date parses as. */
+	const PROPERTIES = { ...INDEX_MAPPING, released: { format: 'epoch_millis', type: 'date' } };
+
+	/**
+	 * The records, each released at an instant given in milliseconds, so every shard holding one parses a
+	 * bound on the field rather than passing over a field it holds no value of.
+	 */
+	const RELEASED_RECORDS = RECORDS.map((record, index) => ({ ...record, released: 1_614_816_000_000 + index }));
+
+	const withCategories = (global: RecordKeyRegistration['categories']['global']): RecordKeyRegistration => ({
+		...RECORDS_REGISTRATION,
+		categories: { global },
+	});
+
+	type Startup = Readonly<{ host: UsherHost; kind: 'started' }> | Readonly<{ error: unknown; kind: 'refused' }>;
+
+	/**
+	 * Starts a host over the one catalogue, registered as given, hands `check` what startup did and logged,
+	 * and closes a host that started whatever `check` finds.
+	 */
+	const startOver = async (
+		registration: KeyRegistration,
+		check: (startup: Startup, lines: readonly LoggedLine[]) => void,
+	): Promise<void> => {
+		const recording = createRecordingLogger();
+		const startup = await startUsherHost({
+			catalogues: { [CATALOGUE]: { esIndex, registration, setsIndex } },
+			recording,
+			table: TABLE,
+		}).then(
+			(host): Startup => ({ host, kind: 'started' }),
+			(error: unknown): Startup => ({ error, kind: 'refused' }),
+		);
+
+		try {
+			check(startup, recording.lines);
+		} finally {
+			await closeAll(startup.kind === 'started' ? startup.host : undefined);
+		}
+	};
+
+	/** What a refused startup says, or that it started, so a test can ask whether it names something. */
+	const describeStartup = (startup: Startup): string => {
+		switch (startup.kind) {
+			case 'refused':
+				return startup.error instanceof Error ? startup.error.message : String(startup.error);
+			case 'started':
+				return 'started';
+		}
+	};
+
+	after(async () => {
+		await dropIndices(esClient, esIndex, setsIndex);
+	});
+
+	test('refuses a catalogue whose resource field holds several values in some record, naming the catalogue, the field and the count', async () => {
+		// Given an index where one record holds two resource identifiers
+		await seed(
+			esIndex,
+			[...RELEASED_RECORDS, { ...RELEASED_RECORDS[0], name: 'h9', study_id: ['HEART_STUDY', 'LUNG_COHORT'] }],
+			PROPERTIES,
+		);
+
+		// When a host verifies the catalogue
+		await startOver(RECORDS_REGISTRATION, (startup) => {
+			// Then startup is refused, naming the catalogue, the resource field and the one record
+			const refusal = describeStartup(startup);
+			assert.equal(startup.kind, 'refused', refusal);
+			assert.ok(
+				[CATALOGUE, `"${RESOURCE_FIELD}"`, '1 record holds'].every((name) => refusal.includes(name)),
+				refusal,
+			);
+		});
+	});
+
+	test('warns of a category matching no record, naming the catalogue and the category, and starts', async () => {
+		// Given an index where no record carries a category the catalogue defines
+		await seed(esIndex, RELEASED_RECORDS, PROPERTIES);
+		const registration = withCategories({
+			...CATEGORY_CONDITIONS,
+			'global.embargoed': categoryCondition('embargoed'),
+		});
+
+		// When a host verifies the catalogue
+		await startOver(registration, (startup, lines) => {
+			// Then it starts, having registered the catalogue, and warned once of that category alone
+			assert.equal(startup.kind, 'started', describeStartup(startup));
+			assert.deepEqual(startup.kind === 'started' ? startup.host.bridge.registered : [], [
+				{ [CATALOGUE]: registration },
+			]);
+			assert.deepEqual(lines, [
+				{
+					fields: { catalogue: CATALOGUE, category: 'global.embargoed' },
+					level: 'warn',
+					message: EVENTS.categoryMatchesNoRecord,
+				},
+			]);
+		});
+	});
+
+	test("refuses a condition its mapping admits but the engine refuses, naming the catalogue and the category, and logs the engine's explanation", async () => {
+		// Given a date field read as milliseconds alone, and a condition bounding it with an ISO 8601 date,
+		// which the mapping check admits since epoch_millis is a format it enforces on
+		await seed(esIndex, RELEASED_RECORDS, PROPERTIES);
+		const registration = withCategories({
+			...CATEGORY_CONDITIONS,
+			'global.embargoed': { content: { fieldName: 'released', value: '2021-03-04' }, op: 'gte' },
+		});
+
+		// When a host verifies the catalogue
+		await startOver(registration, (startup, lines) => {
+			// Then startup is refused naming the catalogue and the category, never the bound, and the engine's
+			// explanation is logged once at error for that category alone
+			const refusal = describeStartup(startup);
+			assert.equal(startup.kind, 'refused', refusal);
+			assert.ok(
+				[CATALOGUE, '"global.embargoed"'].every((name) => refusal.includes(name)),
+				refusal,
+			);
+			assert.equal(refusal.includes('2021-03-04'), false, refusal);
+			assert.deepEqual(
+				lines.map(({ fields, level, message }) => [message, level, fields['catalogue'], fields['category']]),
+				[[EVENTS.conditionRefused, 'error', CATALOGUE, 'global.embargoed']],
+			);
+			assert.ok(String(lines[0]?.fields['explanation'] ?? '').length > 0, JSON.stringify(lines));
+		});
 	});
 });

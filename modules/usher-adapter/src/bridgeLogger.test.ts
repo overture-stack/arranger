@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
+import type { BridgeEventData, BridgeLogger } from '@overture-stack/usher-express-bridge';
+
 import { createBridgeLogger } from './index.js';
 
 /**
@@ -20,6 +22,31 @@ const bridgeEvent = (type: string) => ({
 	type,
 });
 
+/**
+ * A bridge event as the bridge's event log builds it: its fields inside `data` beside the actor, logged at
+ * the level its severity maps to, with its type as the message.
+ */
+const envelopeOf = <Name extends keyof BridgeEventData>(
+	name: Name,
+	data: BridgeEventData[Name],
+	severity: 'critical' | 'error' | 'warning',
+) => ({
+	data: { actorId: null, actorType: 'system', ...data },
+	id: '4c1e9b2f-3a0d-4b6e-9f5a-7d1e2c9a0b34',
+	severity,
+	source: 'https://search.example.org/usher-bridge',
+	specversion: '1.0',
+	time: '2026-10-21T09:00:00.000Z',
+	type: `bio.overture.${name}`,
+});
+
+/** The level the bridge logs each severity at. */
+const LEVEL_OF_SEVERITY: Readonly<Record<'critical' | 'error' | 'warning', keyof BridgeLogger>> = {
+	critical: 'error',
+	error: 'error',
+	warning: 'warn',
+};
+
 suite('the logger shim', () => {
 	for (const level of ['error', 'warn', 'info'] as const) {
 		test(`writes a bridge event at ${level} at that level, with the event's fields unchanged`, () => {
@@ -32,6 +59,38 @@ suite('the logger shim', () => {
 			logger[level](event, event.type);
 
 			// Then one line holds the level, the message and the event's fields exactly
+			assert.equal(written.length, 1);
+			assert.deepEqual(JSON.parse(written[0] ?? 'null'), { ...event, level, message: event.type });
+		});
+	}
+
+	for (const event of [
+		envelopeOf(
+			'category.unknown',
+			{ catalogue: 'records', category: 'resource.reef-elders', resourceId: 'REEF_ARCHIVE' },
+			'warning',
+		),
+		envelopeOf('category.unknown', { catalogue: 'records', category: 'global.embargoed' }, 'warning'),
+		envelopeOf(
+			'category.unmapped',
+			{ catalogue: 'records', category: 'resource.reef-elders', resourceId: 'REEF_ARCHIVE' },
+			'error',
+		),
+		envelopeOf('category.unmapped', { catalogue: 'records', category: 'global.embargoed' }, 'critical'),
+		envelopeOf('catalogue.renderingMismatch', { catalogue: 'records' }, 'critical'),
+		envelopeOf('catalogue.filterLimit', { catalogue: 'records', filterClauseLimit: 1024 }, 'error'),
+	]) {
+		const scope = 'resourceId' in event.data ? ', scoped to a resource' : '';
+		test(`writes the bridge's ${event.type} event${scope} with every field it carries`, () => {
+			// Given the shim, writing to a recorder
+			const written: string[] = [];
+			const logger = createBridgeLogger({ write: (line: string) => written.push(line) });
+			const level = LEVEL_OF_SEVERITY[event.severity];
+
+			// When the bridge logs the event at the level its severity maps to
+			logger[level](event, event.type);
+
+			// Then one line holds the event whole, its data and resource included, at that level
 			assert.equal(written.length, 1);
 			assert.deepEqual(JSON.parse(written[0] ?? 'null'), { ...event, level, message: event.type });
 		});

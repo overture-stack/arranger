@@ -10,11 +10,12 @@ import { isConfigurationRefusal, UNAVAILABLE_ERROR_NAME } from './fixtures/arran
 import { INDEX_MAPPING, RECORDS_REGISTRATION, RESOURCE_FIELD } from './fixtures/catalogue.js';
 import { createFakeBridge } from './fixtures/fakeBridge.js';
 import { createRecordingLogger } from './fixtures/recordingLogger.js';
-import { accessOf, ANONYMOUS, ROWS, signedIn, SUSPENDED } from './fixtures/results.js';
-import { createUsherAccessControl, UNAVAILABLE_ANSWER } from './index.js';
+import { accessOf, ANONYMOUS, DENY_REASONS, type DenyReason, ROWS, signedIn, SUSPENDED } from './fixtures/results.js';
+import { createStubProbe } from './fixtures/stubProbe.js';
+import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback } from './index.js';
 
 /** The callback for the `records` catalogue, verified, as the host hands it to that catalogue's router. */
-const verifiedCallback = () => {
+const verifiedCallback = async (): Promise<UsherFilterCallback> => {
 	const bridge = createFakeBridge({ anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: {} });
 	const { logger } = createRecordingLogger();
 	const accessControl = createUsherAccessControl({
@@ -22,7 +23,7 @@ const verifiedCallback = () => {
 		catalogues: { records: RECORDS_REGISTRATION },
 		logger,
 	});
-	accessControl.verify({ records: INDEX_MAPPING });
+	await accessControl.verify({ records: { mapping: INDEX_MAPPING, probe: createStubProbe().probe } });
 	return accessControl.filterFor('records');
 };
 
@@ -36,9 +37,9 @@ const localsHolding = (results: Readonly<Record<string, Enforcement>>): Record<s
 const MATCH_NOTHING = SqonBuilder.matchNothing(RESOURCE_FIELD).toValue();
 
 suite('the callback, as a pure function of the request store', () => {
-	test("returns a narrow result's filter unchanged", () => {
+	test("returns a narrow result's filter unchanged", async () => {
 		// Given a request whose access narrows this catalogue
-		const callback = verifiedCallback();
+		const callback = await verifiedCallback();
 		const locals = localsHolding({ records: ROWS.heartControlledGrant.result });
 
 		// When the callback runs
@@ -52,13 +53,11 @@ suite('the callback, as a pure function of the request store', () => {
 		);
 	});
 
-	for (const [description, result] of [
-		['holding no grants', ROWS.anonymousBaselineOff.result],
-		['naming an unknown resource', ROWS.unknownResource.result],
-	] as const) {
-		test(`returns match-nothing on the catalogue's resource field for a deny ${description}`, () => {
-			// Given a request denied this catalogue
-			const callback = verifiedCallback();
+	for (const [reason, description] of Object.entries(DENY_REASONS) as [DenyReason, string][]) {
+		test(`returns match-nothing on the catalogue's resource field for a deny for ${description}`, async () => {
+			// Given a request denied this catalogue for this reason
+			const callback = await verifiedCallback();
+			const result: Enforcement = { kind: 'deny', reason };
 
 			// When the callback runs, Then it returns matchNothing on the resource field, as a value
 			assert.deepEqual(
@@ -68,9 +67,9 @@ suite('the callback, as a pure function of the request store', () => {
 		});
 	}
 
-	test("returns the GraphQL router's allow-all value for an allow result", () => {
+	test("returns the GraphQL router's allow-all value for an allow result", async () => {
 		// Given a request allowed this catalogue
-		const callback = verifiedCallback();
+		const callback = await verifiedCallback();
 
 		// When the callback runs, Then it returns the router's own allow-all value
 		assert.deepEqual(
@@ -79,9 +78,9 @@ suite('the callback, as a pure function of the request store', () => {
 		);
 	});
 
-	test('returns match-nothing when the results name only other catalogues, since a missing result is a deny', () => {
+	test('returns match-nothing when the results name only other catalogues, since a missing result is a deny', async () => {
 		// Given a request whose results hold another catalogue's result alone
-		const callback = verifiedCallback();
+		const callback = await verifiedCallback();
 
 		// When the callback runs, Then this catalogue is denied
 		assert.deepEqual(
@@ -90,9 +89,9 @@ suite('the callback, as a pure function of the request store', () => {
 		);
 	});
 
-	test('returns the narrow filter deeply frozen, so composing it cannot write to it', () => {
+	test('returns the narrow filter deeply frozen, so composing it cannot write to it', async () => {
 		// Given a request whose access narrows this catalogue
-		const callback = verifiedCallback();
+		const callback = await verifiedCallback();
 		const filter = callback({ locals: localsHolding({ records: ROWS.everyGrant.result }) }, { readPath: 'hits' });
 
 		// Then every level of the filter is frozen
@@ -117,9 +116,9 @@ suite('the callback, as a pure function of the request store', () => {
 		};
 
 		for (const readPath of ['hits', 'aggregations'] as const) {
-			test(`serves the open tier's filter on the ${readPath} path`, () => {
+			test(`serves the open tier's filter on the ${readPath} path`, async () => {
 				// Given a suspended principal, whose results the bridge narrowed to the open tier
-				const callback = verifiedCallback();
+				const callback = await verifiedCallback();
 
 				// When a search reaches the callback, Then it is served that filter
 				assert.deepEqual(
@@ -137,9 +136,9 @@ suite('the callback, as a pure function of the request store', () => {
 				'a read path the callback does not recognize, so a path added later cannot serve the open tier as complete',
 			],
 		] as const) {
-			test(`refuses ${operation}, with the GraphQL router's temporary refusal`, () => {
+			test(`refuses ${operation}, with the GraphQL router's temporary refusal`, async () => {
 				// Given a suspended principal
-				const callback = verifiedCallback();
+				const callback = await verifiedCallback();
 
 				// When the request reaches this path, Then the refusal is the temporary one, carrying the
 				// bridge's own unavailable text and Retry-After for the GraphQL router to answer with, never
@@ -155,9 +154,9 @@ suite('the callback, as a pure function of the request store', () => {
 			});
 		}
 
-		test("serves an anonymous principal's export, since nothing is reduced for it", () => {
+		test("serves an anonymous principal's export, since nothing is reduced for it", async () => {
 			// Given an anonymous principal, marked open-tier only but never suspended
-			const callback = verifiedCallback();
+			const callback = await verifiedCallback();
 
 			// When its export reaches the callback, Then it is served its filter
 			assert.deepEqual(
@@ -179,9 +178,9 @@ suite('the callback, as a pure function of the request store', () => {
 		['a signed-in principal', signedIn('subject-ana')],
 		['a suspended principal', SUSPENDED],
 	] as const) {
-		test(`refuses network search as a configuration failure for ${description}`, () => {
+		test(`refuses network search as a configuration failure for ${description}`, async () => {
 			// Given a request holding a result the callback would otherwise apply
-			const callback = verifiedCallback();
+			const callback = await verifiedCallback();
 			const locals = {};
 			attachAccess(locals, accessOf(principal, { records: ROWS.everyGrant.result }));
 
@@ -193,9 +192,9 @@ suite('the callback, as a pure function of the request store', () => {
 	}
 
 	suite('a store the bridge did not leave', () => {
-		test('throws when the store holds no request access, because the middleware never ran', () => {
+		test('throws when the store holds no request access, because the middleware never ran', async () => {
 			// Given a store the bridge's layer never reached
-			const callback = verifiedCallback();
+			const callback = await verifiedCallback();
 
 			// When the callback runs, Then it throws through readAccess
 			assert.throws(() => callback({ locals: {} }, { readPath: 'hits' }), UsherContractError);
@@ -218,9 +217,9 @@ suite('the callback, as a pure function of the request store', () => {
 				'enumerable',
 			],
 		] as const) {
-			test(`throws for an usher member ${description}, before any result is read`, () => {
+			test(`throws for an usher member ${description}, before any result is read`, async () => {
 				// Given a member defined directly, since attachAccess refuses each of these
-				const callback = verifiedCallback();
+				const callback = await verifiedCallback();
 				const locals = {};
 				Object.defineProperty(locals, 'usher', {
 					configurable: false,

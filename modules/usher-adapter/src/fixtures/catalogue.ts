@@ -1,10 +1,13 @@
+import type { SqonNode } from '@overture-stack/sqon';
 import type { OpenKeyRegistration, RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
 
 /**
  * The synthetic catalogue the adapter's suites run on, configured as Usher's case table configures it:
  * HEART_STUDY carries `controlled`, LUNG_COHORT carries no concrete category, and REEF_ARCHIVE carries
- * `controlled` and `community-governed`. Its resource and category fields are flat keywords. The other
- * fields carry no access meaning; they give the shared spread of client queries what it needs.
+ * `controlled` and `community-governed`. Each category is the condition that its records hold its value
+ * in the category field, and a record holding `general` there carries none: a record lacking a field a
+ * condition reads counts as carrying the category. Its resource and category fields are flat keywords.
+ * The other fields carry no access meaning; they give the shared spread of client queries what it needs.
  */
 
 export const RESOURCE_FIELD = 'study_id';
@@ -13,10 +16,19 @@ export const CATEGORY_FIELD = 'data_category';
 /** The resources the catalogue is configured to hold. x1's resource is configured nowhere. */
 export const CONFIGURED_RESOURCES = ['HEART_STUDY', 'LUNG_COHORT', 'REEF_ARCHIVE'] as const;
 
-/** Each concrete category the catalogue maps, against the value its records hold. */
-export const MAPPED_CATEGORIES = {
-	'global.community-governed': 'community-governed',
-	'global.controlled': 'controlled',
+/** The value a record holds in the category field when it carries no concrete category. */
+export const UNMARKED_VALUE = 'general';
+
+/** The condition a record meets to carry a category: holding `value` in the category field. */
+export const categoryCondition = (value: string): SqonNode => ({
+	content: { fieldName: CATEGORY_FIELD, value: [value] },
+	op: 'in',
+});
+
+/** Each concrete category the catalogue defines, as the condition its records meet. */
+export const CATEGORY_CONDITIONS = {
+	'global.community-governed': categoryCondition('community-governed'),
+	'global.controlled': categoryCondition('controlled'),
 } as const;
 
 /** The index's field properties, as the GraphQL router fetches them and hands its mapping hook. */
@@ -50,8 +62,15 @@ export const RECORDS: readonly CatalogueRecord[] = [
 		sample_type: 'blood',
 		study_id: 'HEART_STUDY',
 	},
-	{ files: [{ file_type: 'vcf' }], name: 'h2', sample_type: 'saliva', study_id: 'HEART_STUDY' },
 	{
+		data_category: UNMARKED_VALUE,
+		files: [{ file_type: 'vcf' }],
+		name: 'h2',
+		sample_type: 'saliva',
+		study_id: 'HEART_STUDY',
+	},
+	{
+		data_category: UNMARKED_VALUE,
 		files: [{ file_type: 'bam' }, { file_type: 'cram' }],
 		name: 'l1',
 		sample_type: 'tissue',
@@ -59,35 +78,56 @@ export const RECORDS: readonly CatalogueRecord[] = [
 	},
 	{ data_category: 'controlled', files: [], name: 'r1', sample_type: 'blood', study_id: 'REEF_ARCHIVE' },
 	{ data_category: 'community-governed', files: [{ file_type: 'vcf' }], name: 'r2', study_id: 'REEF_ARCHIVE' },
-	{ files: [{ file_type: 'cram' }], name: 'r3', sample_type: 'saliva', study_id: 'REEF_ARCHIVE' },
-	{ files: [{ file_type: 'bam' }], name: 'x1', sample_type: 'tissue', study_id: 'TIDE_POOL' },
+	{
+		data_category: UNMARKED_VALUE,
+		files: [{ file_type: 'cram' }],
+		name: 'r3',
+		sample_type: 'saliva',
+		study_id: 'REEF_ARCHIVE',
+	},
+	{
+		data_category: UNMARKED_VALUE,
+		files: [{ file_type: 'bam' }],
+		name: 'x1',
+		sample_type: 'tissue',
+		study_id: 'TIDE_POOL',
+	},
 ];
 
 /** Every record's name, x1 included. */
 export const EVERY_RECORD: readonly string[] = RECORDS.map(({ name }) => name);
 
-/** The catalogue as the adapter's configuration names it, mapping both concrete categories. */
+/** The catalogue as the adapter's configuration names it, defining both concrete categories. */
 export const RECORDS_REGISTRATION: RecordKeyRegistration = {
-	categoryFieldName: CATEGORY_FIELD,
-	categoryValues: MAPPED_CATEGORIES,
+	categories: { global: CATEGORY_CONDITIONS },
 	kind: 'record',
 	resourceFieldName: RESOURCE_FIELD,
 	resources: [...CONFIGURED_RESOURCES],
 };
 
-/** The same catalogue registered again under a second key, mapping `controlled` alone. */
+/** The same catalogue registered again under a second key, defining `controlled` alone. */
 export const CONTROLLED_ONLY_REGISTRATION: RecordKeyRegistration = {
-	categoryFieldName: CATEGORY_FIELD,
-	categoryValues: { 'global.controlled': 'controlled' },
+	categories: { global: { 'global.controlled': CATEGORY_CONDITIONS['global.controlled'] } },
 	kind: 'record',
 	resourceFieldName: RESOURCE_FIELD,
 	resources: [...CONFIGURED_RESOURCES],
 };
 
-/** A catalogue with no category field, declaring both concrete categories absent. */
+/** A catalogue defining no category, declaring both concrete categories absent. */
 export const ABSENT_CATEGORIES_REGISTRATION: RecordKeyRegistration = {
 	absentCategories: ['global.community-governed', 'global.controlled'],
-	categoryValues: {},
+	categories: { global: {} },
+	kind: 'record',
+	resourceFieldName: RESOURCE_FIELD,
+	resources: [...CONFIGURED_RESOURCES],
+};
+
+/** A catalogue defining a category of REEF_ARCHIVE's own beside both global ones. */
+export const RESOURCE_CATEGORY_REGISTRATION: RecordKeyRegistration = {
+	categories: {
+		global: CATEGORY_CONDITIONS,
+		resource: { REEF_ARCHIVE: { 'resource.reef-elders': categoryCondition('reef-elders') } },
+	},
 	kind: 'record',
 	resourceFieldName: RESOURCE_FIELD,
 	resources: [...CONFIGURED_RESOURCES],

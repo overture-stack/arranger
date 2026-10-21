@@ -4,10 +4,13 @@
  * rename touches one file, beside the check telling that refusal from a configuration failure.
  */
 
-/** The fixed message of each event the adapter's callback logs. */
+/** The fixed message of each event the adapter logs: its callback's, and its startup checks'. */
 export const EVENTS = {
+	categoryMatchesNoRecord: 'access_enforcement.category_matches_no_record',
+	conditionRefused: 'access_enforcement.condition_refused',
 	denied: 'access_enforcement.denied',
 	permitted: 'access_enforcement.permitted',
+	startupCheckFailed: 'access_enforcement.startup_check_failed',
 	unavailable: 'access_enforcement.unavailable',
 } as const;
 

@@ -1,6 +1,7 @@
 export { createBridgeLogger, type LineWriter } from './createBridgeLogger.js';
+export { ACCESS_CONTROL_EVENTS } from './events.js';
 export {
-	ACCESS_CONTROL_EVENTS,
+	type CatalogueIndex,
 	createUsherAccessControl,
 	type UsherAccessControl,
 	type UsherAccessControlOptions,

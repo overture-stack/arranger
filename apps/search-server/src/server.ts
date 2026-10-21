@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import type { IndexProbe } from '@overture-stack/arranger-graphql-router';
+import type { CatalogueIndex } from '@overture-stack/arranger-usher-adapter';
 import cors from 'cors';
 import express, { json, type RequestHandler, urlencoded } from 'express';
 import morgan from 'morgan';
@@ -10,7 +12,7 @@ import { computeAggregateServerStatus, serverAggregateStatuses, startEngineProbe
 import loadAllConfigs from '#configs/index.js';
 import type { ExternalConfigs } from '#configs/types/index.js';
 import createIntrospectionRoutes from '#introspection/index.js';
-import { prepareUsher, verifyAndStartUsher, withUsherFilters } from '#usher.js';
+import { prepareUsher, stopUsherBridge, verifyAndStartUsher, withUsherFilters } from '#usher.js';
 
 /**
  * Records a request identifier generated on the server, never read from the client, ahead of every
@@ -82,7 +84,7 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 		// Arranger process; that's a readiness concern, not a liveness one.
 		app.get(health.pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
 
-		const mappings: Record<string, Record<string, unknown>> = {};
+		const indices: Record<string, CatalogueIndex> = {};
 		const {
 			router: arrangerRouter,
 			catalogueRouters,
@@ -92,14 +94,14 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 			enableDebug,
 			esClient,
 			...(usher && {
-				onIndexMapping: (catalogueId: string, mapping: Record<string, unknown>) => {
-					mappings[catalogueId] = mapping;
+				onIndexMapping: (catalogueId: string, mapping: Record<string, unknown>, probe: IndexProbe) => {
+					indices[catalogueId] = { mapping, probe };
 				},
 			}),
 		});
 
 		if (usher) {
-			await verifyAndStartUsher({ mappings, usher });
+			await verifyAndStartUsher({ indices, usher });
 		}
 
 		const serverStatus = computeAggregateServerStatus(catalogueStatuses);
@@ -162,7 +164,9 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 
 		server.on('close', () => {
 			engineProbe.stop();
-			usher?.bridge.stop();
+			if (usher) {
+				void stopUsherBridge(usher.bridge);
+			}
 		});
 
 		await new Promise((resolve) => server.once('listening', resolve));

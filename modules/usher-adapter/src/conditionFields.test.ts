@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import type { SqonCombinationOp, SqonNode } from '@overture-stack/sqon';
+import type { RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
 
 import { conditionProblemsOf } from './conditionFields.js';
-import type { DraftRecordKeyRegistration } from './draftRegistration.js';
 
 /**
  * Names no reason's prose would contain by chance, so a check that a reason names one cannot pass on its
@@ -101,7 +101,7 @@ const leaf = (op: unknown, fieldName: unknown): SqonNode => {
 const group = (op: SqonCombinationOp, content: SqonNode[]): SqonNode => ({ content, op });
 
 /** A registration enforcing on `study_id`, whose one global category holds `condition`. */
-const withGlobalCondition = (condition: SqonNode): DraftRecordKeyRegistration => ({
+const withGlobalCondition = (condition: SqonNode): RecordKeyRegistration => ({
 	categories: { global: { [GLOBAL_CATEGORY]: condition } },
 	kind: 'record',
 	resourceFieldName: 'study_id',
@@ -122,7 +122,7 @@ const assertOneReasonNaming = (problems: readonly string[], names: readonly stri
 	);
 };
 
-const VALID_REGISTRATION: DraftRecordKeyRegistration = {
+const VALID_REGISTRATION: RecordKeyRegistration = {
 	absentCategories: ['global.community-governed'],
 	categories: {
 		global: {
@@ -142,7 +142,7 @@ const VALID_REGISTRATION: DraftRecordKeyRegistration = {
 	resources: [OTHER_RESOURCE, RESOURCE],
 };
 
-suite("checking a draft registration's conditions against its index mapping", () => {
+suite("checking a registration's conditions against its index mapping", () => {
 	test('gives no reason for a registration whose every field and operator can be enforced on', () => {
 		// Given a registration whose resource field is a keyword, and whose global and resource conditions
 		// group their leaves under and, or and not, each on a field and operator access can enforce on
@@ -637,7 +637,7 @@ suite("checking a draft registration's conditions against its index mapping", ()
 
 		test("checks the values of each resource's own categories, naming the resource, the category, the field and the position", () => {
 			// Given valid global categories, and a resource category bounding a date field by date math
-			const registration: DraftRecordKeyRegistration = {
+			const registration: RecordKeyRegistration = {
 				...VALID_REGISTRATION,
 				categories: {
 					...VALID_REGISTRATION.categories,
@@ -663,7 +663,7 @@ suite("checking a draft registration's conditions against its index mapping", ()
 		test("checks each resource's own categories, naming the resource, the category and the field", () => {
 			// Given valid global categories, one resource whose categories are valid, and another whose
 			// category tests a text field
-			const registration: DraftRecordKeyRegistration = {
+			const registration: RecordKeyRegistration = {
 				...VALID_REGISTRATION,
 				categories: {
 					...VALID_REGISTRATION.categories,
@@ -792,11 +792,7 @@ suite("checking a draft registration's conditions against its index mapping", ()
 			test(`gives a reason for a registration with ${description}, rather than throwing`, () => {
 				// Given a registration read from its file with a part the walker cannot read
 				const check = (): string[] =>
-					conditionProblemsOf(
-						CATALOGUE,
-						registration as unknown as DraftRecordKeyRegistration,
-						INDEX_MAPPING,
-					);
+					conditionProblemsOf(CATALOGUE, registration as unknown as RecordKeyRegistration, INDEX_MAPPING);
 
 				// When it is checked, Then it is refused with one reason naming where
 				assert.doesNotThrow(check);
@@ -808,7 +804,7 @@ suite("checking a draft registration's conditions against its index mapping", ()
 	test('reports every problem in one registration', () => {
 		// Given a registration with an absent resource field, a global category testing a text field and
 		// ranging over a keyword, and a resource category holding an unreadable node and an absent field
-		const registration: DraftRecordKeyRegistration = {
+		const registration: RecordKeyRegistration = {
 			categories: {
 				global: {
 					'global.controlled': leaf('in', 'summary'),
