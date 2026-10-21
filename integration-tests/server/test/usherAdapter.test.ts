@@ -535,6 +535,26 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 		}
 	});
 
+	suite("a client filter under a principal's access", () => {
+		for (const [name, asked] of [
+			['heartControlledGrant', ['h1', 'l1', 'r1', 'r2', 'x1']],
+			['reefControlledAlone', ['h1', 'r1', 'r3', 'x1']],
+			['anonymousBaselineOff', EVERY_RECORD],
+		] as const) {
+			test(`${name} sees only the records it asked for that its access permits, on every endpoint`, async () => {
+				// Given a principal, and a client filter naming records it may see beside records it may not
+				const permitted = asked.filter((record) => ROWS[name].visible.includes(record));
+				assert.ok(asked.length > permitted.length, 'the filter names no withheld record, so it tests nothing');
+
+				// When every endpoint answers the filter for the principal
+				const answer = await recordsFor(host.targetFor('records', name), naming(asked));
+
+				// Then the hits, the saved set and the export each hold exactly the records both permit
+				assertRecordsAre(answer, permitted);
+			});
+		}
+	});
+
 	suite('allow against no access control', () => {
 		for (const [description, filters] of CLIENT_QUERIES) {
 			test(`${description} gives the same hits, pages, counts, facets, saved set and export, x1 included`, async () => {
@@ -870,6 +890,8 @@ suite('the failure cases', { concurrency: false }, () => {
 				assert.equal(answer.status, 503);
 				assert.equal(answer.data, ANSWERS.unavailable);
 				assert.equal(answer.headers['retry-after'], String(RETRY_AFTER_SECONDS));
+				assert.match(String(answer.headers['content-type']), /^text\/plain/);
+				assert.equal(answer.headers['x-content-type-options'], 'nosniff');
 				assert.deepEqual(calls, []);
 				assert.deepEqual(
 					lines.map(({ fields, message }) => [
@@ -1029,6 +1051,8 @@ suite('the failure cases', { concurrency: false }, () => {
 		);
 		assert.equal(exported.status, 500);
 		assert.equal(exported.data, ACCESS_CONTROL_FAILURE_MESSAGE);
+		assert.match(String(exported.headers['content-type']), /^text\/plain/);
+		assert.equal(exported.headers['x-content-type-options'], 'nosniff');
 		assert.ok(
 			errors.mock.calls.some(({ arguments: [event] }) => event === 'access_control.evaluation_failed'),
 			'access_control.evaluation_failed was never logged',

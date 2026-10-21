@@ -1145,13 +1145,13 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Issue:** `getESAliases` has two distinct code paths: alias found (returns the backing index name) and no match (returns `esIndex` as-is); neither has a unit test. Mock the `cat.aliases` response to cover both branches.
 **Standalone:** yes; unit test only, no application changes
 
-### No unit tests for `dataToExportFormat`
+### `dataToExportFormat` has no tests for display values or hidden columns
 
 **File:** `modules/graphql-router/src/utils/dataToExportFormat.js`
-**Severity:** medium
+**Severity:** low
 **Kind:** missing test coverage
-**Issue:** `dataToExportFormat` transforms ES hit data into the export column format, handling `extendedDisplayValues` label substitution, `jsonPath` extraction, column visibility, and hit flattening. No unit tests exist.
-**Fix:** Unit tests covering: basic field mapping; `jsonPath` extraction; `extendedDisplayValues` label substitution; columns with `show: false` excluded; empty hit set returns empty array.
+**Issue:** `dataToTSV.test.js` covers field mapping, `jsonPath` extraction, `valueWhenEmpty`, joined and deeply nested values, and the output shape of both TSV and JSON exports, an empty export included. Two of the formatter's column options have no test: `extendedDisplayValues` label substitution, and a column with `show: false` left out of the export.
+**Fix:** Unit tests for each, in `dataToTSV.test.js`, through both the TSV and the JSON formatter.
 **Standalone:** yes; pure transformation function
 
 ### `ENABLE_SETS` flag does not fully gate the Sets query path
