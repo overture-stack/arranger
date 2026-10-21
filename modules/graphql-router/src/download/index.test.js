@@ -6,6 +6,7 @@ import { inspect } from 'node:util';
 import express from 'express';
 import request from 'supertest';
 
+import { AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
 import includeEverything from '#accessControl/includeEverything.js';
 import { denyAllFilter, restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { serveOnLoopback } from '#loopbackServer.fixture.js';
@@ -1703,6 +1704,88 @@ suite('download', () => {
 		}
 	});
 
+	suite("a client sqon of any shape, under the router's filter", () => {
+		let arranger;
+
+		before(async () => {
+			arranger = await startArranger({
+				getServerSideFilter: restrictingFilter({ fieldName: 'study', values: ['A'] }),
+			});
+		});
+		after(() => arranger.close());
+
+		const studyClause = (study) => ({ content: { fieldName: 'study', value: [study] }, op: 'in' });
+
+		for (const [description, sqon] of [
+			['a string of client text', CLIENT_TEXT],
+			['a number', 5],
+			['an array of clauses', [studyClause('B')]],
+			['a clause whose content is a string', { content: CLIENT_TEXT, op: 'in' }],
+			[
+				'a clause whose field name and values are client text',
+				{ content: { fieldName: CLIENT_TEXT, value: [CLIENT_TEXT] }, op: 'in' },
+			],
+			['a range whose bound is client text', { content: { fieldName: 'age', value: CLIENT_TEXT }, op: '>=' }],
+			['an or naming only documents outside the filter', { content: [studyClause('B')], op: 'or' }],
+			["a not around the filter's own clause", { content: [studyClause('A')], op: 'not' }],
+		]) {
+			test(`exports no document outside the filter for ${description}, refusing it only in fixed text`, () =>
+				runRecordingProcessErrors(async () => {
+					// Given a router restricted to study A, and a client sqon of this shape
+					const consoleCapture = captureConsole();
+
+					try {
+						// When it is downloaded
+						const result = await settle(postDownload(arranger.server, paramsWithFile({ sqon })));
+
+						// Then the request is answered, with study A rows alone or a refusal in fixed plain text
+						assert.equal(result.outcome, 'response', `expected an answer, got ${result.outcome}`);
+						const { response } = result;
+
+						if (response.status === 200) {
+							assert.ok(
+								dataRowIdsOf(response.text).every((donorId) => STUDY_A_DONOR_IDS.includes(donorId)),
+								`a row outside study A was exported: ${response.text}`,
+							);
+						} else {
+							assertPlainTextError(response, response.status);
+						}
+					} finally {
+						consoleCapture.restore();
+					}
+
+					// And the server answers later requests
+					await assertAnswersLaterRequests(arranger);
+				}));
+		}
+	});
+
+	suite('a filter callback refusing to serve the export yet', () => {
+		const REFUSAL_TEXT = 'Access could not be confirmed. Try again shortly.';
+
+		test('answers 503 in plain text, carrying the refusal and its Retry-After, before any engine request', async () => {
+			// Given a router whose callback refuses exports for now and serves every other read
+			const getServerSideFilter = (context, details) => {
+				if (details?.readPath === 'export') {
+					throw new AccessControlUnavailableError(REFUSAL_TEXT, { retryAfterSeconds: 7 });
+				}
+
+				return includeEverything(context);
+			};
+
+			await withArranger({ getServerSideFilter }, async ({ engine, server }) => {
+				// When the stock form is posted
+				const response = await postDownload(server, paramsWithFile());
+
+				// Then it is answered 503 in plain text with nosniff, with the refusal's text and wait, and no search
+				assertPlainTextError(response, 503);
+				assert.equal(response.text, REFUSAL_TEXT);
+				assert.equal(response.headers['retry-after'], '7');
+				assert.equal(engine.requests.length, 0);
+			});
+		});
+	});
+
 	suite('the search engine refusing an export past its clause limit', () => {
 		const QUERY_TOO_LARGE_MESSAGE =
 			'The search engine refused this request to catalogue "donor" as larger than it accepts once the catalogue\'s access filter was applied.';
@@ -2070,6 +2153,77 @@ suite('download', () => {
 							0,
 							`expected paging to stop, but ${requestedAfterRelease} more requests were made`,
 						);
+					});
+				},
+			);
+		});
+
+		for (const [description, engineOptions] of [
+			['the search it was waiting on then succeeds', {}],
+			['the search it was waiting on then fails', { failOnRequest: 1 }],
+		]) {
+			test(`requests nothing further when the client disconnects before the first row, and ${description}`, async () => {
+				// Given twenty documents exported one per page, with the engine holding every search from the first
+				await withArranger(
+					{ documents: generatedDocuments(20), holdFromRequest: 1, ...engineOptions },
+					async (arranger) => {
+						await runRecordingProcessErrors(async () => {
+							const consoleCapture = captureConsole();
+
+							try {
+								// When the client disconnects while the first search is held, and the engine is released
+								// once the server has had time to see the connection close
+								await disconnectOnceSearching({
+									params: paramsWithFile({ chunkSize: 1 }),
+									requests: arranger.engine.requests,
+									server: arranger.server,
+								});
+								await pause(100);
+								arranger.engine.release();
+								await waitForEngineToSettle(arranger.engine.requests);
+
+								// Then the held search is the only one
+								assert.equal(arranger.engine.requests.length, 1);
+							} finally {
+								consoleCapture.restore();
+							}
+
+							// And the server answers later requests
+							await assertAnswersLaterRequests(arranger);
+						});
+					},
+				);
+			});
+		}
+
+		test('answers later requests when the page in flight fails after the client has disconnected', async () => {
+			// Given twenty documents exported one per page, with the engine holding the second search and then failing it
+			await withArranger(
+				{ documents: generatedDocuments(20), failOnRequest: 2, holdFromRequest: 2 },
+				async (arranger) => {
+					await runRecordingProcessErrors(async () => {
+						const consoleCapture = captureConsole();
+
+						try {
+							// When the client disconnects once the first row has arrived, and the engine is released
+							// once the server has had time to see the connection close
+							const firstRows = await disconnectAfterFirstRow(
+								arranger.server,
+								paramsWithFile({ chunkSize: 1 }),
+							);
+							await pause(100);
+							arranger.engine.release();
+							await waitForEngineToSettle(arranger.engine.requests);
+
+							// Then the failed search is the last one
+							assert.equal(firstRows.status, 200);
+							assert.equal(arranger.engine.requests.length, 2);
+						} finally {
+							consoleCapture.restore();
+						}
+
+						// And the server answers later requests
+						await assertAnswersLaterRequests(arranger);
 					});
 				},
 			);
