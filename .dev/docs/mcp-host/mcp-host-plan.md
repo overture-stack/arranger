@@ -172,7 +172,7 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 - **Request:** model, system prompt, messages, tools; temperature, top-p, seed, maximum output tokens; `responseFormat`, a JSON Schema the output must match (for the judge); and `extra`, engine-specific fields such as top-k, passed through. All of it is recorded in `model_request`.
 - **Final response:** text; reasoning, when the model returns any, kept as an optional field since a saved notebook cannot regain it, and sent back to the model only when configured to, off by default, since doing so cost a median of 81 to 538 prompt tokens per earlier turn in the Phase 0 measurements with no consistent effect on the next call ([results, question 5](phase0-results.md#q5-sending-reasoning-back)); well-formed tool calls; any malformed tool call with its raw text; exact token usage as the serving stack reported it; stop reason, reported model id, duration.
 
-**On Ollama, an unparseable call usually comes back as an empty reply, not an error.** In Phase 0, 4 of 376 responses ended on `stop` with no content and no call, though the model had generated tokens ([S4](phase0-results.md#s4-malformed-tool-calls)). The provider reports these as `empty_reply`, separate from malformed calls, since the dropped text is never seen.
+**On Ollama, an unparseable call usually comes back as an empty reply, not an error.** In Phase 0, 4 of 376 responses ended on `stop` with no content and no call, though the model had generated tokens ([S4](phase0-results.md#s4-malformed-tool-calls)). The provider reports these as `empty_reply`, separate from malformed calls, since the dropped text is never seen. Not sending reasoning back, the default above, has a cost: in both Q5 runs, stripping it coincided with empty replies (4 and 3), and keeping it produced none. The pattern is weak, but it is worth watching through `empty_reply` events.
 
 **Start from the SDK's `examples/cli-client`.** It has a provider seam, OpenAI, Anthropic, Gemini and scripted providers, and an agent loop. Its seam lacks exact usage, malformed-call text and streaming, and its OpenAI provider runs an unparseable call with `{}` as its arguments. Adapted code keeps the SDK's licence notices.
 
@@ -259,17 +259,24 @@ A reply that ends on `finish_reason: length` with no tool call ran out of room, 
 
 `done` names the output limit. A retry gets an answer more often than not, but not necessarily a right one: on the step where `qwen3:14b` ran out of room, 3 of 5 sampled attempts made a call, and 1 was correct ([S4](phase0-results.md#s4-malformed-tool-calls)).
 
-**An empty reply** (the model stops with no content and no call, [above](#llm-provider-interface)) is handled the same way as a cut-off reply with no visible text: host-core retries once if the consumer allows it (`chat` and the CRE; not `eval`, where a retry would hide the failure). The `empty_reply` event is kept either way, so `parseFailures` counts it even when the retry succeeds.
+##### Empty replies
+
+An empty reply ([above](#llm-provider-interface)) has no tool call, so it cannot get a tool message. Host-core emits `empty_reply`, then:
+
+- **If the consumer allows it** (`chat` and the CRE; not `eval`, which counts it as a parse failure), sends the request once more, without changing the conversation. The failed attempt stays in the events. The retry counts as a turn.
+- **If the retry is empty too, or retries are off,** the run ends, and `done` names the parse failure.
+
+In Phase 0, resending an empty reply's request with the same seed reproduced it exactly ([S4](phase0-results.md#s4-malformed-tool-calls)), so the retry uses a new seed when the request set one. Under greedy sampling it will probably fail again.
 
 **Starting from a prompt:** a run can start from a trusted server's prompt, seeding the conversation with its messages and roles. `eval` needs this for the `query_arranger` entrypoint. If the prompt cannot be fetched, the run ends before any model call, with `done` naming the failure.
 
 #### Tool Registry
 
-- **Names:** `mcp__<server>__<tool>`, as in the SDK's reference host, reduced to `^[a-zA-Z0-9_-]{1,64}$` for OpenAI-style APIs. MCP tool names may contain `.` and run to 128 characters, so both parts are reduced, and an over-long name is shortened with a deterministic hash suffix. The longest Arranger name is 35 characters.
+- **Names:** `mcp__<server>__<tool>`, as in the SDK's reference host, reduced to `^[a-zA-Z0-9_-]{1,64}$` for OpenAI-style APIs. MCP tool names may contain `.` and run to 128 characters, so both parts are reduced, and an over-long name is shortened with a deterministic hash suffix. The longest Arranger name is 35 characters, with the server key `arranger`.
 - **Routing** reads the registry's map, never the string.
 - **Arguments are re-encoded by Ollama** with object keys sorted, so transcripts record them as received, and comparisons of passed-on values ignore key order.
 - **Collisions** are checked on every rebuild. One at the start of a run fails it; one found later leaves both tools out and is reported in `tools_changed`.
-- **Schemas:** MCP `inputSchema` passes through. Ollama rejects nothing: it keeps a property's `type`, `description`, `enum`, `anyOf`, `properties`, `required` and everything under `items`, and drops the rest, which for the Arranger tools loses only the root `$schema` and bounds the descriptions restate ([S1](phase0-results.md#s1-schema-conversion)).
+- **Schemas:** MCP `inputSchema` passes through. Ollama rejects nothing: it keeps a property's `type`, `description`, `enum`, `anyOf`, `properties`, `required` and everything under `items`, and drops the rest, which for the Arranger tools loses only the root `$schema` and bounds the descriptions restate ([S1](phase0-results.md#s1-schema-conversion)). A future schema with `oneOf`, `const` or `$ref` directly on a property would lose it.
 - **Rebuilt** at the start of each run, and between turns for servers that opt in to change notifications.
 - **The model-facing surface**, the tool definitions and labelled instructions in the provider's request format (OpenAI-style for the first provider), comes from an exported pure function, so `eval` can tokenize it. L1 does not use it: it counts the raw MCP surface instead, so this repository's PR gate does not depend on `mcp-host-core` once it moves ([MCP platform testing](../mcp-platform-testing.md) §3.4). The serving stack's chat template renders it further, so its token count is a stable proxy for the real cost, not the exact figure.
 
@@ -300,7 +307,7 @@ Each event carries a run id, sequence number and timestamp.
 | `token`                                  | Streamed text                                                                                                                          | `chat`, UI                |
 | `model_response`                         | Text or tool calls, any reasoning, exact usage, stop reason, duration                                                                  | All                       |
 | `malformed_tool_call`                    | The raw output                                                                                                                         | `eval` (`parseFailures`)  |
-| `empty_reply`                            | Tokens generated, stop reason; nothing else came back                                                                                  | `eval` (`parseFailures`)  |
+| `empty_reply`                            | Tokens generated, stop reason, and whether host-core retries; nothing else came back                                                   | `eval` (`parseFailures`)  |
 | `context_shortened`                      | The tool results shortened to fit the window, and the estimate before and after                                                        | `chat`, UI                |
 | `output_limit`                           | The turn, its output tokens, any visible text, and whether host-core retries                                                           | All                       |
 | `model_error`                            | The model server's error: HTTP status, timeout or refusal, with its body                                                               | All; `eval` voids the run |
@@ -357,7 +364,7 @@ The harness in [MCP platform testing](../mcp-platform-testing.md), which owns th
 **On top of the events, `eval` adds:**
 
 - a tokenizer client (the serving stack's endpoint, or a pinned local tokenizer) for the token metrics;
-- the `fail` context-window policy and no output-limit retry ([§2.2](#context-window)), each recorded in the manifest;
+- the `fail` context-window policy and no output-limit or empty-reply retry ([§2.2](#context-window)), each recorded in the manifest;
 - rejection classification: parse failures are `malformed_tool_call` events, `empty_reply` events (counted, and reported apart), or calls written as prose; schema rejections start with the SDK's `Input validation error`; the rest are semantic;
 - voiding a run that ends in `model_error`, rather than scoring it;
 - the manifest fields host-core cannot know: run configuration, case set hash, fingerprint.
