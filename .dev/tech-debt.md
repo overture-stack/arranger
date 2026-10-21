@@ -111,6 +111,15 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.
 **Standalone:** yes
 
+### `wireMs` overstates server time, which the evaluation harness would read it as
+
+**File:** `modules/mcp-client/src/outcomes.ts` (`CallTiming`), `modules/mcp-client/src/confirmationLoop.ts`
+**Severity:** low until the evaluation harness is built (MCP host plan, Phase 4)
+**Kind:** measurement
+**Issue:** `wireMs` is all of a call's time outside the resolver, including the 250 ms pause before each round without questions and the time `onRound` takes. Read as the harness's `serverLatency` (`.dev/docs/mcp-platform-testing.md`), it overstates the server's time on any call with confirmation rounds.
+**Fix:** Time each request leg separately and report their sum beside `wireMs`, or report the pauses and `onRound` time as their own fields so the harness can subtract them.
+**Standalone:** no; decide with the harness's metric definitions when Phase 4 resumes
+
 ### Keeping `mcp-client` off npm relies on the Jenkins agent's npm skipping private workspaces
 
 **File:** `modules/mcp-client/package.json` (`"private": true`); the npm publish stage in `vars/pipelineOvertureArranger.groovy` (`jenkins-pipeline-library`)
@@ -285,6 +294,15 @@ A second, quieter half: the two Jest workspaces (`integration-tests/import`, `mo
 
 Two consumers need updating in the same pass: `dev:check` (which just calls `test:dev`) and `DEVELOPMENT.md:83`. `AGENTS.md:119` also documents `test:dev` and is an instruction file, so that line is the developer's edit rather than an incidental one. No CI or Jenkins configuration references `test:dev`, so nothing outside the repo breaks. Worth doing alongside the `test:watch` no-op entry above, which is the same script surface with the same root cause.
 **Standalone:** yes; a package.json change plus two documentation lines, with the `integration-tests/import` placement as the only real decision
+
+### No `typecheck` script runs automatically
+
+**File:** root `package.json` (`test:dev`); `modules/mcp-client/package.json` (`typecheck`)
+**Severity:** low
+**Kind:** CI gap
+**Issue:** `modules/mcp-client` has the only `typecheck` script in the repository, and neither `test:dev` nor the Jenkins pipeline runs it. `tsx --test` strips types without checking them, so a type error in a test, or in source the build does not reach, merges unnoticed. The entries proposing `typecheck` scripts for `modules/sqon` and `integration-tests/mcp-server` would add scripts with the same gap.
+**Fix:** Add a root `typecheck` script that runs `npm run typecheck --workspaces --if-present`, and run it in the pipeline beside the tests.
+**Standalone:** yes
 
 ### Only graphql-router has a test keeping `removeComments` off in its release build
 
