@@ -23,6 +23,6 @@ The search server image wires it when `ENABLE_ACCESS_ENFORCEMENT=true`. A host b
 | `allow`                                | The router's allow-all value                       |
 | `deny`, or no result for the catalogue | Nothing matches, on the catalogue's resource field |
 
-A suspended principal, signed in but unconfirmed by the bridge, is served the open tier on searches and facets. Any other read is refused for now with `AccessControlUnavailableError`, carrying `UNAVAILABLE_ANSWER`, the bridge's own 503 text and wait. Network search is refused as a configuration failure for every principal, since access control does not serve it yet.
+A suspended principal, signed in but unconfirmed by the bridge, is served the open tier on searches and facets. Any other read is refused for now with `AccessControlUnavailableError`, carrying `UNAVAILABLE_ANSWER`, the bridge's own 503 text and wait: the GraphQL router logs the text and answers its own fixed text, `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, with the wait as `Retry-After`. Network search is refused as a configuration failure for every principal, since access control does not serve it yet.
 
 Each application of a result logs `access_enforcement.permitted` or `access_enforcement.denied` at info, and each refusal for now `access_enforcement.unavailable` at warn, naming the catalogue, the read path, the request identifier and the principal's subject, never a token, payload or record.
