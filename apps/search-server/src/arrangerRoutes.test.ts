@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
+import type { SearchClient } from '@overture-stack/arranger-graphql-router';
 import express, { Router } from 'express';
 import request from 'supertest';
 
@@ -147,6 +148,45 @@ suite('arrangerRoutes', () => {
 
 	test('the real buildCatalogueRouter is used by default when no override is provided', () => {
 		assert.equal(typeof buildCatalogueRouter, 'function');
+	});
+
+	test("hands the mapping hook each catalogue's index mapping and its index probe, under the catalogue's key", async (context) => {
+		// Given an engine answering only what a catalogue's construction asks, and a hook recording its calls
+		context.mock.method(console, 'log', () => undefined);
+		const properties = { study_id: { type: 'keyword' } };
+		const engine = {
+			cat: { aliases: async () => ({ body: [] }) },
+			indices: {
+				exists: async () => ({ body: true, statusCode: 200 }),
+				getMapping: async ({ index }: { index: string }) => ({
+					body: { [index]: { mappings: { properties } } },
+				}),
+			},
+		} as unknown as SearchClient;
+		const received: unknown[][] = [];
+
+		// When the real buildCatalogueRouter builds a catalogue's router
+		await buildCatalogueRouter({
+			catalogueConfigs: { documentType: 'record', esIndex: 'testing-mapping-hook' },
+			catalogueId: 'catalogue-k7',
+			enableDebug: false,
+			esClient: engine,
+			onIndexMapping: (...hookArguments) => {
+				received.push(hookArguments);
+			},
+		});
+
+		// Then the hook was called once with the catalogue's key, its mapping and a probe of its index
+		assert.equal(received.length, 1);
+		const [catalogueId, mapping, probe] = received[0] ?? [];
+		assert.equal(catalogueId, 'catalogue-k7');
+		assert.deepEqual(mapping, properties);
+		assert.deepEqual(
+			['countMatching', 'countRecordsHoldingSeveralValues', 'validate'].map(
+				(check) => typeof (probe as Record<string, unknown> | undefined)?.[check],
+			),
+			['function', 'function', 'function'],
+		);
 	});
 
 	const fakeRouterReporting = (catalogueId: string) => {

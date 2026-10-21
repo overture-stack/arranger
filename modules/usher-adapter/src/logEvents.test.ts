@@ -1,14 +1,20 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import { attachAccess, canonicalNarrowing, type Enforcement, type UsherPrincipal } from '@overture-stack/usher-types';
+import {
+	attachAccess,
+	canonicalRecordNarrowing,
+	type Enforcement,
+	type UsherPrincipal,
+} from '@overture-stack/usher-types';
 
 import { EVENTS, isConfigurationRefusal } from './fixtures/arrangerNames.js';
-import { CATEGORY_FIELD, INDEX_MAPPING, RECORDS_REGISTRATION, RESOURCE_FIELD } from './fixtures/catalogue.js';
+import { CATEGORY_CONDITIONS, INDEX_MAPPING, RECORDS_REGISTRATION, RESOURCE_FIELD } from './fixtures/catalogue.js';
 import { createFakeBridge } from './fixtures/fakeBridge.js';
-import { createRecordingLogger } from './fixtures/recordingLogger.js';
-import { accessOf, ANONYMOUS, ROWS, signedIn, SUSPENDED } from './fixtures/results.js';
-import { createUsherAccessControl } from './index.js';
+import { createRecordingLogger, type LoggedLine } from './fixtures/recordingLogger.js';
+import { accessOf, ANONYMOUS, DENY_REASONS, type DenyReason, ROWS, signedIn, SUSPENDED } from './fixtures/results.js';
+import { createStubProbe } from './fixtures/stubProbe.js';
+import { createUsherAccessControl, type UsherFilterCallback } from './index.js';
 
 /**
  * The log events: written now and reviewed with the rest, then committed only with the logging that
@@ -19,8 +25,8 @@ import { createUsherAccessControl } from './index.js';
 
 const REQUEST_ID = 'request-7f3a';
 
-/** The verified callback for `records`, and the lines its logger records. */
-const loggingCallback = () => {
+/** The verified callback for `records`, and the lines its logger records from then on. */
+const loggingCallback = async (): Promise<{ callback: UsherFilterCallback; lines: readonly LoggedLine[] }> => {
 	const bridge = createFakeBridge({ anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: {} });
 	const { lines, logger } = createRecordingLogger();
 	const accessControl = createUsherAccessControl({
@@ -28,7 +34,7 @@ const loggingCallback = () => {
 		catalogues: { records: RECORDS_REGISTRATION },
 		logger,
 	});
-	accessControl.verify({ records: INDEX_MAPPING });
+	await accessControl.verify({ records: { mapping: INDEX_MAPPING, probe: createStubProbe().probe } });
 	return { callback: accessControl.filterFor('records'), lines };
 };
 
@@ -50,9 +56,9 @@ suite('the log events', () => {
 		['an allow result, for an anonymous principal', ANONYMOUS, ROWS.open.result, null, false],
 		['a narrow result, for a suspended principal', SUSPENDED, ROWS.anonymousBaselineOn.result, null, true],
 	] as const) {
-		test(`logs one access-permitted event per application of ${description}`, () => {
+		test(`logs one access-permitted event per application of ${description}`, async () => {
 			// Given the callback, and a request holding that result
-			const { callback, lines } = loggingCallback();
+			const { callback, lines } = await loggingCallback();
 
 			// When the result is applied once
 			callback({ locals: localsFor(principal, result) }, { readPath: 'hits' });
@@ -75,16 +81,13 @@ suite('the log events', () => {
 		});
 	}
 
-	for (const [description, result] of [
-		['holding no grants', ROWS.anonymousBaselineOff.result],
-		['naming an unknown resource', ROWS.unknownResource.result],
-	] as const) {
-		test(`logs one access-denied event per application of a deny ${description}`, () => {
+	for (const [reason, description] of Object.entries(DENY_REASONS) as [DenyReason, string][]) {
+		test(`logs one access-denied event per application of a deny for ${description}, naming its reason`, async () => {
 			// Given the callback, and a request denied this catalogue
-			const { callback, lines } = loggingCallback();
+			const { callback, lines } = await loggingCallback();
 
 			// When the deny is applied on the aggregations path
-			callback({ locals: localsFor(ANONYMOUS, result) }, { readPath: 'aggregations' });
+			callback({ locals: localsFor(ANONYMOUS, { kind: 'deny', reason }) }, { readPath: 'aggregations' });
 
 			// Then one denied event names the subject, whether it is suspended, the reason and the request
 			assert.deepEqual(lines, [
@@ -92,7 +95,7 @@ suite('the log events', () => {
 					fields: {
 						catalogue: 'records',
 						readPath: 'aggregations',
-						reason: result.kind === 'deny' ? result.reason : null,
+						reason,
 						requestId: REQUEST_ID,
 						suspended: false,
 						userId: null,
@@ -105,9 +108,9 @@ suite('the log events', () => {
 	}
 
 	for (const readPath of ['export', 'sets', 'a-read-path-added-later'] as const) {
-		test(`logs one unavailable event, never evaluation_failed, when a suspended principal meets the ${readPath} path`, () => {
+		test(`logs one unavailable event, never evaluation_failed, when a suspended principal meets the ${readPath} path`, async () => {
 			// Given the callback, and a suspended principal's request
-			const { callback, lines } = loggingCallback();
+			const { callback, lines } = await loggingCallback();
 
 			// When the request reaches a path the open tier cannot settle, and is refused
 			assert.throws(() =>
@@ -132,9 +135,9 @@ suite('the log events', () => {
 		});
 	}
 
-	test('logs two events carrying the same request identifier when one request applies a result on two read paths', () => {
+	test('logs two events carrying the same request identifier when one request applies a result on two read paths', async () => {
 		// Given one request's store
-		const { callback, lines } = loggingCallback();
+		const { callback, lines } = await loggingCallback();
 		const locals = localsFor(signedIn('subject-ana'), ROWS.heartControlledGrant.result);
 
 		// When its result is applied for hits and for aggregations
@@ -151,15 +154,23 @@ suite('the log events', () => {
 		);
 	});
 
-	test('logs no token, no payload, no bearer token and no record identifier in any event', () => {
+	test('logs no token, no payload, no bearer token and no record identifier in any event', async () => {
 		// Given a request whose context carries a bearer token in its headers, and whose result names
 		// a distinctive resource, as a payload logged whole would
-		const { callback, lines } = loggingCallback();
+		const { callback, lines } = await loggingCallback();
 		const sentinelResult: Enforcement = {
 			kind: 'narrow',
-			sqon: canonicalNarrowing({
-				categoryFieldName: CATEGORY_FIELD,
-				clauses: [{ categoryValue: 'controlled', kind: 'category', resources: ['LEAK_SENTINEL_RESOURCE'] }],
+			sqon: canonicalRecordNarrowing({
+				globalCategories: CATEGORY_CONDITIONS,
+				heldResources: [
+					{
+						heldCategories: ['global.controlled'],
+						resource: 'LEAK_SENTINEL_RESOURCE',
+						resourceCategories: {},
+						unmarkedHeld: false,
+					},
+				],
+				knownResources: ['LEAK_SENTINEL_RESOURCE'],
 				resourceFieldName: RESOURCE_FIELD,
 			}),
 		};

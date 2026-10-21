@@ -1,49 +1,45 @@
 import {
-	canonicalNarrowing,
+	canonicalRecordNarrowing,
+	type CategoryName,
 	type Enforcement,
-	type NarrowingClause,
+	type HeldResource,
+	type RecordNarrowingDescription,
 	type UsherPrincipal,
 	type UsherRequestAccess,
 } from '@overture-stack/usher-types';
 
-import { CATEGORY_FIELD, CONFIGURED_RESOURCES, EVERY_RECORD, MAPPED_CATEGORIES, RESOURCE_FIELD } from './catalogue.js';
+import { CATEGORY_CONDITIONS, CONFIGURED_RESOURCES, EVERY_RECORD, RESOURCE_FIELD } from './catalogue.js';
 
 /**
  * The fixtures are enforcement results, not payloads, since the adapter never receives a payload. Each
  * row is what the bridge would hand the adapter for one case of Usher's case table and this catalogue's
- * mapping, and the same rows become the bridge's expected outputs in its own step. The narrow filters
- * are built in the canonical form `@overture-stack/usher-types` defines, so a row and the bridge's
- * rendering of its case are compared by the records each returns, never by structure.
+ * category conditions, and the same rows become the bridge's expected outputs in its own step. The
+ * narrow filters are rendered in the canonical form `@overture-stack/usher-types` defines, so a row and
+ * the bridge's rendering of its case are compared by the records each returns, never by structure.
  */
 
 type Resource = (typeof CONFIGURED_RESOURCES)[number];
 
-const MAPPED_VALUES: readonly string[] = Object.values(MAPPED_CATEGORIES).toSorted();
+/** A resource held with record view: the global categories held on it, and whether its unmarked records are. */
+const held = (resource: Resource, heldCategories: readonly CategoryName[], unmarkedHeld: boolean): HeldResource => ({
+	heldCategories,
+	resource,
+	resourceCategories: {},
+	unmarkedHeld,
+});
 
-const narrowing = (clauses: [NarrowingClause, ...NarrowingClause[]], mappedValues = MAPPED_VALUES): Enforcement => ({
+const narrowing = (
+	heldResources: [HeldResource, ...HeldResource[]],
+	globalCategories: RecordNarrowingDescription['globalCategories'] = CATEGORY_CONDITIONS,
+): Enforcement => ({
 	kind: 'narrow',
-	sqon: canonicalNarrowing({
-		categoryFieldName: CATEGORY_FIELD,
-		clauses: clauses.map((clause) =>
-			clause.kind === 'unmarked' ? { ...clause, mappedCategoryValues: mappedValues } : clause,
-		) as [NarrowingClause, ...NarrowingClause[]],
+	sqon: canonicalRecordNarrowing({
+		globalCategories,
+		heldResources,
+		knownResources: [...CONFIGURED_RESOURCES],
 		resourceFieldName: RESOURCE_FIELD,
 	}),
 });
-
-const category = (categoryValue: string, resources: [Resource, ...Resource[]]): NarrowingClause => ({
-	categoryValue,
-	kind: 'category',
-	resources,
-});
-
-const unmarked = (resources: [Resource, ...Resource[]]): NarrowingClause => ({
-	kind: 'unmarked',
-	mappedCategoryValues: MAPPED_VALUES,
-	resources,
-});
-
-const EVERY_CONFIGURED: [Resource, ...Resource[]] = [...CONFIGURED_RESOURCES];
 
 /** One row of the plan's fixture table: the case it traces to, the result, and the records it reveals. */
 export type ResultRow = Readonly<{
@@ -58,34 +54,54 @@ const row = (description: string, caseName: string, result: Enforcement, visible
 
 const NO_GRANTS: Enforcement = { kind: 'deny', reason: 'no-grants' };
 
-/** The rows for the catalogue registered as `records`, which maps both concrete categories. */
+/** Why the bridge denies a catalogue. */
+export type DenyReason = Extract<Enforcement, { kind: 'deny' }>['reason'];
+
+/**
+ * Every reason the bridge denies a catalogue with, each described, so a reason the bridge adds fails to
+ * compile here until a suite covers it.
+ */
+export const DENY_REASONS: Readonly<Record<DenyReason, string>> = {
+	'filter-limit': "grants beyond what the catalogue's filter can express",
+	'no-grants': 'no grants',
+	'rendering-mismatch': 'a filter saying other than the payload it was rendered from',
+	'unknown-resource': 'a catalogue registering no resources',
+	'unmapped-category': 'a global category the catalogue neither defines nor declares absent',
+};
+
+/** The rows for the catalogue registered as `records`, which defines both concrete categories. */
 export const ROWS = {
 	anonymousBaselineOff: row('anonymous, baseline off', '1', NO_GRANTS, []),
-	anonymousBaselineOn: row('anonymous, baseline on', '2', narrowing([unmarked(EVERY_CONFIGURED)]), [
-		'h2',
-		'l1',
-		'r3',
-	]),
+	anonymousBaselineOn: row(
+		'anonymous, baseline on',
+		'2',
+		narrowing([held('HEART_STUDY', [], true), held('LUNG_COHORT', [], true), held('REEF_ARCHIVE', [], true)]),
+		['h2', 'l1', 'r3'],
+	),
 	everyGrant: row(
 		'every grant',
 		'parity',
 		narrowing([
-			category('community-governed', ['REEF_ARCHIVE']),
-			category('controlled', ['HEART_STUDY', 'REEF_ARCHIVE']),
-			unmarked(EVERY_CONFIGURED),
+			held('HEART_STUDY', ['global.controlled'], true),
+			held('LUNG_COHORT', [], true),
+			held('REEF_ARCHIVE', ['global.community-governed', 'global.controlled'], true),
 		]),
 		EVERY_RECORD.filter((name) => name !== 'x1'),
 	),
 	heartControlledGrant: row(
 		"a grant on HEART_STUDY's controlled",
 		'5',
-		narrowing([category('controlled', ['HEART_STUDY']), unmarked(EVERY_CONFIGURED)]),
+		narrowing([
+			held('HEART_STUDY', ['global.controlled'], true),
+			held('LUNG_COHORT', [], true),
+			held('REEF_ARCHIVE', [], true),
+		]),
 		['h1', 'h2', 'l1', 'r3'],
 	),
 	heartUnmarkedUnheld: row(
 		"HEART_STUDY's unmarked by grant, unheld",
 		'19',
-		narrowing([unmarked(['LUNG_COHORT', 'REEF_ARCHIVE'])]),
+		narrowing([held('LUNG_COHORT', [], true), held('REEF_ARCHIVE', [], true)]),
 		['l1', 'r3'],
 	),
 	open: row('a catalogue open by configuration', 'none', { kind: 'allow' }, EVERY_RECORD),
@@ -99,7 +115,11 @@ export const ROWS = {
 	reefControlledAlone: row(
 		'controlled alone on REEF_ARCHIVE',
 		'9',
-		narrowing([category('controlled', ['REEF_ARCHIVE']), unmarked(EVERY_CONFIGURED)]),
+		narrowing([
+			held('HEART_STUDY', [], true),
+			held('LUNG_COHORT', [], true),
+			held('REEF_ARCHIVE', ['global.controlled'], true),
+		]),
 		['r1', 'h2', 'l1', 'r3'],
 	),
 	unknownResource: row(
@@ -112,31 +132,27 @@ export const ROWS = {
 } as const;
 
 /**
- * The anonymous row for the catalogue registered again as `controlledOnly`, mapping `controlled` alone:
- * REEF_ARCHIVE offers `community-governed`, mapped nowhere there, so it is withheld whole, r3 included.
+ * The anonymous row for the catalogue registered again as `controlledOnly`, defining `controlled` alone,
+ * where the unmarked records of HEART_STUDY and LUNG_COHORT are open and REEF_ARCHIVE is withheld whole.
  */
 export const CONTROLLED_ONLY_ANONYMOUS: ResultRow = row(
-	'anonymous, baseline on, in a catalogue mapping controlled alone',
+	'anonymous, baseline on, in a catalogue defining controlled alone',
 	'bridge',
-	narrowing([unmarked(['HEART_STUDY', 'LUNG_COHORT'])], ['controlled']),
+	narrowing([held('HEART_STUDY', [], true), held('LUNG_COHORT', [], true)], {
+		'global.controlled': CATEGORY_CONDITIONS['global.controlled'],
+	}),
 	['h2', 'l1'],
 );
 
 /**
- * The row for the catalogue registered again as `absentCategories`, which declares every concrete
- * category absent and names no category field. Its unmarked clause is then a bare test on the resource
- * field inside the narrowing's `or`, and every record of the held resources is visible.
+ * The row for the catalogue registered again as `absentCategories`, which defines no category and
+ * declares every concrete one absent. Its narrowing is then a test on the resource field alone, and
+ * every record of the held resources is visible.
  */
 export const ABSENT_CATEGORIES_UNMARKED: ResultRow = row(
 	'unmarked over HEART_STUDY and LUNG_COHORT, in a catalogue declaring every category absent',
 	'config',
-	{
-		kind: 'narrow',
-		sqon: canonicalNarrowing({
-			clauses: [{ kind: 'unmarked', mappedCategoryValues: [], resources: ['HEART_STUDY', 'LUNG_COHORT'] }],
-			resourceFieldName: RESOURCE_FIELD,
-		}),
-	},
+	narrowing([held('HEART_STUDY', [], true), held('LUNG_COHORT', [], true)], {}),
 	['h1', 'h2', 'l1'],
 );
 

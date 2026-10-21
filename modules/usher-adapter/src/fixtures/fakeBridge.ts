@@ -106,7 +106,8 @@ export const createFakeBridge = (table: FakeBridgeTable, mode: FakeBridgeMode = 
 		reset: () => undefined,
 		resolve,
 		start: async () => undefined,
-		stop: () => undefined,
+		// No call outlives its own promise, so nothing is in flight once a stop is called and it settles at once.
+		stop: async () => undefined,
 	};
 
 	return {

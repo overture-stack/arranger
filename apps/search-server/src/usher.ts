@@ -1,5 +1,5 @@
 import { configRootProperties } from '@overture-stack/arranger-types/configs/constants';
-import type { UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
+import type { CatalogueIndex, UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
 import type { BridgeCore, KeyRegistration } from '@overture-stack/usher-express-bridge';
 import type { RequestHandler } from 'express';
 
@@ -112,23 +112,37 @@ export const withUsherFilters = (catalogs: CataloguesMap, accessControl: UsherAc
 	);
 
 /**
- * Verifies every loaded catalogue against its index mapping, which registers every catalogue with the
- * bridge, then starts the bridge, before the image listens. A verification's refusal is logged as
- * `access_control.startup_refused`; a bridge failing to start is stopped, so none of its timers outlive
- * the refused startup.
+ * Stops the bridge and waits until its work in flight has ended. A stop that fails is logged as
+ * `access_control.bridge_stop_failed` rather than thrown, so whatever led to the stop keeps its own outcome.
  *
- * @param mappings each loaded catalogue's index mapping, by catalogue id.
+ * @param bridge the image's bridge.
+ */
+export const stopUsherBridge = async (bridge: Pick<BridgeCore, 'stop'>): Promise<void> => {
+	await Promise.resolve()
+		.then(() => bridge.stop())
+		.catch((error: unknown) => {
+			console.error('access_control.bridge_stop_failed', error instanceof Error ? error.message : String(error));
+		});
+};
+
+/**
+ * Verifies every loaded catalogue against its index, which registers every catalogue with the bridge,
+ * then starts the bridge, before the image listens. A verification's refusal is logged as
+ * `access_control.startup_refused`. A bridge failing to start is stopped, and the start's own error is
+ * rejected with once the stop has settled, so none of the bridge's work outlives the refused startup.
+ *
+ * @param indices each loaded catalogue's index mapping and probe, by catalogue id.
  * @param usher what `prepareUsher` returned.
  */
 export const verifyAndStartUsher = async ({
-	mappings,
+	indices,
 	usher,
 }: {
-	mappings: Readonly<Record<string, unknown>>;
+	indices: Readonly<Record<string, CatalogueIndex>>;
 	usher: ImageUsher;
 }): Promise<void> => {
 	try {
-		usher.accessControl.verify(mappings);
+		await usher.accessControl.verify(indices);
 	} catch (error) {
 		console.error('access_control.startup_refused', error instanceof Error ? error.message : String(error));
 		throw error;
@@ -137,7 +151,7 @@ export const verifyAndStartUsher = async ({
 	try {
 		await usher.bridge.start();
 	} catch (error) {
-		usher.bridge.stop();
+		await stopUsherBridge(usher.bridge);
 		throw error;
 	}
 };
