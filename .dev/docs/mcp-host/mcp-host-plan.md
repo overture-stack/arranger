@@ -1,6 +1,8 @@
 # MCP Host: Plan
 
-**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the shared server outstanding. Phase 1: done. Since 2026-10-16, the CRE is a desktop app, and its backend process ([§2.4](#24-cre-backend)) replaces the hosted `cre-server`.
+**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the shared server outstanding. Phase 1: done. Since 2026-10-16, a standalone Electron desktop app, with host-core in its main process ([§2.4](#24-cre-main-process)).
+
+**Recommended, pending the team:** no release of the CRE claims support for controlled data until this plan's security-relevant items, including the open questions below, are settled and built. Usher, Overture's access enforcement system, sorts data into three tiers: open data anyone may read, registered data any signed-in person may read, and controlled data only people granted access to that dataset may read. The gate applies per deployment: in one holding controlled data, the operator registers neither the CRE with the deployment's sign-in service nor an MCP server of its own until then, so the CRE reaches only that deployment's open data, anonymously, even where registered data sits alongside it. A deployment holding nothing controlled is unaffected.
 
 **Goal:** a TypeScript stack that connects to MCP servers, runs a model through a tool-calling loop, and puts every confirmation in front of a person (or, for evaluations, a scripted policy).
 
@@ -20,20 +22,37 @@ Background, including why existing chat hosts cannot drive `apps/mcp-server`: [a
 
 ## 1. Overview
 
-| Component               | Package                               | Lives in                      | Job                                                                                  |
-| ----------------------- | ------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
-| `modules/mcp-client`    | `@overture-stack/arranger-mcp-client` | This repository               | One connection to one MCP server, wrapping the SDK's `Client`. Published.            |
-| `modules/mcp-host-core` | `@overture-stack/mcp-host-core`       | This repository (temporarily) | The agent runtime: model provider, loop, tools across servers, approvals, events.    |
-| `apps/mcp-cli`          | `@overture-stack/mcp-cli`             | This repository (temporarily) | `chat` in a terminal, and `eval`, the evaluation harness. Private.                   |
-| `cre-backend`           | Decided in the CRE repository         | CRE repository                | The desktop app's backend process. Runs `mcp-host-core`.                             |
-| `cre-ui`                | Decided in the CRE repository         | CRE repository                | React notebook in the desktop app's renderer. Talks only to `cre-backend`, over IPC. |
+**Decided 2026-10-15:** CRE ships as a standalone desktop app, not a web-hosted service. A deployed website adds DevOps and infrastructure complexity for Overture operators that a local install avoids entirely, so it is not the priority. If a browser-served version is ever built later, it serves only one session per user: a second tab cancels or blocks the first rather than racing it. The exact design and behaviour for that case are deferred until that work starts.
+
+**Decided 2026-10-16: the framework is Electron, not Tauri.** Both build desktop apps from web technology. The two modules this plan builds, `modules/mcp-client` and `modules/mcp-host-core`, are plain Node code (rule 3 of the rules for every component, in [§1](#1-overview)), written once for the CLI, the evaluation harness and this app:
+
+- **Electron** runs that code directly, since its main process is Node.
+- **Tauri**'s core is Rust, so the same code would have to run as a sidecar: a separate helper program, compiled for each operating system and processor, talking to the Rust core over a channel this project would have to design.
+
+A spike, a short throwaway experiment, built a real Tauri app with this project's own Node program as its sidecar, and found a current defect that rules Tauri out. On macOS, Tauri gives every sidecar all of the main app's entitlements, the permissions an app declares to the operating system, with no way to give it fewer. Once the main app holds a permission Apple licenses per app, such as push notifications or iCloud, macOS kills the sidecar at launch, while the build and its signature check both report success, so no automated build would notice. One need is shared rather than Tauri's alone: any Node program under macOS's hardened runtime needs permission to generate code as it runs (`allow-jit`), Electron's main process included. Tauri's problem is that it cannot grant the sidecar that one permission without also granting everything else the main app holds.
+
+Tauri's usual advantage, a smaller app, does not bear on the reason for going desktop, which was sparing operators a deployed web service; both frameworks do that equally. Electron also comes with a crash reporter and an auto-updater, where Tauri would need a separate package, with its own trust model, for each. A short Electron spike has since checked it against the evidence that ruled Tauri out: under ad-hoc signing and the hardened runtime, a main-process workload modelled on host-core runs with `allow-jit`; a restricted entitlement stays on the main app, not any helper, when the build gives each binary its entitlements explicitly rather than taking the signing tool's own defaults; and `safeStorage` and the fuses this plan requires work as described in [§2.4](#24-cre-main-process). The one case neither spike could test is the same for both: a main app with a real Developer ID certificate and provisioning profile, which this environment does not have. The full evidence is in [mcp-host-packaging-spikes.md](../mcp-host-packaging-spikes.md).
+
+**For readers new to Electron:** an Electron app runs as two halves. The renderer is roughly its user interface, a web page. The main process is roughly its back end, the privileged half that holds tokens, makes every network call and runs host-core. The two talk over IPC, Electron's internal message channel between them. The picture has two limits. Approval and consent prompts are drawn by the main process on purpose, so the renderer can neither fake nor answer them. And "back end" here means a half of the app running on the person's own machine, not a server anyone else reaches, nor the kind of portal back end that holds tokens on a web page's behalf ([roadmap.md](../../roadmap.md#browser-portals-and-token-custody-for-controlled-data-deployments)).
+
+**The CRE's two Electron processes** are its main process (`cre-main` in tables) and its renderer (`cre-renderer`). Neither is a deployed, inbound-reachable service: nothing for an operator to run, expose, or scale. A preload script also exists, since the renderer's hardening ([§2.5](#25-cre-renderer)) requires context isolation, which keeps the page's scripts apart from Electron's internals, and `contextBridge`, Electron's sanctioned way for the page to call into the main process, but it runs inside the renderer's own process, not as a separate one, and isn't named as a component here.
+
+**Host-core runs in the CRE's main process for the first release, not a utility process**, the separate, less privileged helper process Electron can start. Electron's own guidance recommends a utility process for untrusted services, CPU-intensive tasks or crash-prone components, which describes host-core's job closely: it is the one component that parses two independently untrusted inputs, an MCP server's output and a model's output, both already treated as untrusted (rule 5, below). But `safeStorage`, Electron's interface to the operating system's keychain, where every token host-core needs is kept, works only in the main process, so isolating host-core would mean the main process reads the keychain and hands tokens to host-core over a channel, rather than host-core reading it directly; main for the first release keeps that simpler. Revisit a utility process if either trigger shows up: the main thread stalling under host-core's own work, or how much a compromise of host-core could reach. The second, in practice: a bug in host-core while it runs in the main process reaches the keychain, the app's windows and its approval dialogues; the same bug in a utility process reaches only the tokens the main process has handed it, not the keychain, the windows or the approval dialogues themselves.
+
+| Component               | Package                               | Lives in                      | Job                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modules/mcp-client`    | `@overture-stack/arranger-mcp-client` | This repository               | One connection to one MCP server, wrapping the SDK's `Client`. Published.                                                                                                                                                                                                                                                             |
+| `modules/mcp-host-core` | `@overture-stack/mcp-host-core`       | This repository (temporarily) | The agent runtime: model provider, loop, tools across servers, approvals, events.                                                                                                                                                                                                                                                     |
+| `apps/mcp-cli`          | `@overture-stack/mcp-cli`             | This repository (temporarily) | `chat` in a terminal, and `eval`, the evaluation harness. Private.                                                                                                                                                                                                                                                                    |
+| `cre-main`              | Decided in the CRE repository         | CRE repository                | Electron's main process. Runs `mcp-host-core`, for the first release (above). It still makes the same outbound calls the CLI does, to MCP servers, the model endpoint, and the identity provider for sign-in.                                                                                                                         |
+| `cre-renderer`          | Decided in the CRE repository         | CRE repository                | Electron's renderer process. Notebook-style display. Its own wiring to `cre-main` is Electron's IPC (`contextBridge`/`ipcRenderer`), not a network call. Hardened per [§2.5](#25-cre-renderer): context isolation, the sandbox, Node integration off, and a content security policy that permits no remote network access of its own. |
 
 ```
-       cre-ui (renderer)               terminal
+        cre-renderer                   terminal
               │                            │
-              │ (IPC)                      │
+              │ Electron IPC               │
               ▼                            ▼
-      cre-backend (Node)             apps/mcp-cli
+          cre-main                   apps/mcp-cli
               │                            │
               │                       chat │ eval
               ▼                            ▼
@@ -61,15 +80,15 @@ Diagrams of this design, from the system context to each request's flow: [MCP Ho
 
 1. **Dependencies point down only.** `mcp-client` depends on the SDK, `mcp-host-core` on `mcp-client` and the model provider's library, and the apps on `mcp-host-core`.
 2. **No Arranger knowledge in the modules.** Neither module depends on any `@overture-stack/*` package outside the pair, or names an Arranger tool. Arranger knowledge (SQON equivalence, the fingerprint, the case set, scoring) lives in `eval`. This keeps the modules movable.
-3. **Node only.** Model keys and MCP credentials stay in a Node process: `cre-backend` or `mcp-cli`. They never reach the renderer, which displays untrusted text. `apps/mcp-server`'s Origin guard rejects unlisted browser origins on a routable bind, and a request from Node carries no `Origin`.
+3. **Node only.** Model credentials, including access to the development team's shared Ollama server, must not reach the renderer process, which displays untrusted text. Whenever `apps/mcp-server` listens on a network address, its Origin guard refuses requests from web pages on sites it does not list, which still matters if a connection ever crosses a network rather than staying on the person's own machine. A user's MCP credential is held by the CRE's main process, never the renderer. Which model endpoints a deployment may use, and how the shared Ollama server is scoped, are covered in [§5](#5-open-questions), question 1.
 4. **Configuration arrives at the boundary.** The modules read no environment variables and no files, per `AGENTS.md`, including through a dependency ([§2.2](#22-mcp-host-core)). Each app has one config module that reads the environment.
 5. **Server and model text is untrusted unless an operator marks the server trusted.**
-    - Each configured server has a `trusted` flag, off by default. In the desktop app, the shipped configuration sets it; a server the user adds starts untrusted.
+    - Each configured server has a `trusted` flag, off by default. The deployment's configuration sets `trusted` for each server it lists.
     - Only a trusted server's `instructions` enter the system prompt, and only its prompts can start a conversation.
     - Everything else a server sends stays labelled as tool output.
     - Confirmation messages are passed on unmodified and rendered as text, never HTML.
     - Tool results are recorded verbatim, since a dataset record can contain text written to steer a model.
-6. **Events are plain data.** No class instances or functions, so every event crosses IPC unchanged and saves to a file as it is.
+6. **Events are plain data.** No class instances or functions, so every event serializes cleanly across Electron's IPC boundary and into a saved notebook unchanged.
 
 ---
 
@@ -82,7 +101,7 @@ Diagrams of this design, from the system context to each request's flow: [MCP Ho
 | Concern              | What `mcp-client` does                                                                                                                                                                                                                                                                                                                                                                           |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Transport            | Streamable HTTP only.                                                                                                                                                                                                                                                                                                                                                                            |
-| Protocol revision    | `{ pin: '2026-07-28' }` only. The SDK's default, `'legacy'`, is refused by `apps/mcp-server`, so it is never passed through. `'auto'` arrives in Phase 5 if the CRE UI needs it, with a test against a 2025-era server.                                                                                                                                                                          |
+| Protocol revision    | `{ pin: '2026-07-28' }` only. The SDK's default, `'legacy'`, is refused by `apps/mcp-server`, so it is never passed through. `'auto'` arrives in Phase 5 if the CRE needs it, with a test against a 2025-era server.                                                                                                                                                                             |
 | Auth                 | Static headers, or an SDK `AuthProvider`: `token()` before every request, and on a 401 `onUnauthorized()` and one retry. Refused over plain HTTP to anything but a loopback address, unless the caller opts in. The SDK's interactive OAuth flow is not exposed: a host supplies tokens through `token()`.                                                                                       |
 | Surface snapshot     | On connect and at the start of each run: the `server/discover` result (versions, capabilities, instructions), read through `client.discover()`, which is never cached, and the tool, resource, resource template and prompt lists, read with `cacheMode: 'refresh'`. A list the server does not advertise is recorded as empty. The server's name and version are recorded beside it, not in it. |
 | Surface hash         | SHA-256 over the canonicalized snapshot (rule below). The canonicalization and the hash are exported as pure functions, so L1 (the harness's contract tests in `integration-tests/mcp-server`) can hash a raw SDK client's responses and count their tokens.                                                                                                                                     |
@@ -97,9 +116,9 @@ Diagrams of this design, from the system context to each request's flow: [MCP Ho
 
 **Why re-reads bypass the cache.** The SDK client caches list results by default, and `apps/mcp-server` marks its lists fresh for an hour. Without `'refresh'`, a long conversation would keep a pre-redeploy surface and hash. Nothing re-reads during a run, so the cache would save little.
 
-**Why change notifications are off.** On `2026-07-28`, the SDK receives list changes only over a `subscriptions/listen` stream, which it holds open for the life of the client once change handlers are configured. With one client per conversation per server, that is one open stream per conversation. `apps/mcp-server`'s lists never change. On a desktop, one stream per open conversation costs little, so `chat` and `cre-backend` may opt in for servers whose lists change.
+**Why change notifications are off.** On `2026-07-28`, the SDK receives list changes only over a `subscriptions/listen` stream, which it holds open for the life of the client once change handlers are configured. With one client per conversation per server, that is one open stream per conversation. `apps/mcp-server`'s lists never change. `chat` may opt in for servers whose lists do; the CRE's main process should not.
 
-**No stdio, for now.** Every target server speaks HTTP. Adding stdio for local servers is open ([§5](#5-open-questions), question 10).
+**No stdio.** Every target server speaks HTTP, and the CRE's main process must never spawn a process named in user configuration. If `chat` later needs stdio, it arrives as an opt-in the CRE's main process does not expose.
 
 **One user per instance, one credential per server.** An instance holds one user's credential for its one server, and is never shared; a credential for one server never reaches another, so an Overture token never reaches a third party ([MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §4).
 
@@ -129,7 +148,7 @@ type InputResolver = (request: {
 }) => Promise<ElicitResult>;
 ```
 
-**Why manual mode:** it makes `requestState` visible, so the transcript records it and a later version can restore a pending confirmation ([§5](#5-open-questions), question 2), and it turns each round into an event, through `onRound`. That runs before any question is asked, so host-core holds the pending state while it waits; if it throws, the call is `input_failed`. Routing a question to its call does not need manual mode: each client has one call in flight.
+**Why manual mode:** it makes `requestState` visible, so the transcript records it, and it turns each round into an event, through `onRound`. That runs before any question is asked, so host-core holds the pending state while it waits; if it throws, the call is `input_failed`. A later version could use that same visibility to restore a pending confirmation; this version does not ([Conversation State](#conversation-state)). Routing a question to its call does not need manual mode: each client has one call in flight.
 
 **Why `request()`, not `callTool()`.** `execute_query`, the tool that asks for confirmation, declares an `outputSchema`. With `tools/list` cached, `callTool()` checks the reply's `structuredContent` against it, and an `input_required` reply has none, so it throws `-32600`; without the cache, it returns the reply mistyped as a `CallToolResult`. S2 confirmed both ([results](phase0-results.md#s2-calltool-against-request)). `request()` skips two things `callTool()` does:
 
@@ -168,7 +187,7 @@ Every call resolves with one outcome and never throws. Each carries wire time, w
 One method, `generate(request, signal)`, which streams deltas and ends with a final response.
 
 - **Request:** model, system prompt, messages, tools; temperature, top-p, seed, maximum output tokens; `responseFormat`, a JSON Schema the output must match (for the judge); and `extra`, engine-specific fields such as top-k, passed through. All of it is recorded in `model_request`.
-- **Final response:** text; reasoning, when the model returns any ([§5](#5-open-questions), question 5); well-formed tool calls; any malformed tool call with its raw text; exact token usage as the serving stack reported it; stop reason, reported model id, duration.
+- **Final response:** text; reasoning, when the model returns any, kept as an optional field since a saved notebook cannot regain it, and sent back to the model only when configured to, off by default, since doing so cost a median of 81 to 538 prompt tokens per earlier turn in the Phase 0 measurements with no consistent effect on the next call ([results, question 5](phase0-results.md#q5-sending-reasoning-back)); well-formed tool calls; any malformed tool call with its raw text; exact token usage as the serving stack reported it; stop reason, reported model id, duration.
 
 **On Ollama, an unparseable call usually comes back as an empty reply, not an error.** In Phase 0, 4 of 376 responses ended on `stop` with no content and no call, though the model had generated tokens ([S4](phase0-results.md#s4-malformed-tool-calls)). The provider reports these as `empty_reply`, separate from malformed calls, since the dropped text is never seen.
 
@@ -176,17 +195,15 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 
 **One provider first:** OpenAI-compatible Chat Completions through the `openai` package, with a configurable base URL, covering Ollama, vLLM, LM Studio and hosted OpenAI. A scripted provider serves the tests. A second provider comes only for an API that is not OpenAI-compatible ([§5](#5-open-questions), question 1).
 
-**Each user configures their own provider:** a base URL, and a key if the provider needs one. Nothing secret ships in the desktop app, since a user can read anything it contains.
+**The deployment supplies the model endpoint, not the user.** A deployment holding controlled data fetches its endpoints at sign-in, not from local configuration a user could edit. Keys and tokens live in the OS keychain, never a plain file.
 
-- **A local Ollama:** `http://localhost:11434/v1`, with no key.
-- **The team's shared Ollama:** through the user's own SSH tunnel to a local port, so access is gated by each researcher's SSH account.
-- **A hosted provider:** its URL and the user's own key.
-
-`cre-backend` keeps keys in the OS keychain, never in a plain file.
+- **A local Ollama:** `http://localhost:11434/v1`, with no key, for development.
+- **The team's shared Ollama:** behind a gateway that checks the person's own Keycloak token, not a user-held tunnel; never a controlled-data deployment's endpoint.
+- **A hosted provider:** only where the deployment allows one ([§5](#5-open-questions), question 1).
 
 **Reproducibility comes from the record, not from everyone using one model.** `run_started` records the provider's URL, the model id it reported, and the model's digest where the provider gives one. Ollama's native API reports the digest, and `/v1/models` does not.
 
-**The `openai` package reads eight environment variables** for options it is not given (v7.31.0: `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID`, `OPENAI_WEBHOOK_SECRET`, `OPENAI_LOG`, `OPENAI_CUSTOM_HEADERS`). In `cre-backend`, a missing base URL would send conversations wherever the environment points, and `baseURL: null` means `api.openai.com`. The provider requires the key and base URL, passes the rest explicitly, and tests that the variables are ignored.
+**The `openai` package reads eight environment variables** for options it is not given (v7.31.0: `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID`, `OPENAI_WEBHOOK_SECRET`, `OPENAI_LOG`, `OPENAI_CUSTOM_HEADERS`). In the CRE's main process, a missing base URL would send conversations wherever the environment points, and `baseURL: null` means `api.openai.com`. The provider requires the key and base URL, passes the rest explicitly, and tests that the variables are ignored.
 
 **`OPENAI_CUSTOM_HEADERS` defeats that test:** its headers are merged beneath `defaultHeaders`, and only the package's `provider` option skips them. Whether to keep the package or call `/v1/chat/completions` with `fetch` is decided when Phase 2 starts; until then, re-check the list on every upgrade.
 
@@ -196,7 +213,7 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 
 **Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size. The app cannot set a local Ollama's window, which is that server's own `OLLAMA_CONTEXT_LENGTH`, so it checks the actual window on connect, as `probeContext.ts` did in Phase 0.
 
-`eval` does not stream; `chat` and the UI do, and still get exact usage ([S3](phase0-results.md#s3-streamed-usage-from-ollama)).
+`eval` does not stream; `chat` and the CRE do, and still get exact usage ([S3](phase0-results.md#s3-streamed-usage-from-ollama)).
 
 #### Agent Loop
 
@@ -227,11 +244,11 @@ A **turn** is one `generate()` call. A run:
 
 **Tool calls run one at a time**, so transcript order is execution order and each client has one call in flight. No Arranger tool gains from parallel calls.
 
-**One run at a time.** Host-core refuses to start a run while one is active in the same conversation, such as from a second window. One call in flight per client, and who may answer a question, both depend on it.
+**One run at a time.** Host-core refuses to start a run while one is active in the same conversation. In the desktop app it protects against a double-submit within one running instance; a second launch of the app is a separate process, handled by the OS-level single-instance lock ([§2.4](#24-cre-main-process)). A browser-served version, if one is ever built, is expected to enforce one session per user instead, with the mechanism deferred until then ([§1](#1-overview)). One call in flight per client, and who may answer a question, both depend on it.
 
 **Limits** on turns, tool calls and wall-clock time end the run; `done` names which. **Cancellation** is one `AbortSignal` per run.
 
-**Model errors.** An HTTP error, timeout or refusal from the model server ends the run with a `model_error` event, without retrying. Every earlier tool call already has its message, so the conversation stays valid. `chat` and the UI show the error and let the user retry. `eval` voids the run, as it does for a parse-failure spike, since the failure belongs to the serving stack.
+**Model errors.** An HTTP error, timeout or refusal from the model server ends the run with a `model_error` event, without retrying. Every earlier tool call already has its message, so the conversation stays valid. `chat` and the CRE show the error and let the user retry. `eval` voids the run, as it does for a parse-failure spike, since the failure belongs to the serving stack.
 
 **Tool result size:** an optional cap on characters sent to the model, with the cut noted in the message and the full result kept in the event. `chat` sets 50,000. `eval` sets none, so scores reflect the server's output rather than a host's truncation, and records the setting in the manifest.
 
@@ -257,6 +274,8 @@ A reply that ends on `finish_reason: length` with no tool call ran out of room, 
 - **If the retry is cut off too,** the run ends, and the consumer suggests splitting the question.
 
 `done` names the output limit. A retry gets an answer more often than not, but not necessarily a right one: on the step where `qwen3:14b` ran out of room, 3 of 5 sampled attempts made a call, and 1 was correct ([S4](phase0-results.md#s4-malformed-tool-calls)).
+
+**An empty reply** (the model stops with no content and no call, [above](#llm-provider-interface)) is handled the same way as a cut-off reply with no visible text: host-core retries once if the consumer allows it (`chat` and the CRE; not `eval`, where a retry would hide the failure). The `empty_reply` event is kept either way, so `parseFailures` counts it even when the retry succeeds.
 
 **Starting from a prompt:** a run can start from a trusted server's prompt, seeding the conversation with its messages and roles. `eval` needs this for the `query_arranger` entrypoint. If the prompt cannot be fetched, the run ends before any model call, with `done` naming the failure.
 
@@ -309,11 +328,11 @@ Each event carries a run id, sequence number and timestamp.
 | `tool_result`                            | Call id, outcome, `isError`, content, structured content, wire time, waiting time                                                      | All                       |
 | `done`                                   | Why the run ended, such as a limit, the context window or the output limit, and totals                                                 | All                       |
 
-**Answers come back by id** through `respond(id, answer)`, for approvals and confirmations alike, whether from a terminal, a script or the UI over IPC. It is idempotent and returns `accepted`, `unknown`, `already_answered` or `timed_out`. `pending()` lists what is still open, for a UI that reconnects. Approvals and confirmations each take an optional timeout: an approval that times out counts as denied, and a confirmation is answered `cancel`, which `mcp-client` sends like any other answer. Only host-core keeps these clocks, so `respond`, `pending()` and the events always match what the server was sent. A second clock in `mcp-client` could fire first and leave a question listed as pending whose answer goes nowhere.
+**Answers come back by id** through `respond(id, answer)`, for approvals and confirmations alike, whether from a terminal, a script or Electron's IPC. It is idempotent and returns `accepted`, `unknown`, `already_answered` or `timed_out`. `pending()` lists what is still open, for a renderer that reloads. Approvals and confirmations each take an optional timeout: an approval that times out counts as denied, and a confirmation is answered `cancel`, which `mcp-client` sends like any other answer. Only host-core keeps these clocks, so `respond`, `pending()` and the events always match what the server was sent. A second clock in `mcp-client` could fire first and leave a question listed as pending whose answer goes nowhere.
 
 #### Conversation State
 
-A model-neutral, serializable message history that a consumer saves and hands back. A saved notebook is its state plus its events. **A pending confirmation is not restored in this version:** the call gets the "abandoned" tool message and the conversation continues ([§5](#5-open-questions), question 3).
+A model-neutral, serializable message history that a consumer saves and hands back. A saved notebook is its state plus its events. **A pending confirmation is not restored in this version:** the call gets the "abandoned" tool message and the conversation continues. Restoring would need persisting the call's arguments, round and question, plus a way to re-enter a run mid-call, none of which this design has; even built, the answer would still have to land within the server's existing time limit for an answer, so the payoff is narrow: an app closed in the exact gap between a question appearing and the person answering it.
 
 **Not in host-core:** presentation, persistence, Arranger knowledge, reading configuration.
 
@@ -331,7 +350,7 @@ A model-neutral, serializable message history that a consumer saves and hands ba
 - A flag to print tool results in full (the reference host shows 200 characters).
 - Confirmation messages printed as plain text, with a form built from the requested schema and explicit `decline` and `cancel`.
 - `/servers` and `/tools` show the surface. Ctrl-C cancels the run.
-- `--transcript <path>` writes the events to a file. The file holds real dataset records and this repository's issues are public, so the command warns before writing, until [§5](#5-open-questions) question 3 is settled.
+- `--transcript <path>` writes the events to a file. The file holds real dataset records and this repository's issues are public, so the command warns before writing, until [§5](#5-open-questions) question 2 is settled.
 
 `chat` replaces the SDK's `examples/cli-client` in `apps/mcp-server/README.md` § Chatting with an LLM.
 
@@ -339,7 +358,7 @@ A model-neutral, serializable message history that a consumer saves and hands ba
 
 The harness in [MCP platform testing](../mcp-platform-testing.md), which owns the metrics, case format, fingerprint and manifest. `eval` owns its runner; `vitest-evals` is not used (that plan's §5.2).
 
-**Where `eval` is built is open** ([§5](#5-open-questions), question 4). This section describes it as an `mcp-cli` subcommand, which after Phase 5 puts it in the CRE repository.
+**Where `eval` is built is a team decision, recommended as `apps/mcp-eval` in this repository** ([§5](#5-open-questions), question 3). This section describes its subcommands, which apply the same whether it lands here or as an `mcp-cli` subcommand in the CRE repository.
 
 | Subcommand                    | Does                                                                         |
 | ----------------------------- | ---------------------------------------------------------------------------- |
@@ -367,26 +386,51 @@ The harness in [MCP platform testing](../mcp-platform-testing.md), which owns th
 
 **`eval` never runs from `npm test`.** L1 stays on the raw SDK client, so a bug in this stack cannot hide a server bug.
 
-### 2.4 CRE Backend
+### 2.4 CRE Main Process
 
-The desktop app's backend process, in the CRE repository: Electron's main process, or a Node sidecar under Tauri ([§5](#5-open-questions), question 9). This plan requires that it:
+In the CRE repository, as Electron's main process ([§1](#1-overview)). The requirements below, and the renderer's in §2.5, use these terms:
+
+| Term                    | Meaning here                                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Context isolation       | The page's scripts run apart from Electron's own internals, so a script injected into the page cannot reach them. |
+| The sandbox             | The operating system limits what the renderer's process may do, such as reading files.                            |
+| Node integration        | Whether the page may use Node's access to files and processes. It is off here.                                    |
+| Content security policy | The page's declared rules for what it may load or contact. Here it allows nothing remote.                         |
+| Confused deputy         | A service tricked into using its own authority on someone else's behalf.                                          |
+| Fuses                   | Switches fixed when the app is built, each turning off a feature an attacker could misuse.                        |
+| Single-instance lock    | Electron's way to stop a second launch from starting a second copy of the app.                                    |
+
+This plan requires that it:
 
 - runs one host-core instance per conversation;
-- holds a single-instance lock, since host-core's one-run check cannot see a second copy of the app;
-- saves state with a version check, so a save based on an older version fails rather than overwriting a newer one, as when a notebook in a synced folder is open on two machines;
+- gives each `mcp-client` the signed-in user's credential, never a shared service credential, which would make the MCP server a confused deputy ([MCP platform testing](../mcp-platform-testing.md) §5.4.1); for an Arranger-backed server, that token's audience names the MCP server, which exchanges it for the search server's ([MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §3);
 - signs the user in as an OAuth public client, with PKCE and the system browser, and keeps tokens in the OS keychain;
-- gives each `mcp-client` the user's own credential, never a shared service credential, which would make the MCP server a confused deputy ([MCP platform testing](../mcp-platform-testing.md) §5.4.1); for an Arranger-backed server, that token's audience names the MCP server, which exchanges it for the search server's ([MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §3);
-- keeps model keys and MCP credentials out of the renderer, and gives the renderer only a narrow IPC API: in Electron, `contextIsolation`, a sandboxed renderer and a strict content security policy; in Tauri, a minimal capability allowlist;
-- streams events to the renderer over IPC, takes answers as `respond` calls, and reads `pending()` when a window reopens;
-- saves state and events per notebook on the user's machine, subject to the decision on controlled data at rest ([§5](#5-open-questions), question 11);
-- takes MCP servers from the app's shipped configuration and from the user, with auth optional and plain HTTP allowed to a loopback address, so a researcher can test against a local `apps/mcp-server` with no TLS or token;
-- decides through its approval policy whether a call that follows another server's output needs approval, following the decision on data crossing connections ([§5](#5-open-questions), question 7).
+- lets only that user answer the instance's approvals and confirmations, including in a shared notebook, each shown through a dialogue it owns, never answerable or fakeable from the renderer;
+- keeps model credentials off the renderer process;
+- creates the renderer with context isolation and the sandbox on, Node integration off, and a content security policy that loads nothing remote; enforces that in its own process too, by cancelling every request from the renderer's session that is not to the app's own scheme (`session.webRequest.onBeforeRequest`), since a content security policy is declared by the document it constrains;
+- refuses renderer navigation and new windows, opens only an allowlist through `shell.openExternal`, refuses permission requests such as camera or microphone, and checks every IPC handler's sender;
+- ships with Electron's fuses set: the app's binary cannot be run as a plain Node interpreter, a debugger cannot be attached through command-line flags, and the app refuses to run packaged code altered after it was built (embedded ASAR integrity);
+- signs every binary with its own entitlements given explicitly (`optionsForFile`, not a single entitlements file passed to the whole build), so the main app carries none of the signing tool's own default entitlements for camera, microphone, Bluetooth, USB, printing, location or photo-library access, which this plan already refuses as renderer permission requests above and does not need at the operating system's level either ([mcp-host-packaging-spikes.md](../mcp-host-packaging-spikes.md) §3);
+- adopts `app.requestSingleInstanceLock()`: on macOS, a notebook opened through Finder or a file association arrives through the `open-file` event, which fires before `ready` and is handled there, not through `second-instance`; on Windows and Linux, a second launch's notebook path is forwarded through `requestSingleInstanceLock`'s own `additionalData` and opened by the `second-instance` listener in the first instance;
+- saves state with a version check, so a save based on an older version fails rather than overwriting a newer one, as when a notebook in a synced folder is open on two machines;
+- passes events to the renderer over Electron's IPC, takes answers as `respond` calls, and reads `pending()` after the renderer reloads;
+- saves state and events per notebook in the app's own data directory, never Documents or the desktop, encrypted with a key held in the OS keychain, and bound to the deployment's retention period ([§5](#5-open-questions), question 2);
+- takes MCP servers from operator configuration only, never from user input, which would let users reach internal addresses; a development build's configuration may name a loopback `apps/mcp-server`, which needs neither TLS nor a token;
+- leaves change notifications off;
+- decides through its approval policy whether a call that follows another server's output needs approval, following the data-crossing-connections policy ([§5](#5-open-questions), question 4);
+- runs Electron's crash reporter with `uploadToServer: false`; sending a dump is the person's explicit choice for each crash, made after being told it may contain what they were viewing, and a declined dump is deleted. In a deployment holding controlled data, the crash reporter is not started at all. The operating system's own crash reporting is outside the app's reach and stays with device policy: on macOS its reports hold stack traces and register values rather than the app's memory, while Windows can be configured to collect full memory dumps, which an organization handling controlled data controls by device policy.
 
-### 2.5 CRE UI
+### 2.5 CRE Renderer
 
-The desktop app's renderer, in the CRE repository. This plan requires that it renders events as notebook cells, shows `context_shortened` (older results shortened for the model, still in the notebook) and `output_limit` (a retry, or a suggestion to split the question), renders server and tool text as text rather than HTML, shows each confirmation with its tool call and how long it has waited, says "probably expired" on `input_state_rejected`, disables input while a run is active in another window, and holds no credentials.
+In the CRE repository, created by the CRE's main process ([§2.4](#24-cre-main-process)) with context isolation and the sandbox on, Node integration off, and a content security policy that loads nothing remote, so it has no network access of its own: every connection is made by the main process on its behalf. This plan requires that it:
 
-Rendering as text matters: script injected into the renderer could reach the backend's IPC API, and through it the user's machine.
+- renders events as notebook cells;
+- shows `context_shortened` (older results shortened for the model, still in the notebook) and `output_limit` (a retry, or a suggestion to split the question);
+- renders server and tool text as text rather than HTML, and notebook-cell markdown with raw HTML off and no remote images, so that a markdown image link cannot send data to an outside address the moment a cell is shown;
+- shows each confirmation, approval and third-party consent screen through a dialogue owned by the CRE's main process, never answerable or fakeable from here;
+- shows each confirmation with its tool call and how long it has waited, and says "probably expired" on `input_state_rejected`;
+- disables input while a run is active in another window;
+- holds no credentials.
 
 ### 2.6 Shared MCP Server Deployments
 
@@ -407,19 +451,19 @@ Each spike can change the design, except S2, which confirms it.
 - **S1: schema conversion.** Send all five Arranger tools' input schemas, including `execute_query`'s unconstrained `sqon`, as OpenAI-style tools through Ollama's `/v1/chat/completions`, the path the provider uses. Confirm the models below call them correctly. Check for `$ref`.
 - **S2: `callTool()` against `request()`.** Confirm `callTool(..., { allowInputRequired: true })` fails on `execute_query`'s `input_required` reply with `tools/list` cached, and `request()` completes the round trip.
 - **S3: streamed usage from Ollama.** Check whether `stream_options: { include_usage: true }` returns exact usage at the end of a stream on `/v1/chat/completions`. If not, streamed runs report usage as unknown.
-- **S4: malformed tool calls.** Collect real examples from the models below: malformed calls returned, calls written as prose, and any the serving stack refuses with an HTTP error (unverified for Ollama). Reasoning output was measured alongside it, as Q5 ([§5](#5-open-questions), question 5).
+- **S4: malformed tool calls.** Collect real examples from the models below: malformed calls returned, calls written as prose, and any the serving stack refuses with an HTTP error (unverified for Ollama). Reasoning output was measured alongside it ([§2.2](#22-mcp-host-core), LLM Provider Interface).
 - **S5: a refused confirmation.** Restart a loopback `apps/mcp-server` without `MCP_REQUEST_STATE_SECRET` between question and answer, and record what the client surfaces. The source says `-32602` with `data.reason: 'invalid_request_state'`.
 
 **Models for S1, S3 and S4.** Each spike runs on a local Ollama first. A result is confirmed on the team's shared Ollama server only once it is solid, since time there is coordinated across the team.
 
-| Where             | Model                    | Why                                                                                                  |
-| ----------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Local             | `gemma4:e4b`             | Small, and tested with LM Studio before the SDK v2 upgrade. `gemma4:12b` is the step up.             |
-| Local             | `qwen3:14b`              | Recommended for tool calling. Thinks before answering.                                               |
-| Local             | `granite4.1:8b`          | Recommended for tool calling.                                                                        |
-| Shared, suggested | `gpt-oss:20b`            | Trained for tool calling. Thinks before answering, so it also tests [question 5](#5-open-questions). |
-| Shared, suggested | `mistral-small3.1` (24B) | Tool support from another model family, without thinking.                                            |
-| Shared, suggested | `gpt-oss:120b`           | The large tier: shows whether a failure on `gpt-oss:20b` comes from model size.                      |
+| Where             | Model                    | Why                                                                                                                                       |
+| ----------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Local             | `gemma4:e4b`             | Small, and tested with LM Studio before the SDK v2 upgrade. `gemma4:12b` is the step up.                                                  |
+| Local             | `qwen3:14b`              | Recommended for tool calling. Thinks before answering.                                                                                    |
+| Local             | `granite4.1:8b`          | Recommended for tool calling.                                                                                                             |
+| Shared, suggested | `gpt-oss:20b`            | Trained for tool calling. Thinks before answering, so it also tests reasoning output ([§2.2](#22-mcp-host-core), LLM Provider Interface). |
+| Shared, suggested | `mistral-small3.1` (24B) | Tool support from another model family, without thinking.                                                                                 |
+| Shared, suggested | `gpt-oss:120b`           | The large tier: shows whether a failure on `gpt-oss:20b` comes from model size.                                                           |
 
 The shared server's other chat models suit tool calls less: `gemma3`, `medgemma` and `llama3:70b-instruct` have no tool support in Ollama.
 
@@ -429,7 +473,7 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 
 ### Phase 2: MCP Host Core
 
-`modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider ignoring `OPENAI_*` variables, every row of the tool-message table, a `model_error`, refusing a second concurrent run, approval and confirmation timeouts, and restoring a conversation that was waiting on a confirmation.
+`modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider ignoring `OPENAI_*` variables, every row of the tool-message table, a `model_error`, refusing a second concurrent run, approval and confirmation timeouts, and a conversation that gets the "abandoned" tool message when it continues past a pending confirmation.
 
 > [!NOTE]
 > This may involve Jenkins work to prevent automatic publishing of private packages.
@@ -443,17 +487,27 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 Phases 1 to 4 of [MCP platform testing](../mcp-platform-testing.md), on host-core events. Its spikes R2 to R7 still apply, and R1 is the end-to-end run.
 
 > [!NOTE]
-> As of 2026-10-07, work on the `eval` harness will be deferred in favour of completing the CRE sooner. Where it is built is decided when it resumes ([§5](#5-open-questions), question 4).
+> As of 2026-10-07, work on the `eval` harness will be deferred in favour of completing the CRE sooner. Where it is built is a team decision, recommended as `apps/mcp-eval` in this repository ([§5](#5-open-questions), question 3), confirmed when work resumes.
 
 ### Phase 5: Publish `mcp-client` and Migrate to CRE Repository
 
-Publish `mcp-client` under the `rc` dist-tag, once the two `modules/mcp-client` hardening entries in `.dev/tech-debt.md` are fixed. Add `'auto'` negotiation if the CRE UI needs it.
+Publish `mcp-client` under the `rc` dist-tag, once the two `modules/mcp-client` hardening entries in `.dev/tech-debt.md` are fixed. Add `'auto'` negotiation if the CRE needs it.
 
 **Packaging:** the `mcp-client` module follows `modules/sqon`: dual ESM and CommonJS through `tsup`, `wireit` builds, `0.0.0-dev` on `main`, `rc` from `release-test`.
 
 Move `mcp-host-core` and `mcp-cli` (with `chat`; `eval` is not built yet) to the CRE repository, and update any documentation already referencing them.
 
-The desktop app's own packaging is CRE repository work outside these phases: builds for each OS, code signing and notarization for macOS and Windows, and auto-update.
+**Decided 2026-10-16: `chat` also ships as a standalone binary**, so running it needs no separate Node install. `eval` stays a plain Node tool, since its audience already has the repository and a build.
+
+**Decided 2026-10-17: `chat` is compiled with Bun's `--compile`** (evidence: [mcp-host-packaging-spikes.md](../mcp-host-packaging-spikes.md)). Bun is used only to build the binary, on one condition: continuous integration runs a smoke suite, a small set of checks on the basics, against the compiled binary itself on every platform `chat` ships for. It covers sign-in, token storage and, specifically, the keychain library, a native module compiled for each platform, rather than relying on the unit tests, which run on Node. The shipped binary carries its own runtime and needs nothing installed on the person's machine, so the rest of the stack takes on no runtime dependency, only a build dependency on whichever machine builds `chat`.
+
+`pkg`, an older packaging tool, was checked and ruled out first, since its output is not actually a single file. Against the remaining alternative, Node's own single-executable feature (`--build-sea`), Bun needed one fix where Node needed three, and produced a smaller binary needing no separate Unicode data file. Node's documentation also still labels that feature "Active development", an unstable base for a shipped binary. The spike compiled only Ink, the terminal interface library, which is plain JavaScript and WebAssembly. The keychain library `chat` actually needs is a native module, the part of a compiled binary most likely to behave differently under Bun's engine than under Node's, which is exactly what the smoke suite has to exercise, on every platform, not only the one the spike ran on.
+
+**Updates:** code-signed releases, checked for updates over HTTPS only, with `electron-updater` verifying the release's signature before applying it; no auto-update path offered where a build has no package-manager-based update mechanism of its own (for example, a plain Linux binary), until a Linux packaging format is chosen, which is open along with the target platforms (below). The update feed's address is fixed inside the signed release itself and cannot be redirected by runtime configuration. An update channel is the highest-leverage attack surface a desktop app has, since one compromised release reaches every installed copy at once; code-signing plus signature verification before install is the standard mitigation. Which infrastructure hosts and serves the update files, and who holds custody of the signing key, are open ([§5](#5-open-questions), question 7); whether to use code-signed, verified auto-updates at all needs no decision.
+
+Target platforms and exactly which phase this lands in are also open.
+
+**The desktop app's own packaging is CRE repository work outside these phases:** builds for each OS, code signing and notarization for macOS and Windows, and auto-update.
 
 ---
 
@@ -467,15 +521,15 @@ Component-level decisions are stated with their reasons in [§2](#2-components).
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | One shared stack for chat, harness and UI    | Separate implementations would drift.                                                                                                                                                                    |
 | The `mcp-client` module is published         | The CRE repository depends on it.                                                                                                                                                                        |
-| A connection layer separate from the runtime | `mcp-client` knows nothing about models, so it can be tested and reused alone. The runtime is shared by the CLI and the CRE backend.                                                                     |
-| `chat` and `eval` in one app                 | They share configuration, providers, servers and the transcript format. An evaluation is a chat with scripted answers and scoring. Provisional: [§5](#5-open-questions), question 4.                     |
+| A connection layer separate from the runtime | `mcp-client` knows nothing about models, so it can be tested and reused alone. The runtime is shared by the CLI and the CRE server.                                                                      |
+| `chat` and `eval` in one app                 | They share configuration, providers, servers and the transcript format. An evaluation is a chat with scripted answers and scoring. Provisional: [§5](#5-open-questions), question 3.                     |
 | Start in this repository                     | When the CRE repository is ready, `mcp-host-core` and `mcp-cli` move there. Until then, they can be built within this repo alongside the `mcp-client`.                                                   |
 | Own the loop rather than adopt a framework   | The Vercel AI SDK hides the exact usage and tool-call fields the harness reads. LangChain's MCP adapter re-runs a call's first round on resume ([research record](../atlas/mcp-client-landscape.md) §3). |
 | SDK 2.3.0 or later (`node` 2.1.1)            | 2.3.0 stops following redirects to other origins; 2.2.0 made list calls read every page.                                                                                                                 |
 
 ### 4.2 What Each Consumer Needs
 
-| Need                                                  | Terminal chat                    | Eval harness                                     | Notebook app (backend)                     | Owned by                      |
+| Need                                                  | Terminal chat                    | Eval harness                                     | CRE (main process)                         | Owned by                      |
 | ----------------------------------------------------- | -------------------------------- | ------------------------------------------------ | ------------------------------------------ | ----------------------------- |
 | Connect to an MCP server over Streamable HTTP         | Yes                              | Yes, local or remote mode                        | Yes                                        | `mcp-client`                  |
 | Several servers at once                               | Yes                              | No                                               | Yes                                        | `mcp-host-core`               |
@@ -500,7 +554,7 @@ Component-level decisions are stated with their reasons in [§2](#2-components).
 | Re-score stored transcripts                           | No                               | **Required** (L3)                                | No                                         | `eval`                        |
 | A snapshot of the server's surface                    | `/tools`                         | **Required**, it is hashed                       | Shown when connecting                      | `mcp-client`                  |
 
-None of the "Required" cells conflict. The harness needs exact usage but no streaming, and the UI the reverse; spike S3 found Ollama gives both at once.
+None of the "Required" cells conflict. The harness needs exact usage but no streaming, and the CRE the reverse; spike S3 found Ollama gives both at once.
 
 ### 4.3 SDK Evidence
 
@@ -536,19 +590,43 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 
 ## 5. Open Questions
 
-1. **Which models the UI offers at launch** (settled, [§2.2](#llm-provider-interface)). Any OpenAI-compatible endpoint the user configures.
-2. **Whether a later version restores a run waiting on a confirmation**, such as after the app is closed mid-question. Manual mode records the `requestState`, but restoring also needs the call's arguments, the round, the question and a way back into a run mid-call. The answer must arrive within the server's window, and it is impossible on a 2025-era connection. Re-entering a call needs an addition to `mcp-client`: an option to send a saved round's answers and `requestState` as the first request.
-3. **Transcript retention.** `chat` transcripts, `eval` records and saved notebooks all contain real dataset records. The harness plan leaves open whether they may be kept, and where; the question now covers all three. It must be settled before `eval` keeps records (Phase 4); until then `chat --transcript` warns before writing. Saved notebooks live on researchers' own machines (question 11).
-4. **Where `eval` is built**, decided when Phase 4 resumes. Either:
-    - **in `mcp-cli`, in the CRE repository**, as §2.3 describes. `mcp-host-core` stays unpublished, but local mode, the rebuild before a run and the build identity all need a path to an Arranger checkout; `sqonEquivalence` uses the published `@overture-stack/sqon` rather than the version the server under test runs; and running against this repository's commits in CI needs a cross-repository trigger; or
-    - **as `apps/mcp-eval`, in this repository**, beside the server it measures, so local mode, the rebuild and commit attribution work as the harness plan designs them. `mcp-host-core` is then published from the CRE repository, with an API that has to stay stable.
-5. **Reasoning output** (settled by Q5, [results](phase0-results.md#q5-sending-reasoning-back)). Ollama's `/v1` returns a thinking model's reasoning in a non-standard `reasoning` field and reads it back from assistant messages. Sending it back cost a median of 81 to 538 prompt tokens per earlier turn, with no consistent effect on the next call. So the final response, `model_response` and the conversation state keep `reasoning` as an optional field, since a saved notebook cannot regain it, and the provider sends it back only when configured to, off by default.
-6. **What a run does after an empty reply.** A malformed call gets a tool message, which needs a call id; an `empty_reply` has none ([S4](phase0-results.md#s4-malformed-tool-calls)). Either the run ends with `done` naming the parse failure, which `eval` counts and `chat` shows; or host-core asks once more without changing the conversation, which recovers a sampled failure but hides it unless the event is shown. `eval` is unaffected either way, since `parseFailures` counts the event.
-7. **Data crossing connections in one session**, to be decided in [MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §6. Once controlled data enters the model's context, a later call to another server can carry it out, or a third party's injected text can make the host read more. The options there (refuse external calls after a controlled read, confirm each call that leaves a connection, or never have both kinds of server live together) all act through host-core's approval policy, and the first and third need each server's configuration to say whether it serves controlled data, which `trusted` does not. Settle it before Phase 2 fixes the approval policy and server configuration.
-8. **Forking a notebook from a cell.** Two runs at once in one conversation would split its history, and keeping only the latest branch would lose queries that already ran against controlled data. An explicit "fork from this cell" would instead copy the history up to that cell into a new conversation. A researcher could then explore two directions, while each conversation keeps one run at a time and nothing in `mcp-client` or host-core changes. Whether the UI offers it is the CRE repository's decision.
-9. **Electron or Tauri** for the desktop app. Electron's main process is Node, so host-core runs in it unchanged. Under Tauri, host-core runs as a Node sidecar: a packaged Node binary for each target, and a protocol over stdin and stdout. Tauri uses less memory and has a smaller download. The sidecar takes back part of both: on macOS arm64, Node with the MCP SDK loaded uses 73 MB, and its binary is 116 MB. Decide by measuring on the team's own machines, starting with each framework's starter app, and building both shells with the backend only if the result is close.
-10. **stdio servers.** A desktop app can run a local MCP server over stdio, as other desktop hosts do. `mcp-client` speaks Streamable HTTP only, so stdio needs a second transport, and a way to approve the command a configuration names.
-11. **Controlled data at rest.** Saved notebooks contain real dataset records, and in a desktop app they live on researchers' own machines. Data access agreements may limit where controlled data is stored, including the Indigenous data in iMicroSeq's scope. Options include encryption at rest with the key in the OS keychain, no local copies of controlled results, or notebooks kept on a server. Settle it before the CRE launches.
+Each item states the question, a recommendation, why, and the exact choice left for the team.
+
+1. **Which models may receive controlled data.** Covers hosted providers, and how the development team's shared Ollama server is protected, since Ollama, the software that runs models on the team's own hardware, has no authentication of its own. This decides whether Phase 5 needs a second provider.
+    - **Recommended:** the person never chooses a model endpoint, the same as they never choose an MCP server. A deployment holding controlled data supplies its own endpoints, fetched at sign-in and not overridable by local configuration, run only on infrastructure under the same data-handling terms as the data, in practice the operator's own; the development team's shared Ollama server never serves one. Every endpoint, including that deployment's own, sits behind TLS and a gateway that checks the person's own sign-in token from Keycloak, the deployment's sign-in service, not a credential shared by every install. For the launch default and open or registered data:
+        - launch with the one OpenAI-compatible provider already planned, which covers self-hosted and compatible hosted endpoints alike;
+        - allow hosted endpoints for open data only, and for registered data only where a platform's terms of access permit it;
+        - add no second provider until a team asks for one.
+    - **Why:** the model receives every record the assistant reads, so a hosted provider not run on the operator's own infrastructure is an export of those records to a third party, outside any community's governance of its data. A gateway credential shared by every install can be extracted from any copy of the app and revoked only for everyone at once, while the person's own token can be revoked for that person alone.
+    - **Team decision:** whether hosted providers are offered at all beyond the recommended default, and whether registered-tier data may go to one, which depends on each platform's terms of access.
+2. **Transcript, eval-record and notebook retention.** Transcripts, `eval` records and saved notebooks hold real records. Notebooks are saved unencrypted on the person's machine today, possibly inside a folder that syncs to the cloud.
+    - **Recommended:** saved notebooks expire 30 days after they were last opened; a deployment may shorten that but not lengthen it, and reopening resets the clock. What is saved goes in the app's own data directory, never Documents or the desktop, which cloud backup commonly syncs, and is encrypted with a key held in the OS keychain, the store already decided for tokens ([MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §4). Records from controlled data are not saved locally at all. `eval`'s frozen dataset holds open data only, with no registered or controlled records, so its records follow open-data rules wherever the harness runs, a developer's machine included.
+    - **Why:** every laptop copy is outside revocation, since revoking access cannot reach it, so a short default bounds how long one exists. The keychain encryption's own limit is the keychain's: it protects against a lost or stolen machine and a copied file, not against malware running as the person, which can already read that keychain.
+    - **Team decision:** confirming the 30-day default, or a shorter deployment-set period, and whether records from controlled data may ever be saved locally. Recommended: not until questions 1 and 4 settle. Also a confirmation that the harness's frozen dataset is, or is replaced by, open data only.
+3. **Where `eval` is built.** Pull request #1103, "Prepare for MCP Client Implementation", made `mcp-host-core` private and moves it to the CRE repository in Phase 5, which puts it on the opposite side of a repository boundary from the dataset and server version `eval` measures against.
+    - **Recommended:** `apps/mcp-eval` in this repository, beside the server it measures, consuming `mcp-host-core` as a published package at a pinned version, which the run manifest, the record of what each evaluation run used, records. Host-core then needs publishing wherever it lives after Phase 5, and publishing it from here costs nothing new, since Jenkins, the team's build server, already publishes every `modules/*` package.
+    - **Why:** a published version holds the agent loop fixed while `apps/mcp-server` changes, the way the [harness plan](../mcp-platform-testing.md) pins anything that can change a case's expected answer, whereas a workspace copy in the CRE repository would move with every CRE commit. The cost: `chat` and `eval` stop sharing one app, so provider construction and the transcript writer move into host-core or are written twice, and host-core's API must stay stable across the versions `eval` pins.
+    - **Team decision:** (a) `apps/mcp-eval` here, with host-core published, either from this repository or from the CRE repository after the move; or (b) `eval` in `mcp-cli` in the CRE repository with host-core private, needing an Arranger checkout path, a cross-repository CI trigger, and the CRE commit in the manifest as a second moving input. Deciding before Phase 5 lets host-core move once, in its final shape.
+4. **Data crossing connections in one conversation**, also recorded in [MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §6. Already under discussion by the team; this is the recommended option for that discussion. Once controlled data enters the model's context, a later call to another server can carry it out, or a third party's injected text can make the host read more than was asked for.
+    - **Recommended:** scope conversations, the plan's own unit: one host-core instance with its own set of MCP connections. A conversation that can reach controlled data holds only that deployment's connections, never a third-party one, and the set is fixed when it starts. Combining controlled data with an outside connection means a separate conversation. Anything that feeds one conversation's output into another's model context, such as a notebook cell drawing on another, counts as crossing and follows the same rule, so only what the person copies by hand carries across. The deployment marks which connections serve controlled data, fetched at sign-in, since a server's `trusted` flag (rule 5 in [§1](#1-overview)) does not say so. Registered-tier data follows question 1's second decision, since a third-party connection is the same kind of export as a hosted model. Conversations over open data alone may mix connections freely.
+    - **Why:** with no outside connection in a controlled-data conversation, the exfiltration direction has no exit, and the confused-deputy direction loses its main injection point, third-party text. Two exits remain, closed elsewhere: the model endpoint itself (question 1), and the renderer's own network access ([§2.4](#24-cre-main-process), [§2.5](#25-cre-renderer)).
+    - **Team decision:** yes, as already planned; this is the recommendation for that discussion. Settle it before Phase 2 fixes the approval policy and server configuration.
+5. **The modules' licence.** This repository is licensed AGPL-3.0, the GNU Affero General Public License. Its section 13, the network-interaction clause, which would have forced a web-hosted CRE to offer source to anyone reaching it over a network, no longer applies now that the CRE ships as a standalone app nobody reaches remotely ([§1](#1-overview)). Distributing the compiled app still carries AGPL's ordinary distribution terms, which reach the whole combined work, not only these modules: an Electron app linking them is distributed under AGPL as a whole, CRE repository included, which constrains that repository's own licence rather than sitting beside it.
+    - **Recommended:** keep `mcp-client` and `mcp-host-core` under AGPL-3.0 like the rest of this repository, and license the CRE repository AGPL-3.0 too, so distributing the app as one AGPL work adds no obligation beyond publishing its source, which the team does already. Each new package declares `"license": "AGPL-3.0-or-later"` and ships the licence text from its first commit, as the open entry in `tech-debt.md` on missing `license` fields already asks of every existing package.
+    - **Why:** the six other Overture repositories checked on GitHub (Stage, Song, Score, Lectern, Lyric and Maestro) are all AGPL-3.0, and an AGPL work can include Electron (MIT) and Apache-2.0 libraries such as `openai`, so AGPL is the consistent default. Neither module exists yet, so this is the only point where choosing differently is free, since relicensing after others contribute needs every contributor's consent.
+    - **Team decision:** confirming the CRE repository is open source under AGPL-3.0. The alternative applies if the team wants others to embed `mcp-client` or host-core in software under another licence, or to distribute the app through a store whose terms conflict with the AGPL: a permissive licence such as Apache-2.0 for the two modules, chosen before Phase 1 writes `mcp-client`.
+6. **Whether to run a crash collection server at all.** The rest of crash reporting is settled ([§2.4](#24-cre-main-process)): no reporter in a deployment holding controlled data, `uploadToServer: false` elsewhere, a dump sent only by the person's explicit per-crash choice, and a declined dump deleted.
+    - **Recommended:** none, for now.
+    - **Why:** there is no operational need yet, and standing up a collection server is itself one more place dumps, which can hold on-screen records, would be received and stored.
+    - **Team decision:** whether to run one at all.
+7. **Update infrastructure and signing-key custody.** Code-signed, HTTPS-only, signature-verified auto-updates are settled ([Phase 5](#phase-5-publish-mcp-client-and-migrate-to-cre-repository)); which infrastructure hosts and serves the files, and who holds custody of the signing key, are operations decisions, not engineering ones.
+    - **Recommended:** GitHub Releases, where Overture already publishes and which `electron-updater` supports natively; Jenkins builds, and signing goes through a hardware-backed signing service, never a key on a build machine.
+    - **Why:** one signing key is the channel's single point of compromise, since one compromised release reaches every installed copy at once, and Windows code-signing keys already have to be held in hardware under the rules certificate authorities follow for code-signing certificates.
+    - **Team decision:** confirming GitHub Releases and a hardware-backed signing service, or choosing Jenkins' existing release pipeline or an Overture-controlled distribution point instead. The update feed's address is fixed inside the signed release itself and cannot be redirected by runtime configuration, so moving it to new infrastructure later means publishing a new signed release, not editing a config file.
+8. **Forking a notebook from a cell.** Two runs at once in one conversation would split its history, and keeping only the latest branch would lose queries that already ran against controlled data.
+    - **Recommended:** an explicit "fork from this cell" action, copying the conversation's history up to that cell into a new conversation, rather than letting two runs share one conversation's history or silently discarding a branch. A researcher can then explore two directions from the same point; each conversation still keeps one run at a time, and the new conversation starts with the same connections as the one it came from, and may drop any of them but never add one, since its copied history counts as crossing under question 4. The fork is a saved notebook under question 2's rules. Nothing in `mcp-client` or host-core changes.
+    - **Why:** a tool call against controlled data has happened once it runs, and Usher's log keeps it; two runs sharing one history and dropping one branch would leave the notebook's account of what was queried out of step with that log, not just lose unsaved work.
+    - **Team decision:** whether the CRE offers this at all, and if so, in which phase. Not required for the first release.
 
 ---
 
@@ -559,7 +637,7 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 - [MCP platform testing](../mcp-platform-testing.md) builds the harness on this plan, and records its deferral, the L1 token gate counting the raw surface, and `eval`'s open location. If this plan changes, its §5 and §7 change too.
 - [atlas: MCP clients for a 2026-07-28-only server](../atlas/mcp-client-landscape.md) §5.
 - `.dev/roadmap.md`: entries for this plan and the harness.
-- `.dev/tech-debt.md`: confirmation state bound to the OAuth client rather than the user ([§2.4](#24-cre-backend)).
+- `.dev/tech-debt.md`: confirmation state bound to the OAuth client rather than the user ([§2.4](#24-cre-main-process)).
 - `CHANGELOG.md`: the SDK upgrade.
 
 **Updated with Phase 1:** `AGENTS.md` § Structure, for `modules/mcp-client`.

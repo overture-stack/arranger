@@ -87,7 +87,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 ### Output validation must bound its running time for a server's schema
 
 **File:** `modules/mcp-client/src/outputValidation.ts`
-**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
+**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since the app connects to servers its operator configures but does not necessarily run (plan §2.4)
 **Kind:** hardening
 **Issue:** A tool's `outputSchema` comes from the server, and validating `structuredContent` against it must finish within a bounded time whatever the schema says. The size and depth limits bound compiling, not validating.
 **Fix:** Run validation under a time limit, for example in a worker, or configure Ajv's regular expressions with a linear-time engine. Report a validation that does not finish as `output_invalid`. Test that it ends within the limit.
@@ -96,7 +96,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 ### Responses from a server must have a size limit
 
 **File:** `modules/mcp-client/src/client.ts` (the transport)
-**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
+**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since the app connects to servers its operator configures but does not necessarily run (plan §2.4)
 **Kind:** hardening
 **Issue:** A response body must be bounded before the SDK parses it, for list results and call results alike.
 **Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.

@@ -17,10 +17,10 @@ flowchart LR
 
     subgraph machine["Researcher's machine"]
         subgraph renderer["CRE renderer: holds no credentials"]
-            ui["cre-ui<br/>notebook"]
+            ui["cre-renderer<br/>notebook"]
         end
-        subgraph backend["CRE backend process: holds the user's model key and tokens"]
-            cs["cre-backend"]
+        subgraph backend["CRE main process: holds the person's tokens"]
+            cs["cre-main"]
             core["mcp-host-core<br/>one per conversation"]
             clientArranger["mcp-client<br/>for apps/mcp-server"]
             clientOther["mcp-client<br/>for a third-party server"]
@@ -34,7 +34,7 @@ flowchart LR
         cliClientArranger["mcp-client"]
     end
 
-    llm["Model provider the user configures<br/>OpenAI-compatible: a local Ollama,<br/>the team's Ollama over SSH, or hosted"]
+    llm["Model provider the deployment supplies<br/>OpenAI-compatible: a local Ollama for development,<br/>the team's Ollama behind a gateway, or a hosted endpoint"]
 
     subgraph overture["Overture deployment"]
         mcp["apps/mcp-server"]
@@ -53,7 +53,7 @@ flowchart LR
     cs -->|"sign-in: PKCE,<br/>public client"| keycloak
     core -->|"generate()"| llm
     core --> clientArranger
-    core -.->|"data crossing<br/>connections: plan Q7"| clientOther
+    core -.->|"data crossing<br/>connections: plan Q4"| clientOther
     clientArranger -->|"Streamable HTTP, 2026-07-28,<br/>the user's token"| mcp
     clientOther -.->|"its own sign-in:<br/>connections §4"| thirdParty
     mcp -->|"GraphQL over HTTP"| search
@@ -70,21 +70,20 @@ flowchart LR
 
 The rules behind the boundaries:
 
-- **Credentials never reach the renderer** ([plan §1](mcp-host-plan.md#1-overview), rule 3). The renderer displays untrusted text, so script injected there must find no keys and only a narrow IPC API ([plan §2.5](mcp-host-plan.md#25-cre-ui)).
-- **The model key and tokens are the user's own**, kept in the OS keychain. Nothing secret ships in the app ([plan §2.2](mcp-host-plan.md#llm-provider-interface)).
+- **Credentials never reach the renderer** ([plan §1](mcp-host-plan.md#1-overview), rule 3). The renderer displays untrusted text, so script injected there must find no keys and only a narrow IPC API ([plan §2.5](mcp-host-plan.md#25-cre-renderer)).
+- **The person's tokens are kept in the OS keychain.** Model endpoints come from the deployment, not from a key the person holds; nothing secret ships in the app ([plan §2.2](mcp-host-plan.md#llm-provider-interface)).
 - **Each `mcp-client`** holds one user's credential for one server. An Overture token never reaches a third party, and a third party's token never reaches Overture ([connections](../arranger-auth/mcp-host-connections.md) §4).
-- **Text from a server is untrusted** unless the app's shipped configuration marks that server `trusted`. A server the user adds starts untrusted. Instructions, confirmation messages and tool results stay labelled as server output, and the UI renders them as text, never HTML ([plan §1](mcp-host-plan.md#1-overview), rule 5).
+- **Text from a server is untrusted** unless the deployment's configuration marks that server `trusted`. Instructions, confirmation messages and tool results stay labelled as server output, and the CRE's renderer shows them as text, never HTML ([plan §1](mcp-host-plan.md#1-overview), rule 5).
 
 The open lines, and what settles each:
 
 | Open item                   | Open because                                                                                 | Settled in                                                                                                          |
 | --------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| cre-backend's process       | Electron's main process, or a Node sidecar under Tauri.                                      | [Plan §5](mcp-host-plan.md#5-open-questions) question 9                                                             |
-| host-core to a third party  | After controlled data enters the model's context, a call to another server can carry it out. | [Plan §5](mcp-host-plan.md#5-open-questions) question 7, [connections](../arranger-auth/mcp-host-connections.md) §6 |
+| host-core to a third party  | After controlled data enters the model's context, a call to another server can carry it out. | [Plan §5](mcp-host-plan.md#5-open-questions) question 4, [connections](../arranger-auth/mcp-host-connections.md) §6 |
 | mcp-client to a third party | Consent, storage, refresh and revocation of per-person tokens are not designed.              | [Connections](../arranger-auth/mcp-host-connections.md) §4                                                          |
 | apps/mcp-server to Keycloak | Today `apps/mcp-server` calls the search server with no credential.                          | [Connections](../arranger-auth/mcp-host-connections.md) §3                                                          |
 | search server to Usher      | The Usher adapter is planned, not built.                                                     | [Arranger auth](../arranger-auth/index.md)                                                                          |
-| `eval` inside apps/mcp-cli  | `eval` may instead be built as `apps/mcp-eval` in this repository.                           | [Plan §5](mcp-host-plan.md#5-open-questions) question 4                                                             |
+| `eval` inside apps/mcp-cli  | `eval` may instead be built as `apps/mcp-eval` in this repository.                           | [Plan §5](mcp-host-plan.md#5-open-questions) question 3                                                             |
 
 ## Instances and concurrency
 
@@ -133,8 +132,8 @@ A researcher asks a question, and the model answers after one tool call. The ser
 sequenceDiagram
     autonumber
     actor P as Researcher
-    participant UI as cre-ui
-    participant CS as cre-backend
+    participant UI as cre-renderer
+    participant CS as cre-main
     participant HC as mcp-host-core
     participant LLM as Model server
     participant MC as mcp-client
@@ -197,8 +196,8 @@ The diagram starts after the model has asked for `execute_query`.
 sequenceDiagram
     autonumber
     actor P as Researcher
-    participant UI as cre-ui
-    participant CS as cre-backend
+    participant UI as cre-renderer
+    participant CS as cre-main
     participant HC as mcp-host-core
     participant MC as mcp-client
     participant MS as apps/mcp-server
@@ -250,7 +249,7 @@ sequenceDiagram
 
 - **`onRound` runs before the question is asked**, so host-core already holds the `requestState` while it waits. That is why the client drives the rounds itself rather than letting the SDK do it ([plan §2.1](mcp-host-plan.md#the-confirmation-loop)).
 - **A UI that reconnects mid-question** calls `pending()` to redraw the dialog. `respond()` is idempotent, and returns `accepted`, `unknown`, `already_answered` or `timed_out`.
-- **Closing the app does not resume the question.** The call gets the "abandoned" tool message when the conversation is restored ([plan §5](mcp-host-plan.md#5-open-questions), question 2).
+- **Closing the app does not resume the question.** The call gets the "abandoned" tool message when the conversation is restored ([plan §2.2](mcp-host-plan.md#conversation-state)).
 
 ## Cancellation and timeouts
 
@@ -269,7 +268,7 @@ Cancelling is one `AbortSignal` per run, passed down to each call:
 ```mermaid
 sequenceDiagram
     actor P as Researcher
-    participant CS as cre-backend
+    participant CS as cre-main
     participant HC as mcp-host-core
     participant MC as mcp-client
     participant MS as apps/mcp-server

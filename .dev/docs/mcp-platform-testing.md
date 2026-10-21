@@ -2,7 +2,7 @@
 
 **Status:** plan only. Nothing here is implemented. Deferred as of 2026-10-07 in favour of completing the CRE sooner ([MCP host plan](mcp-host/mcp-host-plan.md), Phase 4). Last updated 2026-10-08.
 
-**Built on the [MCP host plan](mcp-host/mcp-host-plan.md), approved 2026-10-07.** The harness runs as `eval` on that plan's modules. Where `eval` is built is open (host plan §5, question 4): as an `mcp-cli` subcommand in the CRE repository, or as `apps/mcp-eval` in this repository. This plan describes the first, as the host plan does. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
+**Built on the [MCP host plan](mcp-host/mcp-host-plan.md), approved 2026-10-07.** The harness runs as `eval` on that plan's modules. Where `eval` is built is a team decision (host plan §5, question 3), recommended as `apps/mcp-eval` in this repository, with an `mcp-cli` subcommand in the CRE repository as the alternative; this plan applies to either. This plan owns the metrics, case set, fingerprint and manifest. The host plan owns the MCP client, agent loop, events and commands, so §5 and §7 change if it does.
 
 **Goal:** a fixed harness, fixed dataset, and a pinned model configuration, run against a changing `apps/mcp-server`, producing numbers that justify a decision to keep or revert a change.
 
@@ -336,7 +336,7 @@ Source intents from real failures rather than imagination. Every hit-or-miss SQO
 
 No framework does what this suite needs end to end: fingerprint an external Arranger, open an MCP session in either local or remote mode, advertise and answer elicitation on a script, bridge MCP tool schemas to the serving API's tool format, run the loop with budgets, separate parser failures from server rejections, and assert Arranger semantics like SQON equivalence.
 
-Most of that list is what any MCP host needs. The [MCP host plan](mcp-host/mcp-host-plan.md) builds it once, as `mcp-client` and `mcp-host-core`, for this harness, a terminal chat and the notebook UI. What is left here is the Arranger-specific work and a small runner. Host-core's events already are the transcript, so a runner framework adds little ([§5.3.3](#533-runner-and-results-store)).
+Most of that list is what any MCP host needs. The [MCP host plan](mcp-host/mcp-host-plan.md) builds it once, as `mcp-client` and `mcp-host-core`, for this harness, a terminal chat and the CRE. What is left here is the Arranger-specific work and a small runner. Host-core's events already are the transcript, so a runner framework adds little ([§5.3.3](#533-runner-and-results-store)).
 
 ### 5.2 Tools considered
 
@@ -409,7 +409,7 @@ The outcome metrics are per-case binary results, paired across baseline and cand
 
 Both are supported, selected by `MCP_MODE`. The surface hash works identically in either, since it is computed from the listing responses rather than from source.
 
-**Local.** Starts the built `apps/mcp-server` as a child process, after the rebuild in [§5.4.2](#542-rebuild-before-local-runs), pointed at the external Arranger rather than a locally started one. It does not import the server's source as `startMcpServerForTest` does, which would pull that source into `eval`'s build. Built in the CRE repository, `eval` needs a path to an Arranger checkout for this, for the rebuild in §5.4.2, and for the build identity; this is part of what host plan question 4 weighs. Fast iteration, exact commit attribution, and per-call timing without network noise. This is the default for development and CI.
+**Local.** Starts the built `apps/mcp-server` as a child process, after the rebuild in [§5.4.2](#542-rebuild-before-local-runs), pointed at the external Arranger rather than a locally started one. It does not import the server's source as `startMcpServerForTest` does, which would pull that source into `eval`'s build. Built in the CRE repository, `eval` needs a path to an Arranger checkout for this, for the rebuild in §5.4.2, and for the build identity; this is part of what host plan question 3 weighs. Fast iteration, exact commit attribution, and per-call timing without network noise. This is the default for development and CI.
 
 **Remote.** Connects to a deployed MCP server over Streamable HTTP, which is what testing a real deployment and whatever auth sits in front of it requires. Two things block it:
 
@@ -491,7 +491,7 @@ Each spike can invalidate a design assumption, so all of them come before case a
 
 ### Phase 2: harness
 
-This is the host plan's Phase 4, after its `mcp-client` and `mcp-host-core` phases. It is deferred, and built wherever the host plan's question 4 settles.
+This is the host plan's Phase 4, after its `mcp-client` and `mcp-host-core` phases. It is deferred, and built wherever the host plan's question 3 settles.
 
 - The config module and `.env.schema` in the app that hosts `eval`, shared with `chat` if that app is `mcp-cli`.
 - `fingerprint.ts`: Arranger-side dataset and configuration fingerprinting.

@@ -524,9 +524,11 @@ Let one export request carry several files and answer them as one archive. The r
 
 ### MCP host: client, host core and terminal chat
 
-_Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; shared-server confirmation outstanding. Phase 1 (`modules/mcp-client`): done. Phase 2 (`modules/mcp-host-core`) waits on the plan's open question 7._
+_Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; shared-server confirmation outstanding. Phase 1 (`modules/mcp-client`): done. Phase 2 (`modules/mcp-host-core`) waits on the plan's open question 4._
 
-One published module (`modules/mcp-client`) and one private module (`modules/mcp-host-core`), that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and a notebook UI in its own repository.
+One published module (`modules/mcp-client`) and one private module (`modules/mcp-host-core`), that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and the CRE, a notebook-style research app, in its own repository.
+
+**Recommended, pending the team:** no release claims support for controlled data until the plan's open security questions are settled and built; a deployment holding controlled data reaches open data only, anonymously, until then (detail: plan §1).
 
 [Detail: components, phases, decisions and open questions](docs/mcp-host/mcp-host-plan.md)
 
@@ -542,7 +544,7 @@ _Priority: not yet set. Plan drafted; nothing implemented. Deferred 2026-10-07 i
 
 _Priority: not yet set. Sketched generically as a future requirement; nothing implemented._
 
-Several cBioPortal-originated visualization components (`oncoprintjs`, `react-mutation-mapper`) are published as standalone, backend-agnostic libraries: they render whatever data shape they're given, with no dependency on cBioPortal's own API. OICR/softeng's own `oncojs` org covers similar ground (`oncogrid`, `lolliplot`, `survivalplot`), a decade behind on its core dependencies but a candidate worth modernizing rather than only reaching outside. Using any of these against Arranger's own data needs a per-catalogue configuration mapping that catalogue's actual field names onto the library's expected concepts (chromosome, start position, protein change, and so on), since Arranger's own field metadata (`displayName`, `isArray`, `type`, `unit`) carries no domain-semantic typing today. Consumer is the notebook UI (`cre-ui`) from the MCP host plan above.
+Several cBioPortal-originated visualization components (`oncoprintjs`, `react-mutation-mapper`) are published as standalone, backend-agnostic libraries: they render whatever data shape they're given, with no dependency on cBioPortal's own API. OICR/softeng's own `oncojs` org covers similar ground (`oncogrid`, `lolliplot`, `survivalplot`), a decade behind on its core dependencies but a candidate worth modernizing rather than only reaching outside. Using any of these against Arranger's own data needs a per-catalogue configuration mapping that catalogue's actual field names onto the library's expected concepts (chromosome, start position, protein change, and so on), since Arranger's own field metadata (`displayName`, `isArray`, `type`, `unit`) carries no domain-semantic typing today. Consumer is the notebook renderer (`cre-renderer`) from the MCP host plan above.
 
 [Detail: the concept vocabulary, confirmed and unconfirmed data shapes, and open questions](docs/visualization-data-mapping.md)
 
