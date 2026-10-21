@@ -5,6 +5,7 @@ Design documents for the MCP host: the stack that connects to MCP servers, runs 
 - **[`mcp-host-plan.md`](mcp-host-plan.md):** the plan, with each component, phase, decision and open question. Start here.
 - **[`architecture.md`](architecture.md):** diagrams of the plan, from the system context to each request's flow.
 - **[`phase0-results.md`](phase0-results.md):** what the Phase 0 spikes found, and what each changed in the plan.
+- **[`model-provider-analysis.md`](model-provider-analysis.md):** why host-core has its own Chat Completions client rather than a library, and when to add the Responses API.
 
 The client's own internals are documented beside its code, in [`modules/mcp-client/docs/architecture.md`](../../../modules/mcp-client/docs/architecture.md).
 

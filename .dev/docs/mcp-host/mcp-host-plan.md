@@ -61,7 +61,7 @@ Diagrams of this design, from the system context to each request's flow: [MCP Ho
 
 **Rules for every component:**
 
-1. **Dependencies point down only.** `mcp-client` depends on the SDK, `mcp-host-core` on `mcp-client` and the model provider's library, and the apps on `mcp-host-core`.
+1. **Dependencies point down only.** `mcp-client` depends on the SDK, `mcp-host-core` on `mcp-client` and `eventsource-parser` ([Model Provider Analysis](model-provider-analysis.md)), and the apps on `mcp-host-core`.
 2. **No Arranger knowledge in the modules.** Neither module depends on any `@overture-stack/*` package outside the pair, or names an Arranger tool. Arranger knowledge (SQON equivalence, the fingerprint, the case set, scoring) lives in `eval`. This keeps the modules movable.
 3. **Node only.** Model credentials, including any key for a remote provider, must not reach the renderer process, which displays untrusted text. Whenever `apps/mcp-server` listens on a network address, its Origin guard refuses requests from web pages on sites it does not list, which still matters if a connection ever crosses a network rather than staying on the person's own machine. A user's MCP credential is held by the CRE's main process, never the renderer.
 4. **Configuration arrives at the boundary.** The modules read no environment variables and no files, per `AGENTS.md`, including through a dependency ([§2.2](#22-mcp-host-core)). Each app has one config module that reads the environment.
@@ -174,9 +174,11 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 
 **On Ollama, an unparseable call usually comes back as an empty reply, not an error.** In Phase 0, 4 of 376 responses ended on `stop` with no content and no call, though the model had generated tokens ([S4](phase0-results.md#s4-malformed-tool-calls)). The provider reports these as `empty_reply`, separate from malformed calls, since the dropped text is never seen. Not sending reasoning back, the default above, has a cost: in both Q5 runs, stripping it coincided with empty replies (4 and 3), and keeping it produced none. The pattern is weak, but it is worth watching through `empty_reply` events.
 
-**Start from the SDK's `examples/cli-client`.** It has a provider seam, OpenAI, Anthropic, Gemini and scripted providers, and an agent loop. Its seam lacks exact usage, malformed-call text and streaming, and its OpenAI provider runs an unparseable call with `{}` as its arguments. Adapted code keeps the SDK's licence notices.
+**Use the SDK's `examples/cli-client` as a reference, not a starting point.** It has a provider seam, OpenAI, Anthropic, Gemini and scripted providers, and an agent loop. Its seam lacks exact usage, malformed-call text and streaming, and its OpenAI provider runs an unparseable call with `{}` as its arguments. Too little of it fits to justify copying it, along with its licence notices.
 
-**One provider first:** OpenAI-compatible Chat Completions through the `openai` package, with a configurable base URL, covering Ollama, vLLM, LM Studio and hosted OpenAI. A scripted provider serves the tests. A second provider comes only for an API that is not OpenAI-compatible ([§5](#5-open-questions), question 1).
+**One provider first:** our own client for OpenAI-compatible Chat Completions (`POST /v1/chat/completions`), with a configurable base URL, covering Ollama, vLLM, LM Studio and hosted OpenAI. It uses `eventsource-parser` to read the stream, reads no environment variables, and never retries. A scripted provider serves the tests. Why not the `openai` package or another library, and why Chat Completions rather than the Responses API: [Model Provider Analysis](model-provider-analysis.md).
+
+**Messages and state are shaped after Responses items,** so a Responses provider, needed if hosted OpenAI becomes a target, is one more adapter that leaves saved state unchanged. A tool call keeps its call id and its raw argument string. An assistant turn has an opaque slot for provider-specific items, such as encrypted reasoning. Usage uses neutral field names.
 
 **The person configures the model endpoint**, the same as the MCP servers: a base URL, and a key if the provider needs one. Whether the records a conversation reads may go to that model is theirs to judge under their own agreements; the app shows which model each conversation uses ([§2.4](#24-cre-main-process)). Keys and tokens live in the OS keychain, never a plain file.
 
@@ -187,15 +189,13 @@ The development team's shared Ollama server is a remote provider for this projec
 
 **Reproducibility comes from the record, not from everyone using one model.** `run_started` records the provider's URL, the model id it reported, and the model's digest where the provider gives one. Ollama's native API reports the digest, and `/v1/models` does not.
 
-**The `openai` package reads eight environment variables** for options it is not given (v7.31.0: `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID`, `OPENAI_WEBHOOK_SECRET`, `OPENAI_LOG`, `OPENAI_CUSTOM_HEADERS`). In the CRE's main process, a missing base URL would send conversations wherever the environment points, and `baseURL: null` means `api.openai.com`. The provider requires the key and base URL, passes the rest explicitly, and tests that the variables are ignored.
-
-**`OPENAI_CUSTOM_HEADERS` defeats that test:** its headers are merged beneath `defaultHeaders`, and only the package's `provider` option skips them. Whether to keep the package or call `/v1/chat/completions` with `fetch` is decided when Phase 2 starts; until then, re-check the list on every upgrade.
+**The provider requires a base URL** and takes a key only if the server needs one. It has no default, so a missing setting is an error rather than a request to a hosted service.
 
 **Every request sends `temperature` and `top_p`:** Ollama's `/v1` sets an omitted one to 1.0, overriding the model's defaults, so `chat` configures explicit defaults.
 
 **A stream that ends without a `finish_reason` is a `model_error`:** Ollama's `/v1` drops an error raised mid-stream and just stops (read from source, not yet observed).
 
-**Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size. The app cannot set a local Ollama's window, which is that server's own `OLLAMA_CONTEXT_LENGTH`, so it checks the actual window on connect, as `probeContext.ts` did in Phase 0.
+**Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size. Through `/v1`, the app cannot set a local Ollama's window, which is that server's own `OLLAMA_CONTEXT_LENGTH`, so it checks the actual window on connect, as `probeContext.ts` did in Phase 0. Ollama's native `/api/chat` does accept a per-request `num_ctx`; whether host-core uses it is [§5](#5-open-questions) question 9.
 
 `eval` does not stream; `chat` and the CRE do, and still get exact usage ([S3](phase0-results.md#s3-streamed-usage-from-ollama)).
 
@@ -483,7 +483,7 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 
 ### Phase 2: MCP Host Core
 
-`modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider ignoring `OPENAI_*` variables, every row of the tool-message table, a `model_error`, refusing a second concurrent run, approval and confirmation timeouts, and a conversation that gets the "abandoned" tool message when it continues past a pending confirmation.
+`modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider's stream handling (fragments split across reads, a missing `finish_reason`, HTTP errors, abort), every row of the tool-message table, a `model_error`, an empty reply and its retry, refusing a second concurrent run, approval and confirmation timeouts, and a conversation that gets the "abandoned" tool message when it continues past a pending confirmation.
 
 The module is `"private": true`, so Jenkins's `npm publish -w` loop over `modules/*` skips it with a warning, as npm 11 does for any private workspace. That assumes the Jenkins agent's npm behaves the same, which is unchecked (`.dev/tech-debt.md`).
 
@@ -526,15 +526,16 @@ Target platforms and exactly which phase this lands in are also open.
 
 Component-level decisions are stated with their reasons in [§2](#2-components). These span the plan:
 
-| Decision                                     | Why                                                                                                                                                                                                      |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| One shared stack for chat, harness and UI    | Separate implementations would drift.                                                                                                                                                                    |
-| The `mcp-client` module is published         | The CRE repository depends on it.                                                                                                                                                                        |
-| A connection layer separate from the runtime | `mcp-client` knows nothing about models, so it can be tested and reused alone. The runtime is shared by the CLI and the CRE.                                                                             |
-| `chat` and `eval` in one app                 | They share configuration, providers, servers and the transcript format. An evaluation is a chat with scripted answers and scoring. Provisional: [§5](#5-open-questions), question 3.                     |
-| Start in this repository                     | When the CRE repository is ready, `mcp-host-core` and `mcp-cli` move there. Until then, they can be built within this repo alongside the `mcp-client`.                                                   |
-| Own the loop rather than adopt a framework   | The Vercel AI SDK hides the exact usage and tool-call fields the harness reads. LangChain's MCP adapter re-runs a call's first round on resume ([research record](../atlas/mcp-client-landscape.md) §3). |
-| SDK 2.3.0 or later (`node` 2.1.1)            | 2.3.0 stops following redirects to other origins; 2.2.0 made list calls read every page.                                                                                                                 |
+| Decision                                       | Why                                                                                                                                                                                                                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One shared stack for chat, harness and UI      | Separate implementations would drift.                                                                                                                                                                                                                         |
+| The `mcp-client` module is published           | The CRE repository depends on it.                                                                                                                                                                                                                             |
+| A connection layer separate from the runtime   | `mcp-client` knows nothing about models, so it can be tested and reused alone. The runtime is shared by the CLI and the CRE.                                                                                                                                  |
+| `chat` and `eval` in one app                   | They share configuration, providers, servers and the transcript format. An evaluation is a chat with scripted answers and scoring. Provisional: [§5](#5-open-questions), question 3.                                                                          |
+| Start in this repository                       | When the CRE repository is ready, `mcp-host-core` and `mcp-cli` move there. Until then, they can be built within this repo alongside the `mcp-client`.                                                                                                        |
+| Own the loop rather than adopt a framework     | The Vercel AI SDK hides the exact usage and tool-call fields the harness reads. LangChain's MCP adapter re-runs a call's first round on resume ([research record](../atlas/mcp-client-landscape.md) §3).                                                      |
+| Our own Chat Completions client, not a library | Every candidate library either wraps the `openai` package, inheriting its environment reads and retries, or is Vercel-maintained. Chat Completions is mature on local servers, where Responses is not. [Model Provider Analysis](model-provider-analysis.md). |
+| SDK 2.3.0 or later (`node` 2.1.1)              | 2.3.0 stops following redirects to other origins; 2.2.0 made list calls read every page.                                                                                                                                                                      |
 
 ### 4.2 What Each Consumer Needs
 
@@ -646,6 +647,7 @@ Each item states the question, a recommendation, why, and the exact choice left 
     - **Recommended:** an explicit "fork from this cell" action, copying the conversation's history up to that cell into a new conversation, rather than letting two runs share one conversation's history or silently discarding a branch. A researcher can then explore two directions from the same point; each conversation still keeps one run at a time, and the new conversation starts with the same connections as the one it came from and may drop any of them; adding one is a crossing under question 4, made only through the person's own crossing action, so they see what carries over and it is recorded. The fork is a saved notebook under question 2's rules. Nothing in `mcp-client` or host-core changes.
     - **Why:** a tool call against controlled data has happened once it runs, and Usher's log keeps it; two runs sharing one history and dropping one branch would leave the notebook's account of what was queried out of step with that log, not just lose unsaved work.
     - **Team decision:** whether the CRE offers this at all, and if so, in which phase. Not required for the first release.
+9. **Native calls for Ollama.** Ollama's native `/api/chat` accepts a per-request `num_ctx`, which `/v1` cannot, and `/api/tags` reports each model's digest. Host-core could use native calls only to check the window and read the digest. Or it could add a native Ollama provider that sets the window per request, needing fewer of the [Context window](#context-window) workarounds. Decide while building the context-window handling in Phase 2.
 
 ---
 
