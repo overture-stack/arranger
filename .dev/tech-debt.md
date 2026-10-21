@@ -102,6 +102,15 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.
 **Standalone:** yes
 
+### Keeping `mcp-client` off npm relies on the Jenkins agent's npm skipping private workspaces
+
+**File:** `modules/mcp-client/package.json` (`"private": true`); the npm publish stage in `vars/pipelineOvertureArranger.groovy` (`jenkins-pipeline-library`)
+**Severity:** low
+**Kind:** release pipeline
+**Issue:** The publish stage runs `npm publish -w` for every `modules/*` package whose version differs from npm (`.dev/docs/release-process.md` § 3). npm 11.19 skips a private workspace with a warning and continues (`lib/commands/publish.js`), but the agent's npm version is unchecked. An npm that throws instead would fail the stage at `mcp-client`, and the packages after it would not publish.
+**Fix:** Check `npm --version` in the agent's image. If it does not skip private workspaces, add a `private` check to the loop, as `scripts/verify-pack.mjs` already does.
+**Standalone:** yes
+
 ---
 
 ## build tooling
@@ -2246,9 +2255,9 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Import each published package's namespace and assert no enumerable export is `undefined`. One loop per package. It would also catch the `arranger-types` ESM gap, which is a different fault with the same signature, and it is the cheapest guard available against a class where the type system is structurally unable to help.
 **Standalone:** yes.
 
-### The repo is AGPL-3.0 but no package declares a `license`, so all five published packages show none on npm
+### The repo is AGPL-3.0 but no package declares a `license`, so the five published packages show none on npm
 
-**File:** root `LICENSE` (AGPL-3.0, tracked since 2021); no `license` field in root `package.json`, `modules/{charts,components,graphql-router,sqon,types}/package.json`, or either `apps/*/package.json`
+**File:** root `LICENSE` (AGPL-3.0, tracked since 2021); no `license` field in root `package.json`, `modules/{charts,components,graphql-router,mcp-client,sqon,types}/package.json`, or either `apps/*/package.json`. `mcp-client` becomes the sixth when it publishes (MCP host plan, Phase 5).
 **Severity:** medium (higher for the client-side packages, see below)
 **Kind:** packaging / licensing
 **Issue:** Verified across all eight manifests: not one declares `license`. npm therefore renders all five published packages with no license, and `npm pack --dry-run` confirms no package ships a copy of the licence text either (each tarball is `README.md`, `dist/`, and `package.json`). This is worse than being unlicensed: the project genuinely _is_ AGPL-3.0, a strong copyleft licence with real obligations, and the automated compliance gate that would flag it in a consumer's pipeline never fires because there is nothing to read. Arranger's consumers are exactly the institutional and clinical integrators most likely to run such gates.
@@ -2258,7 +2267,7 @@ Worth deciding rather than assuming: AGPL's network-use clause has materially di
 **Confirmed as an oversight, not a deliberate position (2026-08-17):** surveying the sibling Overture clones, `lectern`, `js-lectern-client`, and `maestro` declare `AGPL-3.0`, while `lyric`, `sqon-builder`, and `website` declare `AGPL-3.0-or-later`. Only `arranger`, `stage`, `dms-ui`, `ego-ui`, and `dms-jbrowse-components` omit it. GitHub itself reports this repo correctly (`license.spdx_id: "AGPL-3.0"`, detected from the `LICENSE` file); it is only the npm packuments that carry nothing. **Sharpest instance:** `@overture-stack/sqon-builder` declares `AGPL-3.0-or-later` and `@overture-stack/sqon`, the package actively replacing it, declares nothing. A consumer who migrates on the project's own advice moves from a cleanly-licensed dependency to an unlicensed one, and their compliance tooling flags the migration as a regression. Fix `modules/sqon` before its next `rc` publish.
 
 Separately, no copyright holder is asserted anywhere: `LICENSE` still carries the unfilled FSF boilerplate (`Copyright (C) <year> <name of author>`), no source file has a licence header, and `README.md` has no License section. `git log --follow` shows GPL v3 added 2018-01-08 and switched to AGPL 2018-02-05, untouched since.
-**Fix:** Add `"license": "AGPL-3.0-or-later"` (matching the newer siblings' SPDX form, which is what the LICENSE's own "or any later version" boilerplate actually grants) to all five publishable packages, plus the two apps and the root for consistency. Settle the client-side question first for `components`/`charts` specifically, since declaring it will make the position visible to external integrators for the first time and is worth doing deliberately before the first non-`rc` `1.0.0`. Add a copyright line to `LICENSE` and a short License section to `README.md`.
+**Fix:** Add `"license": "AGPL-3.0-or-later"` (matching the newer siblings' SPDX form, which is what the LICENSE's own "or any later version" boilerplate actually grants) to all five publishable packages and `mcp-client` (before its Phase 5 publish), plus the two apps and the root for consistency. Settle the client-side question first for `components`/`charts` specifically, since declaring it will make the position visible to external integrators for the first time and is worth doing deliberately before the first non-`rc` `1.0.0`. Add a copyright line to `LICENSE` and a short License section to `README.md`.
 **Standalone:** the three server-side packages are standalone and should not wait; `components`/`charts` need the client-side question answered first.
 
 ### `.turbo/turbo-build.log` included in published tarballs

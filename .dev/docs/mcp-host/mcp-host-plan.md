@@ -431,8 +431,7 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 
 `modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider ignoring `OPENAI_*` variables, every row of the tool-message table, a `model_error`, refusing a second concurrent run, approval and confirmation timeouts, and restoring a conversation that was waiting on a confirmation.
 
-> [!NOTE]
-> This may involve Jenkins work to prevent automatic publishing of private packages.
+The module is `"private": true`, so Jenkins's `npm publish -w` loop over `modules/*` skips it with a warning, as npm 11 does for any private workspace. That assumes the Jenkins agent's npm behaves the same, which is unchecked (`.dev/tech-debt.md`).
 
 ### Phase 3: MCP CLI `chat`
 
@@ -447,7 +446,7 @@ Phases 1 to 4 of [MCP platform testing](../mcp-platform-testing.md), on host-cor
 
 ### Phase 5: Publish `mcp-client` and Migrate to CRE Repository
 
-Publish `mcp-client` under the `rc` dist-tag, once the two `modules/mcp-client` hardening entries in `.dev/tech-debt.md` are fixed. Add `'auto'` negotiation if the CRE UI needs it.
+Publish `mcp-client` under the `rc` dist-tag, by removing `"private": true` from its `package.json`, once the two `modules/mcp-client` hardening entries in `.dev/tech-debt.md` are fixed. Add `'auto'` negotiation if the CRE UI needs it.
 
 **Packaging:** the `mcp-client` module follows `modules/sqon`: dual ESM and CommonJS through `tsup`, `wireit` builds, `0.0.0-dev` on `main`, `rc` from `release-test`.
 
