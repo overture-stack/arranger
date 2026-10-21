@@ -12,6 +12,7 @@ import type {
 	SearchClientIndicesGetMappingResponseBody,
 	SearchClientShardDataResponseBody,
 	SearchClientIndicesOpenResponseBody,
+	SearchClientIndicesValidateQueryResponseBody,
 	SearchClientSearchBody,
 	SearchConfig,
 } from './types.js';
@@ -87,6 +88,14 @@ export function wrapElasticSearchClient(elasticSearchClient: Client): SearchClie
 					input,
 					options,
 				);
+				return output;
+			},
+			validateQuery: async (input, options) => {
+				const output =
+					await elasticSearchClient.indices.validateQuery<SearchClientIndicesValidateQueryResponseBody>(
+						input,
+						options,
+					);
 				return output;
 			},
 		},

@@ -1,3 +1,4 @@
+export type { ConditionValidation, IndexProbe } from './indexProbe.js';
 export type { ArrangerBaseContext } from './types.js';
 
 export {
