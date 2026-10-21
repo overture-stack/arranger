@@ -1,7 +1,8 @@
 {
 	"name": "@overture-stack/arranger-mcp-client",
-	"description": "One connection to one MCP server over Streamable HTTP, with a manual confirmation loop (see README: no stable release yet)",
+	"description": "One connection to one MCP server over Streamable HTTP, with a manual confirmation loop (see README: not published yet)",
 	"version": "0.0.0-dev",
+	"private": true,
 	"homepage": "https://github.com/overture-stack/arranger#readme",
 	"bugs": {
 		"url": "https://github.com/overture-stack/arranger/issues"
