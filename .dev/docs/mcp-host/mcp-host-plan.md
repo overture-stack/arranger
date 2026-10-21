@@ -258,15 +258,24 @@ A reply that ends on `finish_reason: length` with no tool call ran out of room, 
 
 `done` names the output limit. A retry gets an answer more often than not, but not necessarily a right one: on the step where `qwen3:14b` ran out of room, 3 of 5 sampled attempts made a call, and 1 was correct ([S4](phase0-results.md#s4-malformed-tool-calls)).
 
+##### Empty replies
+
+An empty reply ([above](#llm-provider-interface)) has no tool call, so it cannot get a tool message. Host-core emits `empty_reply`, then:
+
+- **If the consumer allows it** (`chat`, UI; not `eval`, which counts it as a parse failure), sends the request once more, without changing the conversation. The failed attempt stays in the events. The retry counts as a turn.
+- **If the retry is empty too, or retries are off,** the run ends, and `done` names the parse failure.
+
+In Phase 0, resending an empty reply's request with the same seed reproduced it exactly ([S4](phase0-results.md#s4-malformed-tool-calls)), so the retry uses a new seed when the request set one. Under greedy sampling it will probably fail again.
+
 **Starting from a prompt:** a run can start from a trusted server's prompt, seeding the conversation with its messages and roles. `eval` needs this for the `query_arranger` entrypoint. If the prompt cannot be fetched, the run ends before any model call, with `done` naming the failure.
 
 #### Tool Registry
 
-- **Names:** `mcp__<server>__<tool>`, as in the SDK's reference host, reduced to `^[a-zA-Z0-9_-]{1,64}$` for OpenAI-style APIs. MCP tool names may contain `.` and run to 128 characters, so both parts are reduced, and an over-long name is shortened with a deterministic hash suffix. The longest Arranger name is 35 characters.
+- **Names:** `mcp__<server>__<tool>`, as in the SDK's reference host, reduced to `^[a-zA-Z0-9_-]{1,64}$` for OpenAI-style APIs. MCP tool names may contain `.` and run to 128 characters, so both parts are reduced, and an over-long name is shortened with a deterministic hash suffix. The longest Arranger name is 35 characters, with the server key `arranger`.
 - **Routing** reads the registry's map, never the string.
 - **Arguments are re-encoded by Ollama** with object keys sorted, so transcripts record them as received, and comparisons of passed-on values ignore key order.
 - **Collisions** are checked on every rebuild. One at the start of a run fails it; one found later leaves both tools out and is reported in `tools_changed`.
-- **Schemas:** MCP `inputSchema` passes through. Ollama rejects nothing: it keeps a property's `type`, `description`, `enum`, `anyOf`, `properties`, `required` and everything under `items`, and drops the rest, which for the Arranger tools loses only the root `$schema` and bounds the descriptions restate ([S1](phase0-results.md#s1-schema-conversion)).
+- **Schemas:** MCP `inputSchema` passes through. Ollama rejects nothing: it keeps a property's `type`, `description`, `enum`, `anyOf`, `properties`, `required` and everything under `items`, and drops the rest, which for the Arranger tools loses only the root `$schema` and bounds the descriptions restate ([S1](phase0-results.md#s1-schema-conversion)). A future schema with `oneOf`, `const` or `$ref` directly on a property would lose it.
 - **Rebuilt** at the start of each run, and between turns for servers that opt in to change notifications.
 - **The model-facing surface**, the tool definitions and labelled instructions in the provider's request format (OpenAI-style for the first provider), comes from an exported pure function, so `eval` can tokenize it. L1 does not use it: it counts the raw MCP surface instead, so this repository's PR gate does not depend on `mcp-host-core` once it moves ([MCP platform testing](../mcp-platform-testing.md) §3.4). The serving stack's chat template renders it further, so its token count is a stable proxy for the real cost, not the exact figure.
 
@@ -297,7 +306,7 @@ Each event carries a run id, sequence number and timestamp.
 | `token`                                  | Streamed text                                                                                                                          | `chat`, UI                |
 | `model_response`                         | Text or tool calls, any reasoning, exact usage, stop reason, duration                                                                  | All                       |
 | `malformed_tool_call`                    | The raw output                                                                                                                         | `eval` (`parseFailures`)  |
-| `empty_reply`                            | Tokens generated, stop reason; nothing else came back                                                                                  | `eval` (`parseFailures`)  |
+| `empty_reply`                            | Tokens generated, stop reason, and whether host-core retries; nothing else came back                                                   | `eval` (`parseFailures`)  |
 | `context_shortened`                      | The tool results shortened to fit the window, and the estimate before and after                                                        | `chat`, UI                |
 | `output_limit`                           | The turn, its output tokens, any visible text, and whether host-core retries                                                           | All                       |
 | `model_error`                            | The model server's error: HTTP status, timeout or refusal, with its body                                                               | All; `eval` voids the run |
@@ -313,7 +322,7 @@ Each event carries a run id, sequence number and timestamp.
 
 #### Conversation State
 
-A model-neutral, serializable message history that a consumer saves and hands back. A saved notebook is its state plus its events. **A pending confirmation is not restored in this version:** the call gets the "abandoned" tool message and the conversation continues ([§5](#5-open-questions), question 3).
+A model-neutral, serializable message history that a consumer saves and hands back. A saved notebook is its state plus its events. **A pending confirmation is not restored in this version:** the call gets the "abandoned" tool message and the conversation continues ([§5](#5-open-questions), question 2).
 
 **Not in host-core:** presentation, persistence, Arranger knowledge, reading configuration.
 
@@ -354,7 +363,7 @@ The harness in [MCP platform testing](../mcp-platform-testing.md), which owns th
 **On top of the events, `eval` adds:**
 
 - a tokenizer client (the serving stack's endpoint, or a pinned local tokenizer) for the token metrics;
-- the `fail` context-window policy and no output-limit retry ([§2.2](#context-window)), each recorded in the manifest;
+- the `fail` context-window policy and no output-limit or empty-reply retry ([§2.2](#context-window)), each recorded in the manifest;
 - rejection classification: parse failures are `malformed_tool_call` events, `empty_reply` events (counted, and reported apart), or calls written as prose; schema rejections start with the SDK's `Input validation error`; the rest are semantic;
 - voiding a run that ends in `model_error`, rather than scoring it;
 - the manifest fields host-core cannot know: run configuration, case set hash, fingerprint.
@@ -542,8 +551,8 @@ Read from the `@modelcontextprotocol/client` 2.3.1 source. Paths are in the SDK 
 4. **Where `eval` is built**, decided when Phase 4 resumes. Either:
     - **in `mcp-cli`, in the CRE repository**, as §2.3 describes. `mcp-host-core` stays unpublished, but local mode, the rebuild before a run and the build identity all need a path to an Arranger checkout; `sqonEquivalence` uses the published `@overture-stack/sqon` rather than the version the server under test runs; and running against this repository's commits in CI needs a cross-repository trigger; or
     - **as `apps/mcp-eval`, in this repository**, beside the server it measures, so local mode, the rebuild and commit attribution work as the harness plan designs them. `mcp-host-core` is then published from the CRE repository, with an API that has to stay stable.
-5. **Reasoning output** (settled by Q5, [results](phase0-results.md#q5-sending-reasoning-back)). Ollama's `/v1` returns a thinking model's reasoning in a non-standard `reasoning` field and reads it back from assistant messages. Sending it back cost a median of 81 to 538 prompt tokens per earlier turn, with no consistent effect on the next call. So the final response, `model_response` and the conversation state keep `reasoning` as an optional field, since a saved notebook cannot regain it, and the provider sends it back only when configured to, off by default.
-6. **What a run does after an empty reply.** A malformed call gets a tool message, which needs a call id; an `empty_reply` has none ([S4](phase0-results.md#s4-malformed-tool-calls)). Either the run ends with `done` naming the parse failure, which `eval` counts and `chat` shows; or host-core asks once more without changing the conversation, which recovers a sampled failure but hides it unless the event is shown. `eval` is unaffected either way, since `parseFailures` counts the event.
+5. **Reasoning output** (settled by Q5, [results](phase0-results.md#q5-sending-reasoning-back)). Ollama's `/v1` returns a thinking model's reasoning in a non-standard `reasoning` field and reads it back from assistant messages. Sending it back cost a median of 81 to 538 prompt tokens per earlier turn, with no consistent effect on the next call. So the final response, `model_response` and the conversation state keep `reasoning` as an optional field, since a saved notebook cannot regain it, and the provider sends it back only when configured to, off by default. The default has a cost: in both Q5 runs, stripping reasoning coincided with empty replies (4 and 3), and keeping it produced none. The pattern is weak, but it is worth watching through `empty_reply` events.
+6. **What a run does after an empty reply** (settled, [§2.2](#empty-replies)). Host-core retries once, without changing the conversation, where the consumer allows it (`chat` and the UI, not `eval`), as for a reply cut off at the output limit. `eval` counts the event either way.
 7. **Data crossing connections in one session**, to be decided in [MCP host: connection authentication](../arranger-auth/mcp-host-connections.md) §6. Once controlled data enters the model's context, a later call to another server can carry it out, or a third party's injected text can make the host read more. The options there (refuse external calls after a controlled read, confirm each call that leaves a connection, or never have both kinds of server live together) all act through host-core's approval policy, and the first and third need each server's configuration to say whether it serves controlled data, which `trusted` does not. Settle it before Phase 2 fixes the approval policy and server configuration.
 8. **Forking a notebook from a cell.** Two runs at once in one conversation would split its history, and keeping only the latest branch would lose queries that already ran against controlled data. An explicit "fork from this cell" would instead copy the history up to that cell into a new conversation. A researcher could then explore two directions, while each conversation keeps one run at a time and nothing in `mcp-client` or host-core changes. Whether the UI offers it is the CRE repository's decision.
 9. **Electron or Tauri** for the desktop app. Electron's main process is Node, so host-core runs in it unchanged. Under Tauri, host-core runs as a Node sidecar: a packaged Node binary for each target, and a protocol over stdin and stdout. Tauri uses less memory and has a smaller download. The sidecar takes back part of both: on macOS arm64, Node with the MCP SDK loaded uses 73 MB, and its binary is 116 MB. Decide by measuring on the team's own machines, starting with each framework's starter app, and building both shells with the backend only if the result is close.
