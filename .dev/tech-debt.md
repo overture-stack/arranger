@@ -80,6 +80,15 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Type the literals (`as const`, or the package's builders), narrow the schema reads, and add a `typecheck` script like `modules/mcp-client`'s.
 **Standalone:** yes
 
+### A malformed client filter must be refused as the client's mistake on every read path
+
+**File:** `modules/graphql-router/src/middleware/buildQuery/normalizeFilters.js`; `modules/sqon` (the schema)
+**Severity:** low
+**Kind:** error reporting
+**Issue:** A client filter must be refused when it is compiled, with the rule it broke, so that its sender is told the problem is theirs. Two shapes are not refused there: a clause whose `content` is a string, and a range whose bound is text on a numeric field. Both reach the search engine, which refuses them, so the sender is answered as if the server had failed. Every read path compiles through `buildQuery`, so all of them share this.
+**Fix:** `normalizeFilters` already refuses a node with no operator; refuse non-object content the same way. A bound's type needs the field's type, so that check belongs where the field types are known, in the compiler or in a SQON schema given the mapping.
+**Standalone:** yes
+
 ---
 
 ## modules/mcp-client
@@ -1087,7 +1096,7 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 
 ### Download route body is brittle
 
-**Status:** narrowed, not closed. Items 3 and 5 of this entry's list are done, and item 4 in part. `dataStream` validates the parsed `params` itself, one file per request, and refuses a broken rule before any output. `/download` answers an invalid request with `400` and a server fault with `500`, each as fixed plain text, with the detail logged on the server only, so a caller can tell its own mistake from a server fault but not which rule it broke; the server log names the rule. The file name is set through Express's `res.attachment`, which encodes it. Items 1 and 2 are open: `params` still arrives as JSON text in a form field, and callers still send full column descriptors.
+**Status:** narrowed, not closed. Items 3, 4 and 5 of this entry's list are done. `dataStream` validates the parsed `params` itself, one file per request, and refuses a broken rule before any output. `/download` answers an invalid request with `400`, a body its form parser refuses with that parser's own `4xx`, and a server fault with `500`, each as fixed plain text: a refusal names the rule it broke, and the detail is logged on the server only. The file name is set through Express's `res.attachment`, which encodes it. Items 1 and 2 are open: `params` still arrives as JSON text in a form field, and callers still send full column descriptors.
 
 **File:** `modules/graphql-router/src/download/index.js` (the `download` router)
 **Severity:** medium
@@ -1101,6 +1110,33 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 5. The `Content-disposition` header is set without quoting the filename (`attachment; filename=${responseFileName}`); filenames with spaces or special characters break the header.
    **Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
    **Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
+
+### A disabled `/download` answers in JSON, unlike the rest of the route
+
+**File:** `modules/graphql-router/src/download/disableDownloads.ts`
+**Severity:** low
+**Kind:** consistency
+**Issue:** With downloads turned off, `/download` answers `404` with a JSON body, while every other answer the route gives is fixed plain text. Changing it changes the response's shape for clients that read it.
+**Fix:** Answer fixed plain text like the rest of the route, with a migration section, in a release that may change response shapes.
+**Standalone:** yes
+
+### An export and a search treat a client filter differently when client filters are disabled
+
+**File:** `modules/graphql-router/src/utils/getAllData.js`; `modules/graphql-router/src/accessControl/disableFilters.ts`
+**Severity:** low
+**Kind:** consistency
+**Issue:** With client filters disabled, a search whose GraphQL variables carry a client filter is refused with `400`, while an export carrying one ignores it and exports everything the server-side filter admits. Access is never widened either way, but the two read paths disagree, and an export's caller can't tell its filter was set aside.
+**Fix:** Refuse the export the same way, with the same rule's text.
+**Standalone:** yes
+
+### A hit with no source is exported differently in TSV and JSON
+
+**File:** `modules/graphql-router/src/utils/dataToExportFormat.js`
+**Severity:** low
+**Kind:** consistency
+**Issue:** A hit holding no source becomes a row of `valueWhenEmpty` in a TSV export, and ends a JSON export with an error.
+**Fix:** Choose one behaviour for both formats, and pin it with a test in each.
+**Standalone:** yes
 
 ### `fetchMapping` uses `cat.aliases` instead of `indices.getAlias`
 

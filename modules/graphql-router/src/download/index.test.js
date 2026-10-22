@@ -16,6 +16,7 @@ import {
 	WHOLE_QUERY_PAST_THE_LIMIT,
 } from '#searchClient/clauseLimit.fixture.js';
 import { wrapOpenSearchClient } from '#searchClient/index.js';
+import noopFn from '#utils/noops.js';
 
 import { dataStream, InvalidExportRequestError } from './index.js';
 
@@ -546,6 +547,81 @@ const disconnectAfterFirstRow = (server, params) =>
 		clientRequest.end(body);
 	});
 
+/** Posts a download over a raw connection and drops it once the engine has been asked for a page, before any response. */
+const disconnectOnceSearching = ({ params, requests, server }) =>
+	new Promise((resolve, reject) => {
+		const body = new URLSearchParams({ params: JSON.stringify(params) }).toString();
+		const deadline = Date.now() + SETTLE_TIMEOUT;
+		const clientRequest = http.request({
+			headers: {
+				'content-length': Buffer.byteLength(body),
+				'content-type': 'application/x-www-form-urlencoded',
+			},
+			host: '127.0.0.1',
+			method: 'POST',
+			path: '/download',
+			port: server.address().port,
+		});
+		const disconnectOnceSearched = () => {
+			if (requests.length > 0) {
+				clientRequest.destroy();
+				resolve();
+			} else if (Date.now() > deadline) {
+				reject(new Error('no search started before the deadline'));
+			} else {
+				setTimeout(disconnectOnceSearched, 5);
+			}
+		};
+
+		clientRequest.on('error', noopFn);
+		clientRequest.on('response', () => reject(new Error('the response began before the client disconnected')));
+		clientRequest.end(body);
+		disconnectOnceSearched();
+	});
+
+/**
+ * Posts a download over a raw connection to an engine holding its searches, releases them once the
+ * response has begun, and settles when the transfer closes: `{ complete, received, status }`.
+ */
+const postReleasingOnceAnswered = ({ engine, params, server }) =>
+	new Promise((resolve, reject) => {
+		const body = new URLSearchParams({ params: JSON.stringify(params) }).toString();
+		const timer = setTimeout(
+			() => reject(new Error('the transfer did not close before the deadline')),
+			SETTLE_TIMEOUT,
+		);
+		const clientRequest = http.request(
+			{
+				headers: {
+					'content-length': Buffer.byteLength(body),
+					'content-type': 'application/x-www-form-urlencoded',
+				},
+				host: '127.0.0.1',
+				method: 'POST',
+				path: '/download',
+				port: server.address().port,
+			},
+			(response) => {
+				const chunks = [];
+				engine.release();
+
+				response.on('data', (chunk) => chunks.push(chunk));
+				response.on('error', noopFn);
+				response.on('close', () => {
+					clearTimeout(timer);
+					resolve({ complete: response.complete, received: chunks.join(''), status: response.statusCode });
+				});
+			},
+		);
+
+		clientRequest.on('error', noopFn);
+		clientRequest.end(body);
+	});
+
+/** The stock documents with `donorId`'s source left out, as an engine returns a hit it holds no source for. */
+const documentsWithoutSourceFor = (donorId) =>
+	DOCUMENTS.map((document) => (document._id === donorId ? { _id: document._id } : document));
+
 /*
  * Params a download must refuse. Each is tried both at the route, which must answer 400, and
  * against `dataStream` directly, which must reject: an integration calling it receives the client's
@@ -648,6 +724,56 @@ const INVALID_FORMS = [
 	{ form: 'params=%7B%7D&params=%7B%7D', name: 'params sent twice' },
 ];
 
+const FORM_CONTENT_TYPE = 'application/x-www-form-urlencoded';
+
+// Bodies the form parser cannot read, each with the status and the rule it is answered with.
+const UNREADABLE_BODIES = [
+	{
+		body: 'params=%7B%7D',
+		headers: { 'content-encoding': `x-${CLIENT_TEXT}`, 'content-type': FORM_CONTENT_TYPE },
+		name: 'a content encoding the route does not read, named in client text',
+		rule: 'The request body must be sent uncompressed, or compressed with gzip or deflate.',
+		status: 415,
+	},
+	{
+		body: 'params=%7B%7D',
+		headers: { 'content-type': `${FORM_CONTENT_TYPE}; charset="x-${CLIENT_TEXT}"` },
+		name: 'a charset other than UTF-8, named in client text',
+		rule: 'The request body must be encoded as UTF-8.',
+		status: 415,
+	},
+	{
+		body: 'params=%7B%7D',
+		headers: { 'content-encoding': 'gzip', 'content-type': FORM_CONTENT_TYPE },
+		name: 'a gzip encoding over a body that is not gzip',
+		rule: 'The request body must be a URL-encoded form holding params as one field of JSON.',
+		status: 400,
+	},
+	{
+		body: `params=${'a'.repeat(200_000)}`,
+		headers: { 'content-type': FORM_CONTENT_TYPE },
+		name: 'a body larger than the route accepts',
+		rule: 'The request body is larger than the download route accepts.',
+		status: 413,
+	},
+	{
+		body: Array.from({ length: 1_100 }, (_unused, index) => `field${index}=1`).join('&'),
+		headers: { 'content-type': FORM_CONTENT_TYPE },
+		name: 'more form fields than the route accepts',
+		rule: 'The request body holds more form fields than the download route accepts.',
+		status: 413,
+	},
+	{
+		body: `params${'[nested]'.repeat(40)}=1`,
+		headers: { 'content-type': FORM_CONTENT_TYPE },
+		name: 'form fields nested deeper than the route accepts',
+		rule: 'The request body nests its form fields deeper than the download route accepts.',
+		status: 400,
+	},
+];
+
+const postRawBody = (server, { body, headers }) => request(server).post('/download').set(headers).send(body);
+
 suite('download', () => {
 	suite('the ./download entry point', () => {
 		test('exports InvalidExportRequestError, the class dataStream refuses invalid params with', async () => {
@@ -733,6 +859,22 @@ suite('download', () => {
 				],
 			);
 		});
+
+		for (const fileType of ['tsv', 'json']) {
+			test(`serves a ${fileType} export with X-Content-Type-Options: nosniff`, async () => {
+				// Given a file asking for this type
+				// When it is downloaded
+				const response = await postDownload(
+					arranger.server,
+					paramsWithFile({ fileName: `donors.${fileType}`, fileType }),
+				);
+
+				// Then the export arrives whole, marked so a browser keeps to its declared type
+				assert.equal(response.status, 200);
+				assert.equal(response.text.split('\n').filter(Boolean).length, DOCUMENTS.length + 1);
+				assert.equal(response.headers['x-content-type-options'], 'nosniff');
+			});
+		}
 	});
 
 	suite("applying the router's filter to downloads", () => {
@@ -1282,6 +1424,38 @@ suite('download', () => {
 				assertRefusedWhereTheStockDownloadSucceeds(() => postForm(arranger.server, form)));
 		}
 
+		for (const { body, headers, name, rule, status } of UNREADABLE_BODIES) {
+			test(`answers ${status} with fixed text naming the rule for ${name}`, () =>
+				runRecordingProcessErrors(async () => {
+					// Given a router where the stock download succeeds
+					const control = await postDownload(arranger.server, paramsWithFile());
+					assert.equal(control.status, 200, 'the stock download should succeed');
+					const requestsBefore = arranger.engine.requests.length;
+					const consoleCapture = captureConsole();
+
+					try {
+						// When the body is sent
+						const response = await postRawBody(arranger.server, { body, headers });
+
+						// Then it is answered with that rule in plain text before any engine request, logged as the
+						// request's own mistake, and the server answers later requests
+						assertPlainTextError(response, status, [CLIENT_TEXT.toUpperCase()]);
+						assert.equal(response.text, rule);
+						assert.equal(
+							arranger.engine.requests.length,
+							requestsBefore,
+							'no engine request should be made',
+						);
+						assert.deepEqual(consoleCapture.eventsAt('warn'), ['download.invalid_request']);
+						assert.deepEqual(consoleCapture.eventsAt('error'), []);
+					} finally {
+						consoleCapture.restore();
+					}
+
+					assert.equal((await request(arranger.server).get('/alive')).status, 200);
+				}));
+		}
+
 		test('answers the same text for an invalid chunkSize, whatever the value', async () => {
 			// Given three different invalid chunkSize values
 			// When each is downloaded
@@ -1743,6 +1917,92 @@ suite('download', () => {
 			});
 		});
 
+		test('answers 500 with fixed text when the first row cannot be formatted as JSON', async () => {
+			// Given DO_01 returned with no source, so the first page cannot be formatted as JSON
+			await withArranger({ documents: documentsWithoutSourceFor('DO_01') }, async (arranger) => {
+				await runRecordingProcessErrors(async () => {
+					const consoleCapture = captureConsole();
+
+					try {
+						// When it is exported as JSON
+						const params = paramsWithFile({ fileName: 'donors.json', fileType: 'json' });
+						const result = await settle(postDownload(arranger.server, params));
+
+						// Then nothing has reached the client yet, so it is a server fault: 500 in fixed plain text, logged
+						assert.equal(result.outcome, 'response', `expected an answer, got ${result.outcome}`);
+						assertPlainTextError(result.response, 500, ['undefined', 'Donor ID']);
+						assert.deepEqual(consoleCapture.eventsAt('error'), ['download.failed']);
+					} finally {
+						consoleCapture.restore();
+					}
+
+					await assertAnswersLaterRequests(arranger);
+				});
+			});
+		});
+
+		for (const [description, options, fileOverrides, detail] of [
+			[
+				'the engine rejects a later search',
+				{ failOnRequest: 3, failureMessage: 'index [donor_internal_7] is closed' },
+				{},
+				'donor_internal_7',
+			],
+			[
+				'a value on a later page cannot be formatted',
+				{
+					documents: DOCUMENTS.map((document) =>
+						document._id === 'DO_05'
+							? { ...document, _source: { ...document._source, diagnosis_date: '99999999999999999999' } }
+							: document,
+					),
+				},
+				{ columns: [...STOCK_COLUMNS, dateColumn()] },
+				'Invalid time value',
+			],
+			[
+				'a row on a later page cannot be formatted as JSON',
+				{ documents: documentsWithoutSourceFor('DO_05') },
+				{ fileName: 'donors.json', fileType: 'json' },
+				'download.stream_failed',
+			],
+		]) {
+			test(`ends the response short of complete, logging download.stream_failed once with its detail, when ${description} after output has started`, async () => {
+				// Given an export that fails as named on its third page of two, with the engine holding that page
+				await withArranger({ holdFromRequest: 3, ...options }, async (arranger) => {
+					await runRecordingProcessErrors(async () => {
+						const consoleCapture = captureConsole();
+
+						try {
+							// When it is downloaded, and the engine is released once the response has begun
+							const transfer = await postReleasingOnceAnswered({
+								engine: arranger.engine,
+								params: paramsWithFile({ chunkSize: 2, ...fileOverrides }),
+								server: arranger.server,
+							});
+							await waitForEngineToSettle(arranger.engine.requests);
+
+							// Then the response began, ended short of complete, requested no page after the third, and
+							// the server log holds the one failure event, with the detail, and no disconnect
+							assert.equal(transfer.status, 200);
+							assert.equal(transfer.complete, false, 'the transfer should end short of complete');
+							assert.ok(!transfer.received.includes(detail), 'the detail should reach only the log');
+							assert.equal(arranger.engine.requests.length, 3);
+							assert.deepEqual(consoleCapture.eventsAt('error'), ['download.stream_failed']);
+							assert.ok(!consoleCapture.eventsAt('info').includes('download.client_disconnected'));
+							const logged = consoleCapture.loggedText();
+							assert.ok(logged.includes(detail), `the log should carry ${JSON.stringify(detail)}`);
+						} finally {
+							consoleCapture.restore();
+						}
+
+						// And the server answers later requests
+						await assertAnswersLaterRequests(arranger);
+					});
+				});
+			});
+		}
+
 		// Properties the contract sets no rule for. Whatever the answer, the server answers later requests.
 		for (const [description, fileOverrides] of [
 			['a column whose jsonPath is a number', { columns: [{ ...STOCK_COLUMNS[0], jsonPath: 5 }] }],
@@ -1819,6 +2079,97 @@ suite('download', () => {
 				},
 			);
 		});
+
+		test('logs a client disconnecting mid-stream as download.client_disconnected at info, with no request content and nothing at error', async () => {
+			// Given twenty documents exported one per page, with the engine holding every search after the first,
+			// and params carrying client text
+			await withArranger({ documents: generatedDocuments(20), holdFromRequest: 2 }, async (arranger) => {
+				await runRecordingProcessErrors(async () => {
+					const consoleCapture = captureConsole();
+
+					try {
+						// When the client disconnects once the first row has arrived, and the engine is released and
+						// answers once the server has had time to see the connection close
+						const params = paramsWithFile({
+							chunkSize: 1,
+							fileName: `${CLIENT_TEXT}.tsv`,
+							valueWhenEmpty: CLIENT_TEXT,
+						});
+						const firstRows = await disconnectAfterFirstRow(arranger.server, params);
+						await pause(100);
+						arranger.engine.release();
+						await waitForEngineToSettle(arranger.engine.requests);
+
+						// Then the disconnect is logged once at info, nothing at error, and no log carries the client's text
+						assert.equal(firstRows.status, 200);
+						assert.deepEqual(
+							consoleCapture.eventsAt('info').filter((event) => event === 'download.client_disconnected'),
+							['download.client_disconnected'],
+						);
+						assert.deepEqual(consoleCapture.eventsAt('error'), []);
+						assert.ok(
+							!consoleCapture.loggedText().includes(CLIENT_TEXT),
+							'no log should carry request content',
+						);
+					} finally {
+						consoleCapture.restore();
+					}
+				});
+			});
+		});
+
+		for (const [description, engineOptions, disconnect] of [
+			[
+				'before the first row',
+				{ failOnRequest: 1, holdFromRequest: 1 },
+				({ engine, server }, params) => disconnectOnceSearching({ params, requests: engine.requests, server }),
+			],
+			[
+				'mid-stream',
+				{ failOnRequest: 2, holdFromRequest: 2 },
+				({ server }, params) => disconnectAfterFirstRow(server, params),
+			],
+		]) {
+			test(`logs the search in flight failing after the client disconnected ${description} as download.stream_failed, once, with its detail`, async () => {
+				// Given twenty documents exported one per page, with the engine holding a search and then failing it
+				await withArranger(
+					{
+						documents: generatedDocuments(20),
+						failureMessage: 'index [donor_internal_7] is closed',
+						...engineOptions,
+					},
+					async (arranger) => {
+						await runRecordingProcessErrors(async () => {
+							const consoleCapture = captureConsole();
+
+							try {
+								// When the client disconnects as named, and the engine is released once the server has
+								// had time to see the connection close
+								await disconnect(arranger, paramsWithFile({ chunkSize: 1 }));
+								await pause(100);
+								arranger.engine.release();
+								await waitForEngineToSettle(arranger.engine.requests);
+								await pause(50);
+
+								// Then the engine's failure is logged once at error, with its detail
+								assert.deepEqual(
+									consoleCapture
+										.eventsAt('error')
+										.filter((event) => event === 'download.stream_failed'),
+									['download.stream_failed'],
+								);
+								assert.ok(
+									consoleCapture.loggedText().includes('donor_internal_7'),
+									'the log should carry the engine failure',
+								);
+							} finally {
+								consoleCapture.restore();
+							}
+						});
+					},
+				);
+			});
+		}
 	});
 
 	suite('dataStream for an integration route', () => {
@@ -2053,6 +2404,30 @@ suite('download', () => {
 
 					// Then the output errors, without an uncaught exception
 					assert.equal(result.outcome, 'errored');
+				});
+			});
+		});
+
+		test('emits an error from its output, after only JSON object lines, when a row on a later page cannot be formatted as JSON', async () => {
+			await withArranger({ documents: documentsWithoutSourceFor('DO_05') }, async (arranger) => {
+				await runRecordingProcessErrors(async () => {
+					// Given DO_05 returned with no source
+					const ctx = await arranger.captureContext();
+
+					// When dataStream exports JSON in pages of two
+					const params = paramsWithFile({ chunkSize: 2, fileType: 'json' });
+					const { output } = await dataStream({ ctx, params });
+					const result = await settleOutput(output);
+
+					// Then the output errors, and every line it delivered first is a JSON object
+					assert.equal(result.outcome, 'errored');
+					result.chunks
+						.join('')
+						.split('\n')
+						.filter(Boolean)
+						.forEach((line) => {
+							assert.equal(typeof JSON.parse(line), 'object', `not a JSON object: ${line}`);
+						});
 				});
 			});
 		});

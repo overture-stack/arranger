@@ -181,7 +181,8 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  * search page, under the filter resolved from the context's access-control record and the caller's own
  * callback. `total` is capped at the row limit, `matchingTotal` is how many documents the filter matches,
  * and `truncated` says whether the limit cut the export short. Every refusal rejects the call before any
- * search, and a failed search or shard errors the stream. Where the resolved filter restricts any record, a
+ * search, and a failed search or shard errors the stream, or is logged as `download.stream_failed` when it
+ * fails after the stream was destroyed. Where the resolved filter restricts any record, a
  * shard refusing a search fails it, and the engine's refusal of a query past its clause limit errors the
  * stream with an `AccessControlQueryTooLargeError`; where it restricts none, that refusal errors it with an
  * `InvalidExportRequestError` stating the rule the caller's filter broke.
@@ -258,19 +259,31 @@ export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, 
 		.map(({ fieldName, order }) => ({ [applyNestingPrefix(fieldName, nestingPrefix)]: order }))
 		.concat({ _id: 'asc' });
 
-	return Readable.from(
+	const searchPage = pageSearcher({
+		catalogue: configs.label ?? configs.name,
+		esClient,
+		index: configs.index,
+		query,
+		serverSideFilterApplies: !isIncludeEverythingFilter(serverSideFilter),
+		sort: esSort,
+	});
+
+	// A page failing once the consumer has destroyed the stream reaches no reader, so it is logged here.
+	const chunks = Readable.from(
 		exportChunks({
 			chunkSize: pageSize,
 			nestingPrefix,
 			rowLimit: rowLimitFor({ downloads: configs.config[configRootProperties.DOWNLOADS], maxRows }),
-			searchPage: pageSearcher({
-				catalogue: configs.label ?? configs.name,
-				esClient,
-				index: configs.index,
-				query,
-				serverSideFilterApplies: !isIncludeEverythingFilter(serverSideFilter),
-				sort: esSort,
-			}),
+			searchPage: (pageArguments) =>
+				searchPage(pageArguments).catch((error) => {
+					if (chunks.destroyed) {
+						console.error('download.stream_failed', error);
+					}
+
+					throw error;
+				}),
 		}),
 	);
+
+	return chunks;
 };

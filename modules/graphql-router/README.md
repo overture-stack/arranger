@@ -338,7 +338,7 @@ Answer each as plain text, and log the error itself on the server. Only an `Inva
 
 ### Joining the output to the response
 
-Join `output` to the response with `stream.pipeline`, which aborts the response when the export fails partway and stops the export when the client disconnects. `output` emits `'error'` on any failure after the call resolves.
+Join `output` to the response with `stream.pipeline`, which aborts the response when the export fails partway and stops the export when the client disconnects. `output` emits `'error'` on any failure after the call resolves: an export ends with its error when a row cannot be formatted, in JSON as in TSV. A client leaving ends the pipeline with an `ERR_STREAM_PREMATURE_CLOSE` error, which is no fault of the server's. A search failing after the client has left reaches no reader, so `getAllData` logs it as `download.stream_failed`.
 
 The package declares `res.locals.arranger` on Express's `Locals`, so a TypeScript version of this example needs no declarations of its own. An export route still passing the deprecated `ctx: req.context` keeps working where no access control is configured; with access control, the callback then sees no key recorded at the root of `res.locals` and treats the export as a request carrying no identity, by its own rule; pass `res.locals`.
 
@@ -369,9 +369,11 @@ app.post('/export', express.json(), async (req, res) => {
 	try {
 		const { contentType, output, responseFileName } = await dataStream({ ctx: res.locals, params: req.body });
 
-		res.attachment(responseFileName).set('Content-Type', contentType);
+		res.attachment(responseFileName).set('Content-Type', contentType).set('X-Content-Type-Options', 'nosniff');
 		pipeline(output, res, (error) => {
-			if (error) {
+			if (error?.code === 'ERR_STREAM_PREMATURE_CLOSE') {
+				console.info('export.client_disconnected');
+			} else if (error) {
 				console.error('export.stream_failed', error);
 			}
 		});
@@ -386,7 +388,7 @@ app.post('/export', express.json(), async (req, res) => {
 });
 ```
 
-The router's own `/download` goes further: it holds its response headers until the first row is formatted, so a failure on the first search, or on formatting the first row, still answers with an error status.
+The router's own `/download` goes further: it holds its response headers until the first row is formatted, so a failure on the first search, or on formatting the first row, still answers with an error status. A body its form parser refuses is answered with its rule's fixed text, as plain text, with the parser's own `4xx` status, and logged as `download.invalid_request`. A successful download carries `X-Content-Type-Options: nosniff`. A client leaving before the export ends is logged at info as `download.client_disconnected`, and any other failure after output has started as `download.stream_failed`.
 
 ---
 

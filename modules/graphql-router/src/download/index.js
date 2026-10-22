@@ -16,6 +16,17 @@ export { InvalidExportRequestError };
 
 const SERVER_FAULT_TEXT = 'The download failed because of a problem on the server, not in the request.';
 
+// The form parser refuses a body with a 4xx status and a type naming the rule it broke.
+const BODY_RULES = new Map([
+	['charset.unsupported', 'The request body must be encoded as UTF-8.'],
+	['encoding.unsupported', 'The request body must be sent uncompressed, or compressed with gzip or deflate.'],
+	['entity.too.large', 'The request body is larger than the download route accepts.'],
+	['parameters.too.many', 'The request body holds more form fields than the download route accepts.'],
+	['querystring.parse.rangeError', 'The request body nests its form fields deeper than the download route accepts.'],
+]);
+
+const UNREADABLE_BODY_TEXT = 'The request body must be a URL-encoded form holding params as one field of JSON.';
+
 const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isAbsentOr = (isValid) => (value) => value === undefined || isValid(value);
@@ -185,10 +196,24 @@ const failureResponseFor = (error) => {
 		: { event: 'download.failed', log: console.error, status: 500, text: SERVER_FAULT_TEXT };
 };
 
-const sendFailure = ({ error, res }) => {
-	const { event, log, reason, status, text } = failureResponseFor(error);
+const isClientErrorStatus = (status) => Number.isInteger(status) && status >= 400 && status < 500;
 
-	log(event, error, ...(reason ? [{ reason }] : []));
+const unreadableBodyResponseFor = (error) =>
+	isClientErrorStatus(error?.status)
+		? {
+				event: 'download.invalid_request',
+				log: console.warn,
+				status: error.status,
+				text: BODY_RULES.get(error.type) ?? UNREADABLE_BODY_TEXT,
+			}
+		: failureResponseFor(error);
+
+const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
+	const { event, log, reason, status, text } = failure;
+
+	if (log) {
+		log(event, error, ...(reason ? [{ reason }] : []));
+	}
 
 	if (reason === 'access_control') {
 		// Also the event GraphQL and network search log for the same failure, so one alert covers every
@@ -218,8 +243,12 @@ const markCutExport = ({ res, totals }) => {
 	}
 };
 
-const logStreamFailure = (error) => {
-	if (error) {
+// A response closed before its end is the client leaving, which is no fault of the server's. A search
+// failing after that is logged by the export itself, since nothing reads it here.
+const logStreamEnd = (error) => {
+	if (error?.code === 'ERR_STREAM_PREMATURE_CLOSE') {
+		console.info('download.client_disconnected');
+	} else if (error) {
 		console.error('download.stream_failed', error);
 	}
 };
@@ -242,7 +271,7 @@ const pipeFromFirstChunk = ({ output, res, setHeaders }) =>
 		const startResponse = () => {
 			stopWaiting();
 			setHeaders();
-			pipeline(output, res, logStreamFailure);
+			pipeline(output, res, logStreamEnd);
 			resolve();
 		};
 		const stopExport = () => {
@@ -260,7 +289,7 @@ const pipeFromFirstChunk = ({ output, res, setHeaders }) =>
  * The router's `/download` routes: `POST /` exports one file of the catalogue under the filter the
  * router recorded on the request context. Headers wait until the first chunk is formatted, so a
  * failure before any output answers with an error status and fixed text, the detail going to the
- * server log only.
+ * server log only. A body the form parser refuses is answered the same way, with the rule it broke.
  *
  * @param {object} [args]
  * @param {boolean} [args.enableAdmin] also serves `GET /fields`, the fields flattened from the mapping.
@@ -281,7 +310,9 @@ const download = ({ enableAdmin = false } = {}) => {
 				output,
 				res,
 				setHeaders: () => {
-					res.attachment(responseFileName).set('Content-Type', contentType);
+					res.attachment(responseFileName)
+						.set('Content-Type', contentType)
+						.set('X-Content-Type-Options', 'nosniff');
 					markCutExport({ res, totals: exportTotals() });
 				},
 			});
@@ -299,6 +330,11 @@ const download = ({ enableAdmin = false } = {}) => {
 			res.json(fieldsFromMapping);
 		});
 	}
+
+	// Reached by a body the form parser refused, since the routes answer their own failures. Express
+	// recognizes an error handler by its four parameters, so the unused `_next` stays.
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	router.use((error, _req, res, _next) => sendFailure({ error, failure: unreadableBodyResponseFor(error), res }));
 
 	return router;
 };

@@ -263,20 +263,16 @@ const rowToJSON = ({ row, data = row, paths, pathIndex = 0, columns, valueWhenEm
 		}, {});
 };
 
-const transformDataToJSON = ({ enableDebug, row, uniqueBy, columns, valueWhenEmpty }) => {
-	try {
-		const jsonRow = rowToJSON({
+// A row that cannot be formatted fails its chunk, as in TSV, so the export ends with the error.
+const transformDataToJSON = ({ columns, row, uniqueBy, valueWhenEmpty }) =>
+	JSON.stringify(
+		rowToJSON({
 			columns,
-			valueWhenEmpty,
 			paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
 			row,
-		});
-
-		return JSON.stringify(jsonRow);
-	} catch (err) {
-		enableDebug && console.debug('  DEBUG: unhandled JSON in dataToExportFormat/transformDataToJSON', err, row);
-	}
-};
+			valueWhenEmpty,
+		}),
+	);
 
 /**
  * This should ideally stream data as a JSON list using JSONStream

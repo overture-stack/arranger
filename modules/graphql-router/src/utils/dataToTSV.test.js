@@ -347,6 +347,20 @@ suite('dataToExportFormat output shape', () => {
 			formatter.end();
 		});
 
+	/** Writes `chunks` through the formatter and resolves with `{ error, output }` once it ends or errors. */
+	const settleFormatting = ({ chunks, ...formatterArgs }) =>
+		new Promise((resolve) => {
+			const formatter = dataToTSVStream(formatterArgs);
+			const output = [];
+
+			formatter.on('data', (chunk) => output.push(chunk));
+			formatter.on('end', () => resolve({ output }));
+			formatter.once('error', (error) => resolve({ error, output }));
+
+			chunks.forEach((chunk) => formatter.write(chunk));
+			formatter.end();
+		});
+
 	test('yields the TSV header row as its own chunk, then one chunk per hit, each ending in a newline', async () => {
 		// Given two pages of hits, as the paging export delivers them
 		const chunks = [
@@ -460,5 +474,20 @@ suite('dataToExportFormat output shape', () => {
 			'{"donor_id":"DO_01","study":"A"}\n',
 			'{"donor_id":"DO_02","study":"B"}\n',
 		]);
+	});
+
+	test("errors on a JSON chunk holding a row it cannot format, yielding none of that chunk's lines", async () => {
+		// Given a chunk that formats, then a chunk whose second hit holds no source
+		const chunks = [
+			{ hits: [{ donor_id: 'DO_01', study: 'A' }], total: 3 },
+			{ hits: [{ donor_id: 'DO_02', study: 'B' }, undefined], total: 3 },
+		];
+
+		// When they are formatted as JSON
+		const { error, output } = await settleFormatting({ chunks, columns: DONOR_COLUMNS, fileType: 'json' });
+
+		// Then the formatter errors after the first chunk's lines, and the second chunk yields nothing
+		assert.ok(error instanceof Error, 'the formatter should error');
+		assert.deepEqual(output, ['{"donor_id":"Donor ID","study":"Study"}\n', '{"donor_id":"DO_01","study":"A"}\n']);
 	});
 });
