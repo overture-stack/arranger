@@ -402,6 +402,14 @@ Exactly one operation exists end to end: `saveSet`. `listSets`, `deleteSet`, and
 
 [Detail: confirmed backend inventory, the four separable tracks, virtual cohorts](docs/atlas/roadmap/sets-feature.md)
 
+### Saved sets of any size usable as filters
+
+_Priority: medium. Every deployment; the iMicroSeq ticket is #322, under its Post-MVP epic._
+
+A saved set is used as a filter by looking up its id list inside one query, and the search engine accepts at most `index.max_terms_count` ids per lookup (65,536 by default on Elasticsearch and OpenSearch), so a larger set saves but cannot be used as a filter. The plan stores a set's ids in chunks of at most a configurable size, and a set filter combines one lookup per chunk, so it stays one query.
+
+[Detail: the chunked set document, the startup check, and what reads the chunks](docs/atlas/roadmap/sets-feature.md#saved-sets-of-any-size-usable-as-filters)
+
 ### Admin UI replacement
 
 _Priority: low. Deprecated app, replacement needed eventually._

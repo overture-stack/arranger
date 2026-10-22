@@ -38,3 +38,17 @@ A set records the values of one field, its `path`, from the documents returned b
 | Several network nodes | The originating node, which holds the user's identity and records what the set was drawn from | Expanded into its values before the query is forwarded, since a remote node cannot resolve a set it does not hold. The cost is query size, bounded by the engine's terms limit, and a large set can reach it |
 
 **Two constraints hold whichever way it lands.** Who may use a set follows what it was drawn from: a set must record the resources it came from, and a reader must hold every one of them, which is Usher's provenance ceiling on derived artifacts, wherever the set is stored. And values, not references, cross a trust boundary, the same rule Usher's bridge follows when it writes a set into an access filter as one value list.
+
+## Saved sets of any size usable as filters
+
+A saved set is used as a filter through a terms lookup: the compiled query names the set's document in the sets index, and the search engine fetches its `ids` list while it runs the query. The engine applies the data index's `index.max_terms_count` to the list it fetched, 65,536 by default on Elasticsearch and OpenSearch, and refuses the query past it with a `400`, a lookup the same as ids listed inline. `saveSet` stores every matching id, so a set larger than the limit saves, but no `set_id:` filter over it can run.
+
+The plan:
+
+- **Chunked ids:** a set's document holds its ids as several lists of at most N ids each, N being 65,536 by default and configurable.
+- **One query:** a `set_id:` filter compiles to one lookup per chunk, combined, so it stays one query, and sorting, paging and counts are unchanged.
+- **A startup check:** a chunk size above a data index's own `index.max_terms_count` refuses startup, naming the index.
+- **What reads the chunks:** the saved-set read check (iMicroSeq #319), which already batches in chunks, reads the same chunks; Singularity's set bundles, which do their own lookup, could read them too.
+
+Measured on 5 million records, on both engines, with one shard: checking a 65,000-id set by lookup took about 100 to 140 ms warm, 10 checks at once cost 1.0 to 1.8 times one, and a 65,537-id set was refused on both engines, by lookup and inline alike.
+
