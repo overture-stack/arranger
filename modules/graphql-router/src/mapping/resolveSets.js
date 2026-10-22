@@ -75,6 +75,7 @@ export const saveSet =
 
 		const query = buildQuery({
 			caller: 'resolveSets',
+			legacyDateFieldNames: catalogueType.legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
 			filters: compileFilter({

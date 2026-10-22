@@ -47,13 +47,41 @@ export function wrapBool(op, value) {
 	};
 }
 
-export function toEsRangeValue(value) {
-	if (typeof value === 'string' && value.length >= 10) {
-		const dateValue = parseISO(value);
+/**
+ * Whether `value` is a date alone: a string of `YYYY-MM-DD` naming a real calendar date, with no time.
+ *
+ * @param {unknown} value a value from a filter.
+ * @returns {boolean} true for a date alone, and false for anything else, a date-time or a number included.
+ */
+export function isDateAlone(value) {
+	if (typeof value === 'string') {
+		const date = parseISO(value);
 
-		return isValid(dateValue) && format(dateValue, CONSTANTS.DATE_FORMAT) === value
-			? format(dateValue, CONSTANTS.ES_DATE_FORMAT)
-			: value;
+		return isValid(date) && format(date, CONSTANTS.DATE_FORMAT) === value;
+	}
+
+	return false;
+}
+
+// Both written in `ES_DATE_FORMAT`, to its full precision.
+const firstInstantOf = (dateAlone) => `${dateAlone} 00:00:00.000000`;
+const lastInstantOf = (dateAlone) => `${dateAlone} 23:59:59.999999`;
+
+/**
+ * A range bound as the search engine receives it. A date alone on a field whose format holds the legacy
+ * pattern becomes the instant giving it the reading the engine gives a date alone by itself, its whole
+ * day: the day's first instant for `gte` and `lt`, and its last for `gt` and `lte`. Every other value is
+ * kept as written.
+ *
+ * @param {object} args
+ * @param {boolean} args.isLegacyDateField whether the field's mapping format holds `ES_DATE_FORMAT`.
+ * @param {string} args.op the bound's operator: `gt`, `gte`, `lt` or `lte`.
+ * @param {unknown} args.value the bound, as the filter holds it.
+ * @returns {unknown}
+ */
+export function toEsRangeValue({ isLegacyDateField, op, value }) {
+	if (isLegacyDateField && isDateAlone(value)) {
+		return [CONSTANTS.GT_OP, CONSTANTS.LTE_OP].includes(op) ? lastInstantOf(value) : firstInstantOf(value);
 	}
 
 	return value;

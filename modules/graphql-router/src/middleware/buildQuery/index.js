@@ -27,6 +27,7 @@ import {
 	SOME_NOT_IN_OP,
 } from '#middleware/constants.js';
 import {
+	isDateAlone,
 	isNested,
 	mergePath,
 	readPath,
@@ -69,15 +70,44 @@ function getRegexFilter({ nestedFieldNames, filter }) {
 	return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
-function getTermFilter({ nestedFieldNames, filter }) {
+const termsOn = (fieldName, values) => ({ terms: { [fieldName]: values, boost: 0 } });
+
+/** A date alone's whole day, as the range from its first instant to its last. */
+const wholeDayOn = (fieldName, dateAlone) => ({
+	range: {
+		[fieldName]: {
+			boost: 0,
+			[GTE_OP]: toEsRangeValue({ isLegacyDateField: true, op: GTE_OP, value: dateAlone }),
+			[LTE_OP]: toEsRangeValue({ isLegacyDateField: true, op: LTE_OP, value: dateAlone }),
+		},
+	},
+});
+
+// Several parts are an `or` held in a `must`, so that a pivot merging this clause's nested query with its
+// siblings' adds to that `must` and leaves the `or` required.
+const wholeDaysOrTerms = ({ datesAlone, fieldName, values }) => {
+	const otherValues = _.difference(values, datesAlone);
+	const parts = [
+		...(otherValues.length > 0 ? [termsOn(fieldName, otherValues)] : []),
+		...datesAlone.map((dateAlone) => wholeDayOn(fieldName, dateAlone)),
+	];
+
+	return parts.length > 1 ? wrapMust(wrapShould(parts)) : parts[0];
+};
+
+// On a legacy-pattern date field, each date alone matches its whole day, and every other value stays a term.
+function getTermFilter({ filter, legacyDateFieldNames, nestedFieldNames }) {
 	const {
 		op,
 		content: { value, fieldName },
 	} = filter;
+	const values = value.map((item) => item || '');
+	const datesAlone = legacyDateFieldNames.includes(fieldName) ? values.filter(isDateAlone) : [];
 	const esFilter = wrapFilter({
 		filter,
 		nestedFieldNames,
-		esFilter: { terms: { [fieldName]: value.map((item) => item || ''), boost: 0 } },
+		esFilter:
+			datesAlone.length > 0 ? wholeDaysOrTerms({ datesAlone, fieldName, values }) : termsOn(fieldName, values),
 		isNot: NOT_IN_OP === op,
 	});
 
@@ -148,14 +178,17 @@ const canBoundRange = (bound) =>
 
 // Every bound in a list applies: a list of numbers reduces to its strictest, and any other list is
 // applied bound by bound. An entry that cannot bound a range is left out beside one that can.
-function getRangeFilter({ nestedFieldNames, filter }) {
+function getRangeFilter({ filter, legacyDateFieldNames, nestedFieldNames }) {
 	const {
 		op,
 		content: { fieldName, value },
 	} = filter;
 	const usableBounds = value.filter(canBoundRange);
 	const bounds = usableBounds.length > 0 ? usableBounds : value;
-	const rangeFrom = (bound) => ({ range: { [fieldName]: { boost: 0, [op]: toEsRangeValue(bound) } } });
+	const isLegacyDateField = legacyDateFieldNames.includes(fieldName);
+	const rangeFrom = (bound) => ({
+		range: { [fieldName]: { boost: 0, [op]: toEsRangeValue({ isLegacyDateField, op, value: bound }) } },
+	});
 	const reducesToOneBound = bounds.length === 1 || bounds.every((bound) => typeof bound === 'number');
 
 	return wrapFilter({
@@ -198,9 +231,9 @@ const wrappers = {
 	[OR_OP]: wrapShould,
 	[NOT_OP]: wrapMustNot,
 };
-function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot }, setsIndex }) {
+function getGroupFilter({ filter: { content, op, pivot }, legacyDateFieldNames, nestedFieldNames, setsIndex }) {
 	const applyBooleanWrapper = wrappers[op];
-	const esFilters = content.map((filter) => opSwitch({ nestedFieldNames, filter, setsIndex }));
+	const esFilters = content.map((filter) => opSwitch({ filter, legacyDateFieldNames, nestedFieldNames, setsIndex }));
 	// A pivot holds the conditions on its path to one nested item, whichever child comes first.
 	if (esFilters.some((esFilter) => isNested(esFilter) && esFilter.nested.path === pivot)) {
 		const flattned = esFilters.reduce(
@@ -238,10 +271,11 @@ function getSetFilter({ nestedFieldNames, filter, filter: { content, op }, setsI
 	return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
-const getBetweenFilter = ({ nestedFieldNames, filter }) => {
+const getBetweenFilter = ({ filter, legacyDateFieldNames, nestedFieldNames }) => {
 	const {
 		content: { fieldName, value },
 	} = filter;
+	const isLegacyDateField = legacyDateFieldNames.includes(fieldName);
 	return wrapFilter({
 		filter,
 		nestedFieldNames,
@@ -249,15 +283,26 @@ const getBetweenFilter = ({ nestedFieldNames, filter }) => {
 			range: {
 				[fieldName]: {
 					boost: 0,
-					[GTE_OP]: _.min(value),
-					[LTE_OP]: _.max(value),
+					[GTE_OP]: toEsRangeValue({ isLegacyDateField, op: GTE_OP, value: _.min(value) }),
+					[LTE_OP]: toEsRangeValue({ isLegacyDateField, op: LTE_OP, value: _.max(value) }),
 				},
 			},
 		},
 	});
 };
 
-export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
+/**
+ * Compiles one normalized SQON node, and everything under it, into an Elasticsearch query.
+ *
+ * @param {object} args
+ * @param {object} args.filter the normalized SQON node, with field names as the engine holds them.
+ * @param {string[]} [args.legacyDateFieldNames] date fields whose mapping format holds `ES_DATE_FORMAT`,
+ *   named as the engine holds them, where a date alone is rewritten to cover its whole day.
+ * @param {string[]} args.nestedFieldNames paths mapped as `nested`, named as the engine holds them.
+ * @param {string} [args.setsIndex] the catalogue's own sets index, where a `set_id:` value is looked up.
+ * @returns {object}
+ */
+export const opSwitch = ({ filter, legacyDateFieldNames = [], nestedFieldNames, setsIndex }) => {
 	const {
 		op,
 		pivot,
@@ -271,7 +316,7 @@ export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
 	}
 
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
-		return getGroupFilter({ nestedFieldNames, filter, setsIndex });
+		return getGroupFilter({ filter, legacyDateFieldNames, nestedFieldNames, setsIndex });
 	} else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
 		if (`${value[0]}`.includes(REGEX)) {
 			return getRegexFilter({ nestedFieldNames, filter });
@@ -280,12 +325,10 @@ export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
 		} else if (`${value[0]}`.includes(MISSING)) {
 			return getMissingFilter({ nestedFieldNames, filter });
 		} else {
-			return getTermFilter({ nestedFieldNames, filter });
+			return getTermFilter({ filter, legacyDateFieldNames, nestedFieldNames });
 		}
 	} else if ([ALL_OP].includes(op)) {
 		return getGroupFilter({
-			nestedFieldNames,
-			setsIndex,
 			filter: {
 				op: AND_OP,
 				pivot: pivot || '.',
@@ -297,11 +340,14 @@ export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
 					},
 				})),
 			},
+			legacyDateFieldNames,
+			nestedFieldNames,
+			setsIndex,
 		});
 	} else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
-		return getRangeFilter({ nestedFieldNames, filter });
+		return getRangeFilter({ filter, legacyDateFieldNames, nestedFieldNames });
 	} else if ([BETWEEN_OP].includes(op)) {
-		return getBetweenFilter({ nestedFieldNames, filter });
+		return getBetweenFilter({ filter, legacyDateFieldNames, nestedFieldNames });
 	} else if (WILDCARD_OP === op || FILTER_OP === op) {
 		return getWildcardFilter({ nestedFieldNames, filter });
 	} else {
@@ -314,8 +360,14 @@ export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
 /**
  * Compiles a SQON into an Elasticsearch query body.
  *
+ * Both field lists are passed as the catalogue's mapping names them, before any `nestingPrefix`, which
+ * this function applies to them as it does to the filter's field names.
+ *
  * @param {object} args
  * @param {string} [args.caller] Label used in diagnostics only.
+ * @param {string[]} [args.legacyDateFieldNames] Date fields whose mapping format holds `ES_DATE_FORMAT`,
+ *   where a date alone is rewritten to cover its whole day. A date alone on any other field reaches the
+ *   engine as written, which reads it as its whole day by itself.
  * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`, so their clauses are wrapped.
  * @param {string} [args.nestingPrefix] Prefix applied to field names before compilation.
  * @param {string} [args.setsIndex] The catalogue's own sets index, where a `set_id:` value is looked up.
@@ -324,12 +376,21 @@ export const opSwitch = ({ nestedFieldNames, filter, setsIndex }) => {
  *   `compileFilter` is what enforces that, and it throws rather than returning a nullish filter.
  * @returns {object} An Elasticsearch query body.
  */
-export default function ({ caller = 'unknown', nestedFieldNames = [], nestingPrefix, filters: rawFilters, setsIndex }) {
+export default function ({
+	caller = 'unknown',
+	filters: rawFilters,
+	legacyDateFieldNames = [],
+	nestedFieldNames = [],
+	nestingPrefix,
+	setsIndex,
+}) {
 	if (Object.keys(rawFilters || {}).length === 0) return {};
 
 	return opSwitch({
-		nestedFieldNames: applyNestingPrefixToFieldNames(nestedFieldNames, nestingPrefix) ?? nestedFieldNames,
 		filter: normalizeFilters(applyNestingPrefixToSqon(rawFilters, nestingPrefix)),
+		legacyDateFieldNames:
+			applyNestingPrefixToFieldNames(legacyDateFieldNames, nestingPrefix) ?? legacyDateFieldNames,
+		nestedFieldNames: applyNestingPrefixToFieldNames(nestedFieldNames, nestingPrefix) ?? nestedFieldNames,
 		setsIndex,
 	});
 }

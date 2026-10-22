@@ -124,11 +124,13 @@ function wrapWithFilters({
  * path (`esFieldName`) and `nestedFieldNames`/`sqon` used to build the query DSL; every response
  * key (bucket names, `:missing`/`:nested_filtered` suffixes) stays built from the clean `fieldName`
  * so `flattenAggregations` and the GraphQL layer above it need no awareness of the prefix at all.
+ * `legacyDateFieldNames` and `nestedFieldNames` are passed unprefixed, as they are to `buildQuery`.
  */
 const buildAggregations = ({
 	aggregationsFilterThemselves,
 	disableClientFilters = false,
 	graphqlFields,
+	legacyDateFieldNames: rawLegacyDateFieldNames = [],
 	nestedFieldNames: rawNestedFieldNames,
 	nestingPrefix,
 	query,
@@ -137,6 +139,8 @@ const buildAggregations = ({
 	setsIndex,
 	sqon,
 }) => {
+	const legacyDateFieldNames =
+		applyNestingPrefixToFieldNames(rawLegacyDateFieldNames, nestingPrefix) ?? rawLegacyDateFieldNames;
 	const nestedFieldNames =
 		applyNestingPrefixToFieldNames(rawNestedFieldNames, nestingPrefix) ?? rawNestedFieldNames ?? [];
 	// Where client filters are disabled, no facet reads the client's filter, as the query does not.
@@ -164,7 +168,7 @@ const buildAggregations = ({
 			? nestedFieldNames.filter((path) => path.startsWith(`${innermostPath}.`))
 			: [];
 		const termFilters = contentsFiltered.map((filter) =>
-			opSwitch({ nestedFieldNames: pathsBelowFacet, filter, setsIndex }),
+			opSwitch({ filter, legacyDateFieldNames, nestedFieldNames: pathsBelowFacet, setsIndex }),
 		);
 
 		const fieldAggregation = createFieldAggregation({
@@ -173,6 +177,7 @@ const buildAggregations = ({
 			fieldName,
 			graphqlField,
 			isNested: nestedPaths.length,
+			legacyDateFieldNames,
 			setsIndex,
 			termFilters,
 		});
@@ -205,6 +210,7 @@ const buildAggregations = ({
 	const filteredAggregations = injectNestedFiltersToAggs({
 		aggregationsFilterThemselves,
 		aggs,
+		legacyDateFieldNames,
 		nestedSqonFilters,
 		nestingPrefix,
 		setsIndex,

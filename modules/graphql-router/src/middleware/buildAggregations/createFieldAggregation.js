@@ -38,6 +38,7 @@ const createTermAggregation = ({
 	fieldName,
 	graphqlField,
 	isNested,
+	legacyDateFieldNames,
 	setsIndex,
 	termFilters,
 }) => {
@@ -69,8 +70,9 @@ const createTermAggregation = ({
 
 		const aggsFilters = terms?.content?.map((sqonFilter) =>
 			opSwitch({
-				nestedFieldNames: [],
 				filter: normalizeFilters(sqonFilter),
+				legacyDateFieldNames,
+				nestedFieldNames: [],
 				setsIndex,
 			}),
 		);
@@ -137,7 +139,8 @@ const computeCardinalityAggregation = ({ esFieldName, fieldName, graphqlField })
  * `:nested_filtered` suffix, `.hits`) is built from, so the GraphQL layer always sees the same
  * names its schema was built with. `esFieldName` (defaults to `fieldName`) is the real ES field
  * path used inside the query clauses themselves; the two diverge only when the catalogue has a
- * `nestingPrefix` configured (see `middleware/utils/nestingPrefix.ts`).
+ * `nestingPrefix` configured (see `middleware/utils/nestingPrefix.ts`). `legacyDateFieldNames` names
+ * fields by their real ES paths, as `esFieldName` does.
  */
 export default ({
 	disableClientFilters = false,
@@ -145,6 +148,7 @@ export default ({
 	fieldName,
 	graphqlField = {},
 	isNested = false,
+	legacyDateFieldNames = [],
 	setsIndex,
 	termFilters = [],
 }) => {
@@ -161,6 +165,7 @@ export default ({
 					fieldName,
 					graphqlField,
 					isNested,
+					legacyDateFieldNames,
 					setsIndex,
 					termFilters,
 				}),

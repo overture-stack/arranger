@@ -48,7 +48,10 @@ suite('middleware/buildQuery: range bounds', () => {
 
 	test('a range leaves out an entry that cannot bound it, beside one that can', () => {
 		// Given a range whose list holds a usable bound beside an empty string or a null
-		for (const value of [['', 5], [null, 5]]) {
+		for (const value of [
+			['', 5],
+			[null, 5],
+		]) {
 			// When it compiles, Then only the usable bound applies
 			assert.deepEqual(buildQuery({ filters: rangeOn('gte', value) }), { range: { age: { boost: 0, gte: 5 } } });
 		}
@@ -56,7 +59,7 @@ suite('middleware/buildQuery: range bounds', () => {
 
 	test('a range given one bound compiles to that bound alone', () => {
 		assert.deepEqual(buildQuery({ filters: rangeOn('gte', ['2024-01-01']) }), {
-			range: { age: { boost: 0, gte: '2024-01-01 00:00:00.000000' } },
+			range: { age: { boost: 0, gte: '2024-01-01' } },
 		});
 	});
 

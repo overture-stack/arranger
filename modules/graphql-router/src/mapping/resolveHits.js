@@ -266,6 +266,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 		const query = buildQuery({
 			caller: 'resolveHits',
+			legacyDateFieldNames: type.legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
 			filters: compileFilter({

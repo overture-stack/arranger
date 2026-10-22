@@ -248,6 +248,7 @@ export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, 
 			disableClientFilters: configs.config?.[configOptionalProperties.DISABLE_FILTERS] ?? false,
 			serverSideFilter,
 		}),
+		legacyDateFieldNames: configs.legacyDateFieldNames,
 		nestedFieldNames: configs.nested_fieldNames,
 		nestingPrefix,
 		// A context the router built carries the catalogue's own sets index; one built elsewhere gets the

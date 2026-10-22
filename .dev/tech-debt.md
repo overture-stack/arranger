@@ -1767,6 +1767,15 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 
 ## modules/components
 
+### A date facet's day and a typed date's day must be the same day
+
+**File:** `modules/components/src/aggregations/DatesAgg.jsx` (`toSqonDate`, the `>=` and `<=` bounds it builds)
+**Severity:** low
+**Kind:** correctness
+**Issue:** A date facet's day and a date alone typed into a filter must name the same day. The facet sends the viewer's local start and end of day as epoch milliseconds, while a date alone in a filter means its whole day in UTC, since no range query sets a `time_zone`. For a viewer outside UTC the two are different spans.
+**Fix:** Decide which day both mean: send the facet's bounds as dates alone, so both are UTC days, or send the viewer's time zone and set it as the range's `time_zone` for both.
+**Standalone:** yes
+
 ### `LiveAdvancedFacetView`/`MatchBoxState` bypass `DataContext` entirely, and are currently unreachable
 
 **File:** `AdvancedFacetView/LiveAdvancedFacetView.js`, `MatchBox/MatchBoxState.js` (and `Arranger/MatchBox.jsx`, its only caller)

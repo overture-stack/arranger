@@ -10,15 +10,23 @@ import { applyNestingPrefix } from '#middleware/utils/nestingPrefix.js';
  * queries that are on a term that shares a parent with a aggregation field
  * needs to be dropped down to the aggregation level as a filter.
  */
-const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilterThemselves, nestingPrefix, setsIndex }) =>
+const injectNestedFiltersToAggs = ({
+	aggregationsFilterThemselves,
+	aggs,
+	legacyDateFieldNames,
+	nestedSqonFilters,
+	nestingPrefix,
+	setsIndex,
+}) =>
 	Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
 		const skipToNextLevel = () => {
 			acc[aggName] = {
 				...aggContent,
 				aggs: injectNestedFiltersToAggs({
-					aggs: aggContent.aggs,
-					nestedSqonFilters,
 					aggregationsFilterThemselves,
+					aggs: aggContent.aggs,
+					legacyDateFieldNames,
+					nestedSqonFilters,
 					nestingPrefix,
 					setsIndex,
 				}),
@@ -40,21 +48,24 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
 								should: nestedSqonFilters[aggContent.nested.path]
 									.filter(
 										(sqonFilter) =>
-											aggregationsFilterThemselves || esFieldName !== sqonFilter.content.fieldName,
+											aggregationsFilterThemselves ||
+											esFieldName !== sqonFilter.content.fieldName,
 									)
 									.map((sqonFilter) =>
 										opSwitch({
-											nestedFieldNames: [],
 											filter: normalizeFilters(sqonFilter),
+											legacyDateFieldNames,
+											nestedFieldNames: [],
 											setsIndex,
 										}),
 									),
 							},
 						},
 						aggs: injectNestedFiltersToAggs({
-							aggs: aggContent.aggs,
-							nestedSqonFilters,
 							aggregationsFilterThemselves,
+							aggs: aggContent.aggs,
+							legacyDateFieldNames,
+							nestedSqonFilters,
 							nestingPrefix,
 							setsIndex,
 						}),

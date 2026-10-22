@@ -221,6 +221,8 @@ This results in:
 
 `gt`, `gte`, `lt` and `lte` take one bound: a number, or a date string for a date field. Given a list, every bound applies, so the strictest one decides: the largest for `gt` and `gte`, the smallest for `lt` and `lte`. `between` takes `[min, max]`, both inclusive.
 
+On a date field of the default format, or one whose `format` holds `yyyy-MM-dd HH:mm:ss.SSSSSS` as its whole `format` or one of its `||` alternatives, a date alone, such as `2024-03-15`, means its whole day in UTC, for every operator: `gte` and `lt` start at the day's first instant, `gt` and `lte` end at its last, `between` runs from the first instant of its lower bound's day to the last instant of its upper bound's day, and `in`, `not-in`, `some-not-in` and `all` match or exclude any instant of that day. A date-time names its own instant. On a field of another format, a date alone reaches the search engine as written, so it must be one that format parses.
+
 <details>
 <summary><b>Example:</b></summary>
 

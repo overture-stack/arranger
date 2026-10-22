@@ -844,6 +844,7 @@ suite('middleware/buildQuery', () => {
 						],
 						op: 'and',
 					},
+					legacyDateFieldNames: ['cases.clinical.date_of_birth'],
 				},
 				output: {
 					bool: {
@@ -859,7 +860,7 @@ suite('middleware/buildQuery', () => {
 							{
 								range: {
 									'cases.clinical.date_of_birth': {
-										lte: '2017-12-01 00:00:00.000000',
+										lte: '2017-12-01 23:59:59.999999',
 										boost: 0,
 									},
 								},

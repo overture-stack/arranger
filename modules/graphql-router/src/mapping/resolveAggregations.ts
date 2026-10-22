@@ -80,6 +80,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		context,
 		graphqlResolveInfo,
 	) => {
+		const legacyDateFieldNames = type.legacyDateFieldNames;
 		const nestedFieldNames = type.nested_fieldNames;
 		const nestingPrefix = type.config?.[configOptionalProperties.NESTING_PREFIX];
 
@@ -89,6 +90,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const query = buildQuery({
 			caller: 'resolveAggregations',
+			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
 			filters: compileFilter({
@@ -108,6 +110,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		 */
 		const serverSideQuery = buildQuery({
 			caller: 'resolveAggregations',
+			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
 			filters: serverSideFilter,
@@ -127,6 +130,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			setsIndex: type.setsIndex,
 			sqon: filters,
 			graphqlFields,
+			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
 			// Recovering the ES path from a flattened aggregation name takes the registry, not a
