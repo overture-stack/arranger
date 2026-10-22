@@ -1543,15 +1543,6 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Fix:** Remove both and regenerate the lockfile, unless the roadmap's exports holding several files come first: those need an archive library, so keep or replace it there instead.
 **Standalone:** yes
 
-### Route tests using `supertest(app)` can collide with other local listeners
-
-**File:** tests across `modules/graphql-router/src` that pass an app rather than a bound server to `supertest`
-**Severity:** low
-**Kind:** test reliability
-**Issue:** `supertest(app)` binds an ephemeral port on every interface and connects to `127.0.0.1`, so another local process listening on the same port number there can answer instead, giving an intermittent 404 or an empty body. `download/index.test.js` already binds its servers to `127.0.0.1`.
-**Fix:** Bind test servers to `127.0.0.1` the same way, through one shared helper.
-**Standalone:** yes
-
 ### A null in a value list must never match a document by its field being the empty string
 
 **File:** `modules/graphql-router/src/middleware/buildQuery/` (value coercion for clause value lists)

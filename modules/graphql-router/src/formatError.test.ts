@@ -4,15 +4,16 @@ import { format, inspect } from 'node:util';
 
 import express from 'express';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
-import request from 'supertest';
+import type supertest from 'supertest';
 
 import { AccessControlQueryTooLargeError } from '#accessControl/AccessControlError.js';
 import includeEverything from '#accessControl/includeEverything.js';
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { createEndpoint } from '#graphqlRoutes.js';
+import { withLoopbackServer } from '#loopbackServer.fixture.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
 import buildQuery from '#middleware/buildQuery/index.js';
-import { SCHEMA_ANSWER, serveRemoteNode, unreachableRemoteNodeUrl } from '#network/remoteNodeStub.fixture.js';
+import { SCHEMA_ANSWER, serveRemoteNode, withUnreachableRemoteNode } from '#network/remoteNodeStub.fixture.js';
 import arrangerRouter from '#router.js';
 import {
 	CLIENTS,
@@ -142,7 +143,7 @@ const withApolloDebugOn = async <Result>(build: () => Promise<Result>): Promise<
 };
 
 /** Each error in the response, with the response body as text for asserting nothing leaked anywhere in it. */
-const graphQLErrorsOf = (response: request.Response): { bodyText: string; errors: GraphQLErrorBody[] } => ({
+const graphQLErrorsOf = (response: supertest.Response): { bodyText: string; errors: GraphQLErrorBody[] } => ({
 	bodyText: JSON.stringify(response.body),
 	errors: response.body?.errors ?? [],
 });
@@ -303,12 +304,7 @@ const buildRouterApp = async ({
 };
 
 const postQuery = (app: express.Express, query: string) =>
-	withConsoleCaptured(() =>
-		request(app)
-			.post('/graphql')
-			.send({ query })
-			.then((response) => response),
-	);
+	withConsoleCaptured(() => withLoopbackServer(app, (request) => request.post('/graphql').send({ query })));
 
 const READ_PATH_QUERIES = {
 	aggregations: '{ donor { aggregations { study { buckets { key doc_count } } } } }',
@@ -342,9 +338,9 @@ const afterPendingRejections = () => new Promise((resolve) => setTimeout(resolve
 
 suite('formatError', () => {
 	test('strips "Did you mean" field-name suggestions from a misspelled-field error', async () => {
-		const response = await request(await buildApp())
-			.post('/graphql')
-			.send({ query: '{ helth }' });
+		const response = await withLoopbackServer(await buildApp(), (request) =>
+			request.post('/graphql').send({ query: '{ helth }' }),
+		);
 
 		assert.equal(response.status, 400);
 		const message: string = response.body?.errors?.[0]?.message ?? '';
@@ -353,9 +349,9 @@ suite('formatError', () => {
 	});
 
 	test('leaves an unrelated validation error message unchanged', async () => {
-		const response = await request(await buildApp())
-			.post('/graphql')
-			.send({ query: '{ health(unknownArg: 1) }' });
+		const response = await withLoopbackServer(await buildApp(), (request) =>
+			request.post('/graphql').send({ query: '{ health(unknownArg: 1) }' }),
+		);
 
 		assert.equal(response.status, 400);
 		const message: string = response.body?.errors?.[0]?.message ?? '';
@@ -505,7 +501,7 @@ suite("formatError masks filter callback failures on the router's read paths", (
 				// When the read path is queried, and the router is asked something else afterwards
 				const { result: response } = await postQuery(app, query);
 				await afterPendingRejections();
-				const followUp = await request(app).get('/introspection');
+				const followUp = await withLoopbackServer(app, (request) => request.get('/introspection'));
 
 				// Then the query was masked, the process recorded no error event, and the router answers the next request
 				assertMasked(graphQLErrorsOf(response), SECRET_DETAIL);
@@ -574,7 +570,7 @@ const permittingOnlyTheFirstEvaluation = (failLater: () => unknown): ((context: 
 	};
 };
 
-const localNodeOf = (response: request.Response): NetworkNodeBody | undefined =>
+const localNodeOf = (response: supertest.Response): NetworkNodeBody | undefined =>
 	(response.body?.data?.network?.nodes as NetworkNodeBody[] | undefined)?.find(({ name }) => name === 'local node');
 
 suite("network search reports a local node's access-control failure with fixed text", () => {
@@ -654,12 +650,12 @@ const QUERY_TOO_LARGE_MESSAGE =
 const NETWORK_NODES_AND_HITS_QUERY =
 	'{ network { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }';
 
-const nodeNamed = (response: request.Response, name: string): NetworkNodeBody | undefined =>
+const nodeNamed = (response: supertest.Response, name: string): NetworkNodeBody | undefined =>
 	(response.body?.data?.network?.nodes as NetworkNodeBody[] | undefined)?.find((node) => node.name === name);
 
 /** Asserts the node reports `text` once for each read it failed, and the response carries none of `details`. */
 const assertNodeAnswered = (
-	response: request.Response,
+	response: supertest.Response,
 	{ details, name, reads, text }: { details: string[]; name: string; reads: number; text: string },
 ) => {
 	const node = nodeNamed(response, name);
@@ -709,7 +705,9 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 
 		// When network search is queried for hits and aggregations
 		const { calls, result: response } = await withConsoleCalls(() =>
-			request(app).post('/graphql').send({ query: NETWORK_NODES_AND_HITS_QUERY }),
+			withLoopbackServer(app, (request) =>
+				request.post('/graphql').send({ query: NETWORK_NODES_AND_HITS_QUERY }),
+			),
 		);
 
 		// Then the local node reports the refusal's text for each read, logged with the catalogue, read path, limit and node
@@ -737,9 +735,8 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 
 		// When network search is queried with a filter pivoting on a field that is not nested
 		const { result: response } = await withConsoleCaptured(() =>
-			request(app)
-				.post('/graphql')
-				.send({
+			withLoopbackServer(app, (request) =>
+				request.post('/graphql').send({
 					query: `query ($filters: JSON) { network(filters: $filters) { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }`,
 					variables: {
 						filters: {
@@ -749,6 +746,7 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 						},
 					},
 				}),
+			),
 		);
 
 		// Then the local node reports the rule for each read
@@ -766,9 +764,8 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 
 		// When network search is queried with a filter pivoting on a field that is not nested
 		const { calls } = await withConsoleCalls(() =>
-			request(app)
-				.post('/graphql')
-				.send({
+			withLoopbackServer(app, (request) =>
+				request.post('/graphql').send({
 					query: `query ($filters: JSON) { network(filters: $filters) { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }`,
 					variables: {
 						filters: {
@@ -778,6 +775,7 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 						},
 					},
 				}),
+			),
 		);
 
 		// Then each of its logs is at info, a client's ordinary mistake
@@ -788,21 +786,22 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 
 	test('answers a remote node nothing answered at startup as unreachable, never naming its URL', async () => {
 		// Given a router with a remote node at a URL nothing answers at
-		const url = await unreachableRemoteNodeUrl();
-		const app = await buildRouterApp({
-			getServerSideFilter: STUDY_A,
-			remoteNodes: [{ displayName: 'remote node', documentType: 'donor', graphqlUrl: url }],
-		});
+		await withUnreachableRemoteNode(async (url) => {
+			const app = await buildRouterApp({
+				getServerSideFilter: STUDY_A,
+				remoteNodes: [{ displayName: 'remote node', documentType: 'donor', graphqlUrl: url }],
+			});
 
-		// When network search is queried
-		const { result: response } = await postQuery(app, NETWORK_NODES_AND_HITS_QUERY);
+			// When network search is queried
+			const { result: response } = await postQuery(app, NETWORK_NODES_AND_HITS_QUERY);
 
-		// Then the remote node reports that it could not be reached
-		assertNodeAnswered(response, {
-			details: [url, '127.0.0.1'],
-			name: 'remote node',
-			reads: 1,
-			text: 'This node could not be reached.',
+			// Then the remote node reports that it could not be reached
+			assertNodeAnswered(response, {
+				details: [url, '127.0.0.1'],
+				name: 'remote node',
+				reads: 1,
+				text: 'This node could not be reached.',
+			});
 		});
 	});
 
@@ -883,9 +882,7 @@ suite('a GraphQL error carries only its message, locations, path and code', () =
 
 			// When the request is sent
 			const { result: response } = await withConsoleCaptured(() =>
-				request(app)
-					.post('/graphql')
-					.send(body as object),
+				withLoopbackServer(app, (request) => request.post('/graphql').send(body as object)),
 			);
 
 			// Then each error holds only the four members, and extensions only its code
@@ -906,9 +903,11 @@ suite("a request's own mistake keeps its message", () => {
 	test('answers a variable of the wrong type with its own message and code', async () => {
 		const app = await buildDebugApp();
 		const { result: response } = await withConsoleCaptured(() =>
-			request(app)
-				.post('/graphql')
-				.send({ query: 'query ($first: Int) { count(first: $first) }', variables: { first: 'many' } }),
+			withLoopbackServer(app, (request) =>
+				request
+					.post('/graphql')
+					.send({ query: 'query ($first: Int) { count(first: $first) }', variables: { first: 'many' } }),
+			),
 		);
 
 		const [error] = graphQLErrorsOf(response).errors;
@@ -918,7 +917,9 @@ suite("a request's own mistake keeps its message", () => {
 
 	test("logs a request's own mistake at info, as graphql.invalid_request", async () => {
 		const app = await buildDebugApp();
-		const { calls } = await withConsoleCalls(() => request(app).post('/graphql').send({ query: '{ health' }));
+		const { calls } = await withConsoleCalls(() =>
+			withLoopbackServer(app, (request) => request.post('/graphql').send({ query: '{ health' })),
+		);
 
 		assert.deepEqual(
 			calls.filter(({ args }) => args[0] === 'graphql.invalid_request').map(({ method }) => method),
@@ -929,9 +930,9 @@ suite("a request's own mistake keeps its message", () => {
 	test('answers batched operations the endpoint refuses with the rule, not as a problem on the server', async () => {
 		const app = await buildDebugApp();
 		const { result: response } = await withConsoleCaptured(() =>
-			request(app)
-				.post('/graphql')
-				.send([{ query: '{ health }' }, { query: '{ health }' }]),
+			withLoopbackServer(app, (request) =>
+				request.post('/graphql').send([{ query: '{ health }' }, { query: '{ health }' }]),
+			),
 		);
 
 		assert.equal(response.status, 400);
@@ -962,12 +963,12 @@ suite("a request's own mistake keeps its message", () => {
 
 		// When hits are queried with a client filter naming no operator SQON defines
 		const { result: response } = await withConsoleCaptured(() =>
-			request(app)
-				.post('/graphql')
-				.send({
+			withLoopbackServer(app, (request) =>
+				request.post('/graphql').send({
 					query: 'query ($filters: JSON) { donor { hits(filters: $filters) { total } } }',
 					variables: { filters: { content: { fieldName: 'study', value: ['A'] }, op: 'no-such-operator' } },
 				}),
+			),
 		);
 
 		// Then the client is told the rule, as its own mistake
@@ -983,12 +984,12 @@ suite("a request's own mistake keeps its message", () => {
 
 		// When network search is queried with a filter that is no SQON node
 		const { lines, result: response } = await withConsoleCaptured(() =>
-			request(app)
-				.post('/graphql')
-				.send({
+			withLoopbackServer(app, (request) =>
+				request.post('/graphql').send({
 					query: 'query ($filters: JSON) { network(filters: $filters) { nodes { name } } }',
 					variables: { filters: { content: { fieldName: 'study', value: ['A'] }, op: 'no-such-operator' } },
 				}),
+			),
 		);
 
 		// Then the client is told the rule, as its own mistake, and the log carries what the SQON check found
@@ -1060,7 +1061,7 @@ suite("the search engine's refusal of a read past its clause limit, on the Graph
 
 				// When the read path is queried
 				const { calls, result: response } = await withConsoleCalls(() =>
-					request(app).post('/graphql').send({ query }),
+					withLoopbackServer(app, (request) => request.post('/graphql').send({ query })),
 				);
 
 				// Then the client is given the refusal's code and fixed text, and the server log names the

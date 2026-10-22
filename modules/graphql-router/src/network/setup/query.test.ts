@@ -5,7 +5,7 @@ import { REMOTE_NODE_FAILURE_TEXTS } from '#network/remoteNodeFailure.js';
 import {
 	SCHEMA_ANSWER,
 	serveRemoteNode,
-	unreachableRemoteNodeUrl,
+	withUnreachableRemoteNode,
 	withConsoleLines,
 } from '#network/remoteNodeStub.fixture.js';
 
@@ -41,12 +41,12 @@ suite(
 	"fetchAllNodeAggregations records a remote node's startup failure with a fixed text naming the kind of problem",
 	() => {
 		test('records a node nothing answers at as unreachable', async () => {
-			const url = await unreachableRemoteNodeUrl();
-
-			assertFailedNode(await schemaOutcomeFor(url), {
-				result: 'NETWORK_ERROR',
-				text: REMOTE_NODE_FAILURE_TEXTS.unreachable,
-				url,
+			await withUnreachableRemoteNode(async (url) => {
+				assertFailedNode(await schemaOutcomeFor(url), {
+					result: 'NETWORK_ERROR',
+					text: REMOTE_NODE_FAILURE_TEXTS.unreachable,
+					url,
+				});
 			});
 		});
 

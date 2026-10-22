@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { once } from 'node:events';
 import http from 'node:http';
 import { after, before, beforeEach, mock, suite, test } from 'node:test';
 import { inspect } from 'node:util';
@@ -9,6 +8,7 @@ import request from 'supertest';
 
 import includeEverything from '#accessControl/includeEverything.js';
 import { denyAllFilter, restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
+import { serveOnLoopback } from '#loopbackServer.fixture.js';
 import arrangerRouter from '#router.js';
 import {
 	CLIENTS,
@@ -323,21 +323,16 @@ const startArranger = async ({ downloads, getServerSideFilter, ...engineOptions 
 			response.sendStatus(204);
 		});
 
-	const server = app.listen(0, '127.0.0.1');
-	await once(server, 'listening');
+	const served = await serveOnLoopback(app);
 
 	return {
 		captureContext: async () => {
-			await request(server).get('/context');
+			await served.request.get('/context');
 			return lastContext;
 		},
-		close: () =>
-			new Promise((resolve) => {
-				server.closeAllConnections();
-				server.close(() => resolve());
-			}),
+		close: served.close,
 		engine,
-		server,
+		server: served.server,
 	};
 };
 

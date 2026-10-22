@@ -4,11 +4,12 @@ import { format } from 'node:util';
 
 import { tableDefaults, tableProperties } from '@overture-stack/arranger-types/configs/constants';
 import express, { type Request, type RequestHandler, type Router } from 'express';
-import request from 'supertest';
+import type supertest from 'supertest';
 
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import fallbackCatalogConfigs from '#config/constants.js';
 import * as packageRoot from '#index.js';
+import { withLoopbackServer } from '#loopbackServer.fixture.js';
 import type { SearchClient } from '#searchClient/index.js';
 
 import { FALLBACK_LABEL } from './graphqlRoutes.js';
@@ -273,7 +274,7 @@ const appWithContextProbe = ({ beforeRouter, router }: { beforeRouter?: RequestH
 	return {
 		app,
 		nextContext: async (): Promise<RequestContext | undefined> => {
-			await request(app).get('/context');
+			await withLoopbackServer(app, (request) => request.get('/context'));
 			return contexts.at(-1);
 		},
 	};
@@ -296,9 +297,9 @@ const assertOnlyAccessControlLine = (lines: string[], expected: string) => {
 };
 
 const postGraphQL = (router: Router, query: string, variables?: Record<string, unknown>) =>
-	request(express().use(router)).post('/graphql').send({ query, variables });
+	withLoopbackServer(express().use(router), (request) => request.post('/graphql').send({ query, variables }));
 
-const hitIdsOf = (response: request.Response): string[] =>
+const hitIdsOf = (response: supertest.Response): string[] =>
 	response.body.data.donor.hits.edges.map(({ node }: { node: { donor_id: string } }) => node.donor_id);
 
 const PERMITTED_STUDY_HEADER = 'x-permitted-study';
@@ -691,8 +692,12 @@ suite("a restricting filter reaches the search engine on each of the router's re
 		const app = express().use(router);
 
 		// When one request naming study B and then one naming study A query hits
-		const studyB = await request(app).post('/graphql').set(PERMITTED_STUDY_HEADER, 'B').send({ query: HITS_QUERY });
-		const studyA = await request(app).post('/graphql').set(PERMITTED_STUDY_HEADER, 'A').send({ query: HITS_QUERY });
+		const studyB = await withLoopbackServer(app, (request) =>
+			request.post('/graphql').set(PERMITTED_STUDY_HEADER, 'B').send({ query: HITS_QUERY }),
+		);
+		const studyA = await withLoopbackServer(app, (request) =>
+			request.post('/graphql').set(PERMITTED_STUDY_HEADER, 'A').send({ query: HITS_QUERY }),
+		);
 
 		// Then each sees only its own study, so the callback ran for each request, against that request
 		assert.deepEqual(hitIdsOf(studyB), ['DO_02', 'DO_04']);
@@ -813,7 +818,9 @@ suite('a filter callback reads what an application recorded in res.locals, on ev
 		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
 
 		// When hits are queried
-		const response = await request(appRecordingStudyA(router)).post('/graphql').send({ query: HITS_QUERY });
+		const response = await withLoopbackServer(appRecordingStudyA(router), (request) =>
+			request.post('/graphql').send({ query: HITS_QUERY }),
+		);
 
 		// Then only study A's documents come back
 		assert.deepEqual(hitIdsOf(response), PERMITTED_IDS);
@@ -822,7 +829,9 @@ suite('a filter callback reads what an application recorded in res.locals, on ev
 	test('aggregations apply the filter the callback derives from the request context', async () => {
 		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
 
-		const response = await request(appRecordingStudyA(router)).post('/graphql').send({ query: AGGREGATIONS_QUERY });
+		const response = await withLoopbackServer(appRecordingStudyA(router), (request) =>
+			request.post('/graphql').send({ query: AGGREGATIONS_QUERY }),
+		);
 
 		assert.deepEqual(response.body.data.donor.aggregations.study.buckets, [{ doc_count: 3, key: 'A' }]);
 	});
@@ -830,7 +839,9 @@ suite('a filter callback reads what an application recorded in res.locals, on ev
 	test('saveSet applies the filter the callback derives from the request context', async () => {
 		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
 
-		const response = await request(appRecordingStudyA(router)).post('/graphql').send({ query: SAVE_SET_MUTATION });
+		const response = await withLoopbackServer(appRecordingStudyA(router), (request) =>
+			request.post('/graphql').send({ query: SAVE_SET_MUTATION }),
+		);
 
 		assert.deepEqual(response.body.data.saveSet.ids, PERMITTED_IDS);
 	});
@@ -838,10 +849,16 @@ suite('a filter callback reads what an application recorded in res.locals, on ev
 	test('the export applies the filter the callback derives from the request context', async () => {
 		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
 
-		const response = await request(appRecordingStudyA(router))
-			.post('/download')
-			.type('form')
-			.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+		const response = await withLoopbackServer(appRecordingStudyA(router), (request) =>
+			request
+				.post('/download')
+				.type('form')
+				.send({
+					downloadKey: 'a-download-key',
+					httpHeaders: '{}',
+					params: JSON.stringify(DONOR_EXPORT_PARAMS),
+				}),
+		);
 
 		assert.equal(response.status, 200, response.text);
 		assert.deepEqual(response.text.split('\n').filter(Boolean), ['Donor', ...PERMITTED_IDS]);
@@ -859,10 +876,9 @@ suite('a filter callback reads what an application recorded in res.locals, on ev
 			.use(router);
 
 		// When hits are queried by a request whose own header names study A
-		const response = await request(app)
-			.post('/graphql')
-			.set(PERMITTED_STUDY_HEADER, 'A')
-			.send({ query: HITS_QUERY });
+		const response = await withLoopbackServer(app, (request) =>
+			request.post('/graphql').set(PERMITTED_STUDY_HEADER, 'A').send({ query: HITS_QUERY }),
+		);
 
 		// Then the callback read the router's request, so the application's key never replaced it
 		assert.deepEqual(hitIdsOf(response), PERMITTED_IDS);
@@ -876,9 +892,9 @@ suite('an application writing the deprecated req.context still reaches the filte
 	test('hits apply the filter the callback derives from a key written to req.context before the router', async () => {
 		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
 
-		const response = await request(appRecordingStudyA(router, recordStudyAOnRequestContext))
-			.post('/graphql')
-			.send({ query: HITS_QUERY });
+		const response = await withLoopbackServer(appRecordingStudyA(router, recordStudyAOnRequestContext), (request) =>
+			request.post('/graphql').send({ query: HITS_QUERY }),
+		);
 
 		assert.deepEqual(hitIdsOf(response), PERMITTED_IDS);
 	});
@@ -886,10 +902,16 @@ suite('an application writing the deprecated req.context still reaches the filte
 	test('the export applies the filter the callback derives from a key written to req.context before the router', async () => {
 		const { router } = await buildRouter({ getServerSideFilter: studyOnRequestContext });
 
-		const response = await request(appRecordingStudyA(router, recordStudyAOnRequestContext))
-			.post('/download')
-			.type('form')
-			.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+		const response = await withLoopbackServer(appRecordingStudyA(router, recordStudyAOnRequestContext), (request) =>
+			request
+				.post('/download')
+				.type('form')
+				.send({
+					downloadKey: 'a-download-key',
+					httpHeaders: '{}',
+					params: JSON.stringify(DONOR_EXPORT_PARAMS),
+				}),
+		);
 
 		assert.equal(response.status, 200, response.text);
 		assert.deepEqual(response.text.split('\n').filter(Boolean), ['Donor', ...PERMITTED_IDS]);
@@ -912,7 +934,7 @@ suite('an application writing the deprecated req.context still reaches the filte
 			});
 
 		// When it runs, Then each write is visible through the other store, since both are one object
-		const response = await request(app).get('/probe');
+		const response = await withLoopbackServer(app, (request) => request.get('/probe'));
 		assert.deepEqual(response.body, { inLocals: true, inRequestContext: true, sameObject: true });
 	});
 });
@@ -954,7 +976,7 @@ suite("an application's own export route behind a callback reading res.locals", 
 	test('exports the permitted rows when the route passes res.locals', async () => {
 		const { router } = await buildRouter({ getServerSideFilter: studyFromRecordedAccess });
 
-		const response = await request(exportApp(router)).get('/export/locals');
+		const response = await withLoopbackServer(exportApp(router), (request) => request.get('/export/locals'));
 
 		assert.deepEqual(response.body, { rows: PERMITTED_IDS });
 	});
@@ -965,7 +987,7 @@ suite("an application's own export route behind a callback reading res.locals", 
 		const { router } = await buildRouter({ getServerSideFilter: callback });
 
 		// When the route hands req.context to the export
-		const response = await request(exportApp(router)).get('/export/context');
+		const response = await withLoopbackServer(exportApp(router), (request) => request.get('/export/context'));
 
 		// Then the router's record reached the export, so the callback ran, found no access, and the export
 		// is refused with the access-control failure
@@ -978,10 +1000,12 @@ suite("an application's own export route behind a callback reading res.locals", 
 });
 
 const exportFrom = (app: express.Express) =>
-	request(app)
-		.post('/download')
-		.type('form')
-		.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) });
+	withLoopbackServer(app, (request) =>
+		request
+			.post('/download')
+			.type('form')
+			.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(DONOR_EXPORT_PARAMS) }),
+	);
 
 suite('a shard refusing a search fails the whole search where a server-side filter applies', () => {
 	/** Reads hits, aggregations, a saved set and an export, failing if any read is not served. */

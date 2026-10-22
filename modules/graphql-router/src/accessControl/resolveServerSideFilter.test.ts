@@ -4,10 +4,10 @@ import { mock, suite, test } from 'node:test';
 import { format } from 'node:util';
 
 import express, { type Request } from 'express';
-import request from 'supertest';
 
 import { dataStream } from '#download/index.js';
 import * as packageRoot from '#index.js';
+import { withLoopbackServer } from '#loopbackServer.fixture.js';
 import arrangerRouter from '#router.js';
 import type { SearchClient } from '#searchClient/index.js';
 import getAllData from '#utils/getAllData.js';
@@ -192,7 +192,7 @@ const routerContext = async (settings: Record<string, unknown> = {}) => {
 			res.end();
 		});
 
-	await request(app).get('/context');
+	await withLoopbackServer(app, (request) => request.get('/context'));
 
 	return { app, context: contexts[0], engine };
 };
@@ -242,11 +242,12 @@ const dataStreamIds = (exportArguments: ExportArguments): Promise<string[]> =>
 
 const download = (app: express.Express, parameters: unknown) =>
 	quietly(() =>
-		request(app)
-			.post('/download')
-			.type('form')
-			.send({ params: JSON.stringify(parameters) })
-			.then((response) => response),
+		withLoopbackServer(app, (request) =>
+			request
+				.post('/download')
+				.type('form')
+				.send({ params: JSON.stringify(parameters) }),
+		),
 	);
 
 /** The error an export call rejects with, failing the test if the call resolves instead. */
@@ -900,7 +901,7 @@ suite('evaluating a filter callback for an export', () => {
 		assert.equal(engine.searches.length, 0);
 	});
 
-	test("refuses a caller callback whose promise rejects, and the next export succeeds", async () => {
+	test('refuses a caller callback whose promise rejects, and the next export succeeds', async () => {
 		// Given a hand-built context, a caller callback returning a promise that rejects, and a record of process error events
 		const { context } = await routerContext();
 		const handBuilt = contextWithoutRecord(context);
@@ -937,7 +938,7 @@ suite('evaluating a filter callback for an export', () => {
 			// When a download is requested, and the app is asked something else afterwards
 			const response = await download(app, tsvParameters());
 			await afterPendingRejections();
-			const followUp = await request(app).get('/context');
+			const followUp = await withLoopbackServer(app, (request) => request.get('/context'));
 
 			// Then the callback was evaluated and refused with a server error, the process recorded no error event, and the app answers the next request
 			assert.equal(routerCallback.calls.length, 1);

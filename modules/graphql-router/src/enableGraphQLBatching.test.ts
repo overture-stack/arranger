@@ -3,9 +3,9 @@ import { suite, test } from 'node:test';
 
 import express from 'express';
 import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
-import request from 'supertest';
 
 import { createEndpoint } from '#graphqlRoutes.js';
+import { withLoopbackServer } from '#loopbackServer.fixture.js';
 
 const schema = new GraphQLSchema({
 	query: new GraphQLObjectType({
@@ -34,27 +34,27 @@ const buildApp = async ({ enableGraphQLBatching }: { enableGraphQLBatching?: boo
 
 suite('enableGraphQLBatching', () => {
 	test('rejects an array of batched operations with a 400 when enableGraphQLBatching is left unset', async () => {
-		const response = await request(await buildApp())
-			.post('/graphql')
-			.send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]);
+		const response = await withLoopbackServer(await buildApp(), (request) =>
+			request.post('/graphql').send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]),
+		);
 
 		assert.equal(response.status, 400);
 		assert.ok(response.body?.errors?.some((e: { message: string }) => /batch/i.test(e.message)));
 	});
 
 	test('rejects an array of batched operations with a 400 when enableGraphQLBatching is false', async () => {
-		const response = await request(await buildApp({ enableGraphQLBatching: false }))
-			.post('/graphql')
-			.send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]);
+		const response = await withLoopbackServer(await buildApp({ enableGraphQLBatching: false }), (request) =>
+			request.post('/graphql').send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]),
+		);
 
 		assert.equal(response.status, 400);
 		assert.ok(response.body?.errors?.some((e: { message: string }) => /batch/i.test(e.message)));
 	});
 
 	test('processes an array of batched operations when enableGraphQLBatching is true', async () => {
-		const response = await request(await buildApp({ enableGraphQLBatching: true }))
-			.post('/graphql')
-			.send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]);
+		const response = await withLoopbackServer(await buildApp({ enableGraphQLBatching: true }), (request) =>
+			request.post('/graphql').send([{ query: HEALTH_QUERY }, { query: HEALTH_QUERY }]),
+		);
 
 		assert.equal(response.status, 200);
 		assert.ok(Array.isArray(response.body));
@@ -63,7 +63,9 @@ suite('enableGraphQLBatching', () => {
 	});
 
 	test('still processes a single (non-batched) operation when enableGraphQLBatching is left unset', async () => {
-		const response = await request(await buildApp()).post('/graphql').send({ query: HEALTH_QUERY });
+		const response = await withLoopbackServer(await buildApp(), (request) =>
+			request.post('/graphql').send({ query: HEALTH_QUERY }),
+		);
 
 		assert.equal(response.status, 200);
 		assert.equal(response.body?.data?.health, 'ok');

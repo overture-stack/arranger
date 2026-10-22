@@ -3,11 +3,12 @@ import { after, before, suite, test } from 'node:test';
 
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import express, { json, urlencoded, type Request, type Response } from 'express';
-import request from 'supertest';
+import type supertest from 'supertest';
 
 import { restrictingFilter } from './accessControl/serverSideFilters.fixture.js';
 import { dataStream } from './download/index.js';
 import arrangerRouter, { utils, wrapOpenSearchClient } from './index.js';
+import { withLoopbackServer } from './loopbackServer.fixture.js';
 
 /*
  * The two integration patterns a deployment with no access control relies on, exercised end to end
@@ -330,10 +331,12 @@ const stockDownloadParams = (fileOverrides: Record<string, unknown> = {}) => ({
 
 /** Posts the stock UI's download form: `params` as JSON text, beside the other fields it always sends. */
 const postStockDownload = (application: express.Express, path: string, params: Record<string, unknown>) =>
-	request(application)
-		.post(path)
-		.type('form')
-		.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(params) });
+	withLoopbackServer(application, (request) =>
+		request
+			.post(path)
+			.type('form')
+			.send({ downloadKey: 'a-download-key', httpHeaders: '{}', params: JSON.stringify(params) }),
+	);
 
 /**
  * Pattern A: the router mounted the way the search server mounts it, after its own parsers. With
@@ -441,21 +444,21 @@ const patternBClientPayload = ({ sqon = null }: { sqon?: unknown } = {}) => ({
 });
 
 /** Every row a Pattern B getAllData route received, across its chunks, failing on a non-200. */
-const hitsFrom = (response: request.Response): unknown[] => {
+const hitsFrom = (response: supertest.Response): unknown[] => {
 	assert.equal(response.status, 200, `expected a 200, got ${response.status}: ${JSON.stringify(response.body)}`);
 
 	return (response.body.chunks as ExportChunk[]).flatMap((chunk) => chunk.hits);
 };
 
 /** Every chunk a Pattern B dataStream route read from `output`, failing on a non-200. */
-const tsvChunksFrom = (response: request.Response): unknown[] => {
+const tsvChunksFrom = (response: supertest.Response): unknown[] => {
 	assert.equal(response.status, 200, `expected a 200, got ${response.status}: ${JSON.stringify(response.body)}`);
 
 	return response.body.chunks as unknown[];
 };
 
 /** The body of a Pattern A download, failing on a non-200. */
-const downloadedText = (response: request.Response): string => {
+const downloadedText = (response: supertest.Response): string => {
 	assert.equal(response.status, 200, `expected a 200, got ${response.status}: ${response.text}`);
 
 	return response.text;
@@ -617,7 +620,9 @@ suite(
 			const { application } = await buildPatternBApplication();
 
 			// When the client posts its export payload with no sqon
-			const response = await request(application).post('/export/hits').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/hits').send(patternBClientPayload()),
+			);
 
 			// Then the route received { hits, total } chunks holding every document, in _id order, with only the
 			// additive matchingTotal and truncated beside them
@@ -637,9 +642,9 @@ suite(
 			const { application } = await buildPatternBApplication();
 
 			// When the client names two of the three documents
-			const response = await request(application)
-				.post('/export/hits')
-				.send(patternBClientPayload({ sqon: NAMED_MODELS_SQON }));
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/hits').send(patternBClientPayload({ sqon: NAMED_MODELS_SQON })),
+			);
 
 			// Then exactly those two documents arrive
 			assert.deepEqual(hitsFrom(response), [{ name: 'Model One', study: 'STUDY-A' }, { name: 'Model Two' }]);
@@ -650,7 +655,9 @@ suite(
 			const { application } = await buildPatternBApplication();
 
 			// When the client posts its export payload with no sqon
-			const response = await request(application).post('/export/tsv').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/tsv').send(patternBClientPayload()),
+			);
 
 			// Then the output is one string per row, header first, each splitting on tab into the requested columns
 			const chunks = tsvChunksFrom(response);
@@ -671,7 +678,9 @@ suite(
 			const { application } = await buildPatternBApplication();
 
 			// When the client posts its export payload, which carries no fileName or fileType
-			const response = await request(application).post('/export/tsv').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/tsv').send(patternBClientPayload()),
+			);
 
 			// Then the route can set its headers from a text/plain content type and a file.tsv name
 			assert.equal(
@@ -688,9 +697,9 @@ suite(
 			const { application } = await buildPatternBApplication();
 
 			// When the client names two of the three documents
-			const response = await request(application)
-				.post('/export/tsv')
-				.send(patternBClientPayload({ sqon: NAMED_MODELS_SQON }));
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/tsv').send(patternBClientPayload({ sqon: NAMED_MODELS_SQON })),
+			);
 
 			// Then exactly those two rows follow the header
 			assert.deepEqual(tsvChunksFrom(response), NAMED_MODELS_TSV_CHUNKS);
@@ -702,7 +711,9 @@ suite(
 			assert.notEqual(CLIENT_NAMED_INDEX, CONFIGURED_INDEX);
 
 			// When the client posts that payload
-			const response = await request(application).post('/export/tsv').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/tsv').send(patternBClientPayload()),
+			);
 
 			// Then every row arrives, and every search the export made went to the configured index
 			assert.deepEqual(tsvChunksFrom(response), EVERY_ROW_TSV_CHUNKS);
@@ -717,12 +728,12 @@ suite(
 			// When the client posts once to each route for each sqon that restricts nothing
 			const outcomes = [];
 			for (const [description, sqon] of UNRESTRICTING_SQONS) {
-				const hitsResponse = await request(application)
-					.post('/export/hits')
-					.send(patternBClientPayload({ sqon }));
-				const tsvResponse = await request(application)
-					.post('/export/tsv')
-					.send(patternBClientPayload({ sqon }));
+				const hitsResponse = await withLoopbackServer(application, (request) =>
+					request.post('/export/hits').send(patternBClientPayload({ sqon })),
+				);
+				const tsvResponse = await withLoopbackServer(application, (request) =>
+					request.post('/export/tsv').send(patternBClientPayload({ sqon })),
+				);
 				outcomes.push({
 					description,
 					hits: hitsResponse.status === 200 ? hitsFrom(hitsResponse) : hitsResponse.body,
@@ -746,12 +757,12 @@ suite(
 			const { application } = await buildPatternBApplication();
 
 			// When the client names no stored document, to each route
-			const hitsResponse = await request(application)
-				.post('/export/hits')
-				.send(patternBClientPayload({ sqon: NO_MATCH_SQON }));
-			const tsvResponse = await request(application)
-				.post('/export/tsv')
-				.send(patternBClientPayload({ sqon: NO_MATCH_SQON }));
+			const hitsResponse = await withLoopbackServer(application, (request) =>
+				request.post('/export/hits').send(patternBClientPayload({ sqon: NO_MATCH_SQON })),
+			);
+			const tsvResponse = await withLoopbackServer(application, (request) =>
+				request.post('/export/tsv').send(patternBClientPayload({ sqon: NO_MATCH_SQON })),
+			);
 
 			// Then both exports succeed empty, as today
 			assert.equal(
@@ -776,7 +787,9 @@ suite(
 			const { application } = await buildPatternBApplication({ setFieldBeforeRouter: true });
 
 			// When a route mounted after the router reads req.context
-			const response = await request(application).post('/context').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/context').send(patternBClientPayload()),
+			);
 
 			// Then the application's field is still there, beside the router's configs and search client
 			assert.equal(response.status, 200);
@@ -792,7 +805,9 @@ suite(
 			const { application } = await buildPatternBApplication({ setFieldBeforeRouter: true });
 
 			// When the client posts its export payload to the getAllData route
-			const response = await request(application).post('/export/hits').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/hits').send(patternBClientPayload()),
+			);
 
 			// Then every document still arrives
 			assert.deepEqual(hitsFrom(response), SOURCES_IN_ID_ORDER);
@@ -803,7 +818,9 @@ suite(
 			const { application } = await buildPatternBApplication({ setFieldBeforeRouter: true });
 
 			// When the client posts its export payload to the dataStream route
-			const response = await request(application).post('/export/tsv').send(patternBClientPayload());
+			const response = await withLoopbackServer(application, (request) =>
+				request.post('/export/tsv').send(patternBClientPayload()),
+			);
 
 			// Then every row still arrives, header first
 			assert.deepEqual(tsvChunksFrom(response), EVERY_ROW_TSV_CHUNKS);
@@ -830,7 +847,9 @@ suite('the same integration wiring with a restricting filter configured on the r
 		const { application } = await buildPatternBApplication({ getServerSideFilter: STUDY_A_FILTER });
 
 		// When the client posts its export payload with no sqon
-		const response = await request(application).post('/export/hits').send(patternBClientPayload());
+		const response = await withLoopbackServer(application, (request) =>
+			request.post('/export/hits').send(patternBClientPayload()),
+		);
 
 		// Then only the study-A documents arrive
 		assert.deepEqual(hitsFrom(response), [
@@ -844,10 +863,12 @@ suite('the same integration wiring with a restricting filter configured on the r
 		const { application } = await buildPatternBApplication({ getServerSideFilter: STUDY_A_FILTER });
 
 		// When the client posts its payload once with no sqon, and once naming Model One and Model Two
-		const unnarrowed = await request(application).post('/export/tsv').send(patternBClientPayload());
-		const narrowed = await request(application)
-			.post('/export/tsv')
-			.send(patternBClientPayload({ sqon: NAMED_MODELS_SQON }));
+		const unnarrowed = await withLoopbackServer(application, (request) =>
+			request.post('/export/tsv').send(patternBClientPayload()),
+		);
+		const narrowed = await withLoopbackServer(application, (request) =>
+			request.post('/export/tsv').send(patternBClientPayload({ sqon: NAMED_MODELS_SQON })),
+		);
 
 		// Then the first holds the study-A rows, and the second only the one row both permit
 		assert.deepEqual(tsvChunksFrom(unnarrowed), STUDY_A_TSV_CHUNKS);

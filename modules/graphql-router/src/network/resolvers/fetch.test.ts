@@ -4,7 +4,7 @@ import { suite, test } from 'node:test';
 import { parse } from 'graphql';
 
 import { REMOTE_NODE_FAILURE_TEXTS } from '#network/remoteNodeFailure.js';
-import { serveRemoteNode, unreachableRemoteNodeUrl, withConsoleLines } from '#network/remoteNodeStub.fixture.js';
+import { serveRemoteNode, withConsoleLines, withUnreachableRemoteNode } from '#network/remoteNodeStub.fixture.js';
 
 import { fetchData } from './fetch.js';
 
@@ -38,13 +38,13 @@ const assertFailure = (
 suite("fetchData answers a remote node's failure with a fixed text naming the kind of problem", () => {
 	test('answers a node nothing answers at as unreachable, logging its URL', async () => {
 		// Given a URL nothing answers at
-		const url = await unreachableRemoteNodeUrl();
+		await withUnreachableRemoteNode(async (url) => {
+			// When the node is queried
+			const outcome = await fetchFrom(url);
 
-		// When the node is queried
-		const outcome = await fetchFrom(url);
-
-		// Then the failure says the node could not be reached, and only the log carries the URL
-		assertFailure(outcome, { details: [url], text: REMOTE_NODE_FAILURE_TEXTS.unreachable });
+			// Then the failure says the node could not be reached, and only the log carries the URL
+			assertFailure(outcome, { details: [url], text: REMOTE_NODE_FAILURE_TEXTS.unreachable });
+		});
 	});
 
 	test("answers a node answering with GraphQL errors as answering with errors, logging the node's own messages", async () => {
