@@ -528,7 +528,7 @@ _Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; 
 
 One published module (`modules/mcp-client`) and one private module (`modules/mcp-host-core`), that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and the CRE, a notebook-style research app, in its own repository.
 
-**Recommended, pending the team:** no release claims support for controlled data until the plan's open security questions are settled and built; a deployment holding controlled data reaches open data only, anonymously, until then (detail: plan §1).
+**Recommended, pending the team:** no release claims support for controlled data until the plan's open security questions are settled and built; until then, an Overture deployment holding controlled data lets the CRE reach only its open data, anonymously (detail: the plan's opening paragraphs).
 
 [Detail: components, phases, decisions and open questions](docs/mcp-host/mcp-host-plan.md)
 
