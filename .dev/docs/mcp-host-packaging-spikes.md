@@ -1,8 +1,8 @@
 # MCP host packaging spikes: Ink bundling, the Tauri sidecar and Electron's hardened runtime
 
-Three spikes, short throwaway experiments, run on 2026-10-16 and 2026-10-19. Each tested, by building something real, a claim that until then rested on a GitHub issue, a tool's history, an architecture document's own reasoning or an inconclusive earlier attempt, since a real build was cheap enough to run instead. One of them overturned the conclusion the earlier evidence had suggested.
+Three spikes, short throwaway experiments, run on 2026-10-16 and 2026-10-19, each testing one packaging claim by building something real: whether Ink compiles into a standalone binary, whether Tauri's sidecar survives real macOS entitlements, and whether Electron holds up under the same checks.
 
-This document is the full record: exact versions, exact commands, exact errors, exact fixes. [`mcp-host-plan.md`](mcp-host/mcp-host-plan.md) carries the resulting decisions in condensed form; this is where to check them, reproduce them, or find the gap if a later Tauri or Node release changes the facts underneath them.
+This document is the full record: exact versions, exact commands, exact errors, exact fixes. [`mcp-host-plan.md`](mcp-host/mcp-host-plan.md) carries the resulting decisions in condensed form; this is where to check them, reproduce them, or find the gap if a later Tauri, Electron or Node release changes the facts underneath them.
 
 Terms used below:
 
@@ -45,7 +45,7 @@ Versions in use throughout: `ink` 8.0.0, `react` 19.3.1, `yoga-layout` 3.2.1 (In
 
 ### Finding 0: the root cause of the original bug is gone
 
-Reading the installed `yoga-layout` 3.2.1 package directly (not inferring from the bug report) showed `dist/binaries/yoga-wasm-base64-esm.js`: the WASM binary inlined as a base64 string directly in a JS module, loaded purely in memory, with no `readFileSync`, no `__dirname`, no on-disk path lookup at all. The entire class of bug the Bun issue described, a compiled binary unable to locate a separate `.wasm` asset, cannot occur against this version, because the separate asset no longer exists. This was independently confirmed by two of the three build paths below, reading the same file for the same reason, before either knew the other had found it.
+Reading the installed `yoga-layout` 3.2.1 package directly showed `dist/binaries/yoga-wasm-base64-esm.js`: the WASM binary inlined as a base64 string directly in a JS module, loaded purely in memory, with no `readFileSync`, no `__dirname`, no on-disk path lookup at all. The entire class of bug the Bun issue described, a compiled binary unable to locate a separate `.wasm` asset, cannot occur against this version, because the separate asset no longer exists. This was independently confirmed by two of the three build paths below, reading the same file for the same reason.
 
 ### `bun build --compile`: pass, cleanly
 
@@ -53,7 +53,7 @@ Bun was not installed at the start of this spike and was installed fresh (`curl 
 
 One real fix needed: Ink 8's optional peer dependency `react-devtools-core` is not treated as optional by Bun's bundler, which refused to resolve it (`Could not resolve: "react-devtools-core"`) until it was installed as a real dependency (`bun add react-devtools-core@8.0.0`). Unrelated to Yoga or WASM.
 
-Build: `bun build ./index.tsx --compile --outfile dist/ink-bun-spike`. Verification was deliberately paranoid about false positives: the first run under the test harness produced zero visible stdout, which could have read as either "it works but there's no TTY" or "it silently failed." Confirmed it was the former by reproducing the identical empty output from the _uncompiled_ `bun run index.tsx` in the same non-TTY shell, then re-running both under a real pty (`script`). Under the pty, the compiled binary rendered a correct rounded-border box containing "Hello, world!" with the border computed by Yoga, proof the WASM engine actually executed rather than merely having loaded without error.
+Build: `bun build ./index.tsx --compile --outfile dist/ink-bun-spike`. The first run under the test harness produced zero visible stdout, which could have read as either "it works but there's no TTY" or "it silently failed." Confirmed it was the former by reproducing the identical empty output from the _uncompiled_ `bun run index.tsx` in the same non-TTY shell, then re-running both under a real pty (`script`). Under the pty, the compiled binary rendered a correct rounded-border box containing "Hello, world!" with the border computed by Yoga, proof the WASM engine actually executed rather than merely having loaded without error.
 
 Binary size: 72,761,330 bytes (~69.4 MiB), embedding the full Bun runtime. In the same range as Claude Code's own reported ~100 MB binary, which uses the identical stack (React, Ink, Yoga, `bun build --compile`) at production scale.
 
@@ -136,7 +136,7 @@ A separate Electron test, run to check whether Electron itself could be spiked t
 
 Built with `bundle.macOS.entitlements` pointing at a plist containing the issue's exact trigger combination: `com.apple.security.device.audio-input` (harmless) alongside `com.apple.developer.associated-domains` (restricted, requires a provisioning profile this ad-hoc build does not have), ad-hoc signed, via `tauri build --bundles app`.
 
-- `codesign -d --entitlements -` on the embedded sidecar showed entitlements **byte-identical** to the main binary's, including the restricted one the sidecar has no business holding. This directly confirms the report's central technical claim: Tauri's bundler signs every sidecar with the whole app entitlements file, with no per-sidecar option.
+- `codesign -d --entitlements -` on the embedded sidecar showed entitlements **byte-identical** to the main binary's, including the restricted one the sidecar has no business holding. Tauri's bundler signs every sidecar with the whole app entitlements file, with no per-sidecar option.
 - Direct execution of the sidecar from inside the built bundle: **exit code 137** (128 + 9, SIGKILL). Zero stdout bytes; it never got far enough to render anything.
 - `log show` pulled the exact moment of the kill:
     ```
@@ -146,10 +146,10 @@ Built with `bundle.macOS.entitlements` pointing at a plist containing the issue'
     amfid: .../Contents/MacOS/ink-sea-demo not valid:
       Error Domain=AppleMobileFileIntegrityError Code=-424 "The file is adhoc signed but contains restricted entitlements"
     ```
-    This names the sidecar by its full path, and the `-427` code matches the original report's own prediction for the ad-hoc-signing case (as distinct from `-413`, "No matching profile found," predicted for a real notarized build, which this environment could not test).
+    This names the sidecar by its full path. `-427` is the ad-hoc-signing case; the report predicts `-413`, "No matching profile found," for a real notarized build, which this environment could not test.
 - `codesign --verify --deep --strict` and the build itself reported success throughout. Nothing in the ordinary toolchain surfaces this failure; it is invisible to CI by construction.
 
-**A nuance the original report predicted and this spike confirmed rather than merely assumed**: under ad-hoc signing with no certificate chain at all, the kill is not selective to the sidecar. Running the _main app binary_ directly with the same restricted entitlements also exits 137, and launching the `.app` via `open` fails outright ("Launchd job spawn failed"). Only with a real Developer ID certificate _and_ a matching provisioning profile would the main executable legitimately satisfy the restricted entitlement while the sidecar, holding no profile of its own, is killed silently, which is the more dangerous, genuinely CI-invisible shape of the bug. That specific asymmetric case could not be directly tested without real signing credentials. What was directly confirmed, identical-entitlements inheritance with no scoping option, is the exact mechanism that produces it once real credentials are in play.
+**Under ad-hoc signing, with no certificate chain at all, the kill is not selective to the sidecar.** Running the _main app binary_ directly with the same restricted entitlements also exits 137, and launching the `.app` via `open` fails outright ("Launchd job spawn failed"). Only with a real Developer ID certificate _and_ a matching provisioning profile would the main executable legitimately satisfy the restricted entitlement while the sidecar, holding no profile of its own, is killed silently, which is the more dangerous, genuinely CI-invisible shape of the bug. That specific asymmetric case could not be directly tested without real signing credentials. What was directly confirmed, identical-entitlements inheritance with no scoping option, is the exact mechanism that produces it once real credentials are in play.
 
 ### Control: a clean causal isolation
 
@@ -161,13 +161,13 @@ This isolates the variable precisely: an entitlements profile correctly provisio
 
 Because the sidecar tested here is a real Node/V8 standalone binary, exactly the shape this project would ship, it has a hard, load-bearing dependency on `com.apple.security.cs.allow-jit` the moment hardened runtime is active at all. Today, that dependency is satisfied only as a side effect of the sidecar inheriting the _entire_ main app entitlements file. The same architectural gap that causes the restricted-entitlement crash, no way to give a sidecar an entitlements profile different from the main app's, is also the only reason JIT currently works for a Node sidecar at all. A future fix narrowing what a sidecar inherits would need to preserve `allow-jit` specifically for any Node-based sidecar, not just close the security gap; the two problems do not have independent solutions.
 
-### On the originating report's credibility
+### The upstream issue's status
 
-Checked directly via the GitHub API rather than trusted at face value, in either direction: `tauri-apps/tauri#16211` and its proposed fix, draft PR `#16212`, were filed by the same account (`author_association: NONE`) two minutes apart, zero comments on either, and both closed within about an hour of being opened, the PR never merged. No maintainer engagement is visible anywhere on either. This does not make the technical claim false, and the reproduction above confirms it is not false, but it means the report carried no institutional weight of its own: there was no Tauri acknowledgment, roadmap commitment, or reasoned rejection to lean on, which is exactly why direct reproduction rather than reading the thread was the only way to actually know.
+`tauri-apps/tauri#16211` and its proposed fix, draft PR `#16212`, were filed by the same account (`author_association: NONE`) two minutes apart, drew no comments, and were both closed within about an hour, the PR unmerged, with no maintainer response on either. The issue's closed status therefore says nothing about whether Tauri has fixed the defect: to check a later release, re-run the reproduction above.
 
 ### Outcome
 
-Tauri is ruled out by reproduction, not by the original report's uncertain weight. The failure is real, current (Tauri 2.12.4, Rust 1.99.1), CI-invisible, and structurally worse for this project specifically than for a generic Tauri app, because this project's sidecar is Node/V8 and therefore needs its own distinct entitlement that current Tauri has no clean way to grant separately from the main app's. This rules Tauri out; §3 tests Electron against the same checks.
+Tauri is ruled out. The failure is real, current (Tauri 2.12.4, Rust 1.99.1), CI-invisible, and structurally worse for this project specifically than for a generic Tauri app, because this project's sidecar is Node/V8 and therefore needs its own distinct entitlement that current Tauri has no clean way to grant separately from the main app's. §3 tests Electron against the same checks.
 
 ---
 
@@ -175,7 +175,7 @@ Tauri is ruled out by reproduction, not by the original report's uncertain weigh
 
 ### Why this was in question
 
-`mcp-host-plan.md` §1 chose Electron over Tauri on the strength of the Tauri spike above, while noting Electron itself had not been built and verified the same way. That spike's own aside recorded why: a separate Electron test "never launched a process at all: the `electron` binary resolved and executed but reported a plain Node version rather than initializing, with no window and no process visible afterward," with the cause unisolated. This spike re-ran that attempt to find the cause, then built the kind of evidence the Tauri spike did: a real main-process workload, ad-hoc signed, under the hardened runtime, including the direct counterpart to Tauri's entitlement-leakage defect.
+The Tauri spike above rules Tauri out but does not test Electron, and the separate Electron test it records (§2) never launched a process. This spike finds that test's cause, then runs the Tauri spike's checks against Electron: a real main-process workload, ad-hoc signed, under the hardened runtime, including the direct counterpart to Tauri's entitlement-leakage defect.
 
 ### The root cause of the earlier inconclusive attempt: an inherited `ELECTRON_RUN_AS_NODE`
 
@@ -250,12 +250,11 @@ No GUI keychain prompt appeared. `safeStorage` instead created a generic passwor
 | `safeStorage` round trip                                | Pass                                     | Encrypt/decrypt match; keychain item created silently, then deleted                                                                      |
 | Required fuses, read back after signing                 | Pass                                     | All 5 read back set; app still launches                                                                                                  |
 
-Electron clears the same bar Tauri failed: no entitlement leakage to a helper, confirmed by inspection rather than assumed from the absence of a known bug report, provided the build gives each binary its entitlements explicitly rather than relying on `@electron/osx-sign`'s own defaults; and every other mechanism this plan's §2.4 depends on (a main-process workload modelled on host-core running under `allow-jit`, `safeStorage`, the required fuses) verified working under the hardened runtime. The one gap Tauri also has, the asymmetric real-certificate case, needs the same real signing credentials for both frameworks; it does not favour either one over the other.
+Electron clears the same bar Tauri failed: no entitlement leakage to a helper, confirmed by inspecting every binary, provided the build gives each binary its entitlements explicitly rather than relying on `@electron/osx-sign`'s own defaults; and every other mechanism this plan's §2.4 depends on (a main-process workload modelled on host-core running under `allow-jit`, `safeStorage`, the required fuses) verified working under the hardened runtime. The one gap Tauri also has, the asymmetric real-certificate case, needs the same real signing credentials for both frameworks; it does not favour either one over the other.
 
 ---
 
 ## Where this lands
 
-- `mcp-host-plan.md` §1
 - `mcp-host-plan.md` §2.4
 - `mcp-host-plan.md` Phase 5
