@@ -186,11 +186,11 @@ To test against a **remote** instance of Arranger Server:
 
 `execute_query` needs a client that speaks the `2026-07-28` MCP spec and supports elicitation, which most model hosts (including LM Studio) do not yet. Until Arranger has its own chat host, use the MCP TypeScript SDK's example CLI host, which works with any OpenAI-compatible endpoint, including Ollama.
 
-You need Node 20 or later, pnpm 10, and an Ollama server (local or shared), with a tool-calling model.
+You need Node 20 or later, pnpm 10, and an Ollama server, local or remote, with a tool-calling model.
 
 1. Start the MCP Server against a local Arranger (steps 1-3 of [Local Arranger](#local-arranger)) or a remote one ([Remote Arranger](#remote-arranger)).
 
-2. Pull a model, unless you are using a shared Ollama server:
+2. Pull a model, unless your Ollama server already has one:
 
 ```bash
 ollama pull gemma4:e4b
@@ -220,7 +220,7 @@ OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama \
 
 | Setting                         | Description                                                                                                     |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_BASE_URL`               | The model endpoint. For a shared server, use `http://<host>:11434/v1`.                                          |
+| `OPENAI_BASE_URL`               | The model endpoint. For a remote server, use `http://<host>:11434/v1`.                                          |
 | `OPENAI_API_KEY`                | The client refuses to start without one. Ollama ignores the value.                                              |
 | `--protocol-version 2026-07-28` | Without it, the client can fall back to the 2025-era handshake, which this server refuses.                      |
 | `--provider openai`             | Without it, the client picks a provider from whichever API key your shell has set, such as `ANTHROPIC_API_KEY`. |

@@ -1,6 +1,6 @@
 # MCP Host: Plan
 
-**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the shared server outstanding. Phase 1: done. Since 2026-10-16, the CRE is a standalone Electron desktop app, with host-core in its main process ([§2.4](#24-cre-main-process)).
+**Status:** plan approved 2026-10-07. Phase 0: spikes run on local Ollama ([results](phase0-results.md)); confirmation on the development team's shared server outstanding. Phase 1: done. Since 2026-10-16, the CRE is a standalone Electron desktop app, with host-core in its main process ([§2.4](#24-cre-main-process)).
 
 **Recommended, pending the team:** no release of the CRE claims support for controlled data until this plan's security-relevant items, including the open questions below, are settled and built. The CRE is a tool the person configures: they choose its MCP servers and its model, and whether the records they read may reach those is theirs to judge under their own agreements. An Overture deployment, an organization's running Overture platform, is one kind of server it may connect to, never a requirement. Usher, Overture's access enforcement system, sorts data into three tiers: open data anyone may read, registered data any signed-in person may read, and controlled data only people granted access to that dataset may read. For an Overture deployment holding controlled data, the gate is its operator's: it registers neither the CRE with its sign-in service nor an MCP server of its own until then, so the CRE reaches only its open data, anonymously, even where registered data sits alongside it. A deployment holding nothing controlled is unaffected.
 
@@ -449,7 +449,7 @@ First, **upgrade `client`, `server` and `core` to 2.3.0 or later together**, sin
 
 Each spike can change the design, except S2, which confirms it.
 
-**Done on local Ollama, 2026-10-09** ([results](phase0-results.md)). S2 and S5 confirmed the design. S1, S3, S4 and an added S2b (cancellation) changed it, as §2 now states, and found the silent truncation that [Context window](#context-window) handles. Still to do: confirm on the shared server, with the same scripts and `--base-url`.
+**Done on local Ollama, 2026-10-09** ([results](phase0-results.md)). S2 and S5 confirmed the design. S1, S3, S4 and an added S2b (cancellation) changed it, as §2 now states, and found the silent truncation that [Context window](#context-window) handles. Still to do: confirm on the development team's shared server, with the same scripts and `--base-url`.
 
 - **S1: schema conversion.** Send all five Arranger tools' input schemas, including `execute_query`'s unconstrained `sqon`, as OpenAI-style tools through Ollama's `/v1/chat/completions`, the path the provider uses. Confirm the models below call them correctly. Check for `$ref`.
 - **S2: `callTool()` against `request()`.** Confirm `callTool(..., { allowInputRequired: true })` fails on `execute_query`'s `input_required` reply with `tools/list` cached, and `request()` completes the round trip.
@@ -457,7 +457,7 @@ Each spike can change the design, except S2, which confirms it.
 - **S4: malformed tool calls.** Collect real examples from the models below: malformed calls returned, calls written as prose, and any the serving stack refuses with an HTTP error (unverified for Ollama). Reasoning output was measured alongside it ([§2.2](#22-mcp-host-core), LLM Provider Interface).
 - **S5: a refused confirmation.** Restart a loopback `apps/mcp-server` without `MCP_REQUEST_STATE_SECRET` between question and answer, and record what the client surfaces. The source says `-32602` with `data.reason: 'invalid_request_state'`.
 
-**Models for S1, S3 and S4.** Each spike runs on a local Ollama first. A result is confirmed on the team's shared Ollama server only once it is solid, since time there is coordinated across the team.
+**Models for S1, S3 and S4.** Each spike runs on a local Ollama first. A result is confirmed on the development team's shared Ollama server only once it is solid, since time there is coordinated across the team.
 
 | Where             | Model                    | Why                                                                                                                                       |
 | ----------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |

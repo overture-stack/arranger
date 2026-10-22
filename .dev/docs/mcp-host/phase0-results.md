@@ -2,7 +2,7 @@
 
 Evidence for the [MCP host plan](mcp-host-plan.md) §3 Phase 0. The plan states the design; this records what the spikes found.
 
-**Setup:** MCP SDK 2.3.1; Ollama 0.34.3 on a 24 GiB Apple M5 Pro with `OLLAMA_CONTEXT_LENGTH=16384`; models `gemma4:e4b`, `gemma4:12b`, `qwen3:14b` and `granite4.1:8b`. Not yet confirmed on the shared server. Tool results come from the real tools run against a synthetic catalogue, so no dataset records are involved. The [README](README.md) lists the scripts; their raw output, in `results/`, is not committed.
+**Setup:** MCP SDK 2.3.1; Ollama 0.34.3 on a 24 GiB Apple M5 Pro with `OLLAMA_CONTEXT_LENGTH=16384`; models `gemma4:e4b`, `gemma4:12b`, `qwen3:14b` and `granite4.1:8b`. Not yet confirmed on the development team's shared server. Tool results come from the real tools run against a synthetic catalogue, so no dataset records are involved. The [README](README.md) lists the scripts; their raw output, in `results/`, is not committed.
 
 ## Summary
 
