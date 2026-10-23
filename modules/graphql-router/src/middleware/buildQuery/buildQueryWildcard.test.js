@@ -319,4 +319,12 @@ suite('middleware/buildQueryWildcard', () => {
 		});
 	});
 
+	test('reads every * in a value as a wildcard, wherever it stands', () => {
+		const actualOutput = buildQuery({
+			filters: { content: { fieldName: 'case_id', value: ['a*b*c*'] }, op: 'in' },
+			nestedFieldNames,
+		});
+
+		assert.deepEqual(actualOutput, { regexp: { case_id: 'a.*b.*c.*' } });
+	});
 });
