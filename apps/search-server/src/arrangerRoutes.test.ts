@@ -182,7 +182,7 @@ suite('arrangerRoutes', () => {
 		assert.equal(catalogueId, 'catalogue-k7');
 		assert.deepEqual(mapping, properties);
 		assert.deepEqual(
-			['countMatching', 'countRecordsHoldingSeveralValues', 'validate'].map(
+			['countMatching', 'countRecordsAndValues', 'validate'].map(
 				(check) => typeof (probe as Record<string, unknown> | undefined)?.[check],
 			),
 			['function', 'function', 'function'],

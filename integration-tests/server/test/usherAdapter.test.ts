@@ -1173,7 +1173,7 @@ suite("startup checks against the catalogue's own index", { concurrency: false }
 		await dropIndices(esClient, esIndex, setsIndex);
 	});
 
-	test('refuses a catalogue whose resource field holds several values in some record, naming the catalogue, the field and the count', async () => {
+	test('refuses a catalogue whose resource field holds several values in some record, naming the catalogue and the field', async () => {
 		// Given an index where one record holds two resource identifiers
 		await seed(
 			esIndex,
@@ -1183,11 +1183,12 @@ suite("startup checks against the catalogue's own index", { concurrency: false }
 
 		// When a host verifies the catalogue
 		await startOver(RECORDS_REGISTRATION, (startup) => {
-			// Then startup is refused, naming the catalogue, the resource field and the one record
+			// Then startup is refused, naming the catalogue and the resource field, and saying some records hold
+			// more than one value there
 			const refusal = describeStartup(startup);
 			assert.equal(startup.kind, 'refused', refusal);
 			assert.ok(
-				[CATALOGUE, `"${RESOURCE_FIELD}"`, '1 record holds'].every((name) => refusal.includes(name)),
+				[CATALOGUE, `"${RESOURCE_FIELD}"`, 'more than one value'].every((name) => refusal.includes(name)),
 				refusal,
 			);
 		});

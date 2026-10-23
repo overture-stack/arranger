@@ -12,7 +12,7 @@ type Answer<Value> = Readonly<{ kind: 'answered'; value: Value }> | Readonly<{ c
 const isProblem = (problem: string | undefined): problem is string => problem !== undefined;
 
 /** The probe method behind each check, naming it in the event a failure to answer logs. */
-type ProbeCheck = 'countMatching' | 'countRecordsHoldingSeveralValues' | 'validate';
+type ProbeCheck = 'countMatching' | 'countRecordsAndValues' | 'validate';
 
 /** How deep a cause chain is followed, so a chain that loops still ends. */
 const CAUSE_DEPTH = 8;
@@ -115,21 +115,18 @@ const resourceFieldProblemOf = async ({
 	probe: IndexProbe;
 	resourceFieldName: string;
 }): Promise<string | undefined> => {
-	const answer = await answerOf(() => probe.countRecordsHoldingSeveralValues(resourceFieldName));
+	const answer = await answerOf(() => probe.countRecordsAndValues(resourceFieldName));
 	const field = `resource field "${resourceFieldName}"`;
 
 	switch (answer.kind) {
-		case 'answered': {
-			const holding = answer.value === 1 ? '1 record holds' : `${answer.value} records hold`;
-
-			return answer.value > 0
-				? `catalogue "${catalogueId}": ${holding} more than one value in ${field}, while access is enforced on a resource field holding one value per record`
+		case 'answered':
+			return answer.value.values > answer.value.records
+				? `catalogue "${catalogueId}": some records hold more than one value in ${field}, while access is enforced on a resource field holding one value per record`
 				: undefined;
-		}
 		case 'unanswered':
 			logUnanswered(logger, {
 				cause: answer.cause,
-				check: 'countRecordsHoldingSeveralValues',
+				check: 'countRecordsAndValues',
 				fields: { catalogue: catalogueId, field: resourceFieldName },
 			});
 			return `catalogue "${catalogueId}": the check that ${field} holds one value per record could not run, so the catalogue is refused rather than served unchecked; its cause is logged as ${ACCESS_CONTROL_EVENTS.startupCheckFailed}`;

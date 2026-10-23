@@ -121,7 +121,7 @@ Each reason names the catalogue and the field or category at fault, never a valu
 
 A category declared absent is not checked against the index. The [adapter's README](https://github.com/overture-stack/arranger/blob/main/modules/usher-adapter/README.md#what-startup-checks) lists every rule.
 
-The search engine role the server uses needs, on each catalogue's index, `indices:admin/validate/query` to validate the conditions, search to count records, and inline Painless scripts allowed to count the records holding more than one value in the resource field. Raise `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
+The search engine role the server uses needs, on each catalogue's index, `indices:admin/validate/query` to validate the conditions, and search to count records and the values they hold in the resource field. Raise `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
 
 Once running:
 

@@ -323,7 +323,7 @@ suite('the adapter at startup', () => {
 					.filter((call) => call.check === check)
 					.map(({ argument }) => JSON.stringify(argument))
 					.toSorted();
-			assert.deepEqual(sortedCalls('countRecordsHoldingSeveralValues'), [JSON.stringify(RESOURCE_FIELD)]);
+			assert.deepEqual(sortedCalls('countRecordsAndValues'), [JSON.stringify(RESOURCE_FIELD)]);
 			assert.deepEqual(
 				sortedCalls('validate'),
 				[
@@ -357,7 +357,7 @@ suite('the adapter at startup', () => {
 			// Then only the resource field was asked about, nothing was warned of, and the catalogue is registered
 			assert.deepEqual(
 				calls.map(({ check }) => check),
-				['countRecordsHoldingSeveralValues'],
+				['countRecordsAndValues'],
 			);
 			assert.deepEqual(lines, []);
 			assert.deepEqual(bridge.registered, [{ records: ABSENT_CATEGORIES_REGISTRATION }]);
@@ -373,24 +373,25 @@ suite('the adapter at startup', () => {
 			assert.deepEqual(bridge.registered, [{ records: OPEN_REGISTRATION }]);
 		});
 
-		test('refuses a catalogue whose resource field holds several values in some record, naming the catalogue, the field and the count', async () => {
-			// Given an index where three records hold more than one value in the resource field
+		test('refuses a catalogue whose resource field holds several values in some record, naming the catalogue and the field', async () => {
+			// Given an index where the records holding the resource field hold one more value than there are records
 			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
-			const { probe } = createStubProbe({ countRecordsHoldingSeveralValues: async () => 3 });
+			const { probe } = createStubProbe({ countRecordsAndValues: async () => ({ records: 3, values: 4 }) });
 
 			// When the adapter verifies it
 			const refusal = await refusalOf(accessControl.verify({ [NAMED_CATALOGUE]: indexOf(INDEX_MAPPING, probe) }));
 
-			// Then startup fails naming the catalogue, the field and the count, and nothing is registered
-			assertNames(refusal, [NAMED_CATALOGUE, RESOURCE_FIELD, '3 records']);
+			// Then startup fails naming the catalogue and the field, saying some records hold more than one value
+			// there, and nothing is registered
+			assertNames(refusal, [NAMED_CATALOGUE, RESOURCE_FIELD, 'more than one value']);
 			assert.deepEqual(bridge.registered, []);
 		});
 
-		test('refuses a catalogue whose count of records holding several resource values could not run, saying so', async () => {
-			// Given an engine refusing the check, as one refusing the script or failing a shard does
+		test('refuses a catalogue whose count of records and values in the resource field could not run, saying so', async () => {
+			// Given an engine refusing the check, as one failing a shard does
 			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
 			const { probe } = createStubProbe({
-				countRecordsHoldingSeveralValues: async () => {
+				countRecordsAndValues: async () => {
 					throw new Error(`a shard failed on ${ENGINE_VALUE}`);
 				},
 			});
@@ -430,9 +431,9 @@ suite('the adapter at startup', () => {
 
 		for (const [description, answers, fields] of [
 			[
-				'the count of records holding several resource values',
-				{ countRecordsHoldingSeveralValues: rejecting },
-				{ catalogue: NAMED_CATALOGUE, check: 'countRecordsHoldingSeveralValues', field: RESOURCE_FIELD },
+				'the count of records and values in the resource field',
+				{ countRecordsAndValues: rejecting },
+				{ catalogue: NAMED_CATALOGUE, check: 'countRecordsAndValues', field: RESOURCE_FIELD },
 			],
 			[
 				"a condition's validation",
@@ -620,7 +621,7 @@ suite('the adapter at startup', () => {
 				accessControl.verify({
 					[NAMED_CATALOGUE]: indexOf(
 						INDEX_MAPPING,
-						createStubProbe({ countRecordsHoldingSeveralValues: async () => 2 }).probe,
+						createStubProbe({ countRecordsAndValues: async () => ({ records: 2, values: 3 }) }).probe,
 					),
 					[OTHER_CATALOGUE]: indexOf(
 						INDEX_MAPPING,
@@ -630,7 +631,11 @@ suite('the adapter at startup', () => {
 			);
 
 			// Then the one refusal names both catalogues and both reasons, and nothing is registered
-			assertNames(refusal, [NAMED_CATALOGUE, '2 records', OTHER_CATALOGUE, 'global.controlled'], [ENGINE_VALUE]);
+			assertNames(
+				refusal,
+				[NAMED_CATALOGUE, 'more than one value', OTHER_CATALOGUE, 'global.controlled'],
+				[ENGINE_VALUE],
+			);
 			assert.deepEqual(bridge.registered, []);
 		});
 

@@ -56,7 +56,7 @@ const INDICES: Readonly<Record<string, CatalogueIndex>> = {
 		mapping: { study_id: { type: 'keyword' } },
 		probe: {
 			countMatching: async () => 1,
-			countRecordsHoldingSeveralValues: async () => 0,
+			countRecordsAndValues: async () => ({ records: 0, values: 0 }),
 			validate: async () => ({ valid: true }),
 		},
 	},

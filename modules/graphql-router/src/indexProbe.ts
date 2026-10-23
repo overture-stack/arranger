@@ -21,12 +21,13 @@ export type IndexProbe = {
 	/** Resolves to how many records `condition` matches; rejects when it will not compile or the engine fails. */
 	countMatching: (condition: SqonNode) => Promise<number>;
 	/**
-	 * Resolves to how many records hold more than one value in the field `fieldName` names, read from
-	 * the field's doc values. Rejects, rather than resolving to 0, when the engine refuses the script (a
-	 * field without doc values, inline scripts disabled) or cannot count every shard, and for a field
+	 * Resolves to how many records hold the field `fieldName` names, and how many values they hold in it
+	 * as its doc values count them, a keyword a record repeats counted once; more values than records
+	 * means some record holds several. Both come from one search, with no script. Rejects when the
+	 * engine refuses the count (a field without doc values) or cannot count every shard, and for a field
 	 * inside a nested field, whose values its nested objects hold rather than the record.
 	 */
-	countRecordsHoldingSeveralValues: (fieldName: string) => Promise<number>;
+	countRecordsAndValues: (fieldName: string) => Promise<{ records: number; values: number }>;
 	/**
 	 * Resolves to whether the engine accepts `condition`'s query, with the engine's explanation when not.
 	 * A condition that will not compile resolves as not valid, with the compiler's message; an engine
@@ -34,8 +35,6 @@ export type IndexProbe = {
 	 */
 	validate: (condition: SqonNode) => Promise<ConditionValidation>;
 };
-
-const SEVERAL_VALUES_SCRIPT = 'doc[params.fieldName].size() > 1';
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
@@ -99,24 +98,24 @@ export const createIndexProbe = ({
 			}
 		};
 
-		// The query is sent even when it compiled empty, as the router sends it: left out, the engine
-		// would count every record.
-		const countRecords = async ({
+		const searchExactly = async ({
+			aggs,
 			failureMessage,
 			query,
 		}: {
+			aggs?: object;
 			failureMessage: string;
 			query: object;
-		}): Promise<number> => {
+		}): Promise<{ aggregations: SearchClientSearchBody['aggregations']; total: number }> => {
 			const { body } = await searchClient
-				.search({ body: { query, track_total_hits: true }, index, size: 0 })
+				.search({ body: { ...(aggs && { aggs }), query, track_total_hits: true }, index, size: 0 })
 				.catch((cause: unknown) => {
 					throw new Error(failureMessage, { cause });
 				});
 			const total = exactTotalOf(body);
 
 			if (typeof total === 'number') {
-				return total;
+				return { aggregations: body.aggregations, total };
 			}
 
 			throw new Error(failureMessage, {
@@ -138,31 +137,40 @@ export const createIndexProbe = ({
 		};
 
 		return {
-			countMatching: async (condition) =>
-				countRecords({
+			// The query is sent even when it compiled empty, as the router sends it: left out, the engine
+			// would count every record.
+			countMatching: async (condition) => {
+				const { total } = await searchExactly({
 					failureMessage: 'The search engine could not count the records matching a condition.',
 					query: compile(condition),
-				}),
-			countRecordsHoldingSeveralValues: async (fieldName) => {
+				});
+
+				return total;
+			},
+			countRecordsAndValues: async (fieldName) => {
 				const nestedFieldName = nestedFieldHolding(fieldName, nestedFieldNames);
 
 				if (nestedFieldName === undefined) {
-					return countRecords({
-						failureMessage: `The search engine could not count the records holding several values in "${fieldName}".`,
-						query: {
-							script: {
-								script: {
-									lang: 'painless',
-									params: { fieldName: applyNestingPrefix(fieldName, nestingPrefix) ?? fieldName },
-									source: SEVERAL_VALUES_SCRIPT,
-								},
-							},
-						},
+					const fieldPath = applyNestingPrefix(fieldName, nestingPrefix) ?? fieldName;
+					const failureMessage = `The search engine could not count the records and values of "${fieldName}".`;
+					const { aggregations, total } = await searchExactly({
+						aggs: { values: { value_count: { field: fieldPath } } },
+						failureMessage,
+						query: { exists: { field: fieldPath } },
+					});
+					const values: unknown = aggregations?.values?.value;
+
+					if (typeof values === 'number') {
+						return { records: total, values };
+					}
+
+					throw new Error(failureMessage, {
+						cause: new Error("The search engine's answer gave no count of the field's values."),
 					});
 				}
 
 				throw new Error(
-					`Cannot count the records holding several values in "${fieldName}": it lies inside the nested field "${nestedFieldName}", whose objects hold its values rather than the record.`,
+					`Cannot count the records and values of "${fieldName}": it lies inside the nested field "${nestedFieldName}", whose objects hold its values rather than the record.`,
 				);
 			},
 			validate: async (condition) => {

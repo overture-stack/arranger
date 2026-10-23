@@ -16,7 +16,7 @@ export const createStubProbe = (answers: Partial<IndexProbe> = {}): StubProbe =>
 	const calls: ProbeCall[] = [];
 	const {
 		countMatching = async () => 1,
-		countRecordsHoldingSeveralValues = async () => 0,
+		countRecordsAndValues = async () => ({ records: 1, values: 1 }),
 		validate = async () => ({ valid: true as const }),
 	} = answers;
 
@@ -27,9 +27,9 @@ export const createStubProbe = (answers: Partial<IndexProbe> = {}): StubProbe =>
 				calls.push({ argument: structuredClone(condition), check: 'countMatching' });
 				return countMatching(condition);
 			},
-			countRecordsHoldingSeveralValues: async (fieldName) => {
-				calls.push({ argument: fieldName, check: 'countRecordsHoldingSeveralValues' });
-				return countRecordsHoldingSeveralValues(fieldName);
+			countRecordsAndValues: async (fieldName) => {
+				calls.push({ argument: fieldName, check: 'countRecordsAndValues' });
+				return countRecordsAndValues(fieldName);
 			},
 			validate: async (condition) => {
 				calls.push({ argument: structuredClone(condition), check: 'validate' });

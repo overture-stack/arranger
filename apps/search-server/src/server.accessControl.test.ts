@@ -29,18 +29,23 @@ const refusing: ProxyHandler<() => unknown> = {
 };
 const ENGINE_DOWN = new Proxy(() => undefined, refusing) as unknown as SearchClient;
 
-/** A search's answer counting `total` records exactly, every shard answering in time. */
-const countedAnswer = (total: number) => ({
-	body: { _shards: { failed: 0 }, hits: { hits: [], total: { relation: 'eq', value: total } }, timed_out: false },
+/** A search's answer counting `total` records exactly, and `values` values when given, every shard answering in time. */
+const countedAnswer = (total: number, values?: number) => ({
+	body: {
+		_shards: { failed: 0 },
+		...(values === undefined ? {} : { aggregations: { values: { value: values } } }),
+		hits: { hits: [], total: { relation: 'eq', value: total } },
+		timed_out: false,
+	},
 });
 
 /**
  * An engine answering only what startup, its checks of each catalogue's index and the readiness probe
  * ask, its index holding the fields the registrations name, so every catalogue loads with no engine
- * running. Every condition is valid and matches one record, and `recordsHoldingSeveralValues` records
- * hold more than one value in the resource field.
+ * running. Every condition is valid and matches one record, and the one record holding the resource field
+ * holds `extraResourceValues` more values in it than one.
  */
-const engineUp = ({ recordsHoldingSeveralValues = 0 }: Readonly<{ recordsHoldingSeveralValues?: number }> = {}) =>
+const engineUp = ({ extraResourceValues = 0 }: Readonly<{ extraResourceValues?: number }> = {}) =>
 	({
 		cat: { aliases: async () => ({ body: [] }) },
 		indices: {
@@ -61,8 +66,8 @@ const engineUp = ({ recordsHoldingSeveralValues = 0 }: Readonly<{ recordsHolding
 			}),
 			validateQuery: async () => ({ body: { valid: true } }),
 		},
-		search: async ({ body }: { body?: { query?: { script?: unknown } } }) =>
-			countedAnswer(body?.query?.script === undefined ? 1 : recordsHoldingSeveralValues),
+		search: async ({ body }: { body?: { aggs?: unknown } }) =>
+			body?.aggs === undefined ? countedAnswer(1) : countedAnswer(1, 1 + extraResourceValues),
 	}) as unknown as SearchClient;
 
 const ENGINE_UP = engineUp();
@@ -261,21 +266,21 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	}
 
 	test('refuses startup for a catalogue whose resource field holds several values in some record, naming it, before the bridge is registered with or started', async (context) => {
-		// Given a registered catalogue whose index holds two records with more than one value in the resource field
+		// Given a registered catalogue whose index holds a record with more than one value in the resource field
 		context.mock.method(console, 'error', () => undefined);
 		const configs = await writeCatalogues(path.join(workspace, 'several-values'), {
 			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
 		});
 		const bridge = recordingBridge();
 
-		// When the image starts, Then it refuses, naming the catalogue, the field and the count, and the bridge
-		// was neither registered with nor started
+		// When the image starts, Then it refuses, naming the catalogue and the field and saying some records hold
+		// more than one value there, and the bridge was neither registered with nor started
 		await assert.rejects(
-			() => startImage(configs, bridge.core, { engine: engineUp({ recordsHoldingSeveralValues: 2 }) }),
+			() => startImage(configs, bridge.core, { engine: engineUp({ extraResourceValues: 1 }) }),
 			(error: unknown) =>
 				describeRefusal(error).includes(NAMED_CATALOGUE) &&
 				describeRefusal(error).includes('study_id') &&
-				describeRefusal(error).includes('2 records'),
+				describeRefusal(error).includes('more than one value'),
 		);
 		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
 	});

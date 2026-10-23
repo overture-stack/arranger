@@ -17,8 +17,7 @@ const esClient = await buildSearchClient({
 
 const ES_INDEX = `testing-index-probe-${randomUUID()}`;
 const NESTING_PREFIX = 'data';
-// Every record is routed to one shard of three, so a script the engine refuses fails that shard alone
-// while the others answer with a count of 0, which is how a refusal comes back from a real index.
+// Every record is routed to one shard of three, so the other two hold none of a field's values.
 const ROUTING = 'one-shard';
 const MAPPINGS = {
 	mappings: {
@@ -41,6 +40,7 @@ const RECORDS = [
 	{ diagnosed: '2021-06-01', name: 'r2', notes: 'two tags', study: 'A', tags: ['x', 'y'] },
 	{ diagnosed: '2022-06-01', name: 'r3', notes: 'three tags', study: 'B', tags: ['x', 'y', 'z'] },
 	{ diagnosed: '2023-06-01', name: 'r4', notes: 'no tags', study: 'B' },
+	{ name: 'r5', tags: ['w', 'w'] },
 ];
 
 const fieldCondition = (op: 'gte' | 'in', fieldName: string, value: string[]) => ({
@@ -103,15 +103,15 @@ suite("the index probe answers from the catalogue's own index", { concurrency: f
 		assert.equal(await probeOfIndex().countMatching(fieldCondition('in', 'study', ['C'])), 0);
 	});
 
-	test('counts the records holding several values in a keyword field', async () => {
-		assert.equal(await probeOfIndex().countRecordsHoldingSeveralValues('tags'), 2);
+	test('counts more values than records in a keyword field some records hold several times, a repeated value once', async () => {
+		assert.deepEqual(await probeOfIndex().countRecordsAndValues('tags'), { records: 4, values: 7 });
 	});
 
-	test('counts no records holding several values in a keyword field every record holds once', async () => {
-		assert.equal(await probeOfIndex().countRecordsHoldingSeveralValues('study'), 0);
+	test('counts as many values as records in a keyword field every record holds once', async () => {
+		assert.deepEqual(await probeOfIndex().countRecordsAndValues('study'), { records: 4, values: 4 });
 	});
 
-	test('rejects counting the records holding several values in a text field, which has no doc values, though only one shard refuses', async () => {
-		await assert.rejects(probeOfIndex().countRecordsHoldingSeveralValues('notes'));
+	test('rejects counting the values of a text field, which has no doc values', async () => {
+		await assert.rejects(probeOfIndex().countRecordsAndValues('notes'));
 	});
 });

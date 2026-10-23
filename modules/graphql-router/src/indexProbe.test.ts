@@ -42,28 +42,33 @@ const COMPILED_NESTED_CONDITION = {
 };
 const UNCOMPILABLE_CONDITION = { content: { fieldName: 'study', value: ['A'] }, op: 'near' } as unknown as SqonNode;
 
-/** The search counting the records holding several values at `fieldPath`, named only in the script's parameters. */
-const severalValuesSearch = (fieldPath: string) => ({
+/** The search counting the records holding a value at `fieldPath`, and the values they hold there. */
+const recordsAndValuesSearch = (fieldPath: string) => ({
 	body: {
-		query: {
-			script: {
-				script: {
-					lang: 'painless',
-					params: { fieldName: fieldPath },
-					source: 'doc[params.fieldName].size() > 1',
-				},
-			},
-		},
+		aggs: { values: { value_count: { field: fieldPath } } },
+		query: { exists: { field: fieldPath } },
 		track_total_hits: true,
 	},
 	index: ES_INDEX,
 	size: 0,
 });
 
-/** A search response counting `total` records, with `failedShards` of its two shards failing. */
-const countResponse = ({ failedShards = 0, total }: { failedShards?: number; total: number }) => ({
+/**
+ * A search response counting `total` records, with `failedShards` of its two shards failing, and `values`
+ * values when given.
+ */
+const countResponse = ({
+	failedShards = 0,
+	total,
+	values,
+}: {
+	failedShards?: number;
+	total: number;
+	values?: number;
+}) => ({
 	body: {
 		_shards: { failed: failedShards, successful: 2 - failedShards, total: 2 },
+		...(values === undefined ? {} : { aggregations: { values: { value: values } } }),
 		hits: { hits: [], total: { relation: 'eq', value: total } },
 		timed_out: false,
 		took: 1,
@@ -303,70 +308,59 @@ suite('IndexProbe.countMatching', () => {
 	});
 });
 
-suite('IndexProbe.countRecordsHoldingSeveralValues', () => {
-	test("counts with a script over the field's doc values, passing the prefixed field path as a parameter", async () => {
-		// Given an engine counting 2 records for any query
-		const engine = createSearchEngine({ search: async () => countResponse({ total: 2 }) });
+suite('IndexProbe.countRecordsAndValues', () => {
+	test('counts, in one search with no script, the records holding the prefixed field and the values they hold in it', async () => {
+		// Given an engine counting 3 records holding the field and 5 values among them
+		const engine = createSearchEngine({ search: async () => countResponse({ total: 3, values: 5 }) });
 		const probe = await probeOf(engine);
 
-		// When the records holding several values in "study" are counted
-		const count = await probe.countRecordsHoldingSeveralValues('study');
+		// When the records and values of "study" are counted
+		const counts = await probe.countRecordsAndValues('study');
 
-		// Then the engine ran the script over "data.study", named only in the script's parameters
-		assert.equal(count, 2);
-		assert.deepEqual(engine.searches, [severalValuesSearch('data.study')]);
+		// Then both counts are the engine's, from one search on "data.study"
+		assert.deepEqual(counts, { records: 3, values: 5 });
+		assert.deepEqual(engine.searches, [recordsAndValuesSearch('data.study')]);
 	});
 
-	test('keeps a field name holding script syntax out of the script source', async () => {
-		// Given a field name that would change the script if it were written into it
-		const engine = createSearchEngine();
-		const probe = await probeOf(engine);
-		const fieldName = "study'].size() > 0 || doc['study";
-
-		// When the records holding several values in it are counted
-		await probe.countRecordsHoldingSeveralValues(fieldName);
-
-		// Then the script source is unchanged, and the field name travels only as a parameter
-		assert.deepEqual(engine.searches, [severalValuesSearch(`data.${fieldName}`)]);
-	});
-
-	test('rejects when the engine refuses the script', async () => {
-		// Given an engine refusing the script on every shard, as it does with inline scripts disabled
+	test('rejects when the engine refuses the count', async () => {
+		// Given an engine refusing to count a field's values, as it does for a field without doc values
 		const probe = await probeOf(
 			createSearchEngine({
 				search: async () => {
-					throw new Error('cannot execute [inline] scripts');
+					throw new Error("Can't load fielddata on [data.study]");
 				},
 			}),
 		);
 
 		// Then counting rejects, carrying the engine's refusal
-		await assertRejectsCarrying(
-			probe.countRecordsHoldingSeveralValues('study'),
-			'cannot execute \\[inline\\] scripts',
-		);
+		await assertRejectsCarrying(probe.countRecordsAndValues('study'), "Can't load fielddata on \\[data.study\\]");
 	});
 
-	test('never reads a script refused on some shards as a count of 0', async () => {
-		// Given an engine whose script failed on the shard holding records, the other answering with none
+	test('rejects counts some shards failed to give', async () => {
+		// Given an engine whose shard holding records failed, the other answering with none
 		const probe = await probeOf(
-			createSearchEngine({ search: async () => countResponse({ failedShards: 1, total: 0 }) }),
+			createSearchEngine({ search: async () => countResponse({ failedShards: 1, total: 0, values: 0 }) }),
 		);
 
-		// Then counting rejects rather than resolving to 0
-		await assert.rejects(probe.countRecordsHoldingSeveralValues('study'));
+		// Then counting rejects rather than resolving to the other shard's counts
+		await assert.rejects(probe.countRecordsAndValues('study'));
+	});
+
+	test('rejects an answer giving no count of values', async () => {
+		// Given an engine counting the records but answering no value count
+		const probe = await probeOf(createSearchEngine({ search: async () => countResponse({ total: 3 }) }));
+
+		// Then counting rejects rather than resolving to a count of values it never gave
+		await assert.rejects(probe.countRecordsAndValues('study'));
 	});
 
 	test('rejects a field inside a nested field, whose values the record itself never holds, asking the engine nothing', async () => {
 		// Given a probe of a catalogue whose samples are nested objects
-		const engine = createSearchEngine({ search: async () => countResponse({ total: 0 }) });
+		const engine = createSearchEngine({ search: async () => countResponse({ total: 0, values: 0 }) });
 		const probe = await probeOf(engine);
 
-		// Then counting the records holding several sample types rejects, before any search
-		await assertRejectsCarrying(
-			probe.countRecordsHoldingSeveralValues('samples.sample_type'),
-			'nested field "samples"',
-		);
+		// Then counting the records and values of the sample types rejects, before any search
+		await assertRejectsCarrying(probe.countRecordsAndValues('samples.sample_type'), 'nested field "samples"');
 		assert.deepEqual(engine.searches, []);
 	});
 });
