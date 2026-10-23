@@ -55,8 +55,16 @@ const router = await arrangerRouter(options);
 | `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                       |
 | `esClient`            | `SearchClient`           | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
 | `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter that limits each read, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
-| `onIndexMapping` | `(mappingFromIndex) => void` | Optional: called once with a copy of the index mapping the router fetched, before the router resolves, so a host can check fields against it. A throw fails the router's construction. |
+| `onIndexMapping` | `(mappingFromIndex, indexProbe) => void` | Optional: called once, before the router resolves, with a copy of the index mapping the router fetched and an `IndexProbe` of the catalogue's index, so a host can check fields against the mapping and ask the index what the mapping cannot answer. A throw fails the router's construction. |
 | `configsSource`       | `string`                 | **Deprecated**, not read: pass `configs` instead. Passed with no `configs`, construction rejects; beside them, it is ignored with a warning. |
+
+The `IndexProbe`, exported as a type from the package root, compiles a condition as the router compiles its server-side filter, so each answer holds for the queries the router will send, and stays usable after the hook returns:
+
+- `countMatching(condition)`: how many records a condition matches.
+- `countRecordsAndValues(fieldName)`: how many records hold a field, and how many values they hold in it; more values than records means some record holds several.
+- `validate(condition)`: whether the engine accepts a condition's query, with the engine's explanation when it does not.
+
+Each count rejects unless every shard answered in time and the total is exact.
 
 ---
 

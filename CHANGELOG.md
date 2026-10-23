@@ -142,7 +142,7 @@ These correct behaviour that only the 3.1 release candidates had, so a deploymen
 
 - **New `AccessControlUnavailableError`**: a callback throws it, with a message for the server log and `retryAfterSeconds`, to refuse a request for now. GraphQL answers it with `extensions.code` `ACCESS_ENFORCEMENT_UNAVAILABLE`, exported as `ACCESS_ENFORCEMENT_UNAVAILABLE_CODE`, and the router's fixed text, exported as `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`; `/download` answers `503` with that text and `Retry-After`. Each logs the thrower's message as `access_enforcement.unavailable_answered`, and neither logs `access_enforcement.evaluation_failed`.
 
-- **New `onIndexMapping` option on `arrangerRouter`**: called once with a copy of the fetched index mapping before the router resolves, so a host can check fields against it; a throw fails the router's construction.
+- **New `onIndexMapping` option on `arrangerRouter`**: called once before the router resolves with a copy of the fetched index mapping and an `IndexProbe` of the catalogue's index, so a host can check fields against the mapping and ask the index how many records a condition matches, how many records and values a field holds, and whether the engine accepts a condition; a throw fails the router's construction.
 
 ### MCP server
 
