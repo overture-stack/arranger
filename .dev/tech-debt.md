@@ -1396,15 +1396,6 @@ With exactly one sibling filter those are equivalent, which is why the naive fix
 **Fix:** Apply `applyNestingPrefixToSqon` to the `filter_by_term` filter before compiling it, as `buildAggregations` does for the client filter, and cover it with a facet under a prefix.
 **Standalone:** yes
 
-### Legacy wildcard-in-`IN` filter only converts the first `*` to a regex wildcard
-
-**File:** `modules/graphql-router/src/middleware/buildQuery/index.js:57-73` (`getRegexFilter`)
-**Severity:** medium
-**Kind:** bug
-**Issue:** When an `in`/`not-in` value contains a literal `*`, `getRegexFilter` builds an ES `regexp` query via `value.replace('*', '.*')`. `String.prototype.replace` with a string pattern replaces only the first occurrence: `'foo*bar*baz'.replace('*', '.*')` → `'foo.*bar*baz'`, confirmed directly, the second `*` is left as a literal regex quantifier in ES/OS `regexp` syntax ("zero or more of the preceding character"), silently changing query semantics for any value with more than one wildcard. Distinct from the newer, correctly-implemented `WILDCARD_OP`/`getWildcardFilter` path, which uses ES's native `wildcard` query type and needs no conversion. All existing tests in `buildQuery/__tests__/buildQueryWildcard.test.js` use values with exactly one `*`, untested and unnoticed.
-**Fix:** Use `value.replace(/\*/g, '.*')` and add a test case with multiple `*` in one value.
-**Standalone:** yes.
-
 ### `saveSet` performs no structured logging on a sensitive, persistent write
 
 **File:** `modules/graphql-router/src/mapping/resolveSets.js:66-119`
