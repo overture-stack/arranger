@@ -1,6 +1,6 @@
 # Genomics visualization libraries: a research record
 
-Written for whoever specializes in this next. Scope: candidate visualization libraries for rendering Arranger data (OncoPrint-style grids, mutation lollipop plots, survival curves) through the MCP host's eventual notebook UI (`cre-ui`). Not in scope here: the cBioPortal MCP-server integration itself, or the host's broader connection-authentication design, both covered in [`arranger-auth/mcp-host-connections.md`](../arranger-auth/mcp-host-connections.md) §4. The compressed plan this research feeds is [`visualization-data-mapping.md`](../visualization-data-mapping.md); this document is the reasoning, the alternatives, and the parts of the investigation that didn't make it into the compressed version.
+Written for whoever specializes in this next. Scope: candidate visualization libraries for rendering Arranger data (OncoPrint-style grids, mutation lollipop plots, survival curves) through the MCP host's eventual notebook renderer (`cre-renderer`). Not in scope here: the cBioPortal MCP-server integration itself, or the host's broader connection-authentication design, both covered in [`arranger-auth/mcp-host-connections.md`](../arranger-auth/mcp-host-connections.md) §4. The compressed plan this research feeds is [`visualization-data-mapping.md`](../visualization-data-mapping.md); this document is the reasoning, the alternatives, and the parts of the investigation that didn't make it into the compressed version.
 
 ## Why this exists at all
 
@@ -22,7 +22,7 @@ cBioPortal publishes several of its own frontend's visualization components as s
 - npm `0.9.13`, described by its own maintainers as "Generic Mutation Mapper". Licence **AGPL-3.0-or-later**.
 - Confirmed backend-agnostic by reading an actual usage example: `LollipopMutationPlot` takes a `store` built from `DefaultMutationMapperStore`, initialized with a callback that returns plain mutation objects, no live cBioPortal connection anywhere in the pattern.
 - Confirmed the complete `Mutation` type, read from the type's source file (`cbioportal-utils/src/model/Mutation.ts`): 14 fields, full list in [`visualization-data-mapping.md`](../visualization-data-mapping.md)'s table. Only `proteinChange` and `proteinPosStart` are required; the rest sharpen the render rather than gate it.
-- Licence note: the actual consumer is the MCP host's notebook UI (`cre-ui`), a separate app whose own licence isn't settled, not Arranger itself. AGPL's network-use clause reads differently for code bundled into a browser than for a server-side dependency, which `.dev/tech-debt.md`'s own AGPL entry already notes. Whether this is a fit is for whoever approves `cre-ui`'s dependencies to judge, not something this doc can conclude.
+- Licence note: the actual consumer is the MCP host's notebook renderer (`cre-renderer`), a separate app whose own licence isn't settled, not Arranger itself. The CRE ships as a distributed desktop app, so AGPL's ordinary distribution terms apply to the whole combined work once this is bundled in, not the network-use clause, which [mcp-host-plan.md](../mcp-host/mcp-host-plan.md) §5, question 5, already settles does not apply to a desktop app nobody reaches remotely. Whether this is a fit is for whoever approves the CRE's dependencies to judge, not something this doc can conclude.
 
 ### `cbioportal-frontend-commons`
 
@@ -32,17 +32,17 @@ cBioPortal publishes several of its own frontend's visualization components as s
 
 All nine repos under the `oncojs` GitHub org were surveyed, not just the genomics-specific three, as they stood on 2026-10-09. Activity is each repo's default-branch head. The org listing's last-pushed dates come from Dependabot branches and say nothing about the code. Versions are the published npm packages, because the root manifests of `lolliplot` and `survivalplot` belong to a workspace and a demo app. Licensing comes from both the manifest and the licence file, because the two disagree in places.
 
-| Repo | Purpose | Published as | Licence | Core deps | Last commit |
-|---|---|---|---|---|---|
-| `oncogrid` | OncoGrid (≈ `oncoprintjs` equivalent) | `oncogrid` 3.0.0, unscoped | **ambiguous**: manifest MIT, licence file Apache-2.0 | `d3@3.5.17` | 2018-12-12 |
-| `lolliplot` | Mutation lollipop chart (≈ `react-mutation-mapper` equivalent) | `@oncojs/lolliplot` 0.10.2, `@oncojs/react-lolliplot` 0.11.9 | Apache-2.0 file; the packages declare none | `react@^15.4.1`, `redux@^3`, `react-faux-dom@^3`; D3 3 or 4 supplied by the caller | 2020-02-28 |
-| `survivalplot` | Survival curves: **no cBioPortal-extracted equivalent found**, a new capability | `@oncojs/survivalplot` 0.8.3, `@oncojs/react-survivalplot` 0.6.0 | **none** | `d3@3` | 2019-07-03 |
-| `boxplot` | Generic box plot | `@oncojs/boxplot` 0.3.1 | manifest MIT, no licence file | `d3-axis@1`, `d3-scale@3`, `d3-selection@1.4`, `styled-components@4.2` | 2019-08-15 |
-| `qqplot` | Generic Q-Q plot | `@oncojs/qqplot` 0.0.1 | manifest MIT, no licence file | `d3@4.8.0`, `react@16.8.0`, `react-faux-dom@3.1.0` | 2019-11-19 |
-| `sapien` | "Cases by Primary Site" human-body diagram, bucket-shaped data with configurable key names | `@oncojs/sapien` 0.5.3, `@oncojs/react-sapien` 0.5.2 | Apache-2.0 file; the packages declare none | `d3@^4.4.1`, `react@^15.4.2` | 2019-12-02 |
-| `pathwayviewer` | Reactome pathway visualization | `@oncojs/pathwayviewer` 0.3.4 | **none** | `d3@3` and `jquery@3` as peers | 2017-08-04 |
-| `platform` | Faceted-search UI components (Blueprint.js-based), not charts | not published | **none** | `@blueprintjs/*@1.x`, `react@^15.6.1` | 2017-08-01 |
-| `integration-tests` | Cucumber step boilerplate | not published | MIT | not checked | 2017-10-05 |
+| Repo                | Purpose                                                                                    | Published as                                                     | Licence                                              | Core deps                                                                          | Last commit |
+| ------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------- |
+| `oncogrid`          | OncoGrid (≈ `oncoprintjs` equivalent)                                                      | `oncogrid` 3.0.0, unscoped                                       | **ambiguous**: manifest MIT, licence file Apache-2.0 | `d3@3.5.17`                                                                        | 2018-12-12  |
+| `lolliplot`         | Mutation lollipop chart (≈ `react-mutation-mapper` equivalent)                             | `@oncojs/lolliplot` 0.10.2, `@oncojs/react-lolliplot` 0.11.9     | Apache-2.0 file; the packages declare none           | `react@^15.4.1`, `redux@^3`, `react-faux-dom@^3`; D3 3 or 4 supplied by the caller | 2020-02-28  |
+| `survivalplot`      | Survival curves: **no cBioPortal-extracted equivalent found**, a new capability            | `@oncojs/survivalplot` 0.8.3, `@oncojs/react-survivalplot` 0.6.0 | **none**                                             | `d3@3`                                                                             | 2019-07-03  |
+| `boxplot`           | Generic box plot                                                                           | `@oncojs/boxplot` 0.3.1                                          | manifest MIT, no licence file                        | `d3-axis@1`, `d3-scale@3`, `d3-selection@1.4`, `styled-components@4.2`             | 2019-08-15  |
+| `qqplot`            | Generic Q-Q plot                                                                           | `@oncojs/qqplot` 0.0.1                                           | manifest MIT, no licence file                        | `d3@4.8.0`, `react@16.8.0`, `react-faux-dom@3.1.0`                                 | 2019-11-19  |
+| `sapien`            | "Cases by Primary Site" human-body diagram, bucket-shaped data with configurable key names | `@oncojs/sapien` 0.5.3, `@oncojs/react-sapien` 0.5.2             | Apache-2.0 file; the packages declare none           | `d3@^4.4.1`, `react@^15.4.2`                                                       | 2019-12-02  |
+| `pathwayviewer`     | Reactome pathway visualization                                                             | `@oncojs/pathwayviewer` 0.3.4                                    | **none**                                             | `d3@3` and `jquery@3` as peers                                                     | 2017-08-04  |
+| `platform`          | Faceted-search UI components (Blueprint.js-based), not charts                              | not published                                                    | **none**                                             | `@blueprintjs/*@1.x`, `react@^15.6.1`                                              | 2017-08-01  |
+| `integration-tests` | Cucumber step boilerplate                                                                  | not published                                                    | MIT                                                  | not checked                                                                        | 2017-10-05  |
 
 **No repo has had a commit since February 2020, but the dependencies are not equally old.** The genomics-specific packages (`oncogrid`, `lolliplot`, `survivalplot`, `sapien`) sit on D3 v3/v4 and React 15, roughly a decade behind current. The generic statistical charts are newer underneath: `boxplot` on modular D3 sub-packages (the post-v4 architecture) and React 16, `qqplot` on D3 4 and React 16. `pathwayviewer` and `platform` are the oldest and least viable, both from 2017 with no modern tooling at all. Read this as "check each candidate's own dependencies," not "the whole org is equally dated."
 
@@ -54,13 +54,13 @@ All nine repos under the `oncojs` GitHub org were surveyed, not just the genomic
 
 ## Licensing, gathered in one place
 
-| Package | Licence | Note |
-|---|---|---|
-| `oncoprintjs` | ISC | No friction |
-| `react-mutation-mapper` | AGPL-3.0-or-later | Consumer is `cre-ui`, not Arranger; AGPL's network clause reads differently for browser-bundled code; for whoever approves `cre-ui`'s dependencies to judge |
-| `oncogrid` | **Ambiguous** | The manifest says MIT and `LICENSE.txt` is Apache-2.0; settle which before reuse |
-| `lolliplot`, `sapien` | Apache-2.0 | From each repository's licence file; the published packages declare none |
-| `boxplot`, `qqplot` | MIT | Declared in the manifest only; no licence file |
+| Package                                     | Licence           | Note                                                                                                                                                                                                                                           |
+| ------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `oncoprintjs`                               | ISC               | No friction                                                                                                                                                                                                                                    |
+| `react-mutation-mapper`                     | AGPL-3.0-or-later | Consumer is `cre-renderer`, not Arranger; the desktop app's ordinary distribution terms apply, not the network-use clause (plan §5, question 5); for whoever approves the CRE's dependencies to judge                                          |
+| `oncogrid`                                  | **Ambiguous**     | The manifest says MIT and `LICENSE.txt` is Apache-2.0; settle which before reuse                                                                                                                                                               |
+| `lolliplot`, `sapien`                       | Apache-2.0        | From each repository's licence file; the published packages declare none                                                                                                                                                                       |
+| `boxplot`, `qqplot`                         | MIT               | Declared in the manifest only; no licence file                                                                                                                                                                                                 |
 | `survivalplot`, `pathwayviewer`, `platform` | **none declared** | Needs a licence added before any reuse or redistribution, the same class of gap already tracked in `.dev/tech-debt.md` for Arranger's own unlicensed packages. `survivalplot` already has a downstream copy, GDC's, which declares none either |
 
 ## What this doesn't settle
@@ -73,6 +73,6 @@ All nine repos under the `oncojs` GitHub org were surveyed, not just the genomic
 ## Related
 
 - [`visualization-data-mapping.md`](../visualization-data-mapping.md): the compressed plan this feeds.
-- [`mcp-host-plan.md`](../mcp-host-plan.md): the host architecture this slots into, `cre-ui` specifically.
+- [`mcp-host-plan.md`](../mcp-host/mcp-host-plan.md): the host architecture this slots into, `cre-renderer` specifically.
 - [`arranger-auth/mcp-host-connections.md`](../arranger-auth/mcp-host-connections.md): connection authentication for the host, a separate concern from data shape.
 - `.dev/tech-debt.md`'s AGPL/unlicensed-package entries: the same missing-licence pattern found here in three `oncojs` repos.

@@ -6,7 +6,7 @@ Full research trail, every candidate surveyed, and what's still unverified: [atl
 
 ## Why this needs a mapping layer at all
 
-`get_catalogue_fields` already reports per-field metadata: `displayName`, `isArray`, `type`, `unit`. All of it is generic, Elasticsearch-level or presentation-level. None of it says a field *means* "chromosome" or "protein change" in a domain sense, and nothing about a catalogue's configuration today lets it say so. A visualization library that expects a `chromosome` field on every mutation object has no way to find it on an arbitrary catalogue without that catalogue declaring which of its own fields plays that role.
+`get_catalogue_fields` already reports per-field metadata: `displayName`, `isArray`, `type`, `unit`. All of it is generic, Elasticsearch-level or presentation-level. None of it says a field _means_ "chromosome" or "protein change" in a domain sense, and nothing about a catalogue's configuration today lets it say so. A visualization library that expects a `chromosome` field on every mutation object has no way to find it on an arbitrary catalogue without that catalogue declaring which of its own fields plays that role.
 
 The fix isn't automatic inference. It's a small, named vocabulary of concept slots a library's data shape needs, plus a per-catalogue configuration mapping that catalogue's real field names onto those slots. The vocabulary is generic and catalogue-agnostic; the mapping is catalogue-specific, the same shape `displayName` already is.
 
@@ -16,22 +16,22 @@ Two sources exist: cBioPortal's own extracted packages, and `oncojs`, OICR/softe
 
 **`react-mutation-mapper`** (npm, `0.9.13`, described by its own maintainers as "Generic Mutation Mapper", licensed AGPL-3.0-or-later; licence fit is the renderer app's question, not Arranger's, see the atlas doc). Confirmed directly against its `Mutation` type (`cbioportal-utils/src/model/Mutation.ts`), which is the full field list, not a sample:
 
-| Field | Type | Required |
-|---|---|---|
-| `proteinChange` | string | yes |
-| `proteinPosStart` | number | yes |
-| `gene` | Gene | no |
-| `chromosome` | string | no |
-| `startPosition` | number | no |
-| `endPosition` | number | no |
-| `referenceAllele` | string | no |
-| `variantAllele` | string | no |
-| `aminoAcidChange` | string | no |
-| `variantType` | string | no |
-| `mutationStatus` | string | no |
-| `ncbiBuild` | string | no |
-| `proteinPosEnd` | number | no |
-| `mutationType` | string | no |
+| Field             | Type   | Required |
+| ----------------- | ------ | -------- |
+| `proteinChange`   | string | yes      |
+| `proteinPosStart` | number | yes      |
+| `gene`            | Gene   | no       |
+| `chromosome`      | string | no       |
+| `startPosition`   | number | no       |
+| `endPosition`     | number | no       |
+| `referenceAllele` | string | no       |
+| `variantAllele`   | string | no       |
+| `aminoAcidChange` | string | no       |
+| `variantType`     | string | no       |
+| `mutationStatus`  | string | no       |
+| `ncbiBuild`       | string | no       |
+| `proteinPosEnd`   | number | no       |
+| `mutationType`    | string | no       |
 
 Only two fields are actually required to render a lollipop plot: `proteinChange` and `proteinPosStart`. A catalogue's mapping config needs at minimum those two to produce anything; the rest sharpen the plot (exact genomic coordinates, variant classification) without which it degrades gracefully rather than failing.
 
@@ -41,16 +41,16 @@ Only two fields are actually required to render a lollipop plot: `proteinChange`
 
 **`oncojs/lolliplot`** (`@oncojs/lolliplot` `0.10.2` with its React wrapper `@oncojs/react-lolliplot` `0.11.9`, Apache-2.0, last commit 2020) is `react-mutation-mapper`'s equivalent, on similarly dated `react@^15.4.1` and `redux@^3`. No type declaration states its shape, so this table is what its source reads, and which fields are required is not established:
 
-| Object | Field | Role |
-|---|---|---|
-| mutation | `id` | Identity; the target of `mutationId` highlighting |
-| mutation | `x` | Position on the protein, in amino acids |
-| mutation | `donors` | Count setting the stick's height |
-| mutation | `consequence` | Colour and filter grouping |
-| mutation | `impact` | Colour and filter grouping |
-| protein domain | `id` | Identity |
-| protein domain | `start`, `end` | Extent on the protein |
-| protein domain | `description` | Label |
+| Object         | Field          | Role                                              |
+| -------------- | -------------- | ------------------------------------------------- |
+| mutation       | `id`           | Identity; the target of `mutationId` highlighting |
+| mutation       | `x`            | Position on the protein, in amino acids           |
+| mutation       | `donors`       | Count setting the stick's height                  |
+| mutation       | `consequence`  | Colour and filter grouping                        |
+| mutation       | `impact`       | Colour and filter grouping                        |
+| protein domain | `id`           | Identity                                          |
+| protein domain | `start`, `end` | Extent on the protein                             |
+| protein domain | `description`  | Label                                             |
 
 `x` plays `proteinPosStart`'s part. **`donors` is a count per mutation rather than a document field**, so a catalogue would supply it through an aggregation, which a field-to-concept mapping alone does not express. The protein's length is a constructor argument, `domainWidth`, rather than a data field.
 
@@ -62,7 +62,7 @@ Not designed yet, sketched only: something shaped like a list of `{ concept: 'mu
 
 ## Open questions
 
-- Where the mapping config is declared: extended-mapping-adjacent configuration in `modules/graphql-router`, versus something new in `apps/mcp-server`. The data lives in the former; the consumer (`cre-ui`, through the MCP host) reaches it through the latter.
+- Where the mapping config is declared: extended-mapping-adjacent configuration in `modules/graphql-router`, versus something new in `apps/mcp-server`. The data lives in the former; the consumer (`cre-renderer`, through the MCP host) reaches it through the latter.
 - Whether mapping is opt-in per catalogue (most likely) or something the admin UI surfaces as a guided setup.
 - Whether this needs its own MCP tool/resource, or rides on an extended `get_catalogue_fields` response.
 - `react-mutation-mapper`, `oncogrid` and `lolliplot` have confirmed data shapes and `oncoprintjs` a partial one. `cbioportal-frontend-commons`'s exports, and whether `oncogrid`/`lolliplot` are worth modernizing versus rewriting, are open, tracked in the atlas doc rather than guessed at here. Any further candidate needs the same direct verification before being added to this doc.

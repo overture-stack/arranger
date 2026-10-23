@@ -13,7 +13,7 @@ The client's own internals are documented beside its code, in [`modules/mcp-clie
 Research spikes for the plan's §3 Phase 0. None of this is product code.
 
 - **[`phase0-results.md`](phase0-results.md):** what the spikes found and what each changed in the plan. Read it before the scripts.
-- **[`scripts/`](scripts):** the code behind those results, kept so the model spikes can be rerun on the shared Ollama server. When the evaluation harness starts, the useful parts move into its tests.
+- **[`scripts/`](scripts):** the code behind those results, kept so the model spikes can be rerun on the development team's shared Ollama server. When the evaluation harness starts, the useful parts move into its tests.
 - **`results/`:** raw output, recreated by the scripts and not committed (see the root `.gitignore`).
 
 ### Running the scripts
@@ -50,7 +50,7 @@ LOG_LEVEL=fatal npx tsx .dev/docs/mcp-host/scripts/q5.ts --repeats 6
 LOG_LEVEL=fatal npx tsx .dev/docs/mcp-host/scripts/q5.ts --from get_catalogue_fields --hard --repeats 6 --models qwen3:14b,gemma4:e4b
 ```
 
-For the shared server, add `--base-url <server>/v1` and that server's `--models`. When rerunning S4, keep Ollama's own output (`ollama serve 2>&1 | tee ollama.log`): it logs a warning when it drops a `gemma4` tool call, the confirmation Phase 0 could not get locally.
+For the development team's shared Ollama server, reached through your own SSH tunnel ([plan §2.2](mcp-host-plan.md#llm-provider-interface)), add `--base-url http://localhost:<tunnel port>/v1` and that server's `--models`. When rerunning S4, keep Ollama's own output (`ollama serve 2>&1 | tee ollama.log`): it logs a warning when it drops a `gemma4` tool call, the confirmation Phase 0 could not get locally.
 
 ### Shared modules
 
