@@ -1387,6 +1387,15 @@ With exactly one sibling filter those are equivalent, which is why the naive fix
 **Fix:** Select by the facet's innermost nested path with a dot boundary, once the entry above has decided which mechanism owns filtering at that level; selecting at depth 2+ before then applies the same clauses twice with different operators. The minimal fix for a facet's deeper clauses, compiling each term filter with the nested paths below the facet's innermost path, leaves this selection alone on purpose.
 **Standalone:** no; it waits on the entry above.
 
+### A bucket's `filter_by_term` must name fields under the catalogue's nesting prefix
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/createFieldAggregation.js` (`createTermAggregation`, `term_filters`)
+**Severity:** low
+**Kind:** correctness
+**Issue:** A bucket's `filter_by_term` filter is compiled as the client sent it, with no `nestingPrefix` applied, while the query and every other facet filter are compiled under the prefix. On a catalogue with a `nestingPrefix`, its clauses name fields the index does not hold, so a bucket's `term_filters` count reads every clause against a missing field. Established from the code rather than from a deployed instance.
+**Fix:** Apply `applyNestingPrefixToSqon` to the `filter_by_term` filter before compiling it, as `buildAggregations` does for the client filter, and cover it with a facet under a prefix.
+**Standalone:** yes
+
 ### Legacy wildcard-in-`IN` filter only converts the first `*` to a regex wildcard
 
 **File:** `modules/graphql-router/src/middleware/buildQuery/index.js:57-73` (`getRegexFilter`)
