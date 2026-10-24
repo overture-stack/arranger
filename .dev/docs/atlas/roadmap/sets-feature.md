@@ -52,3 +52,21 @@ The plan:
 
 Measured on 5 million records, on both engines, with one shard: checking a 65,000-id set by lookup took about 100 to 140 ms warm, 10 checks at once cost 1.0 to 1.8 times one, and a 65,537-id set was refused on both engines, by lookup and inline alike.
 
+## Anonymous saved sets expire
+
+Under `getRequester`, a set an anonymous request saves is recorded with `attribution` `anonymous` and `userId` null. No reader is listed it; a reader naming it by `setId` is served it, its stored filter included and its records narrowed to that reader's filter. It works as a link, shared by whoever holds the id, and nothing ends it: there is no `deleteSet`, and no listing reaches it.
+
+**The plan:** each anonymous set carries an expiry date, and a cleanup removes the sets past it. The date is a new field in the sets mapping, added to an existing index the way `attribution` is.
+
+**Why an expiry rather than a cap on how many:** a cap needs something to count saves against, and a save made without signing in carries nothing that holds from one save to the next. A cap per requester can't be enforced reliably, and one cap over every anonymous save lets one requester's saves use up everyone's. An expiry needs no key.
+
+**Scope:** anonymous sets alone. Sets a principal owns and unattributed sets, the unmarked sets read as unattributed included, are untouched.
+
+**Open decisions:**
+
+| Decision | What it settles |
+|---|---|
+| The expiry length | how long an anonymous set stays reachable after it is saved, and whether a deployment sets it |
+| Who runs the cleanup | the GraphQL router, the search server, or the deployment, and how often |
+| What a reader naming an expired set is told | on the sets connection, and where a filter names it by `set_id:` |
+| Anonymous sets saved before expiry exists | whether they are given a date, kept, or removed |

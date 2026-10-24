@@ -35,6 +35,7 @@ import {
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import fallbackConfigs, { initializeSets } from '#config/index.js';
+import type { GetRequesterFn } from '#sets/setsAccess.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
@@ -195,6 +196,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 const createSchema = <Context extends ArrangerBaseContext>({
 	enableDebug = false,
 	enableAdmin = false,
+	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
@@ -202,6 +204,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 }: {
 	enableDebug?: boolean;
 	enableAdmin?: boolean;
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	setsIndex: string;
@@ -210,6 +213,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	const { resolvers, typesWithSets } = createCatalogueResolvers({
 		debug: enableDebug,
 		enableAdmin,
+		getRequester,
 		getServerSideFilter,
 		setsIndex,
 		types,
@@ -548,6 +552,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	enableDebug = false,
 	enableAdmin = false,
 	esClient,
+	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
 	label,
@@ -558,6 +563,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	enableDebug?: boolean;
 	enableAdmin?: boolean;
 	esClient: SearchClient;
+	/** Who made a request, for saved sets under a filter callback: see `GetRequesterFn`. */
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
@@ -583,6 +590,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		const { schema, resolvers } = await createSchema({
 			enableDebug,
 			enableAdmin,
+			getRequester,
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
@@ -681,6 +689,8 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	enableAdmin?: boolean;
 	enableDebug?: boolean;
 	esClient: SearchClient;
+	/** Who made a request, for saved sets under a filter callback: see `GetRequesterFn`. */
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
@@ -695,6 +705,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	enableAdmin,
 	enableDebug,
 	esClient,
+	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
 	label = configs[configRootProperties.DOCUMENT_TYPE] || FALLBACK_LABEL,
@@ -714,6 +725,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			enableDebug,
 			enableAdmin,
 			esClient,
+			getRequester,
 			getServerSideFilter,
 			graphqlOptions,
 			label,

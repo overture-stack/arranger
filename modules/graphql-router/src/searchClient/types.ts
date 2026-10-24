@@ -55,7 +55,13 @@ export type SearchClientBulkParams = { body: Record<string, any>[] };
 export type SearchClientCreateParams = { id: string; index: string; body: Record<string, any> };
 export type SearchClientDeleteParams = { index: string; id: string };
 export type SearchClientDeleteByQueryParams = { index: string; body: Record<string, any> };
-export type SearchClientIndexParams = { index: string; body: Record<string, any> };
+/** A document to index: its body, the id it is stored under where given, and when the write becomes searchable. */
+export type SearchClientIndexParams = {
+	body: Record<string, any>;
+	id?: string;
+	index: string;
+	refresh?: boolean | 'wait_for';
+};
 export type SearchClientUpdateParams = { id: string; index: string; body: Record<string, any> };
 
 // Response Bodies

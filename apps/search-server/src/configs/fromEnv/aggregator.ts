@@ -29,6 +29,7 @@ const configsAggregator = (
 		enableLogs,
 		enableSets,
 		filters,
+		getRequester,
 		pingMs,
 		pingPath,
 		readyPath,
@@ -56,6 +57,7 @@ const configsAggregator = (
 				enableAdmin,
 				enableGraphQLBatching,
 				enableSets,
+				...(getRequester && { getRequester }),
 				getServerSideFilter,
 				sets: {
 					index: setsIndex,

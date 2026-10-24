@@ -12,9 +12,17 @@ const makeEsClient = (existsStatusCode: number) =>
 		},
 	}) as any;
 
-/** The mapping the engine answers for `indexName`, its `sqon` property as given. */
-const mappingAnswer = (indexName: string, sqon: unknown) => ({
-	body: { [indexName]: { mappings: { properties: { ids: { type: 'keyword' }, sqon } } } },
+const ATTRIBUTION_KEYWORD = { type: 'keyword' };
+
+/** The mapping the engine answers for `indexName`, its `sqon` and `attribution` properties as given, null leaving attribution out. */
+const mappingAnswer = (indexName: string, sqon: unknown, attribution: unknown = ATTRIBUTION_KEYWORD) => ({
+	body: {
+		[indexName]: {
+			mappings: {
+				properties: { ids: { type: 'keyword' }, sqon, ...(attribution === null ? {} : { attribution }) },
+			},
+		},
+	},
 });
 
 const FILTER_AS_DATA = { enabled: false, type: 'object' };
@@ -214,6 +222,95 @@ suite('initializeSets', () => {
 			[],
 		);
 	});
+
+	test('creates the sets index recording how each set was saved, as a keyword', async () => {
+		const created: unknown[] = [];
+		const esClient = {
+			indices: {
+				create: async (request: unknown) => {
+					created.push(request);
+					return { acknowledged: true };
+				},
+				exists: async () => ({ statusCode: 404 }),
+			},
+		} as any;
+
+		await initializeSets({ enableSets: true, esClient, setsIndex: 'arranger-sets' });
+
+		assert.deepEqual(
+			created.map((request: any) => request.body.mappings.properties.attribution),
+			[ATTRIBUTION_KEYWORD],
+		);
+	});
+
+	/** An existing sets index storing filters as data, its attribution mapped as given, recording each mapping added. */
+	const existingIndexWith = (attribution: unknown, putMapping?: (request: unknown) => Promise<unknown>) => {
+		const added: unknown[] = [];
+		const esClient = {
+			indices: {
+				exists: async () => ({ statusCode: 200 }),
+				getMapping: async () => mappingAnswer('arranger-sets', FILTER_AS_DATA, attribution),
+				...(putMapping && {
+					putMapping: async (request: unknown) => {
+						added.push(request);
+						return putMapping(request);
+					},
+				}),
+			},
+		} as any;
+
+		return { added, esClient };
+	};
+
+	test('adds nothing to an existing sets index mapping attribution as a keyword, warning nothing', async () => {
+		const { added, esClient } = existingIndexWith(ATTRIBUTION_KEYWORD, async () => ({ acknowledged: true }));
+
+		const lines = await withWarningsCaptured(() =>
+			initializeSets({ enableSets: true, esClient, setsIndex: 'arranger-sets' }),
+		);
+
+		assert.deepEqual(added, []);
+		assert.deepEqual(lines, []);
+	});
+
+	test('adds attribution as a keyword to an existing sets index lacking it, warning nothing', async () => {
+		const { added, esClient } = existingIndexWith(null, async () => ({ acknowledged: true }));
+
+		const lines = await withWarningsCaptured(() =>
+			initializeSets({ enableSets: true, esClient, setsIndex: 'arranger-sets' }),
+		);
+
+		assert.deepEqual(added, [
+			{ body: { properties: { attribution: ATTRIBUTION_KEYWORD } }, index: 'arranger-sets' },
+		]);
+		assert.deepEqual(lines, []);
+	});
+
+	for (const [description, attribution, putMapping] of [
+		[
+			'lacking attribution, where adding it is refused',
+			null,
+			async () => {
+				throw new Error('security_exception: action [indices:admin/mapping/put] is unauthorized');
+			},
+		],
+		['mapping attribution as text', { type: 'text' }, async () => ({ acknowledged: true })],
+	] as const) {
+		test(`warns of an existing sets index ${description}, naming the migration section, and starts`, async () => {
+			const { added, esClient } = existingIndexWith(attribution, putMapping);
+
+			const lines = await withWarningsCaptured(() =>
+				initializeSets({ enableSets: true, esClient, setsIndex: 'arranger-sets' }),
+			);
+
+			assert.equal(lines.length, 1, JSON.stringify(lines));
+			assert.match(lines[0] ?? '', /sets\.index_mapping_outdated/u);
+			assert.match(lines[0] ?? '', /#sets-index-attribution/u);
+			if (attribution !== null) {
+				assert.deepEqual(added, []);
+			}
+		});
+	}
 
 	test("warns that the sets index's mapping went unchecked, and starts, when the engine will not show it", async () => {
 		// Given an engine refusing to show the existing sets index's mapping, as a role without permission to does

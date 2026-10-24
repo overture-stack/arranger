@@ -2,6 +2,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { applyMiddleware } from 'graphql-middleware';
 
+import type { GetRequesterFn } from '#sets/setsAccess.js';
 import type { ArrangerBaseContext, GraphQLEndpointMiddleware } from '#types.js';
 
 import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root.js';
@@ -9,9 +10,10 @@ import type { SchemaTypesTuple } from './types.js';
 
 /**
  * The sets index's mapping. A set's `sqon` is stored with it and never indexed, so each saved set's filter is stored
- * exactly as saved.
+ * exactly as saved, and its `attribution` records how it was saved, which ownership is read from.
  */
 export const setsMapping = {
+	attribution: { type: 'keyword' },
 	userId: { type: 'keyword' },
 	sqon: { enabled: false, type: 'object' },
 	ids: { type: 'keyword' },
@@ -57,6 +59,7 @@ export const createSetsType = (setsIndex: string): SchemaTypesTuple => {
 export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	debug = false,
 	enableAdmin = false,
+	getRequester,
 	getServerSideFilter,
 	rootTypes = [],
 	scalarTypes = [],
@@ -65,6 +68,7 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 }: {
 	debug?: boolean;
 	enableAdmin?: boolean;
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes?: any[];
 	scalarTypes?: any[];
@@ -76,6 +80,7 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	const resolvers = generateResolvers<Context>({
 		debug,
 		enableAdmin,
+		getRequester,
 		getServerSideFilter,
 		rootTypes,
 		scalarTypes,

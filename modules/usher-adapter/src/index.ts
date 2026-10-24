@@ -7,4 +7,5 @@ export {
 	type UsherAccessControlOptions,
 	type UsherFilterCallback,
 } from './createUsherAccessControl.js';
+export { requesterOf } from './requester.js';
 export { UNAVAILABLE_ANSWER } from './unavailableAnswer.js';

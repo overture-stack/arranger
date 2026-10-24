@@ -70,9 +70,12 @@ export const aggregationsToGraphql = (aggregations: AllAggregationsMap): AllAggr
 const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 	type,
 	getServerSideFilter,
+	withheldFieldNames = [],
 }: {
 	type: SchemaTypesDefinition;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
+	/** Fields never aggregated, whatever the client selects, so each resolves to null. */
+	withheldFieldNames?: readonly string[];
 }) => {
 	const resolver: AggregationsResolver<Context> = async (
 		root,
@@ -133,7 +136,11 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		 * serve multiple aggregations of the same type for a given field.
 		 * Library issue: https://github.com/robrichard/graphql-fields/issues/18
 		 */
-		const graphqlFields = getFields(graphqlResolveInfo, {}, { processArguments: true });
+		const graphqlFields = Object.fromEntries(
+			Object.entries(getFields(graphqlResolveInfo, {}, { processArguments: true })).filter(
+				([fieldName]) => !withheldFieldNames.includes(fieldName),
+			),
+		);
 		const aggs = buildAggregations({
 			clientSideQuery,
 			disableClientFilters: context.disableClientFilters,

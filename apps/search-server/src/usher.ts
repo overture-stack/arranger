@@ -98,7 +98,8 @@ export const prepareUsher = async ({
 };
 
 /**
- * Each catalogue's configuration with the adapter's callback for it as its server-side filter.
+ * Each catalogue's configuration with the adapter's callback for it as its server-side filter, and the adapter's
+ * answer to who made a request, which saved sets are scoped by.
  *
  * @param catalogs every catalogue the image loaded.
  * @param accessControl the adapter.
@@ -107,7 +108,11 @@ export const withUsherFilters = (catalogs: CataloguesMap, accessControl: UsherAc
 	Object.fromEntries(
 		Object.entries(catalogs).map(([catalogueId, configs]) => [
 			catalogueId,
-			{ ...configs, getServerSideFilter: accessControl.filterFor(catalogueId) },
+			{
+				...configs,
+				getRequester: accessControl.requesterOf,
+				getServerSideFilter: accessControl.filterFor(catalogueId),
+			},
 		]),
 	);
 

@@ -6,6 +6,8 @@ import { startCase } from 'lodash-es';
 import Parallel from 'paralleljs';
 
 import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
+import { createScopedSetsResolvers } from '#sets/scopedSetsResolvers.js';
+import { type GetRequesterFn, narrowsSetRecords } from '#sets/setsAccess.js';
 import { checkESAlias, getESAliases } from '#searchClient/fetchMapping.js';
 import type { ArrangerBaseContext } from '#types.js';
 
@@ -88,6 +90,7 @@ const resolveEmptyObject = () => ({});
 type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 	debug: boolean;
 	enableAdmin?: boolean;
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes: any[];
 	scalarTypes: any[];
@@ -98,12 +101,17 @@ type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 export const resolvers = <Context extends ArrangerBaseContext>({
 	debug,
 	enableAdmin = false,
+	getRequester,
 	getServerSideFilter,
 	rootTypes,
 	scalarTypes,
 	setsIndex,
 	types,
 }: CreateResolversArgs<Context>): IResolvers<any, Context> => {
+	// A filter callback narrows each set's records to its reader, and getRequester gives each set an owner.
+	const setRecordsNarrowed = narrowsSetRecords(getServerSideFilter);
+	const catalogueTypes = types.filter(([key]) => key !== 'sets').map(([, type]) => type);
+
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
@@ -160,13 +168,23 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 		...types.reduce(
 			(acc, [key, type]) => ({
 				...acc,
-				...createConnectionResolvers<Context>({
-					createStateResolvers: 'createState' in type ? type.createState : true,
-					enableAdmin,
-					getServerSideFilter,
-					Parallel,
-					type,
-				}),
+				...(key === 'sets'
+					? createScopedSetsResolvers<Context>({
+							catalogueTypes,
+							enableAdmin,
+							getRequester,
+							getServerSideFilter,
+							narrowed: setRecordsNarrowed,
+							Parallel,
+							setsType: type,
+						})
+					: createConnectionResolvers<Context>({
+							createStateResolvers: 'createState' in type ? type.createState : true,
+							enableAdmin,
+							getServerSideFilter,
+							Parallel,
+							type,
+						})),
 			}),
 			{},
 		),
@@ -186,7 +204,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 			{},
 		),
 		Mutation: {
-			saveSet: saveSet({ getServerSideFilter, setsIndex, types }),
+			saveSet: saveSet({ getRequester, getServerSideFilter, setsIndex, types }),
 		},
 	};
 };

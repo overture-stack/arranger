@@ -410,6 +410,14 @@ A saved set is used as a filter by looking up its id list inside one query, and 
 
 [Detail: the chunked set document, the startup check, and what reads the chunks](docs/atlas/roadmap/sets-feature.md#saved-sets-of-any-size-usable-as-filters)
 
+### Anonymous saved sets expire
+
+_Priority: not set. Under `getRequester` only._
+
+A set an anonymous request saves is listed to no one and reached only by its `setId`, and nothing ends it. Each needs an expiry date, and a cleanup that removes the expired ones; a cap on how many is not the answer, since it can't be enforced reliably against saves made without signing in. It touches anonymous sets alone: sets a principal owns and unattributed sets are untouched. Open: the expiry length, who runs the cleanup, and what a reader naming an expired set is told.
+
+[Detail: why an expiry rather than a cap, and the open decisions](docs/atlas/roadmap/sets-feature.md#anonymous-saved-sets-expire)
+
 ### Admin UI replacement
 
 _Priority: low. Deprecated app, replacement needed eventually._

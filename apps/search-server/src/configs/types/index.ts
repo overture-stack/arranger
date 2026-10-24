@@ -1,4 +1,8 @@
-import { type ArrangerBaseContext, type SearchClient } from '@overture-stack/arranger-graphql-router';
+import {
+	type ArrangerBaseContext,
+	type GetRequesterFn,
+	type SearchClient,
+} from '@overture-stack/arranger-graphql-router';
 import {
 	type configArrangerNetworkProperties,
 	type AllFeatureFlagConfigs,
@@ -18,7 +22,15 @@ import {
 	type serverConfigProperties,
 } from './constants.js';
 
-export type CataloguesMap = Record<string, Partial<ArrangerConfigs<ArrangerBaseContext>>>;
+/**
+ * One catalogue's configuration, as its GraphQL router is built from it, with who made a request where the host or
+ * the Usher adapter names it, for saved sets under a filter callback.
+ */
+export type CatalogueConfigs = Partial<ArrangerConfigs<ArrangerBaseContext>> & {
+	getRequester?: GetRequesterFn<ArrangerBaseContext>;
+};
+
+export type CataloguesMap = Record<string, CatalogueConfigs>;
 
 export type HealthConfigs = {
 	[serverConfigProperties.PING_MS]: number;
@@ -77,6 +89,8 @@ export type ExternalConfigs = Partial<
 		currentDirectory: string;
 		esClient: SearchClient;
 		filters: GetServerSideFilterFn<any>;
+		/** Who made a request, for saved sets under the host's own `filters`: see the GraphQL router's `getRequester`. */
+		getRequester: GetRequesterFn<any>;
 		searchEngine: SearchEngineType;
 		setsIndex: string;
 		setsType: string;

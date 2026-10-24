@@ -4,7 +4,7 @@ import {
 	type ExtendedConfigs,
 	type GetServerSideFilterFn,
 } from '@overture-stack/arranger-types/configs';
-import type Parallel from 'paralleljs';
+import type ParallelPool from 'paralleljs';
 
 import type { SchemaTypesDefinition } from '#schema/types.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
@@ -31,7 +31,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
-	Parallel: Parallel<any>;
+	Parallel: typeof ParallelPool;
 	type: SchemaTypesDefinition;
 }): IResolvers<any, Context> => {
 	/*

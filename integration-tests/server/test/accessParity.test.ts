@@ -70,7 +70,7 @@ const QUERY_FIELDS: QueryFields = {
 
 const CLIENT_QUERIES = clientQueriesOver(QUERY_FIELDS);
 
-const { everythingFor, facetsFor, facetsOf, hitsOf, recordsFor, saveSet } = readersFor({
+const { everythingFor, facetsFor, facetsOf, graphql, hitsOf, recordsFor, saveSet } = readersFor({
 	documentType: DOCUMENT_TYPE,
 	facets: ['resource', 'category', 'files__file_type'],
 	idField: 'name',
@@ -350,5 +350,119 @@ suite(
 			assert.deepEqual(unrestricted.ids.filter((id) => !granted.ids.includes(id)).sort(), ['h1', 'h2']);
 			assert.equal(unrestricted.total - granted.total, UNREACHABLE_RECORDS.length);
 		});
+	},
+);
+
+/** A filter callback granting resource A alone, so a set of every resource's records holds records it withholds. */
+const RESOURCE_A_ONLY: Filter = () => clause('in', 'resource', ['A']);
+
+/** The local node's hits and facets from network search, under `$filters`. */
+const NETWORK_QUERY = `query ($filters: JSON) { network(filters: $filters) { nodes { hits name status } aggregations { category { buckets { key doc_count } } resource { buckets { key doc_count } } } } }`;
+
+const sorted = (values: readonly string[]): string[] => [...values].sort();
+
+suite(
+	"a saved set used as a filter answers only the records the reader's filter permits, on every read path",
+	{ concurrency: false },
+	() => {
+		const esIndex = 'testing-access-parity-set-narrowing';
+		const setsIndex = 'testing-access-parity-set-narrowing-sets';
+		const routers: Record<string, Served> = {};
+
+		before(async () => {
+			await seed(esIndex, RECORDS);
+			routers.none = await startRouter({
+				documentType: DOCUMENT_TYPE,
+				esClient,
+				esIndex,
+				network: true,
+				setsIndex,
+			});
+			routers.resourceA = await startRouter({
+				documentType: DOCUMENT_TYPE,
+				esClient,
+				esIndex,
+				getServerSideFilter: RESOURCE_A_ONLY,
+				network: true,
+				setsIndex,
+			});
+		});
+
+		after(async () => {
+			await closeAll(routers);
+			await dropIndices(esClient, esIndex, setsIndex);
+		});
+
+		/** Saves the category x records, p1 of resource A beside p3 and p6, with no access control, and filters by them. */
+		const setFilterFor = async (operator: string): Promise<Sqon | null> => {
+			const { ids, setId } = await saveSet(routers.none, asUisSend(clause('in', 'category', ['x'])));
+			assert.deepEqual(
+				sorted(ids),
+				['p1', 'p3', 'p6'],
+				'the set holds no record outside resource A, so it tests nothing',
+			);
+
+			return asUisSend(clause(operator, 'name', [`set_id:${setId}`]));
+		};
+
+		for (const [operator, permitted] of [
+			['in', ['p1']],
+			['not-in', ['p2', 'p7']],
+			['some-not-in', ['p2', 'p7']],
+		] as const) {
+			test(`a set used in ${operator} gives hits, pages, facets, a saved set and an export of the permitted records alone`, async () => {
+				// Given a reader granted resource A, and a set holding records of every resource
+				const filters = await setFilterFor(operator);
+
+				// When every endpoint answers the set filter for the reader, and no access control answers a
+				// filter naming the records the reader may see
+				const [seen, shown] = await Promise.all([
+					everythingFor(routers.resourceA, filters),
+					everythingFor(routers.none, asUisSend(clause('in', 'name', [...permitted]))),
+				]);
+
+				// Then every answer holds the permitted records alone, as no access control shows them
+				assert.deepEqual(sorted(seen.hits.ids), permitted);
+				assert.equal(seen.hits.total, permitted.length);
+				assert.deepEqual(sorted(seen.pages.flatMap(({ ids }) => ids)), permitted);
+				assert.deepEqual(
+					seen.pages.map(({ total }) => total),
+					[permitted.length, permitted.length],
+				);
+				assert.deepEqual(
+					{ ids: sorted(seen.savedSet.ids), size: seen.savedSet.size },
+					{ ids: permitted, size: permitted.length },
+				);
+				assert.deepEqual(sorted(seen.exported.rows), permitted);
+				assert.deepEqual(
+					{
+						facetsFiltered: seen.facetsFiltered,
+						facetsUnfiltered: seen.facetsUnfiltered,
+						header: seen.exported.header,
+					},
+					{
+						facetsFiltered: shown.facetsFiltered,
+						facetsUnfiltered: shown.facetsUnfiltered,
+						header: shown.exported.header,
+					},
+				);
+			});
+
+			test(`a set used in ${operator} gives network search's local node the permitted records alone, counted and faceted`, async () => {
+				// Given a reader granted resource A, and a set holding records of every resource
+				const filters = await setFilterFor(operator);
+
+				// When network search answers the set filter for the reader, and no access control answers a
+				// filter naming the records the reader may see
+				const [seen, shown] = await Promise.all([
+					graphql(routers.resourceA, NETWORK_QUERY, { filters }),
+					graphql(routers.none, NETWORK_QUERY, { filters: asUisSend(clause('in', 'name', [...permitted])) }),
+				]);
+
+				// Then the local node counts and facets the permitted records alone, as no access control shows them
+				assert.deepEqual(seen.network.nodes, [{ hits: permitted.length, name: 'local node', status: 'OK' }]);
+				assert.deepEqual(seen.network, shown.network);
+			});
+		}
 	},
 );

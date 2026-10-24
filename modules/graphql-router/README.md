@@ -55,6 +55,7 @@ const router = await arrangerRouter(options);
 | `configs`             | `Partial<ConfigsObject>` | Catalogue configuration. See [Configuration](#configuration).                                                                       |
 | `esClient`            | `SearchClient`           | Optional: bring your own ES/OS client. When omitted, one is created from `configs.esHost`, `configs.esUser`, and `configs.esPass`.  |
 | `getServerSideFilter` | `GetServerSideFilterFn`  | Optional: the synchronous callback returning the filter that limits each read, for access control. Leave it out for no access control. See [Server-side filters](#server-side-filters). |
+| `getRequester` | `(context) => RequesterAnswer` | Optional: who made a request, read from the same context as `getServerSideFilter` and stated explicitly: `{ kind: 'principal', id }`, `{ kind: 'anonymous' }` or `{ kind: 'suspended', retryAfterSeconds?, id? }`. Given, it makes saved sets belong to whoever saved them. See [Server-side filters](#server-side-filters). |
 | `onIndexMapping` | `(mappingFromIndex, indexProbe) => void` | Optional: called once, before the router resolves, with a copy of the index mapping the router fetched and an `IndexProbe` of the catalogue's index, so a host can check fields against the mapping and ask the index what the mapping cannot answer. A throw fails the router's construction. |
 | `configsSource`       | `string`                 | **Deprecated**, not read: pass `configs` instead. Passed with no `configs`, construction rejects; beside them, it is ignored with a warning. |
 
@@ -268,6 +269,37 @@ The router rejects at construction a `getServerSideFilter` that is neither left 
 **A callback may refuse a request for now** by throwing an `AccessControlUnavailableError`, from the package root, given a message for the server log and its `retryAfterSeconds`. A GraphQL client then receives the router's fixed text, `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, with `extensions.code` `ACCESS_ENFORCEMENT_UNAVAILABLE`, and no data for the field, at the status of any execution error; the router's `/download` answers `503` with that text and `Retry-After`. Each logs the thrower's message as `access_enforcement.unavailable_answered`, and nothing as `access_enforcement.evaluation_failed`, since nothing is misconfigured.
 
 **A callback may deny the request its catalogue** by throwing an `AccessControlDeniedError`, from the package root, given the catalogue and the kind of denial: `no-access`, the person has no access to it; `access-too-broad`, their access is more than the catalogue's filter can express; or `misconfigured`, access control is configured wrongly for it. The catalogue's index is then never searched for that read. The router answers on every read path with its own fixed text for the kind, naming the catalogue, and nothing else the thrower says: a GraphQL client receives `extensions.code` `ACCESS_ENFORCEMENT_DENIED` for `no-access` and `INTERNAL_SERVER_ERROR` for the other two, and `/download` answers `403` and `500` the same way. Each answer is logged as `access_enforcement.denial_answered` with the catalogue and the kind, at info for `no-access` and at error otherwise, since only those two leave the operator something to fix. A filter matching nothing is still the way to withhold records without saying so.
+
+**`getRequester` gives saved sets owners.** Give the router `getRequester(context)`, which reads the same context as the callback and states who made the request, as one of:
+
+| Answer | Meaning |
+| --- | --- |
+| `{ kind: 'principal', id }` | A principal, a person or a service account, identified by a non-empty `id` |
+| `{ kind: 'anonymous' }` | A request presenting no credential |
+| `{ kind: 'suspended', retryAfterSeconds?, id? }` | A principal signed in but not confirmed right now. Its `id`, where given, never makes it an owner |
+
+Any other answer, a bare string or `undefined` included, refuses the request as a configuration failure, as a throwing callback does: no state is read from a missing value.
+
+Each saved set records how it was saved, as its `attribution`:
+
+| `attribution` | Saved | `userId` stores |
+| --- | --- | --- |
+| `principal` | by a principal, under `getRequester` | the principal's `id`, whatever `userId` the client sends |
+| `anonymous` | by an anonymous request, under `getRequester` | nothing |
+| `unattributed` | by a router given no `getRequester` | the `userId` the client sends, as data, never as an owner |
+
+A suspended principal's `saveSet` is refused before anything is read or stored, answered with `extensions.code` `ACCESS_ENFORCEMENT_UNAVAILABLE`, to retry after `retryAfterSeconds`. A set carrying no `attribution` was saved before marks were recorded, and is read as `unattributed`.
+
+With `getRequester`, the sets connection lists a principal its own sets, and every reader the `unattributed` sets and those carrying no mark. An `anonymous` set is listed to no one, and reached only when the client's filter names it by `setId`, in an `in` at the top of the filter or directly inside a top-level `and`. A suspended principal reads as an anonymous request. The sets aggregations count the same sets. A set's `sqon` goes to the principal that saved it, and to every reader for a set with no owner.
+
+**Under a filter callback, a set's records pass through each reader's filter**, with or without `getRequester`: a set's `ids` and `size` are checked against the reader's filter on the set's catalogue, and where the set holds records the reader may not see, they hold only the ones the reader may, with nothing to say what was left out. A set whose `type` is none of the router's catalogues has no `ids` and no `size`. A page of the sets connection holds at most 20 sets, the rest reachable by `offset`.
+
+Without `getRequester`, saved sets have no owners, as in 3.0.x: every set is listed to everyone with its filter, and `saveSet` stores the `userId` the client sends, marking the set `unattributed`. Given a filter callback beside none, the router logs `sets.unowned` at info when it starts. Pass `getRequester` wherever the filter depends on who is asking.
+
+**No reader is given a set's `userId`**, in any deployment: the sets connection and `saveSet` answer it as `null`, the field kept in the schema so a client selecting it keeps working. It is stored, as the client sends it or as the principal's `id`, and read only by the listing that finds a principal's own sets and by operators querying the sets index directly. More generally, a field given to some readers other than as stored is never a filter or sort key, and its aggregation answers `null`: `userId` always, `ids` and `size` under a filter callback, and `sqon` under `getRequester`. A filter or sort on the sets connection may name only a field that is indexed and given to every reader as stored, or a path within one. `sqon` never qualifies, since the sets index stores it without indexing it. Any other field, a pattern included, is refused with `extensions.code` `BAD_USER_INPUT`, its message naming the fields it may use.
+
+**The sets index records the mark as a keyword.** A sets index the router creates maps `attribution` as one. On an existing sets index lacking it, the router adds it when it starts, which needs no reindex; where that cannot be done, or `attribution` is mapped as anything else, it warns `sets.index_mapping_outdated`. Each save reads the mapping again, since an index can be recreated after startup. Where it does not map `attribution` as a keyword, a set saved without `getRequester` is stored unmarked, which is read as the same `unattributed`, and nothing is written into the field it lacks, so a strict mapping accepts it; under `getRequester`, `saveSet` is refused as a configuration failure and stores nothing, since an unmarked set would be read as unattributed.
+
 
 ### How the filter applies
 

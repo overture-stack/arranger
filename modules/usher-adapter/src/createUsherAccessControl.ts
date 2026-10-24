@@ -4,6 +4,7 @@ import {
 	AccessControlUnavailableError,
 	includeEverything,
 	type IndexProbe,
+	type RequesterAnswer,
 } from '@overture-stack/arranger-graphql-router';
 import type { SqonNode } from '@overture-stack/sqon';
 import type { BridgeCore, BridgeLogger, KeyRegistration } from '@overture-stack/usher-express-bridge';
@@ -16,6 +17,7 @@ import {
 } from '@overture-stack/usher-types';
 
 import { ACCESS_CONTROL_EVENTS } from './events.js';
+import { requesterOf } from './requester.js';
 import { indexProblemsOf } from './indexChecks.js';
 import { UNAVAILABLE_ANSWER } from './unavailableAnswer.js';
 import { enforcementProblemsOf } from './verifyFields.js';
@@ -42,6 +44,9 @@ export type UsherAccessControl = Readonly<{
 	 * @throws {Error} naming the catalogue, when the adapter has no registration for it.
 	 */
 	filterFor: (catalogueId: string) => UsherFilterCallback;
+
+	/** Who made a request, for the GraphQL router's `getRequester`, from the principal the bridge presents. */
+	requesterOf: (context: unknown) => RequesterAnswer;
 
 	/**
 	 * Checks each loaded catalogue, then registers every configured catalogue with the bridge in one
@@ -275,5 +280,5 @@ export const createUsherAccessControl = ({
 					),
 				);
 
-	return { filterFor, verify };
+	return { filterFor, requesterOf, verify };
 };

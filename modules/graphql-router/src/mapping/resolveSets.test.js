@@ -18,7 +18,11 @@ suite('saveSet', () => {
 			index: async () => undefined,
 		};
 
-		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
+		await saveSet({
+			getServerSideFilter: getDefaultServerSideFilter,
+			setsIndex: 'arranger-sets',
+			types: buildTypes({ nestingPrefix: 'data' }),
+		})(
 			null,
 			{
 				type: 'donor',
@@ -43,7 +47,11 @@ suite('saveSet', () => {
 			index: async () => undefined,
 		};
 
-		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
+		await saveSet({
+			getServerSideFilter: getDefaultServerSideFilter,
+			setsIndex: 'arranger-sets',
+			types: buildTypes({ nestingPrefix: 'data' }),
+		})(
 			null,
 			{ type: 'donor', userId: 'user-1', sqon: { op: 'and', content: [] }, path: 'submitter_donor_id' },
 			{ esClient },
@@ -68,7 +76,11 @@ suite('saveSet', () => {
 			},
 		};
 
-		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes({ nestingPrefix: 'data' }) })(
+		await saveSet({
+			getServerSideFilter: getDefaultServerSideFilter,
+			setsIndex: 'arranger-sets',
+			types: buildTypes({ nestingPrefix: 'data' }),
+		})(
 			null,
 			{ type: 'donor', userId: 'user-1', sqon: { op: 'and', content: [] }, path: 'submitter_donor_id' },
 			{ esClient },
@@ -87,7 +99,11 @@ suite('saveSet', () => {
 			index: async () => undefined,
 		};
 
-		await saveSet({ getServerSideFilter: getDefaultServerSideFilter, setsIndex: 'arranger-sets', types: buildTypes(undefined) })(
+		await saveSet({
+			getServerSideFilter: getDefaultServerSideFilter,
+			setsIndex: 'arranger-sets',
+			types: buildTypes(undefined),
+		})(
 			null,
 			{
 				type: 'donor',
@@ -140,6 +156,106 @@ suite('saveSet', () => {
 
 			assert.equal(stored.sqon, null);
 			assert.equal(answer.sqon, null);
+		});
+
+		test('stores the userId the client sends, and answers it as null, since no reader is given it', async () => {
+			const { answer, stored } = await saveUnder({});
+
+			assert.equal(stored.userId, 'user-1');
+			assert.equal(answer.userId, null);
+		});
+	});
+
+	suite('the mark a saved set records', () => {
+		const PRINCIPAL = () => ({ id: 'subject-r1', kind: 'principal' });
+
+		/**
+		 * Saves a set where the sets index maps attribution as given, undefined leaving it out, returning the searches
+		 * run, what was stored, and what the mutation answered or threw.
+		 */
+		const saveWhereIndexMaps = async ({ attribution, getRequester }) => {
+			const searchCalls = [];
+			const indexCalls = [];
+			const esClient = {
+				indices: {
+					getMapping: async () => ({
+						body: {
+							'arranger-sets': {
+								mappings: {
+									properties: { ids: { type: 'keyword' }, ...(attribution && { attribution }) },
+								},
+							},
+						},
+					}),
+				},
+				index: async (params) => {
+					indexCalls.push(params);
+				},
+				search: async (params) => {
+					searchCalls.push(params);
+					return { body: { hits: { hits: [], total: { value: 0 } } } };
+				},
+			};
+
+			const outcome = await saveSet({
+				getRequester,
+				getServerSideFilter: getDefaultServerSideFilter,
+				setsIndex: 'arranger-sets',
+				types: buildTypes(undefined),
+			})(
+				null,
+				{ type: 'donor', userId: 'user-1', sqon: { op: 'and', content: [] }, path: 'submitter_donor_id' },
+				{ esClient },
+			).then(
+				(answer) => ({ answer }),
+				(error) => ({ error }),
+			);
+
+			return { ...outcome, searchCalls, stored: indexCalls.map(({ body }) => body) };
+		};
+
+		test('records a principal and its id where the sets index maps attribution as a keyword', async () => {
+			const { stored } = await saveWhereIndexMaps({ attribution: { type: 'keyword' }, getRequester: PRINCIPAL });
+
+			assert.deepEqual(
+				stored.map(({ attribution, userId }) => ({ attribution, userId })),
+				[{ attribution: 'principal', userId: 'subject-r1' }],
+			);
+		});
+
+		for (const [description, attribution] of [
+			['lacks attribution', undefined],
+			['maps attribution as text', { type: 'text' }],
+		]) {
+			test(`refuses a principal's save as a configuration failure, naming the mapping fix and reading no record, where the sets index ${description}`, async () => {
+				const { error, searchCalls, stored } = await saveWhereIndexMaps({
+					attribution,
+					getRequester: PRINCIPAL,
+				});
+
+				assert.equal(error?.name, 'AccessControlError');
+				assert.match(error?.message ?? '', /#sets-index-attribution/u);
+				assert.deepEqual({ searchCalls, stored }, { searchCalls: [], stored: [] });
+			});
+
+			test(`saves a set unmarked, writing no attribution, with no getRequester where the sets index ${description}`, async () => {
+				const { answer, stored } = await saveWhereIndexMaps({ attribution, getRequester: undefined });
+
+				assert.ok(answer, 'the set was not saved');
+				assert.deepEqual(
+					stored.map((body) => Object.hasOwn(body, 'attribution')),
+					[false],
+				);
+			});
+		}
+
+		test('marks a set unattributed with no getRequester where the sets index maps attribution as a keyword', async () => {
+			const { stored } = await saveWhereIndexMaps({ attribution: { type: 'keyword' }, getRequester: undefined });
+
+			assert.deepEqual(
+				stored.map(({ attribution, userId }) => ({ attribution, userId })),
+				[{ attribution: 'unattributed', userId: 'user-1' }],
+			);
 		});
 	});
 });

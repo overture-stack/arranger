@@ -4,7 +4,7 @@ import { suite, test } from 'node:test';
 import type { CatalogueIndex, UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
 import type { BridgeCore } from '@overture-stack/usher-express-bridge';
 
-import { type ImageUsher, stopUsherBridge, verifyAndStartUsher } from './usher.js';
+import { type ImageUsher, stopUsherBridge, verifyAndStartUsher, withUsherFilters } from './usher.js';
 
 /** What a fake's calls did, in the order they happened. */
 type Step = 'rejected' | 'started' | 'stopped' | 'verified';
@@ -40,6 +40,9 @@ const bridgeWith = ({
 const usherOver = (bridge: BridgeCore, verify: UsherAccessControl['verify']): ImageUsher => ({
 	accessControl: {
 		filterFor: () => () => {
+			throw new Error('No request reaches a filter in these tests.');
+		},
+		requesterOf: () => {
 			throw new Error('No request reaches a filter in these tests.');
 		},
 		verify,
@@ -177,6 +180,45 @@ suite('stopping the bridge', () => {
 		assert.deepEqual(
 			errors.mock.calls.map(({ arguments: [event] }) => event),
 			['access_enforcement.bridge_stop_failed'],
+		);
+	});
+});
+
+suite("each catalogue's access control under Usher", () => {
+	test("gives each catalogue the adapter's filter callback for it, and the adapter's answer to who made a request", () => {
+		// Given an adapter whose callbacks and requester answer are told apart by identity
+		const callbacks = new Map<string, ReturnType<UsherAccessControl['filterFor']>>();
+		const requesterOf: UsherAccessControl['requesterOf'] = () => ({ id: 'subject-k7', kind: 'principal' });
+		const accessControl: UsherAccessControl = {
+			filterFor: (catalogueId) => {
+				const callback = (() => {
+					throw new Error(`No request reaches ${catalogueId}'s filter in this test.`);
+				}) as ReturnType<UsherAccessControl['filterFor']>;
+				callbacks.set(catalogueId, callback);
+				return callback;
+			},
+			requesterOf,
+			verify: async () => undefined,
+		};
+
+		// When the image attaches it to two catalogues
+		const catalogs = withUsherFilters(
+			{ 'catalogue-k7': { esIndex: 'k7' }, 'catalogue-k8': { esIndex: 'k8' } },
+			accessControl,
+		);
+
+		// Then each keeps its own configuration, with its own callback and the one requester answer
+		assert.deepEqual(
+			Object.entries(catalogs).map(([catalogueId, configs]) => [
+				catalogueId,
+				configs.esIndex,
+				configs.getServerSideFilter === callbacks.get(catalogueId),
+				configs.getRequester === requesterOf,
+			]),
+			[
+				['catalogue-k7', 'k7', true, true],
+				['catalogue-k8', 'k8', true, true],
+			],
 		);
 	});
 });

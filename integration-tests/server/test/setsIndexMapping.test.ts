@@ -25,6 +25,23 @@ const RUN = randomUUID();
 const ES_INDEX = `testing-sets-index-mapping-${RUN}`;
 const SETS_INDEX = `testing-sets-index-mapping-sets-${RUN}`;
 const EARLIER_SETS_INDEX = `testing-sets-index-mapping-earlier-sets-${RUN}`;
+const TEXT_ATTRIBUTION_SETS_INDEX = `testing-sets-index-mapping-text-attribution-sets-${RUN}`;
+const STRICT_SETS_INDEX = `testing-sets-index-mapping-strict-sets-${RUN}`;
+
+/** A sets index mapping as an application creating its own might write it: strict, and without `attribution`. */
+const STRICT_WITHOUT_ATTRIBUTION = {
+	dynamic: 'strict',
+	properties: {
+		createdAt: { type: 'date' },
+		ids: { type: 'keyword' },
+		path: { type: 'keyword' },
+		setId: { type: 'keyword' },
+		size: { type: 'long' },
+		sqon: { enabled: false, type: 'object' },
+		type: { type: 'keyword' },
+		userId: { type: 'keyword' },
+	},
+};
 
 const RECORDS = [
 	{ amount: 5, day: '2024-03-15', name: 'p1' },
@@ -50,10 +67,14 @@ const SAVE_SET = `mutation ($sqon: JSON!) { saveSet(type: ${DOCUMENT_TYPE}, sqon
 
 type Served = { base: string; close: () => Promise<void> };
 
-const serveRouterOn = async (setsIndex: string): Promise<Served> => {
+const serveRouterOn = async (
+	setsIndex: string,
+	getRequester?: () => { id: string; kind: 'principal' },
+): Promise<Served> => {
 	const router = await arrangerRouter({
 		configs: { documentType: DOCUMENT_TYPE, enableSets: true, esIndex: ES_INDEX, sets: { index: setsIndex } },
 		esClient,
+		...(getRequester && { getRequester }),
 	});
 	const server: Server = express().use(router).listen(0, '127.0.0.1');
 	await new Promise((resolve) => server.once('listening', resolve));
@@ -93,14 +114,34 @@ suite("the sets index stores each saved set's filter as data", { concurrency: fa
 			body: { mappings: { properties: { ids: { type: 'keyword' }, sqon: { type: 'object' } } } },
 			index: EARLIER_SETS_INDEX,
 		});
+		await esClient.indices.create({
+			body: {
+				mappings: {
+					properties: {
+						attribution: { type: 'text' },
+						ids: { type: 'keyword' },
+						sqon: { enabled: false, type: 'object' },
+					},
+				},
+			},
+			index: TEXT_ATTRIBUTION_SETS_INDEX,
+		});
 
 		served.push(await serveRouterOn(SETS_INDEX));
+
+		// Two routers on one sets index, which is then recreated with a strict mapping lacking attribution, as an
+		// application's own script recreating it after startup would
+		served.push(await serveRouterOn(STRICT_SETS_INDEX));
+		served.push(await serveRouterOn(STRICT_SETS_INDEX, () => ({ id: 'subject-r1', kind: 'principal' })));
+		await esClient.indices.delete({ index: STRICT_SETS_INDEX });
+		await esClient.indices.create({ body: { mappings: STRICT_WITHOUT_ATTRIBUTION }, index: STRICT_SETS_INDEX });
 
 		const warnings = mock.method(console, 'warn', (...args: unknown[]) => {
 			startupWarnings.push(format(...args));
 		});
 		try {
 			served.push(await serveRouterOn(EARLIER_SETS_INDEX));
+			served.push(await serveRouterOn(TEXT_ATTRIBUTION_SETS_INDEX));
 		} finally {
 			warnings.mock.restore();
 		}
@@ -109,7 +150,7 @@ suite("the sets index stores each saved set's filter as data", { concurrency: fa
 	after(async () => {
 		await Promise.all(served.map(({ close }) => close()));
 		await Promise.all(
-			[ES_INDEX, SETS_INDEX, EARLIER_SETS_INDEX].map((index) =>
+			[ES_INDEX, SETS_INDEX, EARLIER_SETS_INDEX, TEXT_ATTRIBUTION_SETS_INDEX, STRICT_SETS_INDEX].map((index) =>
 				esClient.indices.delete({ index }).catch(() => undefined),
 			),
 		);
@@ -144,11 +185,13 @@ suite("the sets index stores each saved set's filter as data", { concurrency: fa
 
 	test('warns at startup, naming it, of a sets index that does not store each set filter as data, and serves', async () => {
 		// Given a router started on a sets index created with an earlier mapping
-		const router = served[1];
+		const router = served[3];
 		assert.ok(router);
 
-		// Then startup warned once, naming the index and the migration section
-		const lines = startupWarnings.filter((line) => line.includes('sets.index_mapping_outdated'));
+		// Then startup warned once about it, naming the index and the migration section
+		const lines = startupWarnings.filter(
+			(line) => line.includes('sets.index_mapping_outdated') && line.includes(EARLIER_SETS_INDEX),
+		);
 		assert.equal(lines.length, 1, JSON.stringify(startupWarnings));
 		assert.match(lines[0] ?? '', new RegExp(EARLIER_SETS_INDEX, 'u'));
 		assert.match(lines[0] ?? '', /#sets-index-filter-as-data/u);
@@ -158,5 +201,99 @@ suite("the sets index stores each saved set's filter as data", { concurrency: fa
 			query: `{ ${DOCUMENT_TYPE} { hits { total } } }`,
 		});
 		assert.deepEqual(data, { data: { [DOCUMENT_TYPE]: { hits: { total: RECORDS.length } } } });
+	});
+
+	test('records how each set was saved: a sets index it creates maps attribution as a keyword, and one created with an earlier mapping gains it', async () => {
+		const attributionOf = async (index: string) => {
+			const { body } = await esClient.indices.getMapping({ index });
+
+			return (Object.values(body)[0] as { mappings: { properties: Record<string, unknown> } }).mappings.properties
+				.attribution;
+		};
+
+		assert.deepEqual(await attributionOf(SETS_INDEX), { type: 'keyword' });
+		assert.deepEqual(await attributionOf(EARLIER_SETS_INDEX), { type: 'keyword' });
+	});
+
+	test('warns at startup of a sets index mapping attribution as anything but a keyword, and saves its sets without the mark', async () => {
+		// Given a router started on a sets index mapping attribution as text
+		const router = served[4];
+		assert.ok(router);
+
+		// Then startup warned about it, naming the index and the migration section
+		const lines = startupWarnings.filter(
+			(line) => line.includes('sets.index_mapping_outdated') && line.includes(TEXT_ATTRIBUTION_SETS_INDEX),
+		);
+		assert.equal(lines.length, 1, JSON.stringify(startupWarnings));
+		assert.match(lines[0] ?? '', /#sets-index-attribution/u);
+
+		// And a set it saves is stored with no mark
+		const { data } = await axios.post(`${router.base}/graphql`, {
+			query: SAVE_SET,
+			variables: { sqon: FILTERS[0]?.[1] },
+		});
+		assert.equal(data.errors, undefined, JSON.stringify(data.errors));
+		const { body: found } = await esClient.search({
+			body: { query: { ids: { values: [data.data.saveSet.setId] } } },
+			index: TEXT_ATTRIBUTION_SETS_INDEX,
+		});
+		assert.deepEqual(
+			found.hits.hits.map(({ _source }: { _source?: Record<string, unknown> }) =>
+				Object.hasOwn(_source ?? {}, 'attribution'),
+			),
+			[false],
+		);
+	});
+
+	suite('a sets index recreated after startup with a strict mapping lacking attribution', () => {
+		const storedSetIds = async (): Promise<string[]> => {
+			await esClient.indices.refresh({ index: STRICT_SETS_INDEX });
+			const { body } = await esClient.search({ body: { size: 100 }, index: STRICT_SETS_INDEX });
+
+			return body.hits.hits.map(({ _id }: { _id: string }) => _id);
+		};
+
+		test('takes a set saved with no getRequester, unmarked, since nothing is written into the field it lacks', async () => {
+			// Given a router with no getRequester on that index
+			const router = served[1];
+			assert.ok(router);
+
+			// When it saves a set
+			const { data } = await axios.post(`${router.base}/graphql`, {
+				query: SAVE_SET,
+				variables: { sqon: FILTERS[0]?.[1] },
+			});
+
+			// Then the strict mapping accepts it, and it is stored with no mark
+			assert.equal(data.errors, undefined, JSON.stringify(data.errors));
+			const { body: found } = await esClient.search({
+				body: { query: { ids: { values: [data.data.saveSet.setId] } } },
+				index: STRICT_SETS_INDEX,
+			});
+			assert.deepEqual(
+				found.hits.hits.map(({ _source }: { _source?: Record<string, unknown> }) =>
+					Object.hasOwn(_source ?? {}, 'attribution'),
+				),
+				[false],
+			);
+		});
+
+		test('refuses a set saved under getRequester, storing nothing, since unmarked it would be read as unattributed', async () => {
+			// Given a router with getRequester on that index, and the sets it holds
+			const router = served[2];
+			assert.ok(router);
+			const before = await storedSetIds();
+
+			// When it saves a set
+			const { data } = await axios.post(`${router.base}/graphql`, {
+				query: SAVE_SET,
+				variables: { sqon: FILTERS[0]?.[1] },
+			});
+
+			// Then the save is refused, and the index holds the same sets
+			assert.equal(data.errors?.length, 1, JSON.stringify(data));
+			assert.equal(data.data?.saveSet ?? null, null);
+			assert.deepEqual(await storedSetIds(), before);
+		});
 	});
 });

@@ -247,19 +247,32 @@ export const startRouter = async ({
 	documentType,
 	esClient,
 	esIndex,
+	getRequester,
 	getServerSideFilter,
+	network = false,
 	setsIndex,
 }: {
 	before?: RequestHandler[];
 	documentType: string;
 	esClient: SearchClient;
 	esIndex: string;
+	/** Who made a request, as a host names it for saved sets. */
+	getRequester?: (context: unknown) => unknown;
 	getServerSideFilter?: Filter;
+	/** Whether network search serves this catalogue as its one local node, named `local node`. */
+	network?: boolean;
 	setsIndex: string;
 }): Promise<Served> => {
 	const router = await arrangerRouter({
-		configs: { documentType, enableSets: true, esIndex, sets: { index: setsIndex } },
+		configs: {
+			documentType,
+			enableSets: true,
+			esIndex,
+			...(network && { network: { localNode: { displayName: 'local node' }, remoteNodes: [] } }),
+			sets: { index: setsIndex },
+		},
 		esClient,
+		...(getRequester && { getRequester: getRequester as never }),
 		...(getServerSideFilter && { getServerSideFilter: getServerSideFilter as never }),
 	});
 

@@ -29,14 +29,14 @@ export default ({ api, documentType }) => {
 		setId = data?.data?.newSet?.setId;
 	});
 
-	test('2.retrieves newly created set successfully', async () => {
+	test('2.retrieves the newly created set by its id', async () => {
 		const { data } = await api
 			.post({
 				body: {
 					query: print(gql`
-						{
+						query ($filters: JSON) {
 							sets {
-								hits(first: 1000) {
+								hits(first: 1000, filters: $filters) {
 									edges {
 										node {
 											setId
@@ -46,6 +46,7 @@ export default ({ api, documentType }) => {
 							}
 						}
 					`),
+					variables: { filters: { content: { fieldName: 'setId', value: [setId] }, op: 'in' } },
 				},
 			})
 			.catch((err) => {

@@ -1,4 +1,5 @@
 export type { ConditionValidation, IndexProbe } from './indexProbe.js';
+export type { GetRequesterFn, RequesterAnswer } from './sets/setsAccess.js';
 export type { ArrangerBaseContext } from './types.js';
 
 export {

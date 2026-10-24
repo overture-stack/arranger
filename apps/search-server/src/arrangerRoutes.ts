@@ -35,11 +35,12 @@ export const buildCatalogueRouter = async ({
 	esClient?: SearchClient;
 	onIndexMapping?: CatalogueMappingHook;
 }): Promise<ExpressRouter> => {
-	const { getServerSideFilter, ...configs } = catalogueConfigs;
+	const { getRequester, getServerSideFilter, ...configs } = catalogueConfigs;
 	return arrangerRouter({
 		catalogueId,
 		configs: { enableDebug, ...configs },
 		esClient,
+		getRequester,
 		getServerSideFilter,
 		...(onIndexMapping && {
 			onIndexMapping: (mappingFromIndex: Record<string, unknown>, indexProbe: IndexProbe) =>

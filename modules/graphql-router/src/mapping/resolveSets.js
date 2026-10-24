@@ -2,9 +2,13 @@ import { configOptionalProperties } from '@overture-stack/arranger-types/configs
 import { get, isEmpty, uniq } from 'lodash-es';
 import { v4 as uuid } from 'uuid';
 
+import { AccessControlError, AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
 import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
+import { requesterOf, savedAttributionFor } from '#sets/setsAccess.js';
+import { recordsAttribution } from '#sets/setsIndexMapping.js';
+import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
 import compileFilter from './utils/compileFilter.js';
 import { catalogueSearch } from './utils/esSearch.js';
@@ -64,13 +68,49 @@ const retrieveSetIds = async ({
 	return handleResult(await search());
 };
 
+/**
+ * The saveSet mutation's resolver. Each set records how it was saved, as its `attribution`: with the host's
+ * `getRequester`, by the principal it names, whatever `userId` the client sends, or anonymously, and a suspended
+ * principal saves nothing; without it, unattributed, keeping the `userId` the client sends as data. The saved set
+ * is returned without its `userId`, which no reader is given. Where the sets index does not map `attribution` as a
+ * keyword at the time of the save, a set is saved without the mark only when sets have no owners, since a set with no
+ * mark is read as unattributed, and nothing is written into a field the index does not map.
+ *
+ * @param {object} args
+ * @param {Function} [args.getRequester] the host's answer to who made a request.
+ * @param {Function} args.getServerSideFilter the filter callback the saved records are selected under.
+ * @param {string} args.setsIndex the catalogue's own sets index.
+ * @param {Array} args.types the catalogue's types.
+ * @throws {AccessControlUnavailableError} for a suspended principal, before anything is read or stored.
+ * @throws {AccessControlError} where sets have owners and the sets index cannot record the mark, before any record
+ *   is read or anything stored.
+ */
 export const saveSet =
-	({ getServerSideFilter, setsIndex, types }) =>
+	({ getRequester, getServerSideFilter, setsIndex, types }) =>
 	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
+		const requester = getRequester ? requesterOf({ context, getRequester }) : undefined;
+
+		if (requester?.kind === 'suspended') {
+			throw new AccessControlUnavailableError(
+				'The requester is signed in but not confirmed, so no saved set can be given its creator yet.',
+				{ retryAfterSeconds: requester.retryAfterSeconds },
+			);
+		}
+
+		const { esClient } = context;
+		const marksRecorded = await recordsAttribution({ esClient, setsIndex });
+
+		if (requester && !marksRecorded) {
+			throw new AccessControlError(
+				`The sets index "${setsIndex}" does not map attribution as a keyword, so it cannot record who saved a set, and no set is saved while saved sets have owners. Add it as ${MIGRATION_GUIDE_URL}#sets-index-attribution describes.`,
+			);
+		}
+
+		const { attribution, userId: savedUserId } = savedAttributionFor({ clientUserId: userId, requester });
+
 		const catalogueType = types.find(([, x]) => x.name === type)[1];
 		const { nested_fieldNames: nestedFieldNames, index, config } = catalogueType;
 		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
-		const { esClient } = context;
 		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' });
 
 		const query = buildQuery({
@@ -116,7 +156,8 @@ export const saveSet =
 			path,
 			// A set records the client's filter only where that filter selected its ids.
 			sqon: context.disableClientFilters ? null : sqon,
-			userId,
+			...(marksRecorded && { attribution }),
+			userId: savedUserId,
 			size: ids.length,
 		};
 
@@ -127,5 +168,5 @@ export const saveSet =
 			body,
 		});
 
-		return body;
+		return { ...body, userId: null };
 	};

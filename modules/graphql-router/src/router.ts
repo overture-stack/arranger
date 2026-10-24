@@ -25,6 +25,7 @@ import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIn
 import getNestedFields from '#mapping/getNestedFields.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
+import { type GetRequesterFn, narrowsSetRecords } from '#sets/setsAccess.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addArrangerLocals, keepRequestContextView } from '#utils/context.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
@@ -35,13 +36,8 @@ export const mergeConfigs = <Context extends ArrangerBaseContext>(
 ): Partial<ConfigsObject<Context>> => merge({}, fallback, custom);
 
 /** Resolves the identifier used in log output for this catalogue: an explicit `catalogueId`, falling back to `documentType`, then to a generic placeholder when neither is available. */
-export const resolveLabel = ({
-	catalogueId,
-	documentType,
-}: {
-	catalogueId?: string;
-	documentType?: string;
-}): string => catalogueId || documentType || FALLBACK_LABEL;
+export const resolveLabel = ({ catalogueId, documentType }: { catalogueId?: string; documentType?: string }): string =>
+	catalogueId || documentType || FALLBACK_LABEL;
 
 /**
  * The middleware every request meets first: it keeps `req.context` as a view of `res.locals.arranger`,
@@ -75,12 +71,17 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
  * @param getServerSideFilter the access-control filter callback every read applies, which must be a
  *   non-async function. Left out, the router applies `includeEverything` and records the choice as
  *   defaulted rather than configured; any other value makes construction reject.
+ * @param getRequester who made a request, read from the same context and stated explicitly: a principal with its
+ *   id, an anonymous request or a suspended principal. Given, saved sets have owners: each set records how it was
+ *   saved, the sets connection lists a principal its own sets and the sets with no owner, and a principal's set's
+ *   stored filter and creator go to that principal alone. Without it, sets have no owners, as in 3.0.x.
  */
 const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	catalogueId,
 	configs: customConfigs = {},
 	configsSource,
 	esClient: customEsClient = undefined,
+	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
 	onIndexMapping,
@@ -94,6 +95,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	 */
 	configsSource?: string;
 	esClient?: SearchClient;
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 	/**
@@ -124,7 +126,9 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	const label = resolveLabel({ catalogueId, documentType: aggregatedConfigs[configRootProperties.DOCUMENT_TYPE] });
 
 	// TODO: set up a real logger... winston or pino?
-	console.log(`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`);
+	console.log(
+		`\n${logSeparator(label)}\nInitializing an Arranger instance${isFallbackLabel(label) ? '' : ` for "${label}"`}:`,
+	);
 
 	try {
 		assertFilterCallback({ getServerSideFilter, optional: true, receiver: 'arrangerRouter' });
@@ -134,6 +138,20 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		console.log('access_enforcement.startup', `access control: ${describeAccessControlRecord(accessControlRecord)}`, {
 			catalogue: label,
 		});
+
+		if (getRequester !== undefined && typeof getRequester !== 'function') {
+			throw new Error(
+				`arrangerRouter: getRequester must be a function when given, and was ${typeof getRequester}.`,
+			);
+		}
+
+		if (narrowsSetRecords(accessControlRecord.getServerSideFilter) && getRequester === undefined) {
+			console.info(
+				'sets.unowned',
+				"No getRequester is given, so saved sets have no owner: every reader is listed every set with its filter, while each set's records stay narrowed by the server-side filter.",
+				{ catalogue: label },
+			);
+		}
 
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
 			aggregatedConfigs,
@@ -192,6 +210,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			enableAdmin,
 			enableDebug,
 			esClient,
+			getRequester,
 			getServerSideFilter: accessControlRecord.getServerSideFilter, // TODO: Extend for multicatalogue per-catalogue filters
 			graphqlOptions,
 			label,

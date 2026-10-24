@@ -277,7 +277,23 @@ export const hitsToEdges = ({
 export const applyResultsWindow = (first, maxResultsWindow) =>
 	Math.min(first, maxResultsWindow ?? tableDefaults.MAX_RESULTS_WINDOW);
 
-export default ({ type, Parallel, getServerSideFilter }) =>
+/**
+ * The hits resolver for one type.
+ *
+ * @param {object} args
+ * @param {Function} args.getServerSideFilter the filter callback each read applies.
+ * @param {object} args.Parallel the worker pool hits are mapped in.
+ * @param {string[]} [args.requiredSourceFields] stored fields every hit carries, whichever the client selected,
+ *   for a resolver of its node's fields that reads them.
+ * @param {object} args.type the type's definition.
+ */
+export default ({ getServerSideFilter, Parallel, requiredSourceFields = [], type }) =>
+	/**
+	 * @param {unknown} obj
+	 * @param {{ filters?: any, first?: number, offset?: number, score?: any, searchAfter?: any, sort?: any, trackTotalHits?: boolean }} args
+	 * @param {any} context
+	 * @param {any} info
+	 */
 	async (
 		obj,
 		{ first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
@@ -358,6 +374,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 						Object.keys(fields.edges.node || {}).map((name) => rawTopLevelNames[name] ?? name)) ||
 						[]),
 					...Object.values(copyToSourceFields),
+					...requiredSourceFields,
 				];
 
 		const searchResult = await catalogueSearch({
