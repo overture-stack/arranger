@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import buildQuery from '#middleware/buildQuery/index.js';
+import buildQuery, { collapseNestedFilters } from '#middleware/buildQuery/index.js';
 
 const nestedFieldNames = ['files'];
 const compile = (filters) => buildQuery({ filters, nestedFieldNames });
@@ -19,6 +19,17 @@ const nestedOnFiles = (compiled, kind) => compiled.bool[kind].filter((clause) =>
 
 /** The conditions a nested clause holds for one item, whichever kind of clause holds them. */
 const itemConditions = (nested) => Object.values(nested.nested.query.bool).flat();
+
+/** The bounds of every range among some conditions, sorted. */
+const boundsOf = (conditions) =>
+	conditions
+		.flatMap((condition) =>
+			condition.range
+				? Object.values(condition.range).map(({ boost: _boost, ...bound }) => Object.values(bound))
+				: [],
+		)
+		.flat()
+		.sort();
 
 suite('middleware/buildQuery: pivoted groups', () => {
 	// A pivot requires the conditions under it on that path to hold for the same nested item, so
@@ -159,5 +170,54 @@ suite('middleware/buildQuery: pivoted groups', () => {
 				);
 			});
 		}
+	});
+
+	// A clause can hold several conditions for its one item, such as a range given several bounds that are not all
+	// numbers, and a pivot merging it into a sibling on the same path keeps every one of them.
+	suite(
+		'a pivoted group keeps every bound of a range clause on its path, whichever position the clause holds',
+		() => {
+			const createdSince = {
+				content: { fieldName: 'files.created', value: ['2024-01-01', '2024-06-01'] },
+				op: 'gte',
+			};
+
+			for (const [op, kind] of [
+				['and', 'must'],
+				['not', 'must_not'],
+			]) {
+				for (const [position, content] of [
+					['first', [createdSince, bamFile]],
+					['later', [bamFile, createdSince]],
+				]) {
+					test(`in a pivoted ${op}, with the range ${position}`, () => {
+						const nested = nestedOnFiles(compile(group(op, content, 'files')), kind);
+
+						assert.equal(nested.length, 1);
+						assert.deepEqual(boundsOf(itemConditions(nested[0])), ['2024-01-01', '2024-06-01']);
+						assert.equal(itemConditions(nested[0]).filter((condition) => condition.terms).length, 1);
+					});
+				}
+			}
+		},
+	);
+
+	suite('merging a nested clause into a sibling on its path', () => {
+		const condition = (name) => ({ term: { [`files.${name}`]: name } });
+		const onFiles = (bool) => ({ nested: { path: 'files', query: { bool } } });
+
+		test('keeps every condition it holds, under must and must_not alike', () => {
+			// Given a sibling on files, and a clause on files holding conditions under must and must_not
+			const sibling = onFiles({ must: [condition('a')] });
+			const holdingBoth = onFiles({ must: [condition('b'), condition('c')], must_not: [condition('d')] });
+
+			// When the clause merges into the sibling
+			const merged = collapseNestedFilters({ bools: [sibling], esFilter: holdingBoth });
+
+			// Then one clause on files holds every condition, each under its own kind
+			assert.deepEqual(merged, [
+				onFiles({ must: [condition('a'), condition('b'), condition('c')], must_not: [condition('d')] }),
+			]);
+		});
 	});
 });

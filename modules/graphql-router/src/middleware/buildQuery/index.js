@@ -200,27 +200,41 @@ function getRangeFilter({ filter, legacyDateFieldNames, nestedFieldNames }) {
 	});
 }
 
-// Only nested clauses on the same path merge, which holds their conditions to one item. Any other
-// clause stays its own: merging two bools would change what a not, or a must_not, negates.
-function collapseNestedFilters({ esFilter, bools }) {
+/**
+ * Merges one compiled clause of a pivoted group into the clauses before it. Only nested clauses on the same path
+ * merge, which holds their conditions to one item. Any other clause stays its own: merging two bools would change
+ * what a not, or a must_not, negates.
+ *
+ * @param {object} args
+ * @param {object} args.esFilter the compiled clause to merge.
+ * @param {object[]} args.bools the compiled clauses before it.
+ * @returns {object[]} the clauses, with this one merged in or added.
+ */
+export function collapseNestedFilters({ esFilter, bools }) {
 	if (!isNested(esFilter)) {
 		return [...bools, esFilter];
 	}
 
 	const basePath = [ES_NESTED, ES_QUERY, ES_BOOL];
-	const path = [ES_MUST, ES_MUST_NOT].map((p) => [...basePath, p]).find((path) => _.get(esFilter, path));
-	const found = path && bools.find((bool) => readPath(bool) === readPath(esFilter));
+	const paths = [ES_MUST, ES_MUST_NOT].map((kind) => [...basePath, kind]).filter((path) => _.get(esFilter, path));
+	const found = paths.length > 0 ? bools.find((bool) => readPath(bool) === readPath(esFilter)) : undefined;
 
+	// Every condition the clause holds joins the sibling's conditions of the same kind, each merged in turn.
 	return [
 		...bools.filter((bool) => bool !== found),
 		found
-			? mergePath(
+			? paths.reduce(
+					(merged, path) =>
+						mergePath(
+							merged,
+							path,
+							_.get(esFilter, path).reduce(
+								(conditions, condition) =>
+									collapseNestedFilters({ bools: conditions, esFilter: condition }),
+								_.get(merged, path, []),
+							),
+						),
 					found,
-					path,
-					collapseNestedFilters({
-						esFilter: _.get(esFilter, path)[0],
-						bools: _.get(found, path, []),
-					}),
 				)
 			: esFilter,
 	];

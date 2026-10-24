@@ -93,3 +93,98 @@ suite('a range given several bounds matches only what the strictest admits', { c
 		});
 	}
 });
+
+const PIVOT_INDEX = 'testing-range-bounds-pivot';
+const PIVOT_MAPPINGS = {
+	mappings: {
+		properties: {
+			name: { type: 'keyword' },
+			samples: { properties: { collected: { type: 'date' }, kind: { type: 'keyword' } }, type: 'nested' },
+		},
+	},
+};
+
+/** Records whose samples meet the kind, the bounds, or both, on one sample or across two. */
+const PIVOT_RECORDS = [
+	{ name: 'early', samples: [{ collected: '2024-03-01', kind: 'blood' }] },
+	{ name: 'late', samples: [{ collected: '2024-09-01', kind: 'blood' }] },
+	{
+		name: 'split',
+		samples: [
+			{ collected: '2024-03-01', kind: 'blood' },
+			{ collected: '2024-09-01', kind: 'tissue' },
+		],
+	},
+];
+
+const bloodSample = { content: { fieldName: 'samples.kind', value: ['blood'] }, op: 'in' };
+const collectedSince = { content: { fieldName: 'samples.collected', value: ['2024-01-01', '2024-06-01'] }, op: 'gte' };
+
+/** Each case: a pivoted group holding a range with two date bounds, and the records it matches. */
+const PIVOT_CASES: [string, Record<string, unknown>, string[]][] = [
+	[
+		'a pivoted and, the range later',
+		{ content: [bloodSample, collectedSince], op: 'and', pivot: 'samples' },
+		['late'],
+	],
+	[
+		'a pivoted and, the range first',
+		{ content: [collectedSince, bloodSample], op: 'and', pivot: 'samples' },
+		['late'],
+	],
+	[
+		'a pivoted not, the range later',
+		{ content: [bloodSample, collectedSince], op: 'not', pivot: 'samples' },
+		['early', 'split'],
+	],
+];
+
+suite(
+	'a pivoted group applies every bound of a range on its path to the same nested item',
+	{ concurrency: false },
+	() => {
+		let server: Server;
+		let base: string;
+
+		before(async () => {
+			await esClient.indices.delete({ index: PIVOT_INDEX }).catch(() => undefined);
+			await esClient.indices.create({ body: PIVOT_MAPPINGS, index: PIVOT_INDEX });
+			await Promise.all(
+				PIVOT_RECORDS.map((record) =>
+					esClient.index({ body: record, id: record.name, index: PIVOT_INDEX, refresh: 'wait_for' }),
+				),
+			);
+
+			const router = await arrangerRouter({
+				configs: { documentType: DOCUMENT_TYPE, esIndex: PIVOT_INDEX },
+				esClient,
+			});
+			server = express().use(router).listen(0, '127.0.0.1');
+			await new Promise((resolve) => server.once('listening', resolve));
+			base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+		});
+
+		after(async () => {
+			server?.close();
+			await esClient.indices.delete({ index: PIVOT_INDEX }).catch(() => undefined);
+		});
+
+		for (const [description, filters, expected] of PIVOT_CASES) {
+			test(`${description}`, async () => {
+				// Given records whose samples meet the kind and the bounds on one sample, on none, or across two
+				// When hits are queried with a pivoted group holding a range with two bounds
+				const { data } = await axios.post(`${base}/graphql`, {
+					query: `query ($filters: JSON) { ${DOCUMENT_TYPE} { hits(first: 100, filters: $filters) { edges { node { name } } } } }`,
+					variables: { filters },
+				});
+
+				// Then only the records with one sample meeting every condition, both bounds included, are matched
+				assert.equal(data.errors, undefined, JSON.stringify(data.errors));
+				const names = data.data[DOCUMENT_TYPE].hits.edges.map(
+					({ node }: { node: { name: string } }) => node.name,
+				);
+				assert.deepEqual(names.sort(), expected);
+			});
+		}
+	},
+);
