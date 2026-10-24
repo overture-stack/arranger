@@ -4,8 +4,8 @@ import { conditionProblemsOf } from './conditionFields.js';
 
 /**
  * Every reason access cannot be enforced on a catalogue as registered, against its index mapping as the
- * GraphQL router fetched it. An open catalogue names no field, an artifact key is refused, and a record
- * key's resource field and category conditions are checked as `conditionProblemsOf` holds. Each reason
+ * GraphQL router fetched it. An open catalogue names no field, and a record key's resource field and category
+ * conditions are checked as `conditionProblemsOf` holds; Usher's registration format refuses any other kind. Each reason
  * names the catalogue, and the category and field at fault, all of them the operator's configuration.
  *
  * @param catalogueId the catalogue's key.
@@ -20,8 +20,6 @@ export const enforcementProblemsOf = (
 	switch (registration.kind) {
 		case 'open':
 			return [];
-		case 'artifact':
-			return [`catalogue "${catalogueId}" registers an artifact key, which the adapter does not serve yet`];
 		case 'record':
 			return conditionProblemsOf(catalogueId, registration, mapping);
 	}

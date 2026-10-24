@@ -21,10 +21,12 @@ import {
 	CATEGORY_PRINCIPALS,
 	CATEGORY_RECORDS,
 	CATEGORY_REGISTRATION,
+	CATEGORY_SERVED_RESOURCES,
 	STUDY_A,
 	STUDY_B,
 	STUDY_UNLISTED,
 	STUDY_UNLISTED_OTHER,
+	STUDY_UNSERVED,
 } from './categoryFixture.js';
 
 const MAPPING = {
@@ -60,6 +62,9 @@ const or = (...content: Condition[]): Condition => ({ content, op: 'or' });
 const not = (condition: Condition): Condition => ({ content: [condition], op: 'not' });
 
 type Categories = RecordKeyRegistration['categories'];
+
+/** The least an audience serves for `grants`: the resources they name, which every payload's served list holds. */
+const servedFor = (grants: Grants): string[] => Object.keys(grants);
 
 const catalogueWith = ({
 	global = {},
@@ -329,9 +334,15 @@ suite('the category checker', () => {
 			const record = { study: 'one' };
 
 			assert.throws(() => categoriesOf({ catalogue, record }), /Refused catalogue/u);
-			assert.throws(() => isVisible({ catalogue, grants: {}, record }), /Refused catalogue/u);
+			assert.throws(
+				() => isVisible({ catalogue, grants: {}, record, servedResources: [] }),
+				/Refused catalogue/u,
+			);
 			assert.throws(() => resourcesOf({ catalogue, record }), /Refused catalogue/u);
-			assert.throws(() => visibleRecords({ catalogue, grants: {}, records: [record] }), /Refused catalogue/u);
+			assert.throws(
+				() => visibleRecords({ catalogue, grants: {}, records: [record], servedResources: [] }),
+				/Refused catalogue/u,
+			);
 		});
 
 		test('accepts every operator a condition may use, on every field type it may read', () => {
@@ -799,7 +810,7 @@ suite('the category checker', () => {
 		});
 		const plain = { amount: 1, day: '2023-06-01', tag: ['plain'] };
 		const visibleTo = (grants: Grants, record: CatalogueRecord): boolean =>
-			isVisible({ catalogue, grants, record });
+			isVisible({ catalogue, grants, record, servedResources: servedFor(grants) });
 
 		test('withholds a record carrying a held category beside one not held', () => {
 			const flaggedAndRecent = { ...plain, day: '2024-02-01', study: 'one', tag: ['flagged'] };
@@ -821,6 +832,19 @@ suite('the category checker', () => {
 			assert.equal(visibleTo({ two: [UNMARKED_CATEGORY] }, unmarked), false);
 		});
 
+		test('refuses served resources that leave out a resource the grants name, as a payload is refused', () => {
+			const record = { ...plain, study: 'one' };
+
+			assert.throws(
+				() => isVisible({ catalogue, grants: { one: [UNMARKED_CATEGORY] }, record, servedResources: [] }),
+				/Refused served resources/u,
+			);
+			assert.throws(
+				() => isVisible({ catalogue, grants: {}, record, servedResources: 'one' as unknown as string[] }),
+				/Refused served resources/u,
+			);
+		});
+
 		test('serves nothing through empty grants or an empty held set', () => {
 			assert.equal(visibleTo({}, { ...plain, study: 'one' }), false);
 			assert.equal(visibleTo({ one: [] }, { ...plain, study: 'one' }), false);
@@ -836,21 +860,19 @@ suite('the category checker', () => {
 			assert.equal(visibleTo(grants, { ...plain, study: [null] }), false);
 		});
 
-		test('withholds a record of a granted resource the registration does not list', () => {
+		test('serves a record of a granted resource the registration does not list, since the audience serves every granted one', () => {
 			const unlisted = catalogueWith({ global: { 'global.flagged': inValues('tag', ['flagged']) } });
 			const ofThree = { ...plain, study: 'three' };
+			const grants = { three: [UNMARKED_CATEGORY] };
 
-			assert.equal(visibleTo({ three: [UNMARKED_CATEGORY] }, ofThree), false);
-			assert.equal(
-				isVisible({ catalogue: unlisted, grants: { three: [UNMARKED_CATEGORY] }, record: ofThree }),
-				true,
-			);
+			assert.equal(visibleTo(grants, ofThree), true);
+			assert.equal(isVisible({ catalogue: unlisted, grants, record: ofThree, servedResources: ['three'] }), true);
 		});
 
 		test('admits a resource named like a built-in object property only through a grant on that name', () => {
 			const unlisted = catalogueWith({ global: { 'global.flagged': inValues('tag', ['flagged']) } });
 			const visibleWithoutList = (grants: Grants, record: CatalogueRecord): boolean =>
-				isVisible({ catalogue: unlisted, grants, record });
+				isVisible({ catalogue: unlisted, grants, record, servedResources: servedFor(grants) });
 
 			assert.equal(visibleWithoutList({}, { ...plain, study: 'constructor' }), false);
 			assert.equal(visibleWithoutList({}, { ...plain, study: 'toString' }), false);
@@ -859,7 +881,6 @@ suite('the category checker', () => {
 				visibleWithoutList({ constructor: [UNMARKED_CATEGORY] }, { ...plain, study: 'constructor' }),
 				true,
 			);
-			assert.equal(visibleTo({ constructor: [UNMARKED_CATEGORY] }, { ...plain, study: 'constructor' }), false);
 		});
 	});
 
@@ -875,7 +896,7 @@ suite('the category checker', () => {
 		const bothFlagged = { ...plain, study: ['one', 'two'], tag: ['flagged'] };
 		const bothLarge = { ...plain, amount: 150, study: ['one', 'two'] };
 		const visibleTo = (catalogue: Catalogue, grants: Grants, record: CatalogueRecord): boolean =>
-			isVisible({ catalogue, grants, record });
+			isVisible({ catalogue, grants, record, servedResources: servedFor(grants) });
 
 		test('serves it when every resource it holds is held with each category it carries', () => {
 			assert.equal(visibleTo(listing, { one: [UNMARKED_CATEGORY], two: [UNMARKED_CATEGORY] }, both), true);
@@ -910,7 +931,7 @@ suite('the category checker', () => {
 			assert.equal(visibleTo(listing, { one: ['resource.large'], two: [UNMARKED_CATEGORY] }, bothLarge), false);
 		});
 
-		test('passes over a value that is not a known resource, deciding the record by the rest', () => {
+		test('passes over a value neither served nor listed, deciding the record by the rest', () => {
 			const withUnlisted = { ...plain, study: ['one', 'elsewhere'] };
 
 			assert.equal(visibleTo(listing, { one: [UNMARKED_CATEGORY] }, withUnlisted), true);
@@ -921,10 +942,28 @@ suite('the category checker', () => {
 		});
 
 		test('withholds it when none of its values is a held resource', () => {
-			const grants = { elsewhere: [UNMARKED_CATEGORY], other: [UNMARKED_CATEGORY] };
+			const grants = { one: [UNMARKED_CATEGORY] };
 
 			assert.equal(visibleTo(listing, grants, { ...plain, study: ['elsewhere', 'other'] }), false);
-			assert.equal(visibleTo(unlisted, grants, { ...plain, study: ['elsewhere', 'other'] }), true);
+			assert.equal(visibleTo(unlisted, grants, { ...plain, study: ['elsewhere', 'other'] }), false);
+		});
+
+		test('withholds it when a resource it holds is served but not held, whether or not the registration lists it', () => {
+			const grants = { one: [UNMARKED_CATEGORY] };
+			const withServed = { ...plain, study: ['one', 'elsewhere'] };
+
+			assert.equal(
+				isVisible({ catalogue: listing, grants, record: withServed, servedResources: ['one', 'elsewhere'] }),
+				false,
+			);
+			assert.equal(
+				isVisible({ catalogue: unlisted, grants, record: withServed, servedResources: ['one', 'elsewhere'] }),
+				false,
+			);
+			assert.equal(
+				isVisible({ catalogue: unlisted, grants, record: withServed, servedResources: ['one'] }),
+				true,
+			);
 		});
 
 		test('decides a resource field repeating one value as that one resource', () => {
@@ -939,8 +978,17 @@ suite('the category checker', () => {
 			);
 		});
 
-		test('counts the resources the grants name as known when the registration lists none', () => {
+		test('knows the resources the audience serves when the registration lists none', () => {
 			assert.equal(visibleTo(unlisted, { one: [UNMARKED_CATEGORY] }, both), true);
+			assert.equal(
+				isVisible({
+					catalogue: unlisted,
+					grants: { one: [UNMARKED_CATEGORY] },
+					record: both,
+					servedResources: ['one', 'two'],
+				}),
+				false,
+			);
 			assert.equal(visibleTo(unlisted, { one: [UNMARKED_CATEGORY], two: ['resource.large'] }, both), false);
 			assert.equal(
 				visibleTo(unlisted, { one: [UNMARKED_CATEGORY], two: [UNMARKED_CATEGORY, 'resource.large'] }, both),
@@ -989,7 +1037,6 @@ suite('the category checker', () => {
 			'b-labels-absent',
 		];
 		const missingStudy = ['no-study-absent', 'no-study-null', 'no-study-empty', 'no-study-only-nulls'];
-		const onlyUnlistedStudies = ['unlisted-only', 'unlisted-pair'];
 
 		const recordOf = (recordId: string): CatalogueRecord => {
 			const record = CATEGORY_RECORDS.find((candidate) => idOf(candidate) === recordId);
@@ -1000,10 +1047,20 @@ suite('the category checker', () => {
 		};
 
 		const visibleIdsFor = (grants: Grants): string[] =>
-			visibleRecords({ catalogue: fixture, grants, records: CATEGORY_RECORDS }).map(idOf);
+			visibleRecords({
+				catalogue: fixture,
+				grants,
+				records: CATEGORY_RECORDS,
+				servedResources: CATEGORY_SERVED_RESOURCES,
+			}).map(idOf);
 
 		const isVisibleInFixture = (grants: Grants, recordId: string): boolean =>
-			isVisible({ catalogue: fixture, grants, record: recordOf(recordId) });
+			isVisible({
+				catalogue: fixture,
+				grants,
+				record: recordOf(recordId),
+				servedResources: CATEGORY_SERVED_RESOURCES,
+			});
 
 		test('gives every record its own id', () => {
 			assert.equal(new Set(fixtureIds).size, CATEGORY_RECORDS.length);
@@ -1069,6 +1126,7 @@ suite('the category checker', () => {
 				['unlisted-only', []],
 				['unlisted-pair', []],
 				['a-and-unlisted', []],
+				['a-and-unserved', []],
 				['no-study-absent', []],
 				['no-study-null', []],
 				['no-study-empty', []],
@@ -1097,14 +1155,14 @@ suite('the category checker', () => {
 			test('serves a principal holding global.unmarked alone only the records carrying no category', () => {
 				assert.deepEqual(
 					visibleIdsFor(CATEGORY_PRINCIPALS.unmarkedOnly).toSorted(),
-					[...unmarkedOnStudyA, ...unmarkedOnStudyB, 'ab-unmarked', 'a-and-unlisted'].toSorted(),
+					[...unmarkedOnStudyA, ...unmarkedOnStudyB, 'ab-unmarked', 'a-and-unserved'].toSorted(),
 				);
 			});
 
 			test('serves a principal holding community on study-a its unmarked and community-only records there', () => {
 				assert.deepEqual(
 					visibleIdsFor(CATEGORY_PRINCIPALS.communityOnStudyA).toSorted(),
-					[...unmarkedOnStudyA, 'a-community', 'a-and-unlisted'].toSorted(),
+					[...unmarkedOnStudyA, 'a-community', 'a-and-unserved'].toSorted(),
 				);
 			});
 
@@ -1117,7 +1175,7 @@ suite('the category checker', () => {
 						'a-tier-null-beside-value',
 						...unmarkedOnStudyB,
 						'ab-unmarked',
-						'a-and-unlisted',
+						'a-and-unserved',
 					].toSorted(),
 				);
 			});
@@ -1144,17 +1202,15 @@ suite('the category checker', () => {
 						...onlyBulkOnStudyB,
 						'ab-unmarked',
 						'ab-bulk',
-						'a-and-unlisted',
+						'a-and-unserved',
 					].toSorted(),
 				);
 			});
 
-			test('serves a principal holding everything every record holding a listed study, in the given order', () => {
+			test('serves a principal holding everything every record holding a study, in the given order', () => {
 				assert.deepEqual(
 					visibleIdsFor(CATEGORY_PRINCIPALS.everything),
-					fixtureIds.filter(
-						(recordId) => !missingStudy.includes(recordId) && !onlyUnlistedStudies.includes(recordId),
-					),
+					fixtureIds.filter((recordId) => !missingStudy.includes(recordId)),
 				);
 			});
 		});
@@ -1184,22 +1240,29 @@ suite('the category checker', () => {
 			});
 		});
 
-		suite('decides the records holding an unlisted study', () => {
-			test(`withholds a record of ${STUDY_UNLISTED} though it is granted`, () => {
-				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.everything, 'unlisted-only'), false);
+		suite('decides the records holding an unlisted study the audience serves', () => {
+			test(`serves a record of ${STUDY_UNLISTED} to a principal granted it`, () => {
+				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.everything, 'unlisted-only'), true);
 			});
 
-			test(`withholds a record holding ${STUDY_UNLISTED} and ${STUDY_UNLISTED_OTHER}, both granted alike`, () => {
-				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.everything, 'unlisted-pair'), false);
+			test(`serves a record holding ${STUDY_UNLISTED} and ${STUDY_UNLISTED_OTHER} to a principal granted both alike`, () => {
+				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.everything, 'unlisted-pair'), true);
 			});
 
+			test(`withholds a record holding ${STUDY_A} and ${STUDY_UNLISTED} from a principal holding ${STUDY_A} alone`, () => {
+				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.unmarkedOnly, 'a-and-unlisted'), false);
+				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.everything, 'a-and-unlisted'), true);
+			});
+		});
+
+		suite('decides the records holding a study no one serves', () => {
 			// The filter serves this record, since it cannot exclude a value it was never given. The guard for this
 			// case is the contract of one value per resource field, held by a startup refusal of any catalogue whose
 			// records hold several, not the filter.
-			test(`serves a record holding ${STUDY_A} and ${STUDY_UNLISTED} as the filter does, deciding it by ${STUDY_A} alone`, () => {
-				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.unmarkedOnly, 'a-and-unlisted'), true);
+			test(`serves a record holding ${STUDY_A} and ${STUDY_UNSERVED} as the filter does, deciding it by ${STUDY_A} alone`, () => {
+				assert.equal(isVisibleInFixture(CATEGORY_PRINCIPALS.unmarkedOnly, 'a-and-unserved'), true);
 				assert.equal(
-					isVisibleInFixture(CATEGORY_PRINCIPALS.controlledWithoutUnmarked, 'a-and-unlisted'),
+					isVisibleInFixture(CATEGORY_PRINCIPALS.controlledWithoutUnmarked, 'a-and-unserved'),
 					false,
 				);
 			});

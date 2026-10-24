@@ -35,6 +35,7 @@ import {
 	CATEGORY_PRINCIPALS,
 	CATEGORY_RECORDS,
 	CATEGORY_REGISTRATION,
+	CATEGORY_SERVED_RESOURCES,
 	STUDY_A,
 	STUDY_B,
 } from '../harness/categoryFixture.js';
@@ -115,14 +116,14 @@ const usherRegistrationOf = (registration: unknown): RecordKeyRegistration => {
 const USHER_REGISTRATION = usherRegistrationOf(CATEGORY_REGISTRATION);
 
 /**
- * The narrowing description for a principal holding `grants`, or `undefined` when it holds no known resource, which
- * the bridge answers with a deny rather than a narrowing. The known resources are the registration's list, else every
- * resource the grants name; the held resources are the granted ones that are known. Each holds its grants other than
+ * The narrowing description for a principal holding `grants`, or `undefined` when it holds no resource, which the
+ * bridge answers with a deny rather than a narrowing. The known resources are the ones the audience serves together
+ * with the registration's list; the held resources are the granted ones, every one of them served. Each holds its grants other than
  * `global.unmarked` as its categories, its unmarked records when it holds `global.unmarked`, and the registration's
  * own categories for it. The global categories are every one the registration defines, held or not.
  */
 const descriptionFor = (grants: Grants): RecordNarrowingDescription | undefined => {
-	const knownResources = USHER_REGISTRATION.resources ?? Object.keys(grants);
+	const knownResources = [...new Set([...CATEGORY_SERVED_RESOURCES, ...(USHER_REGISTRATION.resources ?? [])])];
 	const [firstHeld, ...otherHeld] = Object.entries(grants)
 		.filter(([resource]) => knownResources.includes(resource))
 		.map(
@@ -146,7 +147,8 @@ const descriptionFor = (grants: Grants): RecordNarrowingDescription | undefined 
 
 /**
  * The access filter a principal holding `grants` is served under: its narrowing rendered by usher-types, or, holding
- * no known resource, what the adapter answers the bridge's deny with, matching nothing on the resource field.
+ * no resource, a filter matching nothing on the resource field, standing for the bridge's deny, which the adapter
+ * answers with a denial of the catalogue instead.
  */
 const accessFilterFor = (grants: Grants): SqonNode => {
 	const description = descriptionFor(grants);
@@ -263,6 +265,7 @@ suite('each principal through the GraphQL router, against the category checker',
 				catalogue: CATALOGUE,
 				grants: CATEGORY_PRINCIPALS[principal],
 				records: CATEGORY_RECORDS,
+				servedResources: CATEGORY_SERVED_RESOURCES,
 			});
 			const target: Target = routers[principal];
 
@@ -315,17 +318,24 @@ suite('each principal through the GraphQL router, against the category checker',
 					['unmarkedOnly', 'ab-unmarked', true],
 				],
 			],
-			// The complement withholds only the resources the registration lists or the payload names.
+			// The complement withholds only the resources the registration lists or the payload serves.
 			[
-				'serves a record holding a held study beside one the registration does not list, deciding it by the held study alone',
+				'serves a record holding a held study beside one neither served nor listed, deciding it by the held study alone',
 				[
-					['controlledWithoutUnmarked', 'a-and-unlisted', false],
-					['unmarkedOnly', 'a-and-unlisted', true],
+					['controlledWithoutUnmarked', 'a-and-unserved', false],
+					['unmarkedOnly', 'a-and-unserved', true],
 				],
 			],
 			[
-				'withholds a record holding only studies the registration does not list, though both are granted',
-				[['everything', 'unlisted-pair', false]],
+				'withholds a record holding a held study beside one served but not held, listed or not',
+				[
+					['unmarkedOnly', 'a-and-unlisted', false],
+					['everything', 'a-and-unlisted', true],
+				],
+			],
+			[
+				'serves a record holding only unlisted studies the audience serves to a principal granted them',
+				[['everything', 'unlisted-pair', true]],
 			],
 		];
 
@@ -340,6 +350,7 @@ suite('each principal through the GraphQL router, against the category checker',
 							catalogue: CATALOGUE,
 							grants: CATEGORY_PRINCIPALS[principal],
 							record: recordOf(recordId),
+							servedResources: CATEGORY_SERVED_RESOURCES,
 						});
 
 						return { checker: shown, engine: ids.includes(recordId), principal, recordId, served };
@@ -435,6 +446,7 @@ suite("the category fixture's records of one study each, through the Usher adapt
 				catalogue: CATALOGUE,
 				grants: CATEGORY_PRINCIPALS[principal],
 				records: RECORDS,
+				servedResources: CATEGORY_SERVED_RESOURCES,
 			}).map(idOf);
 
 			// When the principal reads hits through the bridge's layer and the adapter

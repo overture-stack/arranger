@@ -180,6 +180,11 @@ suite('the adapter at startup', () => {
 				{ ...RECORDS_REGISTRATION, resources: ['set_id:HEART_STUDY'] },
 				REGISTRATION_RULES.resources,
 			],
+			[
+				'an artifact key',
+				{ kind: 'artifact', provenanceFieldName: 'study_id', resources: ['HEART_STUDY'] },
+				REGISTRATION_RULES.artifactKind,
+			],
 		] as const) {
 			test(`refuses a registration with ${description}, naming the catalogue and the rule, before its mapping or index is read`, async () => {
 				// Given a registration the format refuses, whose mapping is missing every field as well
@@ -291,20 +296,6 @@ suite('the adapter at startup', () => {
 				assert.deepEqual(bridge.registered, []);
 			});
 		}
-
-		test('refuses an artifact key, which it does not serve, naming the catalogue', async () => {
-			// Given a catalogue registering an artifact key
-			const { accessControl, bridge } = adapterOver({
-				[NAMED_CATALOGUE]: { kind: 'artifact', provenanceFieldName: 'study_id', resources: ['HEART_STUDY'] },
-			});
-
-			// When the adapter verifies it, Then startup fails naming the catalogue, and nothing is registered
-			assertNames(await refusalOf(accessControl.verify({ [NAMED_CATALOGUE]: indexOf() })), [
-				NAMED_CATALOGUE,
-				'artifact',
-			]);
-			assert.deepEqual(bridge.registered, []);
-		});
 	});
 
 	suite('checking each catalogue against what its index holds', () => {

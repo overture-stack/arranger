@@ -22,11 +22,20 @@ export const STUDY_A = 'study-a';
 /** The second listed study. */
 export const STUDY_B = 'study-b';
 
-/** A study the registration does not list, though `everything` is granted on it. */
+/** A study the registration does not list, which the audience serves and `everything` is granted on. */
 export const STUDY_UNLISTED = 'study-unlisted';
 
-/** A second unlisted study, granted to `everything` with the same set as the first. */
+/** A second unlisted study, served too, and granted to `everything` with the same set as the first. */
 export const STUDY_UNLISTED_OTHER = 'study-unlisted-other';
+
+/** A study the registration does not list and the audience does not serve, so the filter passes over it. */
+export const STUDY_UNSERVED = 'study-unserved';
+
+/**
+ * Every study the fixture's audience serves, as a payload's `servedResources` lists them: both listed studies and both
+ * unlisted ones, every study a principal is granted on among them. `STUDY_UNSERVED` is not.
+ */
+export const CATEGORY_SERVED_RESOURCES = [STUDY_A, STUDY_B, STUDY_UNLISTED, STUDY_UNLISTED_OTHER] as const;
 
 /** The index's field properties, typing every field the records hold. */
 export const CATEGORY_INDEX_MAPPING = {
@@ -181,10 +190,11 @@ export const CATEGORY_RECORDS: readonly CatalogueRecord[] = [
 	{ ...PLAIN_FIELDS, access_tier: 'controlled', record_id: 'ab-controlled', study_id: [STUDY_A, STUDY_B] },
 	{ ...PLAIN_FIELDS, record_id: 'unlisted-only', study_id: STUDY_UNLISTED },
 	{ ...PLAIN_FIELDS, record_id: 'unlisted-pair', study_id: [STUDY_UNLISTED, STUDY_UNLISTED_OTHER] },
+	{ ...PLAIN_FIELDS, record_id: 'a-and-unlisted', study_id: [STUDY_A, STUDY_UNLISTED] },
 	// The filter serves this record by study-a alone, since it cannot exclude a value it was never given. The guard for
 	// this case is the contract of one value per resource field, held by a startup refusal of any catalogue whose
 	// records hold several, not the filter.
-	{ ...PLAIN_FIELDS, record_id: 'a-and-unlisted', study_id: [STUDY_A, STUDY_UNLISTED] },
+	{ ...PLAIN_FIELDS, record_id: 'a-and-unserved', study_id: [STUDY_A, STUDY_UNSERVED] },
 	{ ...PLAIN_FIELDS, record_id: 'no-study-absent' },
 	{ ...PLAIN_FIELDS, record_id: 'no-study-null', study_id: null },
 	{ ...PLAIN_FIELDS, record_id: 'no-study-empty', study_id: [] },
@@ -205,7 +215,7 @@ const EVERY_CATEGORY = [
 
 /**
  * The principals' grants. `everything` and `unmarkedOnly` hold the same set on both listed studies, and `everything`
- * holds it on both unlisted studies too, which still serves none of their own records. `controlledOnStudyA`,
+ * holds it on both unlisted studies too, which the audience serves, so their records are served to it. `controlledOnStudyA`,
  * `controlledWithoutUnmarked` and `unmarkedWithBulkOnStudyB` hold different sets on the listed studies:
  * `controlledOnStudyA` holds `global.controlled` on study-a alone, while the other two differ only in study-b's own
  * category. `communityOnStudyA` cannot reach study-b at all.

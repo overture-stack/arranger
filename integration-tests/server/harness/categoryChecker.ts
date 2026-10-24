@@ -41,8 +41,8 @@ export type Condition =
 /**
  * A catalogue's registration under the category model, a local draft of the Usher Bridge's shape. Global categories
  * apply to every record of the catalogue, and a resource's categories to that resource's records only; no condition
- * reads the resource field. `resources`, when given, lists the known resources, so a record holding none of them is
- * never served, and must list every resource with categories of its own. `absentCategories` names global categories
+ * reads the resource field. `resources`, when given, lists the catalogue's own resources, known beside the ones the
+ * payload serves, and must list every resource with categories of its own. `absentCategories` names global categories
  * no record of the catalogue carries; they define no condition, so they place no record in any category.
  */
 export type RecordKeyRegistration = Readonly<{
@@ -70,6 +70,12 @@ export type CatalogueRecord = Readonly<Record<string, unknown>>;
 
 /** A principal's grants: the category names held on each resource, by resource id. */
 export type Grants = Readonly<Record<string, readonly string[]>>;
+
+/**
+ * Every resource the principal's audience serves, held or not, as a payload's `servedResources` lists them. It names
+ * every resource the grants name, so a resource the principal holds nothing on is still known.
+ */
+export type ServedResources = readonly string[];
 
 type FieldType = 'date' | 'keyword' | 'number';
 
@@ -479,6 +485,19 @@ export const assertValidCatalogue = (catalogue: Catalogue): void => {
 	}
 };
 
+/** Throws, naming the first problem, unless the served resources are strings naming every resource the grants name. */
+const assertServedResourcesCoverGrants = (grants: Grants, servedResources: ServedResources): void => {
+	if (!Array.isArray(servedResources) || !servedResources.every((resourceId) => typeof resourceId === 'string')) {
+		throw new Error('Refused served resources: they are a list of resource ids');
+	}
+
+	const unserved = Object.keys(grants).filter((resourceId) => !servedResources.includes(resourceId));
+
+	if (unserved.length > 0) {
+		throw new Error(`Refused served resources: they do not list ${quoted(unserved)}, though the grants name each`);
+	}
+};
+
 const presentValuesOf = (record: CatalogueRecord, fieldName: string): unknown[] =>
 	[ownValue(record, fieldName)].flat(Infinity).filter((value) => value !== null && value !== undefined);
 
@@ -626,8 +645,8 @@ const carriedBy = (
 
 /**
  * Whether the rendered access filter serves `record` to a principal holding `grants`. With V the record's resource
- * values, the known resources are `registration.resources` when the registration lists them, otherwise the resources
- * the grants name, and the held resources are the granted ones that are known. The filter serves the record only when
+ * values, the known resources are the ones the payload serves together with the registration's own list where it has
+ * one, and the held resources are the granted ones, every one of them served. The filter serves the record only when
  * all of these hold, the missing-field rule deciding which categories it carries:
  *
  * 1. some value in V is a held resource;
@@ -640,11 +659,16 @@ const carriedBy = (
  * A record of one resource meets the same steps with one value, and a record missing its resource field, whether
  * absent, null, an empty array or an array of nulls, fails the first.
  */
-const isServedByFilter = (catalogue: Catalogue, grants: Grants, record: CatalogueRecord): boolean => {
+const isServedByFilter = (
+	catalogue: Catalogue,
+	grants: Grants,
+	servedResources: ServedResources,
+	record: CatalogueRecord,
+): boolean => {
 	const { registration } = catalogue;
 	const values = resourceIdsOf(registration, record);
-	const known = registration.resources ?? Object.keys(grants);
-	const isKnown = (resourceId: string): boolean => known.includes(resourceId);
+	const known = new Set([...servedResources, ...(registration.resources ?? [])]);
+	const isKnown = (resourceId: string): boolean => known.has(resourceId);
 	const heldOn = (resourceId: string): readonly string[] | undefined =>
 		isKnown(resourceId) ? ownValue(grants, resourceId) : undefined;
 	const heldValues = values.flatMap((resourceId): [string, readonly string[]][] => {
@@ -701,38 +725,45 @@ export const categoriesOf = ({ catalogue, record }: { catalogue: Catalogue; reco
 };
 
 /**
- * Whether a principal holding `grants` may see `record`, as the rendered access filter decides it. A record of one
- * resource is visible when that resource is known and granted and holds every category the record carries, or, the
- * record carrying none, holds `global.unmarked`. A record of several resources is visible when one of them is held,
- * none is known but not held, every held one holds each global category it carries, each held one holds the
- * categories of its own that the record carries, and every held one for which the record carries no global category
- * and none of its own holds `global.unmarked`. A record missing its resource field is never visible.
+ * Whether a principal holding `grants` may see `record`, as the rendered access filter decides it, its audience
+ * serving `servedResources`. A record of one resource is visible when that resource is granted and holds every
+ * category the record carries, or, the record carrying none, holds `global.unmarked`. A record of several resources is
+ * visible when one of them is held, none is known but not held, every held one holds each global category it
+ * carries, each held one holds the categories of its own that the record carries, and every held one for which the
+ * record carries no global category and none of its own holds `global.unmarked`. A resource neither served nor listed
+ * by the registration is passed over. A record missing its resource field is never visible.
  */
 export const isVisible = ({
 	catalogue,
 	grants,
 	record,
+	servedResources,
 }: {
 	catalogue: Catalogue;
 	grants: Grants;
 	record: CatalogueRecord;
+	servedResources: ServedResources;
 }): boolean => {
 	assertValidCatalogue(catalogue);
+	assertServedResourcesCoverGrants(grants, servedResources);
 
-	return isServedByFilter(catalogue, grants, record);
+	return isServedByFilter(catalogue, grants, servedResources, record);
 };
 
-/** The records of `records` a principal holding `grants` may see, in their given order. */
+/** The records of `records` a principal holding `grants` may see, its audience serving `servedResources`, in their given order. */
 export const visibleRecords = <Indexed extends CatalogueRecord>({
 	catalogue,
 	grants,
 	records,
+	servedResources,
 }: {
 	catalogue: Catalogue;
 	grants: Grants;
 	records: readonly Indexed[];
+	servedResources: ServedResources;
 }): Indexed[] => {
 	assertValidCatalogue(catalogue);
+	assertServedResourcesCoverGrants(grants, servedResources);
 
-	return records.filter((record) => isServedByFilter(catalogue, grants, record));
+	return records.filter((record) => isServedByFilter(catalogue, grants, servedResources, record));
 };
