@@ -7,9 +7,13 @@ import type { ArrangerBaseContext, GraphQLEndpointMiddleware } from '#types.js';
 import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root.js';
 import type { SchemaTypesTuple } from './types.js';
 
+/**
+ * The sets index's mapping. A set's `sqon` is stored with it and never indexed, so each saved set's filter is stored
+ * exactly as saved.
+ */
 export const setsMapping = {
 	userId: { type: 'keyword' },
-	sqon: { type: 'object' },
+	sqon: { enabled: false, type: 'object' },
 	ids: { type: 'keyword' },
 	setId: { type: 'keyword' },
 	type: { type: 'keyword' },

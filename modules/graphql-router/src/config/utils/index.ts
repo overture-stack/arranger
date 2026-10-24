@@ -1,6 +1,55 @@
 import { setsMapping } from '#schema/index.js';
 import { logSeparator } from '#utils/label.js';
+import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 import { type SearchClient } from '#searchClient/types.js';
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/** Whether an index's mapping stores each saved set's filter as data, as the sets index this version creates does. */
+const storesFilterAsData = (indexMapping: unknown): boolean => {
+	const sqon =
+		isRecord(indexMapping) && isRecord(indexMapping.mappings) && isRecord(indexMapping.mappings.properties)
+			? indexMapping.mappings.properties.sqon
+			: undefined;
+
+	return isRecord(sqon) && sqon.enabled === false;
+};
+
+/**
+ * Checks an existing sets index, which keeps the mapping it was created with, against the one this version creates:
+ * where it does not store each saved set's filter as data, it is named in a warning pointing at the migration
+ * section. A mapping the engine will not show is reported as unchecked. Neither stops startup.
+ */
+const checkExistingSetsIndex = async ({
+	esClient,
+	label,
+	setsIndexName,
+}: {
+	esClient: SearchClient;
+	label?: string;
+	setsIndexName: string;
+}): Promise<void> => {
+	try {
+		const { body } = await esClient.indices.getMapping({ index: setsIndexName });
+		const outdated = Object.entries(isRecord(body) ? body : {})
+			.filter(([, indexMapping]) => !storesFilterAsData(indexMapping))
+			.map(([indexName]) => indexName);
+
+		if (outdated.length > 0) {
+			console.warn(
+				'sets.index_mapping_outdated',
+				`The sets index "${setsIndexName}" (${outdated.join(', ')}) does not store each saved set's filter as data, as a sets index this version creates does. Recreate it as ${MIGRATION_GUIDE_URL}#sets-index-filter-as-data describes.`,
+				{ ...(label && { catalogue: label }), indices: outdated },
+			);
+		}
+	} catch (cause) {
+		console.warn(
+			'sets.index_mapping_unchecked',
+			`The mapping of the sets index "${setsIndexName}" could not be read, so whether it stores each saved set's filter as data is unchecked.`,
+			{ ...(label && { catalogue: label }), cause: cause instanceof Error ? cause.message : String(cause) },
+		);
+	}
+};
 
 export const initializeSets = async ({
 	enableSets = false,
@@ -51,6 +100,7 @@ export const initializeSets = async ({
 	} else {
 		console.log('  - Index already exists. no work needed');
 		enableDebug && console.debug(`    DEBUG: "${setsIndexName}" found`);
+		await checkExistingSetsIndex({ esClient, label, setsIndexName });
 		console.log('\n  Success!');
 	}
 };
