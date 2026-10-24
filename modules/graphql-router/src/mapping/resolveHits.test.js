@@ -129,3 +129,53 @@ suite('hitsToEdges array-without-isArray coercion', () => {
 		assert.equal(warnings[0].fullPath, 'sample_registrations');
 	});
 });
+
+suite('hitsToEdges with a field the schema types as JSON', () => {
+	/** A saved set's filter holding single-value lists at several depths, and a list of several values. */
+	const STORED_FILTER = {
+		content: [
+			{ content: { fieldName: 'name', value: ['p1'] }, op: 'in' },
+			{
+				content: [
+					{ content: { fieldName: 'tag', value: ['x'] }, op: 'in' },
+					{ content: { fieldName: 'study', value: ['a', 'b'] }, op: 'in' },
+				],
+				op: 'or',
+			},
+		],
+		op: 'and',
+	};
+
+	test('serves it whole, exactly as stored, single-value lists at every depth included, with no warning', async () => {
+		// Given a hit whose JSON field holds lists at several depths
+		const hits = { hits: [{ _id: 'set1', _source: { ids: ['p1'], sqon: STORED_FILTER } }] };
+
+		// When it is mapped to an edge, the field named as JSON
+		const { results, warnings } = await hitsToEdges({
+			extendedFields: [{ fieldName: 'ids', isArray: true }],
+			hits,
+			jsonFieldPaths: ['sqon'],
+			nestedFieldNames: [],
+			Parallel,
+		});
+
+		// Then the field is the stored value itself, and nothing is reported dropped
+		assert.deepEqual(results[0].node.sqon, STORED_FILTER);
+		assert.deepEqual(results[0].node.ids, ['p1']);
+		assert.deepEqual(warnings, []);
+	});
+
+	test('serves a JSON field that is itself a list whole', async () => {
+		const hits = { hits: [{ _id: 'set1', _source: { sqon: [STORED_FILTER, STORED_FILTER] } }] };
+
+		const { results, warnings } = await hitsToEdges({
+			hits,
+			jsonFieldPaths: ['sqon'],
+			nestedFieldNames: [],
+			Parallel,
+		});
+
+		assert.deepEqual(results[0].node.sqon, [STORED_FILTER, STORED_FILTER]);
+		assert.deepEqual(warnings, []);
+	});
+});

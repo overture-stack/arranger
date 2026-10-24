@@ -24,11 +24,31 @@ const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 	return results;
 };
 
+/**
+ * The paths of the fields the schema types as JSON, those mapped with `type: 'object'`, which a hit serves whole, as
+ * stored.
+ *
+ * @param {Record<string, any>} [mapping] a type's mapping, its properties at the root.
+ * @param {string} [parent] the path the mapping sits under.
+ * @returns {string[]}
+ */
+const jsonFieldPathsOf = (mapping = {}, parent = '') =>
+	Object.entries(mapping).flatMap(([fieldName, metadata]) => {
+		const fullPath = parent ? `${parent}.${fieldName}` : fieldName;
+
+		return metadata?.type === 'object'
+			? [fullPath]
+			: metadata?.properties
+				? jsonFieldPathsOf(metadata.properties, fullPath)
+				: [];
+	});
+
 const processChunk = ({
 	copyToSourceFields,
 	extendedFieldsObj,
 	graphqlNameByPath = {},
 	hits,
+	jsonFieldPaths = [],
 	nestedFieldNames,
 	nestingPrefix,
 }) => {
@@ -82,9 +102,16 @@ const processChunk = ({
 
 				// TODO: inner hits query if necessary
 				const fullPath = joinParent(parent, fieldName);
+				const graphqlName = graphqlNameByPath[fullPath] ?? fieldName;
+
+				// A field the schema types as JSON is the stored value itself, never walked or coerced.
+				if (jsonFieldPaths.includes(fullPath)) {
+					acc[graphqlName] = hits;
+					return acc;
+				}
+
 				const areHitsNested = nestedFieldNames?.includes(fullPath);
 				const hitsAreActuallyNested = areHitsNested && Array.isArray(hits);
-				const graphqlName = graphqlNameByPath[fullPath] ?? fieldName;
 
 				// ES never enforces a field's cardinality against its mapping: any keyword/text/etc.
 				// field can hold an array of values on a given document regardless of whether
@@ -179,6 +206,7 @@ export const hitsToEdges = ({
 	extendedFields = [],
 	graphqlNameByPath = {},
 	hits,
+	jsonFieldPaths = [],
 	nestedFieldNames,
 	nestingPrefix,
 	Parallel,
@@ -208,6 +236,7 @@ export const hitsToEdges = ({
 			extendedFieldsObj,
 			graphqlNameByPath,
 			hits: chunk,
+			jsonFieldPaths,
 			nestedFieldNames,
 			nestingPrefix,
 		};
@@ -355,6 +384,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 					extendedFields,
 					graphqlNameByPath: type.graphqlNameRegistry?.leafNamesByPath,
 					hits,
+					jsonFieldPaths: jsonFieldPathsOf(type.mapping),
 					nestedFieldNames,
 					nestingPrefix,
 					Parallel,
