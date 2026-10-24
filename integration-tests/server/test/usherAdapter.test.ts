@@ -19,7 +19,12 @@ import arrangerRouter, {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
 } from '../../../modules/graphql-router/src/index.js';
-import { EVENTS, UNAVAILABLE_GRAPHQL_CODE } from '../../../modules/usher-adapter/src/fixtures/arrangerNames.js';
+import {
+	type DenialKind,
+	denialAnswerFor,
+	EVENTS,
+	UNAVAILABLE_GRAPHQL_CODE,
+} from '../../../modules/usher-adapter/src/fixtures/arrangerNames.js';
 import {
 	ABSENT_CATEGORIES_REGISTRATION,
 	CATEGORY_CONDITIONS,
@@ -42,6 +47,7 @@ import { createRecordingLogger, type LoggedLine } from '../../../modules/usher-a
 import {
 	ABSENT_CATEGORIES_UNMARKED,
 	CONTROLLED_ONLY_ANONYMOUS,
+	DENIAL_KINDS,
 	type ResultRow,
 	ROWS,
 } from '../../../modules/usher-adapter/src/fixtures/results.js';
@@ -250,25 +256,6 @@ const assertRecordsAre = (answer: RecordAnswers, visible: readonly string[]): vo
 const allBucketsEmpty = (facets: Facets): boolean =>
 	Object.values(facets).every((buckets) => buckets.every(({ doc_count }) => doc_count === 0));
 
-/** What the engine counts for each query the GraphQL router sent `esIndex`, run on its own. */
-const replayedTotals = (calls: readonly EngineCall[], esIndex: string): Promise<number[]> =>
-	Promise.all(
-		calls
-			.filter(({ index, method }) => method === 'search' && index === esIndex)
-			.map(async ({ body }) => {
-				const { query } = (body ?? {}) as { query?: unknown };
-				const { body: answer } = await esClient.search({
-					body: { query, size: 0, track_total_hits: true },
-					index: esIndex,
-				});
-				const hits: unknown = answer.hits;
-				const total = typeof hits === 'object' && hits !== null && 'total' in hits ? hits.total : undefined;
-
-				// Elasticsearch 7 and OpenSearch report the count as `{ value }`, as getAllData reads it.
-				return typeof total === 'number' ? total : Number((total as { value?: unknown } | undefined)?.value);
-			}),
-	);
-
 /** Whatever `act` makes the host do, and the calls and log lines it made while doing it. */
 const during = async <Answer>(
 	host: UsherHost,
@@ -321,6 +308,44 @@ const postExport = (target: Target) =>
 		}),
 		{ headers: target.headers, responseType: 'text', validateStatus: () => true },
 	);
+
+const FACETS_QUERY = `query { ${DOCUMENT_TYPE} { aggregations { study_id { buckets { key doc_count } } } } }`;
+
+/** Each GraphQL error's code and message, in order. */
+const errorsOf = (response: { data?: { errors?: { extensions?: { code?: unknown }; message?: unknown }[] } }) =>
+	(response.data?.errors ?? []).map(({ extensions, message }) => [extensions?.code, message]);
+
+/**
+ * How each endpoint answers a request: the GraphQL errors of hits, facets and saving a set, and the export's
+ * status and text.
+ */
+const refusalsFor = async (target: Target) => {
+	const [hits, facets, savedSet, exported] = await Promise.all([
+		postGraphql(target, HITS_QUERY),
+		postGraphql(target, FACETS_QUERY),
+		postGraphql(target, SAVE_SET_MUTATION, { sqon: naming(EVERY_RECORD) }),
+		postExport(target),
+	]);
+
+	return {
+		exported: { status: exported.status, text: exported.data },
+		facets: errorsOf(facets),
+		hits: errorsOf(hits),
+		savedSet: errorsOf(savedSet),
+	};
+};
+
+/** What `refusalsFor` reads when every endpoint answers the denial of `catalogue` as `kind`. */
+const expectedRefusals = (kind: DenialKind, catalogue: string) => {
+	const { code, status, text } = denialAnswerFor(kind, catalogue);
+
+	return {
+		exported: { status, text },
+		facets: [[code, text]],
+		hits: [[code, text]],
+		savedSet: [[code, text]],
+	};
+};
 
 const closeAll = (...served: (Served | undefined)[]): Promise<void[]> =>
 	Promise.all(served.flatMap((each) => (each ? [each.close()] : [])));
@@ -457,6 +482,23 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 						},
 					);
 				});
+			} else if (row.result.kind === 'deny') {
+				const kind = DENIAL_KINDS[row.result.reason];
+
+				test(`${name}: ${row.description} is refused on every endpoint as ${kind}, sending the engine nothing, while the same request with no access control sees every record`, async () => {
+					// Given the row's principal, and the same request answered with no access control as a positive control
+					// When every endpoint answers both
+					const { answer: refusals, calls } = await during(host, () =>
+						refusalsFor(host.targetFor('records', credential)),
+					);
+					const shown = await recordsFor(unrestricted, null);
+
+					// Then each endpoint answers the denial of the catalogue for the kind, no search reached the
+					// engine, and the positive control sees every record
+					assert.deepEqual(refusals, expectedRefusals(kind, 'records'));
+					assert.deepEqual(calls, []);
+					assert.deepEqual(sorted(shown.hits.ids), sorted(EVERY_RECORD));
+				});
 			} else {
 				test(`${name}: ${row.description} sees nothing on any endpoint, while the same request with no access control sees every record`, async () => {
 					// Given the row's principal, and the same request answered with no access control as a positive control
@@ -488,24 +530,6 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 					assert.deepEqual(sorted(shown.hits.ids), sorted(EVERY_RECORD));
 				});
 			}
-		}
-
-		for (const [name, row] of Object.entries(ROWS).filter(([, { result }]) => result.kind === 'deny')) {
-			test(`${name}: every query the GraphQL router emits for a deny matches nothing on its own, unlike an allow's`, async () => {
-				// Given the deny row's principal, and the allow row's as a positive control
-				// When each reads hits, facets, a saved set and an export
-				const denied = await during(host, () => everythingFor(host.targetFor('records', name), null));
-				const allowed = await during(host, () => everythingFor(host.targetFor('records', 'open'), null));
-
-				// Then each query sent for the deny, run alone, counts nothing, while the allow's count every record
-				const [deniedTotals, allowedTotals] = await Promise.all([
-					replayedTotals(denied.calls, esIndex),
-					replayedTotals(allowed.calls, esIndex),
-				]);
-				assert.ok(deniedTotals.length > 0, 'no query reached the engine, so nothing was checked');
-				assert.deepEqual(new Set(deniedTotals), new Set([0]));
-				assert.deepEqual(new Set(allowedTotals), new Set([EVERY_RECORD.length]));
-			});
 		}
 
 		test('composes a narrow filter, which arrives deeply frozen, on every read path without writing to it', async () => {
@@ -552,7 +576,6 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 		for (const [name, asked] of [
 			['heartControlledGrant', ['h1', 'l1', 'r1', 'r2', 'x1']],
 			['reefControlledAlone', ['h1', 'r1', 'r3', 'x1']],
-			['anonymousBaselineOff', EVERY_RECORD],
 		] as const) {
 			test(`${name} sees only the records it asked for that its access permits, on every endpoint`, async () => {
 				// Given a principal, and a client filter naming records it may see beside records it may not
@@ -767,17 +790,18 @@ suite("one context holding two catalogues' results", { concurrency: false }, () 
 		});
 	}
 
-	test('a configured catalogue absent from the results denies, while the other answers normally', async () => {
+	test('a configured catalogue absent from the results is refused as misconfigured, while the other answers normally', async () => {
 		// Given a principal whose results name the records catalogue alone
 		// When it reads both catalogues
 		const [fromRecords, fromControlledOnly] = await Promise.all([
 			recordsFor(host.targetFor('records', 'recordsOnly'), null),
-			recordsFor(host.targetFor('controlledOnly', 'recordsOnly'), null),
+			refusalsFor(host.targetFor('controlledOnly', 'recordsOnly')),
 		]);
 
-		// Then the catalogue missing from them sees nothing, and the other its own records
+		// Then the other answers its own records, and the catalogue missing from them is refused on every endpoint
+		// as misconfigured, the system's fault rather than the principal's
 		assertRecordsAre(fromRecords, ROWS.heartControlledGrant.visible);
-		assertRecordsAre(fromControlledOnly, []);
+		assert.deepEqual(fromControlledOnly, expectedRefusals('misconfigured', 'controlledOnly'));
 	});
 });
 

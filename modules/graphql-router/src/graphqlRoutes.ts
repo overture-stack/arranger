@@ -18,13 +18,17 @@ import { Router, type Request, type RequestHandler, type Response } from 'expres
 import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql';
 
 import {
+	ACCESS_ENFORCEMENT_DENIED_CODE,
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_CODE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
+	type AccessControlDeniedError,
 	type AccessControlError,
 	type AccessControlQueryTooLargeError,
 	type AccessControlUnavailableError,
+	denialAnswerOf,
+	isAccessControlDeniedError,
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
@@ -313,6 +317,22 @@ const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavai
 	return answerWith({ code: ACCESS_ENFORCEMENT_UNAVAILABLE_CODE, error, message: ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE });
 };
 
+// The callback's denial of the catalogue: forbidden where the person may raise it, a problem on the server where
+// only the operator can fix it, and the router's text for its kind either way.
+const answerDenied = (error: GraphQLError, denied: AccessControlDeniedError): GraphQLFormattedError => {
+	const { catalogue, kind, text } = denialAnswerOf(denied);
+	const forbidden = kind === 'no-access';
+	const log = forbidden ? console.info : console.error;
+
+	log('access_enforcement.denial_answered', { catalogue, kind, path: error.path });
+
+	return answerWith({
+		code: forbidden ? ACCESS_ENFORCEMENT_DENIED_CODE : INTERNAL_SERVER_ERROR_CODE,
+		error,
+		message: text,
+	});
+};
+
 const answerQueryTooLarge = (error: GraphQLError, tooLarge: AccessControlQueryTooLargeError): GraphQLFormattedError => {
 	console.error('access_enforcement.query_too_large', {
 		catalogue: tooLarge.catalogue,
@@ -358,6 +378,10 @@ const answerServerProblem = (error: GraphQLError, label?: string): GraphQLFormat
 const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError => {
 	// Widened, so each check narrows it on its own: every refusal class has Error's shape.
 	const originalError: unknown = error.originalError;
+
+	if (isAccessControlDeniedError(originalError)) {
+		return answerDenied(error, originalError);
+	}
 
 	if (isAccessControlUnavailableError(originalError)) {
 		return answerUnavailable(error, originalError);

@@ -86,8 +86,10 @@ suite('the log events', () => {
 			// Given the callback, and a request denied this catalogue
 			const { callback, lines } = await loggingCallback();
 
-			// When the deny is applied on the aggregations path
-			callback({ locals: localsFor(ANONYMOUS, { kind: 'deny', reason }) }, { readPath: 'aggregations' });
+			// When the deny is applied on the aggregations path, which it refuses
+			assert.throws(() =>
+				callback({ locals: localsFor(ANONYMOUS, { kind: 'deny', reason }) }, { readPath: 'aggregations' }),
+			);
 
 			// Then one denied event names the subject, whether it is suspended, the reason and the request
 			assert.deepEqual(lines, [

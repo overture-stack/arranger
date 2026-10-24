@@ -55,7 +55,7 @@ A clause-less `bool` is match-all in Elasticsearch, and `groupingOptimizer` flat
 out of the tree entirely, so the emitted body is byte-identical to one with no server-side filter
 at all.
 
-**The deny encoding is decided, and only the leaf form is safe.** With deny required to be expressible as a filter (the callback is total and must return a SQON node), two encodings were compared through the full path:
+**The encoding of a filter matching nothing is decided, and only the leaf form is safe.** A catalogue-level deny is not a filter: the Usher adapter throws the GraphQL router's denial in its place (see [The denial path](#the-denial-path)). Any filter that must match nothing still needs a safe encoding, and two were compared through the full path:
 
 | Encoding | Raw | After `SqonBuilder.from(x).toValue()` |
 |---|---|---|
@@ -107,7 +107,7 @@ reasoning recorded here was that a SQON matching nothing returns 200 with zero h
 that the catalogue exists. Two problems. Under the corrected model there is no disclosure to prevent:
 a nonexistent resource is a field value that matches nothing, and a denied resource is a filter that
 matches nothing, so both return 200 with zero hits and converge with no work, which is exactly the
-[structural indistinguishability](#a-denial-says-does-not-exist-or-you-lack-access-without-indicating-which)
+[structural indistinguishability](#below-the-catalogue-a-denial-says-does-not-exist-or-you-lack-access-without-indicating-which)
 the denial path now relies on. And even under the old model the thing being protected was catalogue
 existence, which `GET /introspection` publishes unauthenticated (see
 [Constraints](#constraints-this-deployment-imposes)). So the argument bought nothing on either
@@ -217,33 +217,34 @@ type Enforcement =
   | { kind: 'allow' }
 ```
 
-**`Enforcement` is the bridge's return type, not the callback's.** The Usher adapter receives three arms
-and returns one `SqonNode`, which is what `GetServerSideFilterFn` expects today. All three values in
-the table below exist now, so this section is implementable without any seam change.
+**`Enforcement` is the bridge's return type, not the callback's.** The Usher adapter receives three arms,
+returns a `SqonNode` for `narrow` and `allow`, which is what `GetServerSideFilterFn` expects, and throws the
+GraphQL router's `AccessControlDeniedError` for `deny`, so the catalogue's index is never searched for it.
 
-Widening the seam ([Phase 1 item 5](roadmap.md)) buys something this cannot express: **the ability to
-say different things to different requesters.** A bare `SqonNode` yields one behaviour for every
-denial, which is correct for a requester with no relationship to the resource and wrong for one who
-holds a lapsed or insufficient grant. See the denial path below; the widening is for the second case,
-and reading it as being about a status code produces two denial paths and reintroduces the oracle.
+The thrown denial is how the seam says different things for different reasons, and the difference is only
+whose move it is: the person's own lack of access, grants more than the catalogue's filter can express, or
+the operator's configuration. It never separates a lapsed grant from a stranger; see the denial path below.
 
 Each arm has one expression, and none is a hand-written literal:
 
-| Arm | What the Usher adapter returns to the router |
+| Arm | What the Usher adapter gives the router |
 | --- | ------------------------------------ |
-| `deny` | `SqonBuilder.matchNothing(fieldName).toValue()` |
+| `deny` | A thrown `AccessControlDeniedError` naming the catalogue, of the kind its reason maps to |
 | `narrow` | The filter carried on the result |
-| `allow` | `getDefaultServerSideFilter()`, exported from `@overture-stack/arranger-graphql-router` |
+| `allow` | `includeEverything`, exported from `@overture-stack/arranger-graphql-router` |
 
-`matchNothing` returns a `SqonBuilderHandle`, so `.toValue()` is required to produce the `SqonNode`
-the seam expects. The draft omitted it.
+| Deny reason | Denial kind | GraphQL code | Export status |
+| ----------- | ----------- | ------------ | ------------- |
+| `no-grants` | `no-access` | `ACCESS_ENFORCEMENT_DENIED` | `403` |
+| `filter-limit` | `access-too-broad` | `INTERNAL_SERVER_ERROR` | `500` |
+| `unknown-resource`, `unmapped-category`, `rendering-mismatch`, and no result for the catalogue | `misconfigured` | `INTERNAL_SERVER_ERROR` | `500` |
 
 **The callback is total. Returning `null` or `undefined` throws rather than granting everything**, so
 an Usher adapter falling through a branch fails loudly. This is why `allow` must be requested by name and
 cannot be expressed by declining to answer.
 
-**The `reason` on a denial is for the audit trail and never for the response.** See the denial
-section below.
+**The `reason` on a denial is the audit trail's in full; the response carries only its kind's fixed text,
+naming nothing finer than the catalogue.** See the denial section below.
 
 **Both arms are computed locally and neither describes the principal's relationship to the resource.**
 `no-grants` is the empty intersection at step 5: this principal's held set did not overlap this type.
@@ -425,9 +426,10 @@ whose approval lapses gets a refusal that tells them nothing and no message eith
 burden is accepted rather than overlooked. Nothing in the Usher adapter should try to fill the gap locally,
 because every local approximation of it is an oracle.
 
-### A denial says "does not exist or you lack access", without indicating which
+### Below the catalogue, a denial says "does not exist or you lack access", without indicating which
 
-This is **oracle denial, not deterrence.** Deterrence would be satisfied by the wording. Denying an
+This holds for everything inside a catalogue: a resource, a category, a record. It is **oracle denial,
+not deterrence.** Deterrence would be satisfied by the wording. Denying an
 oracle means closing every channel that separates the two cases:
 
 | Channel | How it leaks |
@@ -441,10 +443,19 @@ oracle means closing every channel that separates the two cases:
 construction: the short-circuit path and the overlap path do genuinely different amounts of work.
 Design for it rather than discover it.
 
-The response *shape* is not a flat menu. **A denial expressed as a filter matching nothing achieves
-indistinguishability structurally**, because a denied resource and a nonexistent one traverse the same
+The response *shape* is not a flat menu. **Withholding a resource as a narrowing achieves
+indistinguishability structurally**, because a withheld resource and a nonexistent one traverse the same
 code doing the same work: same body, and timing that converges by construction rather than by review.
 Every other shape achieves the same property by maintenance, and has to keep achieving it.
+
+**A whole catalogue is the one thing a denial names.** A catalogue-level deny is refused before any
+search, with its kind's fixed text naming the catalogue, so it answers faster and differently from a
+narrowing that matches nothing. That separates nothing the asker could not already see: every catalogue is
+listed to everyone, through discovery and introspection, and whether the server's access control serves
+this person on this catalogue is their own status, not anyone else's data. The coupling is pinned by a
+test that every principal is given the same listing, without the bridge being asked who is asking; were
+catalogues ever listed per principal, a denial of a catalogue hidden from the asker would have to answer
+as a catalogue that does not exist does.
 
 Side effects stay in scope under either. Two paths returning identical bodies can still differ in
 whether they emit an audit event or move a rate-limit counter, and both are observable to someone who
@@ -470,12 +481,13 @@ channel already carrying the grant lifecycle. Those notices are post-MVP, so for
 load is carried rather than avoided. Written down so a later reader finds the argument already weighed
 rather than missing, and does not reintroduce the exception as an improvement.
 
-**Ambiguous outward, precise inward.** The denial reason distinguishes `no-grants` from
-`unconfigured-resource` in the audit trail while the response says neither. That pair is what the
-reason separates, and it is not the pair declared indistinguishable by the section above: a lapsed grant
-and a stranger are identical everywhere, audit trail included. Do not helpfully surface the reason:
-that split is the design, and it is the thing a later contributor is most likely to undo as an
-improvement.
+**Ambiguous at the resource level, named at the catalogue level.** A catalogue-level deny tells the
+person whose move it is: no access, access more than the catalogue's filter can express, or a problem in
+the server's configuration, with no detail of it. The audit trail keeps the precise reason. A lapsed grant
+and a stranger are identical everywhere, audit trail included, and so are a grant never held and one
+withdrawn. What is never surfaced is anything finer than the catalogue: which resources, categories or
+records were withheld, or how many. That split is the design, and the finer detail is the thing a later
+contributor is most likely to add as an improvement.
 
 ### A live grant can narrow to nothing, and the cause is invisible from outside
 
@@ -786,7 +798,7 @@ itself survives; only its triggers change.
 | Layer | Responsibility | Failure mode |
 |---|---|---|
 | Upstream per-request step (middleware) | Bridge exchange, token decryption, cache lookup. Populates `context.grants` with the resolved set of resources this principal holds. | No resolved payload, **503**, before the callback is invoked. |
-| `getServerSideFilter` callback | Pure, synchronous. Intersects the held set with the resources configured for the queried type, and translates the result into SQON. | Total: deny-all rather than nothing, for any input that reaches it despite the layer above. |
+| `getServerSideFilter` callback | Pure, synchronous. Intersects the held set with the resources configured for the queried type, and translates the result into SQON. | Total: a thrown denial rather than nothing, for any input that reaches it despite the layer above. |
 
 The division is what makes the fail-closed property structural. Async work sits where it can
 short-circuit the request; the callback is a pure function that cannot be invoked in a state it
@@ -802,7 +814,7 @@ The old arrangement never rested on the layering alone. Point 3 above already re
 to be total regardless, because "that would be a bridge bug" describes exactly the input class that
 has to fail closed. So the 404 was a primary guard with the empty-case encoding as a backstop, and
 **a backstop only fires once the primary has already failed, which means nobody finds out it is
-broken until the day it is needed.** Under the new arrangement the empty case is the primary path,
+broken until the day it is needed.** Under the new arrangement the callback's deny is the primary path,
 exercised on every denial rather than only after something upstream has gone wrong. Moving a check
 onto the path that actually runs strengthens it even though it looks like a demotion.
 
@@ -816,18 +828,15 @@ unrelated indices. So a request is not one authorization decision. It is one per
 being asked for. Recovering the short-circuit would mean parsing and interpreting the GraphQL
 document in middleware, which is the pattern P0-c just removed for being defeatable.
 
-What preserves fail-closed, then, is not the decision's layer but that deny has a total,
-leaf-shaped encoding: see [Grants payload structure](#grants-payload-structure).
+What preserves fail-closed, then, is not the decision's layer but that deny has a total answer: the
+callback throws the router's denial for the type, and the router refuses that type's read before any
+search. See [Grants payload structure](#grants-payload-structure).
 
-### The cost this carries, recorded as a decision rather than a defect
+### A denied type never reaches the cluster
 
-A denial no longer short-circuits above the query, so denied traffic reaches the cluster instead of
-being refused cheaply. Structural rather than an oversight, per the paragraph above, so it is recorded
-rather than tracked as something to remove.
-
-Two things bound it. Denial is per type, so a request mixing a denied and a permitted type has to run
-regardless. And the composed query collapses, which is the part that had to be measured, since the
-leaf's behaviour says nothing about the conjunction that actually reaches the cluster.
+The callback runs before each type's search, so a denied type is refused without a query, and denied
+traffic costs no search. Denial is per type, so a request mixing a denied and a permitted type still
+runs the permitted one.
 
 Measured on the body emitted by Arranger, taken from `compileFilter` and `buildQuery` rather than written
 by hand:
@@ -1029,8 +1038,8 @@ never reach filter composition in a shape that compiles to match-all.** Of the f
 encodings of "restrict to nothing", only `in` with an empty value list fails closed. That is now
 satisfied by the encoding rather than by the layering.
 
-The deny value is `SqonBuilder.matchNothing(fieldName).toValue()`, which landed in `modules/sqon` on
-2026-08-24. An earlier version of this paragraph specified a raw Elasticsearch literal
+The encoding of a filter that must match nothing is `SqonBuilder.matchNothing(fieldName).toValue()`, which
+landed in `modules/sqon` on 2026-08-24; a catalogue-level deny is thrown instead, never a filter. An earlier version of this paragraph specified a raw Elasticsearch literal
 (`{"bool":{"must_not":{"match_all":{}}}}`) as a stopgap; **do not use it.** It is not SQON, it cannot
 travel through the seam, and it was a third deny encoding coexisting with two others in one document.
 

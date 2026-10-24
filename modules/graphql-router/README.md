@@ -267,6 +267,8 @@ The router rejects at construction a `getServerSideFilter` that is neither left 
 
 **A callback may refuse a request for now** by throwing an `AccessControlUnavailableError`, from the package root, given a message for the server log and its `retryAfterSeconds`. A GraphQL client then receives the router's fixed text, `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, with `extensions.code` `ACCESS_ENFORCEMENT_UNAVAILABLE`, and no data for the field, at the status of any execution error; the router's `/download` answers `503` with that text and `Retry-After`. Each logs the thrower's message as `access_enforcement.unavailable_answered`, and nothing as `access_enforcement.evaluation_failed`, since nothing is misconfigured.
 
+**A callback may deny the request its catalogue** by throwing an `AccessControlDeniedError`, from the package root, given the catalogue and the kind of denial: `no-access`, the person has no access to it; `access-too-broad`, their access is more than the catalogue's filter can express; or `misconfigured`, access control is configured wrongly for it. The catalogue's index is then never searched for that read. The router answers on every read path with its own fixed text for the kind, naming the catalogue, and nothing else the thrower says: a GraphQL client receives `extensions.code` `ACCESS_ENFORCEMENT_DENIED` for `no-access` and `INTERNAL_SERVER_ERROR` for the other two, and `/download` answers `403` and `500` the same way. Each answer is logged as `access_enforcement.denial_answered` with the catalogue and the kind, at info for `no-access` and at error otherwise, since only those two leave the operator something to fix. A filter matching nothing is still the way to withhold records without saying so.
+
 ### How the filter applies
 
 The returned filter is composed with any client-provided SQON, and the client cannot remove or weaken it: composition happens after the client's filter is parsed, and a filter is required to survive to the query. It is applied to record, aggregation, set, network search and export queries.
@@ -343,12 +345,13 @@ On a context built some other way, pass the filter function this deployment's ro
 | Error | Means | Answer |
 | --- | --- | --- |
 | `InvalidExportRequestError`, from `./download` | The request broke a rule, the clause-limit rule included where no server-side filter restricts any record. Its message names the rule broken where there is one, and never a value carried by the request, so it is written for the client | `400`, with the error's message |
+| `AccessControlDeniedError`, from the package root | The callback denied the request its catalogue. Its message is the router's fixed text for its kind, naming the catalogue, so it is written for the client | `403` for `no-access`, `500` for `access-too-broad` and `misconfigured`, with the error's message |
 | `AccessControlUnavailableError`, from the package root | The callback refused to serve the request for now. Its message is for the server log | `503`, with `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, and `Retry-After` set to its `retryAfterSeconds` |
 | `AccessControlError`, from the package root | The deployment's access control could not be applied to the request | `500`, with a fixed text saying the problem is in the server's configuration, not in the request |
 | `AccessControlQueryTooLargeError`, from the package root | The search engine refused the export's search past its clause limit once the catalogue's access filter was applied. Its message is fixed text naming the catalogue, so it is written for the client | `500`, with the error's message |
 | Anything else | A server fault, such as a failed search | `500`, with a fixed text saying the problem is on the server, not in the request |
 
-Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s or an `AccessControlQueryTooLargeError`'s message is written for the client, and an `AccessControlUnavailableError` is answered with `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`; any other error's message, and every error's cause, is written for the log.
+Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s, an `AccessControlDeniedError`'s or an `AccessControlQueryTooLargeError`'s message is written for the client, and an `AccessControlUnavailableError` is answered with `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`; any other error's message, and every error's cause, is written for the log.
 
 ### Joining the output to the response
 

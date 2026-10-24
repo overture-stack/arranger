@@ -2,15 +2,23 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import { includeEverything } from '@overture-stack/arranger-graphql-router';
-import { SqonBuilder } from '@overture-stack/sqon';
 import { ANSWERS, RETRY_AFTER_SECONDS } from '@overture-stack/usher-express-bridge';
 import { attachAccess, type Enforcement, UsherContractError } from '@overture-stack/usher-types';
 
-import { isConfigurationRefusal, UNAVAILABLE_ERROR_NAME } from './fixtures/arrangerNames.js';
-import { INDEX_MAPPING, RECORDS_REGISTRATION, RESOURCE_FIELD } from './fixtures/catalogue.js';
+import { DENIED_ERROR_NAME, isConfigurationRefusal, UNAVAILABLE_ERROR_NAME } from './fixtures/arrangerNames.js';
+import { INDEX_MAPPING, RECORDS_REGISTRATION } from './fixtures/catalogue.js';
 import { createFakeBridge } from './fixtures/fakeBridge.js';
 import { createRecordingLogger } from './fixtures/recordingLogger.js';
-import { accessOf, ANONYMOUS, DENY_REASONS, type DenyReason, ROWS, signedIn, SUSPENDED } from './fixtures/results.js';
+import {
+	accessOf,
+	ANONYMOUS,
+	DENIAL_KINDS,
+	DENY_REASONS,
+	type DenyReason,
+	ROWS,
+	signedIn,
+	SUSPENDED,
+} from './fixtures/results.js';
 import { createStubProbe } from './fixtures/stubProbe.js';
 import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback } from './index.js';
 
@@ -34,7 +42,18 @@ const localsHolding = (results: Readonly<Record<string, Enforcement>>): Record<s
 	return locals;
 };
 
-const MATCH_NOTHING = SqonBuilder.matchNothing(RESOURCE_FIELD).toValue();
+/** Asserts `run` throws the GraphQL router's denial of the `records` catalogue, of `kind`. */
+const assertDenied = (run: () => unknown, kind: string): void => {
+	assert.throws(run, (error: unknown) => {
+		assert.ok(error instanceof Error);
+		assert.equal(error.name, DENIED_ERROR_NAME);
+		assert.deepEqual(
+			{ catalogue: (error as { catalogue?: unknown }).catalogue, kind: (error as { kind?: unknown }).kind },
+			{ catalogue: 'records', kind },
+		);
+		return true;
+	});
+};
 
 suite('the callback, as a pure function of the request store', () => {
 	test("returns a narrow result's filter unchanged", async () => {
@@ -54,15 +73,15 @@ suite('the callback, as a pure function of the request store', () => {
 	});
 
 	for (const [reason, description] of Object.entries(DENY_REASONS) as [DenyReason, string][]) {
-		test(`returns match-nothing on the catalogue's resource field for a deny for ${description}`, async () => {
+		test(`throws the GraphQL router's denial of the catalogue, of the kind its reason maps to, for a deny for ${description}`, async () => {
 			// Given a request denied this catalogue for this reason
 			const callback = await verifiedCallback();
 			const result: Enforcement = { kind: 'deny', reason };
 
-			// When the callback runs, Then it returns matchNothing on the resource field, as a value
-			assert.deepEqual(
-				callback({ locals: localsHolding({ records: result }) }, { readPath: 'hits' }),
-				MATCH_NOTHING,
+			// When the callback runs, Then it throws the denial in place of a filter, so nothing is searched
+			assertDenied(
+				() => callback({ locals: localsHolding({ records: result }) }, { readPath: 'hits' }),
+				DENIAL_KINDS[reason],
 			);
 		});
 	}
@@ -78,14 +97,14 @@ suite('the callback, as a pure function of the request store', () => {
 		);
 	});
 
-	test('returns match-nothing when the results name only other catalogues, since a missing result is a deny', async () => {
+	test("throws the GraphQL router's misconfigured denial when the results name only other catalogues, since a missing result is the system's fault", async () => {
 		// Given a request whose results hold another catalogue's result alone
 		const callback = await verifiedCallback();
 
-		// When the callback runs, Then this catalogue is denied
-		assert.deepEqual(
-			callback({ locals: localsHolding({ other: ROWS.everyGrant.result }) }, { readPath: 'hits' }),
-			MATCH_NOTHING,
+		// When the callback runs, Then this catalogue is denied as misconfigured
+		assertDenied(
+			() => callback({ locals: localsHolding({ other: ROWS.everyGrant.result }) }, { readPath: 'hits' }),
+			'misconfigured',
 		);
 	});
 

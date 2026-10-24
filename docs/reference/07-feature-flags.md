@@ -129,6 +129,7 @@ Once running:
 - **A catalogue that fails to load serves nothing**, and is reported `failed` as without access control, while the others serve normally.
 - **An unset `DOWNLOAD_MAX_ROWS` bounds every export at 100 rows.** An explicit value applies as written, `0` meaning every row.
 - **A signed-in principal unconfirmed by the bridge is served the open tier alone** on searches and facets, and the response carries `Usher-Suspended: true`, readable by a browser, so an interface can say its results are reduced. Its exports and saved sets are refused for now: `503` with `Retry-After` on an export, and a GraphQL error coded `ACCESS_ENFORCEMENT_UNAVAILABLE` on saving a set.
+- **A catalogue the bridge denies is refused on every read path**, naming the catalogue and nothing finer, and its index is not searched. A principal holding no grant on it is told they have no access: `403` on an export, and a GraphQL error coded `ACCESS_ENFORCEMENT_DENIED`. Grants more than the catalogue's filter can express, a problem in the catalogue's access configuration and the bridge's own fault answer as a problem on the server: `500`, and `INTERNAL_SERVER_ERROR`. The [adapter's README](https://github.com/overture-stack/arranger/blob/main/modules/usher-adapter/README.md#what-a-request-gets) lists each reason.
 - **Each request carries an identifier generated on the server**, named in the access-control events logged for it: `access_enforcement.permitted`, `access_enforcement.denied` and `access_enforcement.unavailable`.
 
 

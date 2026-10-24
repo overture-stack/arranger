@@ -5,6 +5,8 @@ import { Router, urlencoded } from 'express';
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
+	denialAnswerOf,
+	isAccessControlDeniedError,
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
@@ -178,6 +180,23 @@ const failureResponseFor = (error) => {
 		return { event: 'download.invalid_request', log: console.info, status: 400, text: error.message };
 	}
 
+	// The callback's denial of the catalogue: forbidden where the person may raise it, a fault on the server
+	// where only the operator can fix it, with the router's text for its kind either way.
+	if (isAccessControlDeniedError(error)) {
+		const denial = denialAnswerOf(error);
+
+		return denial.kind === 'no-access'
+			? { denial, reason: 'access_enforcement_denied', status: 403, text: denial.text }
+			: {
+					denial,
+					event: 'download.failed',
+					log: console.error,
+					reason: 'access_enforcement_denied',
+					status: 500,
+					text: denial.text,
+				};
+	}
+
 	// The callback's refusal to serve the request yet, answered with the router's text.
 	if (isAccessControlUnavailableError(error)) {
 		return {
@@ -222,7 +241,7 @@ const unreadableBodyResponseFor = (error) =>
 		: failureResponseFor(error);
 
 const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
-	const { event, log, reason, retryAfterSeconds, status, text } = failure;
+	const { denial, event, log, reason, retryAfterSeconds, status, text } = failure;
 
 	if (log) {
 		log(event, error, ...(reason ? [{ reason }] : []));
@@ -244,6 +263,16 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 			catalogue: error.catalogue,
 			clauseLimit: error.clauseLimit,
 			readPath: error.readPath,
+			route: 'download',
+		});
+	}
+
+	if (reason === 'access_enforcement_denied') {
+		// The event GraphQL logs for the same answer, raising an alert only where the operator has something to fix.
+		const logDenial = denial.kind === 'no-access' ? console.info : console.error;
+		logDenial('access_enforcement.denial_answered', {
+			catalogue: denial.catalogue,
+			kind: denial.kind,
 			route: 'download',
 		});
 	}

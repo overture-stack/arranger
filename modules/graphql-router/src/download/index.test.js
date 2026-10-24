@@ -6,7 +6,7 @@ import { inspect } from 'node:util';
 import express from 'express';
 import request from 'supertest';
 
-import { AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
+import { AccessControlDeniedError, AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
 import includeEverything from '#accessControl/includeEverything.js';
 import { denyAllFilter, restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { serveOnLoopback } from '#loopbackServer.fixture.js';
@@ -1828,6 +1828,64 @@ suite('download', () => {
 				}
 			});
 		});
+	});
+
+	suite('a filter callback denying the export its catalogue', () => {
+		const DENIAL_DETAIL = 'grants read from the token service at 10.0.0.5';
+
+		for (const [kind, status, text, events] of [
+			[
+				'no-access',
+				403,
+				'You have no access to catalogue "donor".',
+				{ error: [], info: ['access_enforcement.denial_answered'] },
+			],
+			[
+				'access-too-broad',
+				500,
+				'Your access is more than the filter of catalogue "donor" can express, so its records were not served.',
+				{ error: ['download.failed', 'access_enforcement.denial_answered'], info: [] },
+			],
+			[
+				'misconfigured',
+				500,
+				'The server could not apply its access control to catalogue "donor" because of a problem in its configuration, not in this request.',
+				{ error: ['download.failed', 'access_enforcement.denial_answered'], info: [] },
+			],
+		]) {
+			test(`answers ${status} in plain text with the router's text for ${kind}, before any engine request`, async () => {
+				// Given a router whose callback denies exports their catalogue, with a message of its own, and serves
+				// every other read
+				const getServerSideFilter = (context, details) => {
+					if (details?.readPath === 'export') {
+						throw Object.assign(new AccessControlDeniedError({ catalogue: 'donor', kind }), {
+							message: DENIAL_DETAIL,
+						});
+					}
+
+					return includeEverything(context);
+				};
+
+				await withArranger({ getServerSideFilter }, async ({ engine, server }) => {
+					const consoleCapture = captureConsole();
+
+					try {
+						// When the stock form is posted
+						const response = await postDownload(server, paramsWithFile());
+
+						// Then it is answered with the kind's status in plain text with nosniff, with the router's text
+						// alone and no search, logged at the kind's level
+						assertPlainTextError(response, status, [DENIAL_DETAIL]);
+						assert.equal(response.text, text);
+						assert.equal(engine.requests.length, 0);
+						assert.deepEqual(consoleCapture.eventsAt('error'), events.error);
+						assert.deepEqual(consoleCapture.eventsAt('info'), events.info);
+					} finally {
+						consoleCapture.restore();
+					}
+				});
+			});
+		}
 	});
 
 	suite('the search engine refusing an export past its clause limit', () => {

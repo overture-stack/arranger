@@ -328,6 +328,51 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		}
 	});
 
+	// A denial names its catalogue, which confirms nothing only while every catalogue is listed to everyone. Were
+	// listings ever made per principal, a denial of a catalogue hidden from the asker would have to answer as a
+	// catalogue that does not exist does, so this fails first.
+	test('lists every catalogue to every principal alike, without asking the bridge who asks', async () => {
+		// Given two registered catalogues that loaded, and a bridge that confirms no one
+		const configs = await writeCatalogues(path.join(workspace, 'listing'), {
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+			[OPEN_CATALOGUE]: { 'base.json': baseFor(OPEN_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+		});
+		const bridge = recordingBridge();
+		const server = await startImage(configs, bridge.core, { engine: ENGINE_UP });
+		const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+		const routes = ['/introspection', `/introspection/${NAMED_CATALOGUE}`, `/introspection/${OPEN_CATALOGUE}`];
+		const read = (headers: Record<string, string>) =>
+			Promise.all(
+				routes.map(async (route) => {
+					const response = await fetch(`${base}${route}`, { headers });
+					return { body: await response.json(), status: response.status };
+				}),
+			);
+
+		try {
+			// When the listing and each catalogue's introspection are read anonymously, then with a credential
+			const anonymous = await read({});
+			const signedIn = await read({ authorization: 'Bearer credential-the-bridge-cannot-confirm' });
+
+			// Then each answers the same whoever asks, the listing names both catalogues, and the bridge was
+			// never asked who was asking
+			assert.deepEqual(signedIn, anonymous);
+			assert.deepEqual(
+				anonymous.map(({ status }) => status),
+				[200, 200, 200],
+			);
+			assert.ok(
+				[NAMED_CATALOGUE, OPEN_CATALOGUE].every((catalogueId) =>
+					JSON.stringify(anonymous[0]?.body).includes(catalogueId),
+				),
+				JSON.stringify(anonymous[0]?.body),
+			);
+			assert.equal(bridge.state.resolved, 0);
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
+	});
+
 	/** Starts the image over one registered catalogue, its bridge in `mode`, and reads both health routes. */
 	const healthOf = async (mode: BridgeMode, engine: SearchClient) => {
 		const configs = await writeCatalogues(

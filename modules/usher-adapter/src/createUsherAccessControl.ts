@@ -1,9 +1,11 @@
 import {
+	type AccessControlDenialKind,
+	AccessControlDeniedError,
 	AccessControlUnavailableError,
 	includeEverything,
 	type IndexProbe,
 } from '@overture-stack/arranger-graphql-router';
-import { SqonBuilder, type SqonNode } from '@overture-stack/sqon';
+import type { SqonNode } from '@overture-stack/sqon';
 import type { BridgeCore, BridgeLogger, KeyRegistration } from '@overture-stack/usher-express-bridge';
 import {
 	type Enforcement,
@@ -26,7 +28,8 @@ export type CatalogueIndex = Readonly<{ mapping: Readonly<Record<string, unknown
 
 /**
  * A GraphQL router's filter callback for one catalogue. The router passes the read path as the second
- * argument; a read path the callback does not know is served, except to a suspended principal.
+ * argument; a read path the callback does not know is served, except to a suspended principal. A deny is
+ * thrown as an `AccessControlDeniedError`, so the catalogue's index is never searched for it.
  */
 export type UsherFilterCallback = (context: unknown, details?: { readPath?: string }) => SqonNode;
 
@@ -74,6 +77,22 @@ const isRecord = (value: unknown): value is Record<PropertyKey, unknown> => type
 
 const quotedList = (values: readonly string[]): string => values.map((value) => `"${value}"`).join(', ');
 
+/**
+ * The router's denial kind for a deny's reason: the principal's own lack of access, grants more than the
+ * catalogue's filter can express, and otherwise the operator's configuration or the system's fault, a reason
+ * the adapter does not know included.
+ */
+const denialKindOf = (reason: Extract<Enforcement, { kind: 'deny' }>['reason']): AccessControlDenialKind => {
+	switch (reason) {
+		case 'filter-limit':
+			return 'access-too-broad';
+		case 'no-grants':
+			return 'no-access';
+		default:
+			return 'misconfigured';
+	}
+};
+
 /** What every event logged by the callback says about its request, never a token, payload or record. */
 const requestFieldsOf = ({
 	catalogueId,
@@ -97,7 +116,7 @@ const requestFieldsOf = ({
  * Creates the Usher adapter: a translator from the bridge's enforcement results to each catalogue's
  * GraphQL router filter, which decides nothing itself. A `narrow` result's filter is returned
  * unchanged, `allow` returns the router's allow-all value, and `deny`, or no result for the
- * catalogue, matches nothing on its resource field.
+ * catalogue, is thrown as the router's denial of the catalogue, of the kind its reason maps to.
  *
  * @param options the bridge, each catalogue's registration, and the logger events are written to.
  */
@@ -123,25 +142,15 @@ export const createUsherAccessControl = ({
 		throw new Error(`The Usher adapter has no registration for catalogue "${catalogueId}".`);
 	};
 
-	const denyFilterOf = (catalogueId: string, registration: KeyRegistration): SqonNode => {
-		if (registration.kind === 'record') {
-			return SqonBuilder.matchNothing(registration.resourceFieldName).toValue() as SqonNode;
-		}
-
-		throw new Error(`Catalogue "${catalogueId}" received a result it registered no resource field to enforce.`);
-	};
-
 	const apply = ({
 		catalogueId,
 		context,
 		fields,
-		registration,
 		result,
 	}: {
 		catalogueId: string;
 		context: unknown;
 		fields: ReturnType<typeof requestFieldsOf>;
-		registration: KeyRegistration;
 		result: Enforcement | undefined;
 	}): SqonNode => {
 		switch (result?.kind) {
@@ -153,11 +162,11 @@ export const createUsherAccessControl = ({
 				return includeEverything(context);
 			case 'deny':
 				logger.info({ ...fields, reason: result.reason }, ACCESS_CONTROL_EVENTS.denied);
-				return denyFilterOf(catalogueId, registration);
+				throw new AccessControlDeniedError({ catalogue: catalogueId, kind: denialKindOf(result.reason) });
 			case undefined:
-				// A configured catalogue missing from the request's results is a deny.
+				// A configured catalogue missing from the request's results is a deny, and the system's fault.
 				logger.info({ ...fields, reason: 'no-result' }, ACCESS_CONTROL_EVENTS.denied);
-				return denyFilterOf(catalogueId, registration);
+				throw new AccessControlDeniedError({ catalogue: catalogueId, kind: 'misconfigured' });
 			default: {
 				// readAccess admits no other kind, and this assignment fails to compile once Enforcement gains
 				// a kind the cases above do not handle. One arriving anyway is refused here rather than left to
@@ -175,7 +184,8 @@ export const createUsherAccessControl = ({
 		verification.kind === 'verified' && verification.catalogues.has(catalogueId);
 
 	const filterFor = (catalogueId: string): UsherFilterCallback => {
-		const registration = registrationOf(catalogueId);
+		// Refuses a catalogue with no registration when its callback is built, not on its first request.
+		registrationOf(catalogueId);
 
 		return (context, details) => {
 			if (!isVerified(catalogueId)) {
@@ -205,7 +215,7 @@ export const createUsherAccessControl = ({
 				});
 			}
 
-			return apply({ catalogueId, context, fields, registration, result: resultFor(access, catalogueId) });
+			return apply({ catalogueId, context, fields, result: resultFor(access, catalogueId) });
 		};
 	};
 

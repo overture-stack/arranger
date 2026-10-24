@@ -8,6 +8,7 @@ import {
 	type UsherRequestAccess,
 } from '@overture-stack/usher-types';
 
+import type { DenialKind } from './arrangerNames.js';
 import { CATEGORY_CONDITIONS, CONFIGURED_RESOURCES, EVERY_RECORD, RESOURCE_FIELD } from './catalogue.js';
 
 /**
@@ -67,6 +68,18 @@ export const DENY_REASONS: Readonly<Record<DenyReason, string>> = {
 	'rendering-mismatch': 'a filter saying other than the payload it was rendered from',
 	'unknown-resource': 'a catalogue registering no resources',
 	'unmapped-category': 'a global category the catalogue neither defines nor declares absent',
+};
+
+/**
+ * The GraphQL router's denial kind the adapter throws for each deny reason: the principal's own lack of access,
+ * grants more than the catalogue's filter can express, and the operator's configuration or the system's fault.
+ */
+export const DENIAL_KINDS: Readonly<Record<DenyReason, DenialKind>> = {
+	'filter-limit': 'access-too-broad',
+	'no-grants': 'no-access',
+	'rendering-mismatch': 'misconfigured',
+	'unknown-resource': 'misconfigured',
+	'unmapped-category': 'misconfigured',
 };
 
 /** The rows for the catalogue registered as `records`, which defines both concrete categories. */

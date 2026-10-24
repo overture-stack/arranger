@@ -6,7 +6,11 @@ import express from 'express';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import type supertest from 'supertest';
 
-import { AccessControlQueryTooLargeError, AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
+import {
+	AccessControlDeniedError,
+	AccessControlQueryTooLargeError,
+	AccessControlUnavailableError,
+} from '#accessControl/AccessControlError.js';
 import includeEverything from '#accessControl/includeEverything.js';
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { createEndpoint } from '#graphqlRoutes.js';
@@ -655,6 +659,33 @@ const withConsoleCalls = async <Result>(
 const QUERY_TOO_LARGE_MESSAGE =
 	'The search engine refused this request to catalogue "donor" as larger than it accepts once the catalogue\'s access filter was applied.';
 
+/**
+ * Each kind of denial, with the code a GraphQL client is answered with, the router's text and the level its
+ * answer is logged at: the person's to raise answered as forbidden, the operator's to fix as a server problem.
+ */
+const DENIALS = [
+	['no-access', 'ACCESS_ENFORCEMENT_DENIED', 'You have no access to catalogue "donor".', 'info'],
+	[
+		'access-too-broad',
+		'INTERNAL_SERVER_ERROR',
+		'Your access is more than the filter of catalogue "donor" can express, so its records were not served.',
+		'error',
+	],
+	[
+		'misconfigured',
+		'INTERNAL_SERVER_ERROR',
+		'The server could not apply its access control to catalogue "donor" because of a problem in its configuration, not in this request.',
+		'error',
+	],
+] as const;
+
+/** A filter callback denying the catalogue as `kind`, with a message of its own that no client may be given. */
+const denyingAs = (kind: (typeof DENIALS)[number][0]) => (): never => {
+	throw Object.assign(new AccessControlDeniedError({ catalogue: 'donor', kind }), { message: DENIAL_DETAIL });
+};
+
+const DENIAL_DETAIL = 'grants read from the token service at 10.0.0.5';
+
 /** Network search's nodes with their hits, so the local node's hits and aggregations both run. */
 const NETWORK_NODES_AND_HITS_QUERY =
 	'{ network { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }';
@@ -741,6 +772,37 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 		);
 		assert.ok(!lines.some((line) => line.includes('access_enforcement.evaluation_failed')), JSON.stringify(lines));
 	});
+
+	for (const [kind, , text, level] of DENIALS) {
+		test(`answers a local node's callback denying the catalogue as ${kind} with the router's text, logging it at ${level} with the node`, async () => {
+			// Given a router whose callback denies the local node's catalogue
+			const app = await buildRouterApp({
+				getServerSideFilter: refusingTheLocalNode(() => {
+					throw new AccessControlDeniedError({ catalogue: 'donor', kind });
+				}),
+			});
+
+			// When network search is queried for hits and aggregations
+			const { calls, result: response } = await withConsoleCalls(() =>
+				withLoopbackServer(app, (request) =>
+					request.post('/graphql').send({ query: NETWORK_NODES_AND_HITS_QUERY }),
+				),
+			);
+
+			// Then the local node reports the router's text for each read, and each answer is logged with the node
+			assertNodeAnswered(response, { details: [], name: 'local node', reads: 2, text });
+			assert.deepEqual(
+				calls
+					.filter(({ args: [event] }) => event === 'access_enforcement.denial_answered')
+					.map(({ args, method }) => [method, ...args]),
+				[
+					[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, node: 'local node' }],
+					[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, node: 'local node' }],
+				],
+			);
+			assert.ok(!calls.some(({ args: [event] }) => event === 'access_enforcement.evaluation_failed'));
+		});
+	}
 
 	test("answers a local node's read past the clause limit under a restricting filter with the refusal's text, logging it with the node", async () => {
 		// Given a router with a restricting callback over an engine refusing every search past its clause limit
@@ -1119,6 +1181,46 @@ const READ_PATHS_SEARCHING_THE_CATALOGUE = [
 	['aggregations', READ_PATH_QUERIES.aggregations, ['donor', 'aggregations']],
 	['sets', READ_PATH_QUERIES['saved sets'], ['saveSet']],
 ] as const;
+
+suite("a filter callback's denial of the catalogue, on the GraphQL endpoint", () => {
+	for (const [kind, code, text, level] of DENIALS) {
+		for (const [readPath, query, path] of READ_PATHS_SEARCHING_THE_CATALOGUE) {
+			test(`answers ${readPath} denied as ${kind} with ${code} and the router's text naming the catalogue, before any search`, async () => {
+				// Given a router whose callback denies the catalogue, over an engine failing any search it is sent
+				const app = await buildRouterApp({
+					esClient: stubSearchClient({ searchFailure: new Error(ENGINE_FAILURE) }),
+					getServerSideFilter: denyingAs(kind),
+				});
+
+				// When the read path is queried
+				const { calls, result: response } = await withConsoleCalls(() =>
+					withLoopbackServer(app, (request) => request.post('/graphql').send({ query })),
+				);
+
+				// Then the client is given the kind's code and the router's text alone, no search failed, and the
+				// answer is logged at the kind's level
+				const { bodyText, errors } = graphQLErrorsOf(response);
+				assert.deepEqual(
+					errors.map(({ extensions, message, path: errorPath }) => [extensions?.code, message, errorPath]),
+					[[code, text, path]],
+				);
+				assert.ok(!bodyText.includes(DENIAL_DETAIL), `the response carried "${DENIAL_DETAIL}": ${bodyText}`);
+				assert.deepEqual(
+					calls
+						.filter(({ args: [event] }) => event === 'access_enforcement.denial_answered')
+						.map(({ args, method }) => [method, ...args]),
+					[[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, path }]],
+				);
+				assert.ok(
+					!calls.some(({ args: [event] }) =>
+						['access_enforcement.evaluation_failed', 'graphql.failed'].includes(String(event)),
+					),
+					inspect(calls),
+				);
+			});
+		}
+	}
+});
 
 suite("the search engine's refusal of a read past its clause limit, on the GraphQL endpoint", () => {
 	for (const [refusalDescription, refusal] of Object.entries(CLAUSE_LIMIT_REFUSALS)) {

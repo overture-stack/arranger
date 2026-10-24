@@ -5,6 +5,8 @@ import graphqlFields from 'graphql-fields';
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
+	denialAnswerOf,
+	isAccessControlDeniedError,
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
@@ -38,9 +40,10 @@ type SuccessResponse = Record<string, { hits: Hits; aggregations: NetworkAggrega
 
 /**
  * What a node's `errors` reports for `error`, each kind answered as the GraphQL endpoint answers it and logged on
- * the server naming the node: a refusal to serve the request yet and an access-control failure with their fixed
- * texts, a read the engine refused once the catalogue's access filter was applied with its own fixed text, a
- * filter breaking a rule with that rule, and anything else as a problem on the server.
+ * the server naming the node: a denial of the catalogue with the router's text for its kind, a refusal to serve the
+ * request yet and an access-control failure with their fixed texts, a read the engine refused once the catalogue's
+ * access filter was applied with its own fixed text, a filter breaking a rule with that rule, and anything else as
+ * a problem on the server.
  *
  * @param details what else the server log records of a failure of any other kind, such as the node's catalogue.
  */
@@ -53,6 +56,14 @@ const nodeErrorMessageFor = ({
 	error: unknown;
 	nodeName: string;
 }): string => {
+	if (isAccessControlDeniedError(error)) {
+		const { catalogue, kind, text } = denialAnswerOf(error);
+		const log = kind === 'no-access' ? console.info : console.error;
+
+		log('access_enforcement.denial_answered', { catalogue, kind, node: nodeName });
+		return text;
+	}
+
 	if (isAccessControlUnavailableError(error)) {
 		console.warn('access_enforcement.unavailable_answered', error.message, {
 			node: nodeName,

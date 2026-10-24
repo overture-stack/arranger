@@ -46,14 +46,22 @@ The bridge's `filterClauseLimit`, which the search server sets from `ACCESS_CONT
 
 ## What a request gets
 
-| The bridge's result for the catalogue  | The router's filter                                |
-| -------------------------------------- | -------------------------------------------------- |
-| `narrow`                               | The result's filter, unchanged                     |
-| `allow`                                | The router's allow-all value                       |
-| `deny`, or no result for the catalogue | Nothing matches, on the catalogue's resource field |
+| The bridge's result for the catalogue  | What the router is given                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------- |
+| `narrow`                               | The result's filter, unchanged                                                   |
+| `allow`                                | The router's allow-all value                                                     |
+| `deny`, or no result for the catalogue | A thrown `AccessControlDeniedError` naming the catalogue, so nothing is searched |
 
 A suspended principal, signed in but unconfirmed by the bridge, is served the open tier on searches and facets. Any other read is refused for now with `AccessControlUnavailableError`, carrying `UNAVAILABLE_ANSWER`, the bridge's own 503 text and wait: the GraphQL router logs the text and answers its own fixed text, `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, with the wait as `Retry-After`. Network search is refused as a configuration failure for every principal, since access control does not serve it yet.
 
-Every deny reason the bridge gives, `filter-limit`, `no-grants`, `rendering-mismatch`, `unknown-resource` and `unmapped-category`, matches nothing in the same way.
+A deny is answered on every read path, hits, facets, saved sets and export, with the router's fixed text for its kind, naming the catalogue and nothing finer. Whose move it is decides the kind:
+
+| Deny reason                                                                                   | Denial kind        | What the person is told                                                    | GraphQL code            | Export status |
+| --------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------- | ----------------------- | ------------- |
+| `no-grants`                                                                                   | `no-access`        | They have no access to the catalogue                                       | `ACCESS_ENFORCEMENT_DENIED` | `403`         |
+| `filter-limit`                                                                                | `access-too-broad` | Their access is more than the catalogue's filter can express               | `INTERNAL_SERVER_ERROR` | `500`         |
+| `unknown-resource`, `unmapped-category`, `rendering-mismatch`, or no result for the catalogue | `misconfigured`    | The server could not apply its access control because of its configuration | `INTERNAL_SERVER_ERROR` | `500`         |
+
+A grant never held and one withdrawn are told the same. Partial access is a narrowing, which says nothing of what it withheld, and a resource or record withheld answers as one that does not exist. Naming a denied catalogue confirms nothing only while every catalogue is listed to everyone, as the search server lists them; were catalogues listed per principal, a denial of one hidden from the asker would have to answer as a catalogue that does not exist.
 
 Each application of a result logs `access_enforcement.permitted` or `access_enforcement.denied` at info, the latter with the deny's reason, and each refusal `access_enforcement.unavailable` at warn, naming the catalogue, the read path, the request identifier and the principal's subject, never a token, payload or record.

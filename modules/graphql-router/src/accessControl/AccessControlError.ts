@@ -72,6 +72,80 @@ export const ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE =
 export const isAccessControlUnavailableError = (error: unknown): error is AccessControlUnavailableError =>
 	error instanceof Error && error.name === 'AccessControlUnavailableError';
 
+/**
+ * Why a filter callback denied a request its catalogue: `no-access`, the principal has no access to it;
+ * `access-too-broad`, their access is more than the catalogue's filter can express; `misconfigured`, access
+ * control is configured wrongly for it. The first is the person's to raise, the other two the operator's to fix.
+ */
+export type AccessControlDenialKind = 'access-too-broad' | 'misconfigured' | 'no-access';
+
+const denialTextFor = (kind: AccessControlDenialKind, catalogue: string): string => {
+	switch (kind) {
+		case 'access-too-broad':
+			return `Your access is more than the filter of catalogue "${catalogue}" can express, so its records were not served.`;
+		case 'no-access':
+			return `You have no access to catalogue "${catalogue}".`;
+		default:
+			return `The server could not apply its access control to catalogue "${catalogue}" because of a problem in its configuration, not in this request.`;
+	}
+};
+
+/**
+ * A filter callback's denial of a request's catalogue, thrown in place of a filter so the catalogue's index is
+ * never searched. Its `message` is the router's fixed text for its kind, naming the catalogue, written for the
+ * client. The GraphQL endpoint answers `no-access` with `ACCESS_ENFORCEMENT_DENIED_CODE` and the export route with
+ * `403`; the other kinds are answered as a problem on the server, `INTERNAL_SERVER_ERROR` and `500`. Each answer
+ * is built from the kind and the catalogue alone, so nothing else the thrower says reaches a client, and logged
+ * as `access_enforcement.denial_answered`, at info for `no-access` and at error otherwise.
+ */
+export class AccessControlDeniedError extends Error {
+	override name = 'AccessControlDeniedError';
+
+	/** The catalogue denied, as clients know it. */
+	readonly catalogue: string;
+
+	/** Why it was denied. */
+	readonly kind: AccessControlDenialKind;
+
+	/**
+	 * @param details the catalogue denied, why, and an optional `cause`.
+	 */
+	constructor({ catalogue, cause, kind }: { catalogue: string; cause?: unknown; kind: AccessControlDenialKind }) {
+		super(denialTextFor(kind, catalogue), { cause });
+		this.catalogue = catalogue;
+		this.kind = kind;
+	}
+}
+
+/** The GraphQL error code a `no-access` denial is answered with. */
+export const ACCESS_ENFORCEMENT_DENIED_CODE = 'ACCESS_ENFORCEMENT_DENIED';
+
+/**
+ * Whether `error` is an `AccessControlDeniedError`, recognized by its name so one raised by another copy of
+ * this module counts too.
+ *
+ * @param error anything caught.
+ */
+export const isAccessControlDeniedError = (error: unknown): error is AccessControlDeniedError =>
+	error instanceof Error && error.name === 'AccessControlDeniedError';
+
+const DENIAL_KINDS: readonly string[] = ['access-too-broad', 'misconfigured', 'no-access'];
+
+/**
+ * What a client is told of `denied` and how its answer is logged: its kind, read as `misconfigured` when it is
+ * none the router knows, as from another copy of this module, and the router's text for it.
+ *
+ * @param denied a denial, possibly raised by another copy of this module.
+ */
+export const denialAnswerOf = (
+	denied: AccessControlDeniedError,
+): { catalogue: string; kind: AccessControlDenialKind; text: string } => {
+	const kind = DENIAL_KINDS.includes(denied.kind) ? denied.kind : 'misconfigured';
+	const catalogue = String(denied.catalogue);
+
+	return { catalogue, kind, text: denialTextFor(kind, catalogue) };
+};
+
 /** The GraphQL error code an `AccessControlQueryTooLargeError` is answered with. */
 export const ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE = 'ACCESS_ENFORCEMENT_QUERY_TOO_LARGE';
 
