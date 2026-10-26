@@ -93,6 +93,8 @@ sequenceDiagram
 
 A list the server does not advertise is not requested, and is recorded as empty.
 
+The SDK records the server's identity and capabilities only at connect, and its list methods check that copy. So each read takes the server's name and version from its own `discover()` result. A read that finds a list advertised now but not at connect throws `ReconnectRequiredError`, rather than recording that list as empty.
+
 ### Change notifications
 
 Off by default. When a host passes `changeNotifications`, the SDK holds a `subscriptions/listen` stream open for the client's life, and the client reports which list changed. It does not re-read the list.

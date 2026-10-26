@@ -1,5 +1,5 @@
 /**
- * Open question 5: does sending a thinking model's `reasoning` back with its tool call change the next
+ * Phase 0 question Q5 (now settled in the MCP host plan, §2.2): does sending a thinking model's `reasoning` back with its tool call change the next
  * call it makes?
  *
  * Turn 1 is one step of each goal, sampled: `build_sqon` by default, or the step `--from` names. When

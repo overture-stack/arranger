@@ -7,7 +7,7 @@ One connection to one MCP server over Streamable HTTP, for an MCP host. It wraps
 - resolves every call with an outcome instead of throwing;
 - snapshots the server's surface, with a hash that ignores its version and cache hints.
 
-No stable release yet.
+Not published yet: the package is `private` until the hardening entries for this module in `.dev/tech-debt.md` are fixed (MCP Host Plan, Phase 5).
 
 - Design: [MCP Host Plan](../../.dev/docs/mcp-host/mcp-host-plan.md) §2.1
 - Architecture: [`mcp-client` Architecture](docs/architecture.md)
@@ -37,6 +37,8 @@ await client.close();
 ```
 
 `connect` and `refreshSurface` throw on failure; `callTool`, `getPrompt` and `readResource` never do.
+
+`refreshSurface` throws `ReconnectRequiredError`, naming the lists, when a redeploy advertises a list the client did not see at connect. The SDK checks capabilities as they stood at connect, so it would read that list as empty; connect a new client instead. Whenever `refreshSurface` throws, `surface` keeps the previous snapshot.
 
 A tool's result is checked against its `outputSchema` from the latest snapshot. If that schema is larger than `MAX_OUTPUT_SCHEMA_BYTES`, nests deeper than `MAX_OUTPUT_SCHEMA_DEPTH`, or does not compile, the tool still runs, but each result is `output_invalid`.
 

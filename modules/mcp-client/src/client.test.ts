@@ -11,6 +11,7 @@ import {
 	McpClient,
 	type McpClientOptions,
 	PROTOCOL_REVISION,
+	ReconnectRequiredError,
 	type SurfaceChange,
 	type SurfaceRecord,
 } from './client.js';
@@ -383,6 +384,34 @@ suite('surface', () => {
 		assert.notEqual(a?.hash, c?.hash, 'instructions are part of the surface');
 		assert.equal(c?.snapshot.instructions, 'Use the tools carefully.');
 	});
+
+	test('records the server version a redeploy reports', () =>
+		withServer({ version: '1.0.0' }, async (server) => {
+			const client = await connect(server);
+			server.state.version = '1.1.0';
+			const refreshed = await client.refreshSurface();
+			await client.close();
+
+			assert.equal(refreshed.server?.version, '1.1.0');
+			assert.equal(client.surface.server?.version, '1.1.0');
+		}));
+
+	test('asks for a reconnect when a redeploy advertises a new list', () =>
+		withServer({}, async (server) => {
+			server.state.prompts = false;
+			const client = await connect(server);
+			const before = client.surface;
+			server.state.prompts = true;
+
+			await assert.rejects(client.refreshSurface(), (error: unknown) => {
+				assert.ok(error instanceof ReconnectRequiredError);
+				assert.deepEqual(error.kinds, ['prompts']);
+				return true;
+			});
+			await client.close();
+
+			assert.equal(client.surface, before, 'the previous snapshot is kept');
+		}));
 
 	test('reports list changes once opted in', () =>
 		withServer({}, async (server) => {

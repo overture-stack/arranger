@@ -7,6 +7,7 @@ import {
 	type ListChangedHandlers,
 	type ReadResourceResult,
 	type RequestOptions,
+	SERVER_INFO_META_KEY,
 	StreamableHTTPClientTransport,
 	type StreamableHTTPClientTransportOptions,
 } from '@modelcontextprotocol/client';
@@ -82,6 +83,34 @@ export type SurfaceRecord = {
 	server?: { name: string; version: string };
 	/** When the snapshot was taken, as ISO 8601. */
 	takenAt: string;
+};
+
+/**
+ * The server began advertising a list after this client connected.
+ *
+ * @remarks
+ * The SDK checks a list's capability as it stood at connect, so it would read the new list as empty. Connect a new
+ * client to read it.
+ */
+export class ReconnectRequiredError extends Error {
+	/** The lists the server now advertises and did not at connect. */
+	readonly kinds: SurfaceChangeKind[];
+
+	constructor(kinds: SurfaceChangeKind[]) {
+		super(`The server now advertises ${kinds.join(', ')}, which it did not at connect; reconnect to read them`);
+		this.name = 'ReconnectRequiredError';
+		this.kinds = kinds;
+	}
+}
+
+/** The server's name and version, from this `server/discover` result's `_meta`, where servers SHOULD put them. */
+const serverInfoOf = (discover: Awaited<ReturnType<Client['discover']>>): SurfaceRecord['server'] => {
+	const info: unknown = discover._meta?.[SERVER_INFO_META_KEY];
+	if (typeof info !== 'object' || info === null) {
+		return undefined;
+	}
+	const { name, version } = info as Record<string, unknown>;
+	return typeof name === 'string' && typeof version === 'string' ? { name, version } : undefined;
 };
 
 const isLoopback = (url: URL) =>
@@ -194,11 +223,20 @@ export class McpClient {
 
 	/**
 	 * Reads the surface. `server/discover` is never cached, and the lists are read with `'refresh'`, so a redeploy
-	 * is always seen.
+	 * is always seen. The server's identity comes from this `discover`, since the SDK records it only at connect.
+	 *
+	 * @throws {@link ReconnectRequiredError} when the server advertises a list it did not at connect.
 	 */
 	static async #readSurface(client: Client, requestOptions: RequestOptions): Promise<SurfaceRecord> {
 		const discover = await client.discover(requestOptions);
 		const { capabilities } = discover;
+		const atConnect = client.getServerCapabilities();
+		const added = (['tools', 'prompts', 'resources'] as const).filter(
+			(kind) => capabilities[kind] && !atConnect?.[kind],
+		);
+		if (added.length > 0) {
+			throw new ReconnectRequiredError(added);
+		}
 		const listOptions = { ...requestOptions, cacheMode: 'refresh' as const };
 		const [tools, resources, resourceTemplates, prompts] = await Promise.all([
 			capabilities.tools ? client.listTools(undefined, listOptions) : undefined,
@@ -207,12 +245,12 @@ export class McpClient {
 			capabilities.prompts ? client.listPrompts(undefined, listOptions) : undefined,
 		]);
 		const snapshot = toSurfaceSnapshot({ discover, tools, resources, resourceTemplates, prompts });
-		const server = client.getServerVersion();
+		const server = serverInfoOf(discover);
 
 		return {
 			snapshot,
 			hash: hashSurface(snapshot),
-			...(server && { server: { name: server.name, version: server.version } }),
+			...(server && { server }),
 			takenAt: new Date().toISOString(),
 		};
 	}
@@ -227,7 +265,8 @@ export class McpClient {
 	 *
 	 * @param signal - Aborts the re-read.
 	 * @returns The new snapshot, which also becomes {@link McpClient.surface}.
-	 * @throws Whatever the SDK throws when a read fails.
+	 * @throws {@link ReconnectRequiredError} when the server advertises a list it did not at connect, and whatever the
+	 * SDK throws when a read fails. Either way, {@link McpClient.surface} keeps the previous snapshot.
 	 */
 	async refreshSurface(signal?: AbortSignal): Promise<SurfaceRecord> {
 		const surface = await McpClient.#readSurface(this.#client, McpClient.#requestOptions(this.#options, signal));

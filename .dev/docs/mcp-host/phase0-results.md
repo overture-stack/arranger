@@ -6,16 +6,16 @@ Evidence for the [MCP host plan](mcp-host-plan.md) §3 Phase 0. The plan states 
 
 ## Summary
 
-| Spike   | Finding                                                                                                 | Plan change                                                     |
-| ------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| S2      | `callTool()` fails on a confirmation once `tools/list` is cached; `request()` works.                    | None: confirmed.                                                |
-| S2b     | Aborting closes the stream without `notifications/cancelled`, and errors exactly like a timeout.        | `cancelled` comes from the caller's own signal.                 |
-| S5      | A confirmation answered after a restart is refused with `-32602`, and nothing runs.                     | None: confirmed.                                                |
-| S3      | A stream ends with exact usage, equal to the non-streamed figure.                                       | Streaming keeps exact usage; the "usage unknown" fallback goes. |
-| S1      | Ollama rejects no schema. Models make well-formed calls; failures are in what the calls say.            | None to schemas; two server fixes recorded in tech-debt.        |
-| Context | Ollama's default 4,096-token window silently drops the oldest messages, the user's question among them. | Host-core manages the window.                                   |
-| S4      | No call arrives malformed; Ollama instead drops some calls and returns an empty reply.                  | New `empty_reply` class; open question 6.                       |
-| Q5      | Sending reasoning back costs tokens on every turn, with no consistent effect on quality.                | Store `reasoning`; send it back only when configured.           |
+| Spike   | Finding                                                                                                 | Plan change                                                                          |
+| ------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| S2      | `callTool()` fails on a confirmation once `tools/list` is cached; `request()` works.                    | None: confirmed.                                                                     |
+| S2b     | Aborting closes the stream without `notifications/cancelled`, and errors exactly like a timeout.        | `cancelled` comes from the caller's own signal.                                      |
+| S5      | A confirmation answered after a restart is refused with `-32602`, and nothing runs.                     | None: confirmed.                                                                     |
+| S3      | A stream ends with exact usage, equal to the non-streamed figure.                                       | Streaming keeps exact usage; the "usage unknown" fallback goes.                      |
+| S1      | Ollama rejects no schema. Models make well-formed calls; failures are in what the calls say.            | None to schemas; two server fixes recorded in tech-debt.                             |
+| Context | Ollama's default 4,096-token window silently drops the oldest messages, the user's question among them. | Host-core manages the window.                                                        |
+| S4      | No call arrives malformed; Ollama instead drops some calls and returns an empty reply.                  | New `empty_reply` class, retried once ([plan §2.2](mcp-host-plan.md#empty-replies)). |
+| Q5      | Sending reasoning back costs tokens on every turn, with no consistent effect on quality.                | Store `reasoning`; send it back only when configured.                                |
 
 ## S2: `callTool()` against `request()`
 
@@ -96,7 +96,7 @@ Otherwise, failures repeat S1's: `gemma4:12b` stringified `sqon` in all 20 of it
 
 ## Q5: sending reasoning back
 
-Plan [question 5](mcp-host-plan.md#5-open-questions). A thinking model's call runs against the real tool; then its next step is sent twice, with and without its earlier `reasoning`, same seed ([`q5.ts`](scripts/q5.ts)). Temperature 0.7, six seeds per goal.
+Formerly plan question 5, now settled in the plan's [LLM Provider Interface](mcp-host-plan.md#llm-provider-interface). A thinking model's call runs against the real tool; then its next step is sent twice, with and without its earlier `reasoning`, same seed ([`q5.ts`](scripts/q5.ts)). Temperature 0.7, six seeds per goal.
 
 | Run                                                 | Model        | Correct, with | Correct, without | Only with / only without | Cost of sending it back (prompt tokens) |
 | --------------------------------------------------- | ------------ | ------------- | ---------------- | ------------------------ | --------------------------------------- |
