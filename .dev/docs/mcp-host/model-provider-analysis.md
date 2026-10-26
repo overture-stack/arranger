@@ -16,7 +16,7 @@ From plan §2.2 and §1:
 | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | Stream deltas, then return a final response                                                                        | `chat` and the CRE show text as it arrives                                           |
 | Exact token usage, including when streaming                                                                        | A metric for `eval`, and the input to host-core's context-window estimate            |
-| Read Ollama's `reasoning` field, and send it back when configured                                                  | Thinking models return it outside the standard fields (plan §5 question 5)           |
+| Read Ollama's `reasoning` field, and send it back when configured                                                  | Thinking models return it outside the standard fields (plan §2.2)                    |
 | Keep a malformed tool call's raw argument text                                                                     | `eval` counts parse failures; substituting `{}` hides them                           |
 | Detect an empty reply, a stream that ends without `finish_reason`, and `finish_reason: length`                     | Each maps to its own event (`empty_reply`, `model_error`, `output_limit`)            |
 | Temperature, top-p, seed, maximum tokens, a JSON Schema response format, and other fields passed through unchanged | Reproducible runs, the judge's constrained output, and engine extras such as `top_k` |
@@ -138,11 +138,11 @@ Independent of Vercel, MIT-licensed, and under active development (all 0.x, seve
 
 **Why Chat Completions first:**
 
-1. The first targets are a researcher's own Ollama and the team's shared Ollama, where Chat Completions is mature and Responses is not. Every Phase 0 measurement was taken on Chat Completions.
-2. Host-core owns the conversation, so OpenAI-held state is not wanted. On hosted OpenAI, the default storage would also put controlled data on a third party's servers ([data crossing connections](data-crossing-options.md)).
+1. The first targets are a local Ollama, the self-hosted servers a researcher may configure as a remote provider, and, for this project's developers, the team's shared Ollama. Chat Completions is mature on all of them and Responses is not. Every Phase 0 measurement was taken on Chat Completions.
+2. Host-core owns the conversation, so OpenAI-held state is not wanted. On hosted OpenAI, the default storage would also keep every record a conversation reads on OpenAI's servers, beyond the request the person chose to send.
 3. Host-core owns the tool loop, so every MCP call goes through `mcp-client`. Responses' hosted MCP tool would bypass approvals, server confirmations and per-user credentials.
 
-**What would add a Responses provider:** hosted OpenAI reasoning models becoming a primary target, or a local server shipping features only on Responses. It would be a second provider behind the same `generate()` interface, not a replacement.
+**What would add a Responses provider:** hosted OpenAI reasoning models becoming a primary target, or a local server shipping features only on Responses. It would be a second provider behind the same `generate()` interface, not a replacement. The person configures the model endpoint, hosted ones included (plan §2.2), so the first is a matter of what researchers choose rather than of what the plan offers.
 
 **How host-core stays ready for it:**
 

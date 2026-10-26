@@ -270,6 +270,8 @@ In Phase 0, resending an empty reply's request with the same seed reproduced it 
 
 **Starting from a prompt:** a run can start from a trusted server's prompt, seeding the conversation with its messages and roles. `eval` needs this for the `query_arranger` entrypoint. If the prompt cannot be fetched, the run ends before any model call, with `done` naming the failure.
 
+**Starting from carried content:** a conversation can also start from what the person carried out of another one ([§5](#5-open-questions), question 4). Host-core takes it as the first message, labelled as server text (rule 5 in [§1](#1-overview)), and records an event naming what was carried, from which server, to which, and when. The model may call the servers the person picked with it.
+
 #### Tool Registry
 
 - **Names:** `mcp__<server>__<tool>`, as in the SDK's reference host, reduced to `^[a-zA-Z0-9_-]{1,64}$` for OpenAI-style APIs. MCP tool names may contain `.` and run to 128 characters, so both parts are reduced, and an over-long name is shortened with a deterministic hash suffix. The longest Arranger name is 35 characters, with the server key `arranger`.
@@ -289,7 +291,7 @@ In Phase 0, resending an empty reply's request with the same seed reproduced it 
 | Without the consumer | No run starts; the policy is required                         | Never asked: `elicitation` is not declared               |
 | Events               | `approval_required`, `approval_answered`                      | `input_required`, `input_answered`                       |
 
-The policy sees the conversation's earlier tool calls, across runs, each with its server, so a consumer can require approval for a call that follows another server's output. What else it needs, such as a per-server boundary label, waits on [§5](#5-open-questions) question 4.
+The policy sees the conversation's earlier tool calls, across runs, each with its server, which the rule on data crossing connections needs ([§5](#5-open-questions), question 4).
 
 **Invariants:** host-core never answers a server confirmation itself and ships no "approve everything" resolver. The model never sees the question, only the tool message.
 
@@ -485,7 +487,7 @@ The shared server's other chat models suit tool calls less: `gemma3`, `medgemma`
 
 `modules/mcp-host-core` ([§2.2](#22-mcp-host-core)) with the scripted and OpenAI-compatible providers. Tests cover the provider's stream handling (fragments split across reads, a missing `finish_reason`, HTTP errors, abort), every row of the tool-message table, a `model_error`, an empty reply and its retry, refusing a second concurrent run, approval and confirmation timeouts, and a conversation that gets the "abandoned" tool message when it continues past a pending confirmation.
 
-The approval policy's inputs and the server configuration's fields wait on [§5](#5-open-questions) question 4. Everything else can be built first. [Data crossing connections](data-crossing-options.md) §6 lists what Phase 2 builds whichever option is chosen.
+Only how a conversation keeps servers apart waits on [§5](#5-open-questions) question 4. Everything else can be built first.
 
 The module is `"private": true`, so Jenkins's `npm publish -w` loop over `modules/*` skips it with a warning, as npm 11 does for any private workspace. That assumes the Jenkins agent's npm behaves the same, which is unchecked (`.dev/tech-debt.md`).
 
@@ -649,7 +651,10 @@ Each item states the question, a recommendation, why, and the exact choice left 
     - **Recommended:** an explicit "fork from this cell" action, copying the conversation's history up to that cell into a new conversation, rather than letting two runs share one conversation's history or silently discarding a branch. A researcher can then explore two directions from the same point; each conversation still keeps one run at a time, and the new conversation starts with the same connections as the one it came from and may drop any of them; adding one is a crossing under question 4, made only through the person's own crossing action, so they see what carries over and it is recorded. The fork is a saved notebook under question 2's rules. Nothing in `mcp-client` or host-core changes.
     - **Why:** a tool call against controlled data has happened once it runs, and Usher's log keeps it; two runs sharing one history and dropping one branch would leave the notebook's account of what was queried out of step with that log, not just lose unsaved work.
     - **Team decision:** whether the CRE offers this at all, and if so, in which phase. Not required for the first release.
-9. **Native calls for Ollama.** Ollama's native `/api/chat` accepts a per-request `num_ctx`, which `/v1` cannot, and `/api/tags` reports each model's digest. Host-core could use native calls only to check the window and read the digest. Or it could add a native Ollama provider that sets the window per request, needing fewer of the [Context window](#context-window) workarounds. Decide while building the context-window handling in Phase 2.
+9. **Native calls for Ollama.** Ollama's native `/api/chat` accepts a per-request `num_ctx`, which `/v1` cannot, and `/api/tags` reports each model's digest, which `/v1/models` does not.
+    - **Recommended:** when the configured endpoint is an Ollama server, use its native API only to read the loaded context window (`/api/ps`) and the model's digest (`/api/tags`), and keep every model call on the one Chat Completions provider.
+    - **Why:** the person may configure any OpenAI-compatible endpoint ([§2.2](#llm-provider-interface)), so host-core manages the window itself whatever the server, and a native provider would be a second adapter to keep in step for Ollama alone. Phase 0 already worked this way: model calls through `/v1`, and the loaded window read from `/api/ps`.
+    - **Team decision:** whether to add a native Ollama provider, which sets the window per request, if the [Context window](#context-window) workarounds prove costly while Phase 2 builds them.
 
 ---
 
