@@ -181,7 +181,7 @@ One method, `generate(request, signal)`, which streams deltas and ends with a fi
 
 **Messages and state are shaped after Responses items,** so a Responses provider, needed if hosted OpenAI becomes a target, is one more adapter that leaves saved state unchanged. A tool call keeps its call id and its raw argument string. An assistant turn has an opaque slot for provider-specific items, such as encrypted reasoning. Usage uses neutral field names.
 
-**The person configures the model endpoint**, the same as the MCP servers: a base URL, and a key if the provider needs one. Whether the records a conversation reads may go to that model is theirs to judge under their own agreements; the app shows which model each conversation uses ([§2.4](#24-cre-main-process)). Keys and tokens live in the OS keychain, never a plain file.
+**The person configures the model endpoint**, the same as the MCP servers: a base URL, and a key if the provider needs one. Whether the records a conversation reads may go to that model is theirs to judge under their own agreements; the app shows which model each conversation uses ([§2.4](#24-cre-main-process)). Keys and tokens live in the OS keychain, never a plain file. The provider takes the key as a value, or as a function it calls before each request, so a short-lived token can be refreshed between requests; a 401 ends the run as a `model_error`, never retried.
 
 - **A local Ollama:** `http://localhost:11434/v1`, with no key.
 - **A remote provider,** self-hosted or hosted: its URL, and the person's own key if it needs one.
@@ -196,7 +196,7 @@ The development team's shared Ollama server is a remote provider for this projec
 
 **A stream that ends without a `finish_reason` is a `model_error`:** Ollama's `/v1` drops an error raised mid-stream and just stops (read from source, not yet observed).
 
-**Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size. Through `/v1`, the app cannot set a local Ollama's window, which is that server's own `OLLAMA_CONTEXT_LENGTH`, so it checks the actual window on connect, as Phase 0's `assertContextLength` did through Ollama's native `/api/ps`. Ollama's native `/api/chat` does accept a per-request `num_ctx`; whether host-core uses it is [§5](#5-open-questions) question 9.
+**Ollama truncates silently past the context window.** Its default is 4,096 tokens, `/v1` cannot change it per request, and the Arranger tools and instructions alone take about 3,500 ([results](phase0-results.md#context-length)). Host-core therefore manages the window itself ([Context window](#context-window)); the provider's configuration records its size. Through `/v1`, the app cannot set a local Ollama's window, which is that server's own `OLLAMA_CONTEXT_LENGTH`, so it checks the actual window at the start of each run, as Phase 0's `assertContextLength` did through Ollama's native `/api/ps`, and the run uses the smaller of the configured and loaded windows. A model not yet loaded reports nothing, so a cold model's first run uses the configured size. Ollama's native `/api/chat` does accept a per-request `num_ctx`; whether host-core uses it is [§5](#5-open-questions) question 9.
 
 `eval` does not stream; `chat` and the CRE do, and still get exact usage ([S3](phase0-results.md#s3-streamed-usage-from-ollama)).
 
@@ -212,20 +212,23 @@ A **turn** is one `generate()` call. A run:
 
 **Every tool call gets a tool message**, or the conversation cannot continue: OpenAI-style APIs reject an assistant message whose tool calls lack replies. Host-core writes one before a run ends or its state is saved, with fixed wording so transcripts compare:
 
-| What happened                                  | Tool message (an error unless noted)                          |
-| ---------------------------------------------- | ------------------------------------------------------------- |
-| `result`                                       | The content; an error only if `isError`                       |
-| `output_invalid`                               | The result did not match the tool's declared output           |
-| `rejected`                                     | The server rejected the call, with its message                |
-| `input_state_rejected`                         | The confirmation was no longer accepted; the call did not run |
-| `input_failed`                                 | The confirmation could not be answered; the call did not run  |
-| `rounds_exceeded`                              | The server kept asking for input; the call was abandoned      |
-| `cancelled`                                    | The user cancelled the call                                   |
-| `transport_error`                              | No usable answer came back; whether the call ran is unknown   |
-| Approval denied                                | The user declined the call                                    |
-| Malformed call (counts against the call limit) | The call could not be parsed                                  |
-| Not run, after a limit or cancellation         | The run stopped before this call                              |
-| Restored while waiting on a confirmation       | The confirmation was abandoned; the call did not run          |
+| What happened                                  | Tool message (an error unless noted)                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `result`                                       | The content; an error only if `isError`                                            |
+| `output_invalid`                               | The result did not match the tool's declared output                                |
+| `rejected`                                     | The server rejected the call, with its message                                     |
+| `input_state_rejected`                         | The confirmation was no longer accepted; the call did not run                      |
+| `input_failed`                                 | The confirmation could not be answered; the call did not run                       |
+| `rounds_exceeded`                              | The server kept asking for input; the call was abandoned                           |
+| `cancelled`                                    | The user cancelled the call                                                        |
+| `transport_error`                              | No usable answer came back; whether the call ran is unknown                        |
+| Approval denied                                | The user declined the call                                                         |
+| Malformed call (counts against the call limit) | The call could not be parsed                                                       |
+| A name no server's tool has (counts too)       | There is no tool with this name                                                    |
+| Refused by the policy as a data crossing       | Calls to server "<key>" are refused in this conversation, with the policy's reason |
+| Not run, after a limit or cancellation         | The run stopped before this call                                                   |
+| Saved while waiting on a confirmation          | The confirmation was abandoned; the call did not run                               |
+| Saved while the call was on the wire           | No usable answer came back; whether the call ran is unknown                        |
 
 **Tool calls run one at a time**, so transcript order is execution order and each client has one call in flight. No Arranger tool gains from parallel calls.
 
@@ -246,7 +249,7 @@ Host-core never lets the serving stack truncate a conversation: Ollama drops the
     - `shorten` (`chat`, UI): in what is sent, replace the oldest tool results with a stub, "Earlier result of `<tool>` omitted to fit the context window; call the tool again if it is needed", until it fits. The system prompt, user and assistant messages, and the latest tool results are never shortened. Emits `context_shortened`.
     - `fail` (`eval`): the run ends, so no score comes from a truncated conversation.
 3. **If it still cannot fit,** the run ends, and the consumer suggests a new conversation or a model with a larger window.
-4. **Backstop:** if `prompt_tokens` does not grow from one turn to the next with nothing shortened, the serving stack truncated anyway, and the run ends with `model_error`.
+4. **Backstop:** if `prompt_tokens` does not grow for a longer request shortened the same way as the last, the serving stack truncated it. Host-core emits `model_error` (kind `truncated`) and ends the run.
 
 When the run ends for either reason, `done` names the context window. Shortening changes only the request: state and events keep every result whole, so the notebook shows them all.
 
@@ -292,7 +295,14 @@ In Phase 0, resending an empty reply's request with the same seed reproduced it 
 | Without the consumer | No run starts; the policy is required                         | Never asked: `elicitation` is not declared               |
 | Events               | `approval_required`, `approval_answered`                      | `input_required`, `input_answered`                       |
 
-The policy sees the conversation's earlier tool calls, across runs, each with its server and whether that connection is authenticated, which the rule on data crossing connections needs ([§5](#5-open-questions), question 4). The consumer marks each connection authenticated or not; host-core does not infer it from the connection's headers, which need not hold a credential.
+What the policy sees and can decide, for the rule on data crossing connections ([§5](#5-open-questions), question 4):
+
+- **Earlier calls,** across runs, each with its server and whether the person had flagged that server as holding only open-access data. The flag is off unless the person sets it, so every server is restricted by default.
+- **What each server has returned.** A result, a rejection or a fetched prompt counts, the outcomes whose text reaches the model. That data is restricted unless the server was flagged when it returned it, and a later change to a flag never loosens it. Under way (a), a call carries restricted data out only when another server's data is restricted; host-core exports that test for policies.
+- **What the person carried in.** It is their own, so it marks no server; the conversation's servers are its chosen destinations.
+- **A refusal,** besides `allow`, `deny` and `ask`: the call does not run, and the tool message passes the policy's reason to the model so it can explain it.
+
+Until question 4 settles how a conversation keeps servers apart, host-core supplies these inputs and enforces nothing itself.
 
 **Invariants:** host-core never answers a server confirmation itself and ships no "approve everything" resolver. The model never sees the question, only the tool message.
 
@@ -302,33 +312,35 @@ The policy sees the conversation's earlier tool calls, across runs, each with it
 
 Each event carries a run id, sequence number and timestamp.
 
-| Event                                    | Carries                                                                                                                                | Required by               |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| `run_started`                            | Model, provider URL, model digest where available, limits, client name and version; each server's identity, surface hash, capabilities | `eval` (manifest), UI     |
-| `tools_changed`                          | Changed servers, new hashes, tools left out and why                                                                                    | All                       |
-| `model_request`                          | The provider request except the messages; the message count                                                                            | `eval`                    |
-| `token`                                  | Streamed text                                                                                                                          | `chat`, UI                |
-| `model_response`                         | Text or tool calls, any reasoning, exact usage, stop reason, duration                                                                  | All                       |
-| `malformed_tool_call`                    | The raw output                                                                                                                         | `eval` (`parseFailures`)  |
-| `empty_reply`                            | Tokens generated, stop reason, and whether host-core retries; nothing else came back                                                   | `eval` (`parseFailures`)  |
-| `context_shortened`                      | The tool results shortened to fit the window, and the estimate before and after                                                        | `chat`, UI                |
-| `output_limit`                           | The turn, its output tokens, any visible text, and whether host-core retries                                                           | All                       |
-| `model_error`                            | The model server's error: HTTP status, timeout or refusal, with its body                                                               | All; `eval` voids the run |
-| `approval_required`, `approval_answered` | The tool call, the decision                                                                                                            | `chat`, UI                |
-| `tool_call`                              | Call id, server, tool, arguments                                                                                                       | All                       |
-| `input_required`                         | Question id, call id, round, key, message, requested schema                                                                            | All                       |
-| `input_answered`                         | Question id, the answer, how long it took                                                                                              | `eval`, UI                |
-| `input_state_rejected`                   | Call id, server, how long the question waited                                                                                          | UI, `eval`                |
-| `tool_result`                            | Call id, outcome, `isError`, content, structured content, wire time, waiting time                                                      | All                       |
-| `done`                                   | Why the run ended, such as a limit, the context window or the output limit, and totals                                                 | All                       |
+| Event                                    | Carries                                                                                                                                                                        | Required by               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| `run_started`                            | Model, provider URL, model digest where available, limits, client name and version; each server's identity, surface hash, capabilities                                         | `eval` (manifest), UI     |
+| `tools_changed`                          | Changed servers, new hashes, tools left out and why                                                                                                                            | All                       |
+| `content_carried`                        | What the person carried in, the server it came from, this conversation's servers, and when                                                                                     | CRE                       |
+| `model_request`                          | The provider request except the messages; the message count                                                                                                                    | `eval`                    |
+| `token`                                  | Streamed text                                                                                                                                                                  | `chat`, UI                |
+| `model_response`                         | Text or tool calls, any reasoning, exact usage, stop reason, duration                                                                                                          | All                       |
+| `malformed_tool_call`                    | The raw output                                                                                                                                                                 | `eval` (`parseFailures`)  |
+| `empty_reply`                            | Tokens generated, stop reason, and whether host-core retries; nothing else came back                                                                                           | `eval` (`parseFailures`)  |
+| `context_shortened`                      | The tool results shortened to fit the window, and the estimate before and after                                                                                                | `chat`, UI                |
+| `output_limit`                           | The turn, its output tokens, any visible text, and whether host-core retries                                                                                                   | All                       |
+| `model_error`                            | The model server's error: HTTP status, timeout or refusal, with its body                                                                                                       | All; `eval` voids the run |
+| `approval_required`, `approval_answered` | The tool call, the decision                                                                                                                                                    | `chat`, UI                |
+| `tool_call`                              | Call id, server, tool, arguments                                                                                                                                               | All                       |
+| `input_required`                         | Question id, call id, round, key, message, requested schema                                                                                                                    | All                       |
+| `input_answered`                         | Question id, the answer, how long it took                                                                                                                                      | `eval`, UI                |
+| `question_withdrawn`                     | The id and kind of an approval or confirmation closed unanswered because its run was cancelled or reached its time limit; one that reaches its own timeout is answered instead | UI                        |
+| `input_state_rejected`                   | Call id, server, how long the question waited                                                                                                                                  | UI, `eval`                |
+| `tool_result`                            | Call id, outcome, `isError`, content, structured content, wire time, waiting time                                                                                              | All                       |
+| `done`                                   | Why the run ended, such as a limit, the context window or the output limit, and totals                                                                                         | All                       |
 
-**Answers come back by id** through `respond(id, answer)`, for approvals and confirmations alike, whether from a terminal, a script or Electron's IPC. It is idempotent and returns `accepted`, `unknown`, `already_answered` or `timed_out`. `pending()` lists what is still open, for a renderer that reloads. Approvals and confirmations each take an optional timeout: an approval that times out counts as denied, and a confirmation is answered `cancel`, which `mcp-client` sends like any other answer. Only host-core keeps these clocks, so `respond`, `pending()` and the events always match what the server was sent. A second clock in `mcp-client` could fire first and leave a question listed as pending whose answer goes nowhere.
+**Answers come back by id** through `respond(id, answer)`, for approvals and confirmations alike, whether from a terminal, a script or Electron's IPC. It is idempotent and returns `accepted`, `unknown`, `already_answered` or `timed_out`, and throws `TypeError` for an answer that does not fit the question, which stays open. `pending()` lists what is still open, for a renderer that reloads. Approvals and confirmations each take an optional timeout: an approval that times out counts as denied, and a confirmation is answered `cancel`, which `mcp-client` sends like any other answer. Only host-core keeps these clocks, so `respond`, `pending()` and the events always match what the server was sent. A second clock in `mcp-client` could fire first and leave a question listed as pending whose answer goes nowhere.
 
 #### Conversation State
 
 A model-neutral, serializable message history that a consumer saves and hands back. A saved notebook is its state plus its events. **A pending confirmation is not restored in this version:** the call gets the "abandoned" tool message and the conversation continues. Restoring would need persisting the call's arguments, round and question, plus a way to re-enter a run mid-call, none of which this design has; even built, the answer would still have to land within the server's existing time limit for an answer, so the payoff is narrow: an app closed in the exact gap between a question appearing and the person answering it.
 
-**A conversation's servers are saved with its state** and checked when it is restored. Once it holds data from an authenticated connection, adding a server is a crossing ([§5](#5-open-questions), questions 4 and 8).
+**A conversation's servers are saved with its state** and checked when it is restored, each with a digest of its endpoint's URL and its readable origin, so a key reused for another server, or for another path or query on the same one, counts as a server added. So is a record of what the person carried in. Once a conversation holds restricted data or carried content, adding a server, flagged or not, is a crossing ([§5](#5-open-questions), questions 4 and 8).
 
 **Not in host-core:** presentation, persistence, Arranger knowledge, reading configuration.
 

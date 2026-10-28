@@ -1,0 +1,71 @@
+{
+	"name": "@overture-stack/mcp-host-core",
+	"description": "The agent runtime of an MCP host: a model provider seam, the tool-calling loop, tools across servers, approvals and events (see README: not published)",
+	"version": "0.0.0-dev",
+	"private": true,
+	"license": "AGPL-3.0-or-later",
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
+	},
+	"repository": {
+		"directory": "modules/mcp-host-core",
+		"type": "git",
+		"url": "git+https://github.com/overture-stack/arranger.git"
+	},
+	"main": "dist/index.cjs",
+	"types": "dist/index.d.ts",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "wireit",
+		"clear:dist": "rm -rf dist",
+		"test": "tsx --test",
+		"test:watch": "npm test -- --watch",
+		"typecheck": "tsc --noEmit",
+		"watch": "WIREIT_WATCH=true npm run build"
+	},
+	"dependencies": {
+		"@overture-stack/arranger-mcp-client": "file:../mcp-client",
+		"eventsource-parser": "^3.1.0"
+	},
+	"devDependencies": {
+		"@modelcontextprotocol/node": "^2.1.1",
+		"@modelcontextprotocol/server": "^2.3.1",
+		"@tsconfig/node22": "^22.0.0",
+		"@types/node": "^22.19.13",
+		"tsup": "^6.7.0",
+		"tsx": "^4.19.2",
+		"typescript": "^5.8.2",
+		"zod": "^4.2.0"
+	},
+	"imports": {
+		"#*": "./src/*"
+	},
+	"type": "module",
+	"wireit": {
+		"build": {
+			"command": "tsup",
+			"dependencies": [
+				"../mcp-client:build"
+			],
+			"files": [
+				"src/**/*.ts",
+				"!src/**/*.test.ts",
+				"!src/testing/**"
+			],
+			"output": [
+				"dist/**"
+			]
+		}
+	}
+}
