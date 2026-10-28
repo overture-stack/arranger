@@ -6,7 +6,7 @@ Design documents for the MCP host: the stack that connects to MCP servers, runs 
 - **[`architecture.md`](architecture.md):** diagrams of the plan, from the system context to each request's flow.
 - **[`phase0-results.md`](phase0-results.md):** what the Phase 0 spikes found, and what each changed in the plan.
 - **[`model-provider-analysis.md`](model-provider-analysis.md):** why host-core has its own Chat Completions client rather than a library, and when to add the Responses API.
-- **[`data-crossing-options.md`](data-crossing-options.md):** the options weighed for plan question 4, keeping data from an authenticated connection out of other servers' requests, and the team's remaining choice.
+- **[`data-crossing-options.md`](data-crossing-options.md):** the options weighed for plan question 4, keeping each server's data out of other servers' requests unless the person flags it as open-access only, and the team's remaining choice.
 
 The client's own internals are documented beside its code, in [`modules/mcp-client/docs/architecture.md`](../../../modules/mcp-client/docs/architecture.md).
 
