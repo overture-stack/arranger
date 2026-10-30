@@ -19,6 +19,7 @@ const fallbackCatalogConfigs = {
 	...featureFlagDefaults,
 	[configRootProperties.DOWNLOADS]: {
 		[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: false,
+		[downloadProperties.MAX_ROWS_IS_CEILING]: false,
 		[downloadProperties.MAX_ROWS]: DOWNLOAD_MAX_ROWS,
 		[downloadProperties.STREAM_BUFFER_SIZE]: DOWNLOAD_STREAM_BUFFER_SIZE,
 	},

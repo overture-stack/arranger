@@ -83,14 +83,17 @@ const compileQuery = (queryArguments) => {
 	}
 };
 
-// A caller's 0 asks for the configured limit, and a configured 0 means no limit at all.
+// A caller's 0 asks for the configured limit, and a configured 0 means no limit at all. Where the configured
+// limit is a ceiling, a caller's own limit applies only when it is smaller.
 const rowLimitFor = ({ downloads, maxRows }) => {
-	const limit =
-		downloads[downloadProperties.ALLOW_CUSTOM_MAX_ROWS] && maxRows
-			? maxRows
-			: downloads[downloadProperties.MAX_ROWS];
+	const configured = downloads[downloadProperties.MAX_ROWS] > 0 ? downloads[downloadProperties.MAX_ROWS] : Infinity;
+	const requested = downloads[downloadProperties.ALLOW_CUSTOM_MAX_ROWS] && maxRows > 0 ? maxRows : undefined;
 
-	return limit > 0 ? limit : Infinity;
+	return requested === undefined
+		? configured
+		: downloads[downloadProperties.MAX_ROWS_IS_CEILING]
+			? Math.min(requested, configured)
+			: requested;
 };
 
 const searchAfterLastOf = (hits) => {

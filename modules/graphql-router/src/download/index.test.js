@@ -1304,6 +1304,51 @@ suite('download', () => {
 			});
 		}
 
+		for (const [description, downloads, requestedRows, expectedRows] of [
+			[
+				'caps a request above the configured limit at it, where that limit is a ceiling',
+				{ maxRowsIsCeiling: true },
+				5,
+				3,
+			],
+			[
+				"takes a request's own smaller limit, where the configured one is a ceiling",
+				{ maxRowsIsCeiling: true },
+				2,
+				2,
+			],
+			[
+				'gives a request asking for 0 the configured limit, where that limit is a ceiling',
+				{ maxRowsIsCeiling: true },
+				0,
+				3,
+			],
+			["takes a request's own larger limit where the configured one is no ceiling", {}, 5, 5],
+			[
+				"takes a request's own limit where the ceiling is a configured 0, meaning no limit",
+				{ maxRows: 0, maxRowsIsCeiling: true },
+				5,
+				5,
+			],
+		]) {
+			test(`${description}, custom row limits allowed`, async () => {
+				// Given ten documents, a configured limit of three, and custom row limits allowed
+				const documents = generatedDocuments(10);
+
+				await withArranger(
+					{ documents, downloads: { allowCustomMaxRows: true, maxRows: 3, ...downloads } },
+					async ({ server }) => {
+						// When a file asking for its own number of rows is downloaded
+						const response = await postDownload(server, paramsWithFile({ maxRows: requestedRows }));
+
+						// Then the rows the limit allows arrive
+						assert.equal(response.status, 200);
+						assert.equal(response.text, tsvOf(idsOf(documents.slice(0, expectedRows)), documents));
+					},
+				);
+			});
+		}
+
 		test('names an export the limit cuts short, sent a sort, as holding the first rows of the matching total', async () => {
 			// Given ten documents and a configured limit of three
 			const documents = generatedDocuments(10);

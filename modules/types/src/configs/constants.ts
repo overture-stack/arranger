@@ -103,6 +103,7 @@ export const dataFieldProperties = {
 export const downloadProperties = {
 	ALLOW_CUSTOM_MAX_ROWS: 'allowCustomMaxRows',
 	MAX_ROWS: 'maxRows',
+	MAX_ROWS_IS_CEILING: 'maxRowsIsCeiling',
 	STREAM_BUFFER_SIZE: 'chunkSize',
 } as const;
 

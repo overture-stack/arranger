@@ -30,7 +30,7 @@ Omitting an argument does not mean "use everything" or "no limit applies." It me
 | ---------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Sort order | Your `sort`, with an `_id: asc` tie-breaker appended | Not overridable. The tie-breaker guarantees deterministic ordering across paginated export batches; without it, ties in your sort field could cause rows to be skipped or repeated across batches. |
 | Max rows (`DOWNLOAD_MAX_ROWS`) | unset: no limit | Maximum number of rows returned by a single export, for every catalogue that sets none of its own; `0` also means no limit. An export cut short by the limit carries the `Arranger-Export-Truncated` and `Arranger-Export-Matching-Total` response headers, and is saved under a name marked with its rows and the matching total: `donors-first-100-of-183.tsv` where the request gives a sort, and `donors-100-of-183.tsv` where it gives none. |
-| Custom row caps (`ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS`) | `false` | When `false`, requests cannot override the row cap above. Set to `true` to allow per-request row limits. |
+| Custom row caps (`ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS`) | `false` | When `false`, requests cannot override the row cap above. Set to `true` to allow per-request row limits, which replace the cap above, or with `ENABLE_ACCESS_ENFORCEMENT` true apply only when smaller. |
 | Stream buffer (`DOWNLOAD_STREAM_BUFFER_SIZE`) | `2000` | Number of rows buffered per batch while streaming an export. |
 
 ## Query validation limits

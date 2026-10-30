@@ -1,4 +1,4 @@
-import { configRootProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
 import type { CatalogueIndex, UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
 import type { BridgeCore, KeyRegistration } from '@overture-stack/usher-express-bridge';
 import type { RequestHandler } from 'express';
@@ -98,8 +98,9 @@ export const prepareUsher = async ({
 };
 
 /**
- * Each catalogue's configuration with the adapter's callback for it as its server-side filter, and the adapter's
- * answer to who made a request, which saved sets are scoped by.
+ * Each catalogue's configuration with the adapter's callback for it as its server-side filter, the adapter's
+ * answer to who made a request, which saved sets are scoped by, and its configured row limit as a ceiling no
+ * request can lift.
  *
  * @param catalogs every catalogue the image loaded.
  * @param accessControl the adapter.
@@ -110,6 +111,8 @@ export const withUsherFilters = (catalogs: CataloguesMap, accessControl: UsherAc
 			catalogueId,
 			{
 				...configs,
+				// A file is the read most easily taken further, so a request cannot lift the configured row limit.
+				downloads: { ...configs.downloads, [downloadProperties.MAX_ROWS_IS_CEILING]: true },
 				getRequester: accessControl.requesterOf,
 				getServerSideFilter: accessControl.filterFor(catalogueId),
 			},

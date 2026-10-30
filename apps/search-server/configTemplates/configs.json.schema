@@ -42,7 +42,12 @@
 	// Settings and limits for dataset downloads - [Back-end]
 	"downloads": {
 		"allowCustomMaxRows": true,
-		"maxRows": 10000
+		"maxRows": 10000,
+
+		// Optional, false by default. Whether maxRows also bounds a request's own row limit, which then
+		// applies only when it is smaller. The search server sets it to true on every catalogue while
+		// ENABLE_ACCESS_ENFORCEMENT is true, whatever this file says.
+		"maxRowsIsCeiling": false
 	},
 
 	// ES mapping customization, aka the Extended mapping

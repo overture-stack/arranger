@@ -221,4 +221,34 @@ suite("each catalogue's access control under Usher", () => {
 			],
 		);
 	});
+
+	test("makes each catalogue's configured row limit a ceiling, keeping its other download settings, whatever its files say", () => {
+		// Given two catalogues, one whose files allow custom row limits and say the limit is no ceiling
+		const accessControl = {
+			filterFor: () =>
+				(() => ({ content: [], op: 'and' })) as unknown as ReturnType<UsherAccessControl['filterFor']>,
+			requesterOf: () => ({ kind: 'anonymous' }),
+			verify: async () => undefined,
+		} as unknown as UsherAccessControl;
+
+		// When the image attaches the adapter to them
+		const catalogs = withUsherFilters(
+			{
+				'catalogue-k7': {
+					downloads: { allowCustomMaxRows: true, maxRows: 50, maxRowsIsCeiling: false },
+					esIndex: 'k7',
+				},
+				'catalogue-k8': { esIndex: 'k8' },
+			},
+			accessControl,
+		);
+
+		// Then both limits are ceilings, and the first keeps the rest of its download settings
+		assert.deepEqual(catalogs['catalogue-k7']?.downloads, {
+			allowCustomMaxRows: true,
+			maxRows: 50,
+			maxRowsIsCeiling: true,
+		});
+		assert.deepEqual(catalogs['catalogue-k8']?.downloads, { maxRowsIsCeiling: true });
+	});
 });

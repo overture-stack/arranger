@@ -64,6 +64,11 @@ export type ColumnConfigs = {
 export type DownloadsConfigs = {
 	[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]?: boolean;
 	[downloadProperties.MAX_ROWS]?: number;
+	/**
+	 * Whether `maxRows` bounds a request's own row limit too, which then applies only when it is smaller.
+	 * Otherwise a request's own limit, where custom limits are allowed, replaces `maxRows`.
+	 */
+	[downloadProperties.MAX_ROWS_IS_CEILING]?: boolean;
 	[downloadProperties.STREAM_BUFFER_SIZE]?: number;
 };
 
