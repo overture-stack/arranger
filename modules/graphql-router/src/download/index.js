@@ -111,10 +111,13 @@ const requireValidParams = (params) => {
  * @param {import('@overture-stack/arranger-types/configs').GetServerSideFilterFn<Context>} [args.getServerSideFilter]
  *   a filter of the caller's own, which can only narrow the one the router recorded.
  * @param {unknown} args.params the download params as the client sent them, holding exactly one file.
- * @returns {Promise<{ contentType: string, exportTotals: () => { matchingTotal: number, truncated: boolean } | undefined, output: import('node:stream').Readable, responseFileName: string }>}
+ * @returns {Promise<{ attachmentName: () => string, contentType: string, exportTotals: () => { matchingTotal: number, truncated: boolean } | undefined, output: import('node:stream').Readable, responseFileName: string }>}
  *   `output` emits `'error'` when the export fails after it starts. `exportTotals` gives how many
  *   documents the export's filter matches and whether the row limit cut the export short, once its first
- *   row is formatted, and undefined before then or for an export that matched nothing.
+ *   row is formatted, and undefined before then or for an export that matched nothing. `attachmentName`
+ *   gives the name to save the export under: `responseFileName`, marked once the first row is formatted
+ *   with the rows the export holds and the documents it matched when the row limit cut it short, as the first
+ *   of them when the request gave a sort.
  * @throws {InvalidExportRequestError} when `params` breaks a rule or its filter cannot be compiled.
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
  */
@@ -141,23 +144,58 @@ export const dataStream = async ({ ctx: givenContext, getServerSideFilter, param
 	// Recorded as the first chunk passes, so a route can mark a cut export in the headers it sends with
 	// the first formatted row, which that chunk always precedes.
 	let firstTotals;
+	let exportedRows;
 	const recordTotals = new Transform({
 		objectMode: true,
 		transform(chunk, _encoding, callback) {
 			firstTotals ??= { matchingTotal: chunk.matchingTotal, truncated: chunk.truncated };
+			exportedRows ??= chunk.total;
 			callback(null, chunk);
 		},
 	});
+	const responseFileName = fileName || defaultFileName || `file.${outputFileType}`;
 
 	// Every failure reaches the consumer as an 'error' on `output`, which pipeline destroys with it.
 	pipeline(source, recordTotals, output, noopFn);
 
 	return {
+		attachmentName: () =>
+			firstTotals?.truncated
+				? markedFileName({
+						fileName: responseFileName,
+						matchingTotal: firstTotals.matchingTotal,
+						ordered: Array.isArray(sort) && sort.length > 0,
+						rows: exportedRows,
+					})
+				: responseFileName,
 		contentType: 'text/plain',
 		exportTotals: () => firstTotals,
 		output,
-		responseFileName: fileName || defaultFileName || `file.${outputFileType}`,
+		responseFileName,
 	};
+};
+
+/**
+ * A file name marked as holding `rows` of `matchingTotal` documents, before its last extension or at its end when
+ * it has none, so a person saving a cut export is told so by the file itself. It says `first` only for an export
+ * sent in an order of the request's own, since rows cut from an unordered export are not the first of anything a
+ * person sees.
+ *
+ * @param {object} args
+ * @param {string} args.fileName the name the export would otherwise be saved under.
+ * @param {number} args.matchingTotal how many documents the export's filter matches.
+ * @param {boolean} args.ordered whether the request gave the export a sort.
+ * @param {number} args.rows how many rows the export holds.
+ * @returns {string} e.g. `donors-first-100-of-183.tsv` for `donors.tsv` given a sort, and `donors-100-of-183.tsv`
+ *   otherwise.
+ */
+const markedFileName = ({ fileName, matchingTotal, ordered, rows }) => {
+	const marker = `${ordered ? '-first' : ''}-${rows}-of-${matchingTotal}`;
+	const extensionAt = fileName.lastIndexOf('.');
+
+	return extensionAt > 0
+		? `${fileName.slice(0, extensionAt)}${marker}${fileName.slice(extensionAt)}`
+		: `${fileName}${marker}`;
 };
 
 const paramsFrom = (body) => {
@@ -355,7 +393,7 @@ const download = ({ enableAdmin = false } = {}) => {
 
 	router.post('/', async (req, res) => {
 		try {
-			const { contentType, exportTotals, output, responseFileName } = await dataStream({
+			const { attachmentName, contentType, exportTotals, output } = await dataStream({
 				ctx: res.locals,
 				params: paramsFrom(req.body),
 			});
@@ -364,7 +402,7 @@ const download = ({ enableAdmin = false } = {}) => {
 				output,
 				res,
 				setHeaders: () => {
-					res.attachment(responseFileName)
+					res.attachment(attachmentName())
 						.set('Content-Type', contentType)
 						.set('X-Content-Type-Options', 'nosniff');
 					markCutExport({ res, totals: exportTotals() });

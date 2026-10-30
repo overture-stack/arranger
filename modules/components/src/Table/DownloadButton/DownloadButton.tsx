@@ -15,7 +15,7 @@ import download from '#utils/download.js';
 import noopFn, { emptyObj } from '#utils/noops.js';
 import stringCleaner from '#utils/stringCleaner.js';
 
-import { useExporters } from './helpers.js';
+import { exportSortOf, useExporters } from './helpers.js';
 import SingleDownloadButton from './SingleDownload.js';
 import type { DownloadButtonProps, ProcessedExporterDetailsInterface } from './types.js';
 
@@ -67,6 +67,7 @@ const DownloadButton = ({
 		isLoading,
 		missingProvider,
 		selectedRows,
+		sorting,
 		sqon,
 		total,
 	} = useTableContext({
@@ -100,6 +101,9 @@ const DownloadButton = ({
 	const theme = merge({}, themeDropDownProps, themeDownloadButtonProps, customThemeProps);
 
 	const { exporterDetails, hasMultipleExporters } = useExporters(exporters);
+
+	// The table's own order, so a file holds the rows as the table shows them, and a cut one its first rows.
+	const exportSort = exportSortOf(sorting);
 
 	const downloadSqon =
 		!disableRowSelection && hasSelectedRows
@@ -136,6 +140,7 @@ const DownloadButton = ({
 										: `${stringCleaner((exporterLabel as string).toLowerCase())}.tsv`,
 									fileType: 'tsv',
 									maxRows: exporterMaxRows,
+									...(exportSort && { sort: exportSort }),
 									sqon: downloadSqon,
 									valueWhenEmpty,
 								},

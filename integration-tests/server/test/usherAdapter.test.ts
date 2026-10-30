@@ -632,6 +632,19 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 			assert.equal(response.headers['arranger-export-truncated'], 'true');
 			assert.equal(response.headers['arranger-export-matching-total'], String(ROWS.everyGrant.visible.length));
 		});
+
+		test("names the file it is saved under by the rows it holds and the principal's matching total", async () => {
+			// Given a host whose exports stop at two rows, and a principal seeing six records
+			// When the principal exports, naming the file usher.tsv
+			const response = await postExport(cutting.targetFor('records', 'everyGrant'));
+
+			// Then the attachment is named for two of the records that principal sees
+			assert.equal(response.status, 200, response.data);
+			assert.match(
+				String(response.headers['content-disposition']),
+				new RegExp(`filename="usher-2-of-${ROWS.everyGrant.visible.length}\\.tsv"`, 'u'),
+			);
+		});
 	});
 });
 

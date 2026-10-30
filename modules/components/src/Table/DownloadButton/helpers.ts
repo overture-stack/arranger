@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { ColumnMappingInterface } from '#DataContext/types.js';
+import type { ColumnMappingInterface, ColumnSortingInterface } from '#DataContext/types.js';
 import download from '#utils/download.js';
 import { emptyObj } from '#utils/noops.js';
 
@@ -18,10 +18,25 @@ const useCustomisers =
 	([customiserLabel, customiserValue]: [key: string, value: any]): Partial<ColumnMappingInterface> => {
 		return (
 			customiserValue && {
-				[customiserLabel]: typeof customiserValue === 'function' ? customiserValue(extendedColumn) : customiserValue,
+				[customiserLabel]:
+					typeof customiserValue === 'function' ? customiserValue(extendedColumn) : customiserValue,
 			}
 		);
 	};
+
+/**
+ * The sort an export is sent in: the table's own, column by column, as its page queries send it, or none for a
+ * table sorted by nothing.
+ *
+ * @param sorting the table's sorting, its first column deciding first.
+ * @returns each column's field and order, or undefined where the table is sorted by nothing.
+ */
+export const exportSortOf = (
+	sorting: ColumnSortingInterface[] = [],
+): { fieldName: string; order: 'asc' | 'desc' }[] | undefined =>
+	sorting.length > 0
+		? sorting.map(({ desc, fieldName }) => ({ fieldName, order: desc ? 'desc' : 'asc' }))
+		: undefined;
 
 export const saveTSV = async ({ fileName = '', files = [], options = {}, url = '' }: ExporterFunctionProps) =>
 	download({
@@ -41,7 +56,9 @@ export const saveTSV = async ({ fileName = '', files = [], options = {}, url = '
 											// checking if each column is customised
 											case 'object': {
 												const fieldName =
-													typeof column.fieldName === 'function' ? column.fieldName?.(column) : column.fieldName;
+													typeof column.fieldName === 'function'
+														? column.fieldName?.(column)
+														: column.fieldName;
 
 												const extendedColumn = allColumnsDict[fieldName];
 												const useExtendedCustomisers = useCustomisers(extendedColumn);

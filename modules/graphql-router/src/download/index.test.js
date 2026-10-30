@@ -1272,6 +1272,77 @@ suite('download', () => {
 			);
 		});
 
+		for (const [description, params, expected] of [
+			['before the extension of the name the client gives', paramsWithFile(), 'donors-3-of-10.tsv'],
+			[
+				'at the end of a name the client gives with no extension',
+				paramsWithFile({ fileName: 'donors' }),
+				'donors-3-of-10',
+			],
+			['before the extension of the default name', paramsWithFile({ fileName: '' }), 'file-3-of-10.tsv'],
+			['for an empty sort as for none', paramsWithFile({ sort: [] }), 'donors-3-of-10.tsv'],
+		]) {
+			test(`names an export the limit cuts short, sent no sort, by its rows and matching total, ${description}`, async () => {
+				// Given ten documents and a configured limit of three
+				const documents = generatedDocuments(10);
+
+				await withArranger(
+					{ documents, downloads: { allowCustomMaxRows: false, maxRows: 3 } },
+					async ({ server }) => {
+						// When they are downloaded
+						const response = await postDownload(server, params);
+
+						// Then the attachment's name says three of ten, the file and the headers unchanged
+						assert.equal(
+							parseContentDisposition(response.headers['content-disposition']).fileName,
+							expected,
+						);
+						assert.equal(response.text, tsvOf(idsOf(documents.slice(0, 3)), documents));
+						assert.equal(response.headers['arranger-export-truncated'], 'true');
+					},
+				);
+			});
+		}
+
+		test('names an export the limit cuts short, sent a sort, as holding the first rows of the matching total', async () => {
+			// Given ten documents and a configured limit of three
+			const documents = generatedDocuments(10);
+
+			await withArranger(
+				{ documents, downloads: { allowCustomMaxRows: false, maxRows: 3 } },
+				async ({ server }) => {
+					// When they are downloaded in an order the request gives
+					const response = await postDownload(
+						server,
+						paramsWithFile({ sort: [{ fieldName: 'donor_id', order: 'desc' }] }),
+					);
+
+					// Then the attachment's name says the first three of ten
+					assert.equal(
+						parseContentDisposition(response.headers['content-disposition']).fileName,
+						'donors-first-3-of-10.tsv',
+					);
+					assert.equal(response.headers['arranger-export-truncated'], 'true');
+				},
+			);
+		});
+
+		test('keeps the name of an export the limit cuts nothing from', async () => {
+			const documents = generatedDocuments(3);
+
+			await withArranger(
+				{ documents, downloads: { allowCustomMaxRows: false, maxRows: 3 } },
+				async ({ server }) => {
+					const response = await postDownload(server, paramsWithFile());
+
+					assert.equal(
+						parseContentDisposition(response.headers['content-disposition']).fileName,
+						'donors.tsv',
+					);
+				},
+			);
+		});
+
 		test("gives dataStream's caller the totals of an export the limit cuts short", async () => {
 			const documents = generatedDocuments(10);
 

@@ -27,6 +27,8 @@ export interface ExporterFileInterface {
 	fileName: string;
 	fileType: 'tsv' | string;
 	maxRows: number;
+	/** The order the export is sent in, the table's own; left out for a table sorted by nothing. */
+	sort?: { fieldName: string; order: 'asc' | 'desc' }[];
 	sqon: SQONType;
 	valueWhenEmpty: ReactNode;
 }

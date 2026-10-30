@@ -614,6 +614,12 @@ Not greenfield. `modules/charts` already has a complete, empty Storybook 9 harne
 
 [Detail: a first run in real browsers, and what adopting browser tests involves](docs/atlas/roadmap/components-browser-tests.md)
 
+### DownloadButton says when an export will be cut short
+
+_Priority: low. A complement to the cut export's marked file name._
+
+`DownloadButton` knows the table's total, and can read the catalogue's row limit from the configs query, before it submits, so it can say in the page that an export will hold only the first rows, such as "exports the first 100 of 183". The download submits a form into a hidden frame, so no page script reads the response's `Arranger-Export-Truncated` headers; the file's name carries the cut, and this item lets a person see it before downloading.
+
 ## Security
 
 ### GraphQL query complexity analysis

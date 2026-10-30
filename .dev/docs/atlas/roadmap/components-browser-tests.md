@@ -37,7 +37,7 @@ So the race the helper's shape suggests did not occur in Chromium or WebKit, hea
 - It submits from a form in the page, targeting a hidden frame by name, and the frame has no `src`. It used to build the form inside the frame's `about:blank` document and submit it at once, which Safari dropped. Waiting for the frame's `load` was set aside: engines differ in when they fire `load` for an `about:blank` frame, so waiting for it trades one timing dependency for another.
 - A form cannot set request headers. `addDownloadHttpHeaders` therefore posts its headers as a form field named `httpHeaders`, which no server reads as headers. A download through the helper carries a credential only when it posts to its own origin and a proxy there attaches one, as a portal's server-side proxy can.
 - Each field is a hidden input whose `value` is set as a property, never written as markup, so the export route receives each value exactly as the caller passed it, with no escaping to get right.
-- The response goes to the frame and becomes a file, so no page script reads its headers, `Arranger-Export-Truncated` and `Usher-Suspended` included.
+- The response goes to the frame and becomes a file, so no page script reads its headers, `Arranger-Export-Truncated` and `Usher-Suspended` included. The file name the download route sets is the one signal a person sees.
 - Fetching the export and saving the result would read those headers and could send a bearer token, but it holds the whole export in memory, where the form streams it to disk.
 
 ## Bringing browser tests into the repo
@@ -58,3 +58,5 @@ A first unit could carry the harness and the download helper's tests across the 
 
 - The download helper's submission arrives in every engine, Firefox and real Safari included.
 - Every field value arrives at a real server exactly as the caller passed it, beyond the unit test's check of each input's value.
+- A cut export's attachment name is the marked one, read from the download Playwright reports.
+- The download button warns before a cut export, once that roadmap item exists.
