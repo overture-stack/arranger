@@ -604,6 +604,8 @@ Not greenfield. `modules/charts` already has a complete, empty Storybook 9 harne
 
 [Detail: the gap this let ship, and the per-package state](docs/atlas/roadmap/components-modernization.md#storybook-or-similar-for-modulescomponentsmodulescharts-carrying-their-own-integration-tests)
 
+[Detail: a first run in real browsers, and what adopting browser tests involves](docs/atlas/roadmap/components-browser-tests.md)
+
 ## Security
 
 ### GraphQL query complexity analysis
