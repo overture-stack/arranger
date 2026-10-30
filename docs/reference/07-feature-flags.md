@@ -121,7 +121,26 @@ Each reason names the catalogue and the field or category at fault, never a valu
 
 A category declared absent is not checked against the index. The [adapter's README](https://github.com/overture-stack/arranger/blob/main/modules/usher-adapter/README.md#what-startup-checks) lists every rule.
 
-The search engine role the server uses needs, on each catalogue's index, `indices:admin/validate/query` to validate the conditions, and search to count records and the values they hold in the resource field. Raise `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
+With access enforcement on, the search engine role the server uses needs these privileges on each catalogue's index. Without search or query validation, the catalogue's startup checks fail and startup is refused under `access_enforcement.startup_refused`; without reading the mapping, the catalogue fails to load and serves nothing.
+
+The names are the search engine's action names; where access is granted in another policy language, such as a cloud provider's, grant the requests beside them.
+
+| Privilege | Request | Why |
+| --- | --- | --- |
+| Search (`indices:data/read/search`) | `POST <index>/_search` | To serve reads, and at startup to count the records and the values they hold in the resource field |
+| Reading the mapping (`indices:admin/mappings/get`) | `GET <index>/_mapping` | To build the catalogue's schema, which every deployment needs, and to check each registration's fields against it |
+| Validating a query (`indices:admin/validate/query`) | `POST <index>/_validate/query` | To check, at startup, that the search engine accepts each category's condition; only access control needs it |
+
+With saved sets enabled, it also needs these on the sets index, since a saved set belongs to the principal who saved it only where the index records how each set was saved:
+
+| Privilege | Request | Why |
+| --- | --- | --- |
+| Reading the mapping (`indices:admin/mappings/get`) | `GET <sets index>/_mapping` | To check, at each save, that the index maps `attribution` as a keyword; a save it cannot check is refused |
+| Updating the mapping (`indices:admin/mapping/put`) | `PUT <sets index>/_mapping` on Elasticsearch, `POST <sets index>/_mapping` on OpenSearch | To add `attribution` at startup to a sets index lacking it. Without it, add the field by hand, as the [migration guide](./08-Migration/v3.1.md#sets-index-attribution) describes |
+
+The sets index's other privileges, to save sets, read them and look them up, are unchanged by access control.
+
+Raise `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
 
 Once running:
 

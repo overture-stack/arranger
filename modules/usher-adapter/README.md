@@ -37,8 +37,13 @@ Three events are logged through the adapter's logger beside the checks:
 
 The search engine role Arranger uses needs, on each catalogue's index:
 
-- `indices:admin/validate/query`, to validate each condition;
-- search, to count records, and the values they hold in the resource field.
+- `indices:admin/validate/query`, to validate each condition, which only access control needs;
+- `indices:admin/mappings/get`, to read the mapping the registration's fields are checked against, which the GraphQL router also reads to build the catalogue's schema;
+- search (`indices:data/read/search`), to count records, and the values they hold in the resource field.
+
+[Feature flags](https://github.com/overture-stack/arranger/blob/main/docs/reference/07-feature-flags.md#with-access-enforcement-on) lists the request each permits.
+
+Without search or query validation, the check fails and startup is refused; without the mapping, the catalogue fails to load and serves nothing. Either way it is never served unchecked.
 
 The bridge's `filterClauseLimit`, which the search server sets from `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT`, is raised only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
 
