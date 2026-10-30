@@ -177,6 +177,7 @@ The charts module was introduced in this release cycle as a new package.
 - **Column width themability**: Table header column widths are now configurable via the theme prop.
 - **Quoted string search in QuickSearch**: Quoted phrases are preserved as a single search token rather than split on whitespace.
 - **Large TSV download**: Streaming download for large result sets restored; handles files that exceed the default row limit.
+- **Downloads start in every browser, Safari included**: the download button's request is sent from a form in the page into a hidden frame by name, so no browser drops it for the frame's own first load.
 - **The AdvancedSqonBuilder removes a group once its last condition is deleted**, under `and`, `or` and `not`, along with any group above it the deletion empties, since an emptied group means every document. Deleting a query likewise removes every reference to a query the deletion empties, so a union never keeps an empty operand. **A term filter's Clear removes its condition** the same way, rather than leaving an `in` with no values, which matches nothing and would empty the results of the whole query it sits under.
 - **Accessibility improvements**: Table headers, row count selector, and pagination controls updated for keyboard navigation and screen reader compatibility.
 - **Non-SSR config compatibility**: Fixed a type error in config resolution that surfaced in non-server-rendered environments.
