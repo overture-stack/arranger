@@ -4,7 +4,7 @@ import path from 'path';
 import { resolveCatalogueId } from './catalogueId.js';
 import { resolveConfigsLocation } from './configsLocation.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
-import getConfigFromFiles from './fromFiles/fileHandlers.js';
+import getConfigFromFiles, { AUTH_PLACEMENT_REFUSAL } from './fromFiles/fileHandlers.js';
 import { type LegacyNetworkEnv, resolveLegacyNetwork } from './legacyNetwork.js';
 import type { AllServerConfigs, CataloguesMap, UsherRegistrations } from './types/index.js';
 
@@ -81,6 +81,11 @@ const buildCataloguesFromFolder = async ({
 			}
 			console.log(`    Registered catalogue "${catalogueId}"`);
 		} catch (err) {
+			// A refusal of where a registration is written stops startup, rather than skipping the catalogue.
+			if ((err as Error).name === AUTH_PLACEMENT_REFUSAL) {
+				throw err;
+			}
+
 			console.log(`  Error loading catalogue from ${dir.name}:`, (err as Error).message);
 		}
 	}

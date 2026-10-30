@@ -87,18 +87,18 @@ A host application that starts the server with its own `filters` option cannot a
 
 `ENABLE_ACCESS_ENFORCEMENT=true` applies the Usher adapter: Usher's bridge resolves each request's credential, and every catalogue's router filters each read by the bridge's result for that catalogue. The server refuses to start, naming what it lacks, unless:
 
-- **every catalogue has a `usher.json` beside its `base.json`**, holding that catalogue's registration with the bridge: its resource field, and each category it defines as the SQON condition a record meets to carry it, or `{ "kind": "open" }` for a catalogue open by configuration. Each registration is checked when the server starts, as [Checking each catalogue at startup](#checking-each-catalogue-at-startup) describes;
+- **every catalogue has an `auth.json` beside its `base.json`**, holding under its one key, `auth`, that catalogue's registration with the bridge: its resource field, and each category it defines as the SQON condition a record meets to carry it, or `{ "kind": "open" }` for a catalogue open by configuration. An `auth` key in any other file of the catalogue's folder, or an `auth.json` holding anything beside it, refuses startup whatever `ENABLE_ACCESS_ENFORCEMENT` says, so each catalogue's rules come from one file. A template is in the [search server's `configTemplates`](https://github.com/overture-stack/arranger/tree/main/apps/search-server/configTemplates). Each registration is checked when the server starts, as [Checking each catalogue at startup](#checking-each-catalogue-at-startup) describes;
 - **no catalogue configures network search**, which access control does not serve yet;
 - **the bridge's configuration is set**:
 
 | Variable | Holds |
 | --- | --- |
 | `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT` | Optional: the most clauses the bridge lets one principal's filter hold, a positive integer, the bridge's own `1024` when unset |
-| `USHER_KEY` | The application key, a secret, injected from the secrets store and never written into a values file |
-| `USHER_AUDIENCE` | The audience of the tokens issued for this application by Usher's controller |
+| `USHER_AUDIENCE` | The identifier Usher's controller generated when this application was registered, the audience of the tokens it issues for it |
 | `USHER_CONTROLLER_URL` | The controller's base URL, `https`, or plain `http` to loopback only |
 | `USHER_EVENT_SOURCE` | This deployment's event source, a URI reference, the same on every replica |
 | `USHER_ISSUER` | The issuer named in Usher's tokens |
+| `USHER_KEY` | A secret: the key Usher's controller shows, once, when this application is registered with it. Give each application its own, and keep it out of version control. Whitespace around it is ignored, so a trailing newline pasted with it does no harm |
 | `USHER_PAYLOAD_VERSIONS` | Optional: the payload versions read by the bridge, as a comma list, `1` when unset |
 
 A refusal names each variable missing or malformed, never its value.

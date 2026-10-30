@@ -80,7 +80,7 @@ export type ExternalNetworkConfig = Partial<{
  */
 export type UsherSeam = Readonly<{ bridge: BridgeCore; logger: BridgeLogger }>;
 
-/** Each catalogue's registration with Usher's bridge, as its `usher.json` holds it, by catalogue id. */
+/** Each catalogue's registration with Usher's bridge, as its `auth.json` holds it, by catalogue id. */
 export type UsherRegistrations = Record<string, unknown>;
 
 export type ExternalConfigs = Partial<
@@ -106,6 +106,6 @@ export type AllServerConfigs = {
 	health: HealthConfigs;
 	/** Whether ENABLE_ACCESS_ENFORCEMENT asks for the Usher adapter. */
 	usherAccessControl: boolean;
-	/** Each catalogue's `usher.json`, for those holding one. */
+	/** Each catalogue's `auth.json`, for those holding one. */
 	usherRegistrations?: UsherRegistrations;
 } & BaseServerConfigs;

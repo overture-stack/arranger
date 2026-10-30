@@ -67,7 +67,7 @@ const usherFromEnvironment = async (): Promise<UsherSeam> => {
  *
  * @param catalogs every catalogue the image loaded from its configuration.
  * @param seam a host's own bridge and logger, used in place of the environment's.
- * @param usherRegistrations each catalogue's `usher.json`, by catalogue id.
+ * @param usherRegistrations each catalogue's `auth.json`, by catalogue id.
  */
 export const prepareUsher = async ({
 	catalogs,

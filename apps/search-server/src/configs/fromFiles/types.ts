@@ -18,6 +18,6 @@ export type ConfigsFromFilesFn = (args: {
 	[
 		string, // configsPath
 		Partial<ArrangerConfigs<any>>, // configFromFiles
-		unknown, // the catalogue's usher.json, parsed, or undefined where there is none
+		unknown, // the catalogue's auth.json, parsed, or undefined where there is none
 	]
 >;

@@ -185,11 +185,11 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		await rm(workspace, { force: true, recursive: true });
 	});
 
-	test("starts, handing the bridge each catalogue's usher.json exactly, even while every catalogue fails to load", async () => {
+	test("starts, handing the bridge each catalogue's registration exactly as its auth.json holds it, even while every catalogue fails to load", async () => {
 		// Given two catalogues, each with a registration beside its base.json, and no engine to load them from
 		const configs = await writeCatalogues(path.join(workspace, 'registered'), {
-			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
-			[OPEN_CATALOGUE]: { 'base.json': baseFor(OPEN_CATALOGUE), 'usher.json': { kind: 'open' } },
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
+			[OPEN_CATALOGUE]: { 'base.json': baseFor(OPEN_CATALOGUE), 'auth.json': { auth: { kind: 'open' } } },
 		});
 		const bridge = recordingBridge();
 
@@ -209,10 +209,10 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		}
 	});
 
-	test('refuses startup for a catalogue with no usher.json beside its base.json, naming it', async () => {
+	test('refuses startup for a catalogue with no auth.json beside its base.json, naming it', async () => {
 		// Given one catalogue registered and one with no registration
 		const configs = await writeCatalogues(path.join(workspace, 'unregistered'), {
-			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 			[UNREGISTERED_CATALOGUE]: { 'base.json': baseFor(UNREGISTERED_CATALOGUE) },
 		});
 		const bridge = recordingBridge();
@@ -222,9 +222,33 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		await assert.rejects(
 			() => startImage(configs, bridge.core),
 			(error: unknown) =>
-				describeRefusal(error).includes(UNREGISTERED_CATALOGUE) &&
-				describeRefusal(error).includes('usher.json'),
+				describeRefusal(error).includes(UNREGISTERED_CATALOGUE) && describeRefusal(error).includes('auth.json'),
 		);
+		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
+	});
+
+	test('refuses startup for an auth key in any file but auth.json, among several catalogues, naming the file', async () => {
+		// Given two registered catalogues, one also carrying an auth key in its base.json
+		const configs = await writeCatalogues(path.join(workspace, 'misplaced'), {
+			[NAMED_CATALOGUE]: {
+				'auth.json': { auth: RECORD_REGISTRATION },
+				'base.json': { ...baseFor(NAMED_CATALOGUE), auth: RECORD_REGISTRATION },
+			},
+			[OPEN_CATALOGUE]: { 'auth.json': { auth: { kind: 'open' } }, 'base.json': baseFor(OPEN_CATALOGUE) },
+		});
+		const bridge = recordingBridge();
+
+		// When the image starts, and is closed again if it listens
+		const outcome = await startImage(configs, bridge.core).then(
+			(server) => new Promise<string>((resolve) => server.close(() => resolve('listening'))),
+			(error: unknown) => describeRefusal(error),
+		);
+
+		// Then it refuses rather than skip the catalogue, naming the file, before the bridge is registered
+		// with or started
+		assert.notEqual(outcome, 'listening');
+		assert.match(outcome, /"base\.json"/u);
+		assert.match(outcome, /auth\.json/u);
 		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
 	});
 
@@ -239,11 +263,15 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	for (const [placement, files] of [
 		[
 			'in a file of its own',
-			{ 'base.json': baseFor(NAMED_CATALOGUE), 'network.json': NETWORK, 'usher.json': RECORD_REGISTRATION },
+			{
+				'base.json': baseFor(NAMED_CATALOGUE),
+				'network.json': NETWORK,
+				'auth.json': { auth: RECORD_REGISTRATION },
+			},
 		],
 		[
 			'inside base.json',
-			{ 'base.json': { ...baseFor(NAMED_CATALOGUE), ...NETWORK }, 'usher.json': RECORD_REGISTRATION },
+			{ 'base.json': { ...baseFor(NAMED_CATALOGUE), ...NETWORK }, 'auth.json': { auth: RECORD_REGISTRATION } },
 		],
 	] as const) {
 		test(`refuses startup for a catalogue configuring network search ${placement}, naming it`, async () => {
@@ -269,7 +297,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		// Given a registered catalogue whose index holds a record with more than one value in the resource field
 		context.mock.method(console, 'error', () => undefined);
 		const configs = await writeCatalogues(path.join(workspace, 'several-values'), {
-			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 		});
 		const bridge = recordingBridge();
 
@@ -288,7 +316,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	test('stops the bridge once when the server closes', async () => {
 		// Given an image started over a registered catalogue that loaded
 		const configs = await writeCatalogues(path.join(workspace, 'closing'), {
-			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 		});
 		const bridge = recordingBridge();
 		const server = await startImage(configs, bridge.core, { engine: ENGINE_UP });
@@ -301,7 +329,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	test('answers its liveness route while the bridge answers unavailable', async () => {
 		// Given a registered catalogue, and a bridge still waiting for its first check, so it answers unavailable
 		const configs = await writeCatalogues(path.join(workspace, 'liveness'), {
-			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 		});
 		const bridge = recordingBridge();
 		const server = await startImage(configs, bridge.core, { pingPath: LIVENESS_PATH });
@@ -334,8 +362,8 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	test('lists every catalogue to every principal alike, without asking the bridge who asks', async () => {
 		// Given two registered catalogues that loaded, and a bridge that confirms no one
 		const configs = await writeCatalogues(path.join(workspace, 'listing'), {
-			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
-			[OPEN_CATALOGUE]: { 'base.json': baseFor(OPEN_CATALOGUE), 'usher.json': RECORD_REGISTRATION },
+			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
+			[OPEN_CATALOGUE]: { 'base.json': baseFor(OPEN_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 		});
 		const bridge = recordingBridge();
 		const server = await startImage(configs, bridge.core, { engine: ENGINE_UP });
@@ -377,7 +405,12 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	const healthOf = async (mode: BridgeMode, engine: SearchClient) => {
 		const configs = await writeCatalogues(
 			path.join(workspace, `health-${mode}-${engine === ENGINE_UP ? 'loaded' : 'failed'}`),
-			{ [NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'usher.json': RECORD_REGISTRATION } },
+			{
+				[NAMED_CATALOGUE]: {
+					'base.json': baseFor(NAMED_CATALOGUE),
+					'auth.json': { auth: RECORD_REGISTRATION },
+				},
+			},
 		);
 		const server = await startImage(configs, recordingBridge(mode).core, {
 			engine,

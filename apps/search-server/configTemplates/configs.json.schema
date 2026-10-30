@@ -1,5 +1,8 @@
-// this file serves as an example of a basic Arranger configurations
+// this file serves as an example of one catalogue's Arranger configuration, as the server holds it
+// once it has merged every .json file in that catalogue's folder (base.json, extended.json, ...),
 // and it shows both required (marked with *) and optional properties
+// in a multicatalogue setup, each catalogue has a folder of its own under CONFIGS_PATH, named after
+// its catalogue id, holding its own files, so every value here, "auth" included, is set per catalogue
 // note: credentials in config json files will be ignored
 
 {
@@ -113,6 +116,53 @@
 		],
 		"maxResultsWindow": 10000,
 		"rowIdFieldName": "analysis.analysis_id"
+	},
+
+	///////////// Access control /////////////
+
+	// The catalogue's access-control registration, used while ENABLE_ACCESS_ENFORCEMENT is true, when every
+	// catalogue needs one. Unlike every other key in this file, "auth" is read from the catalogue's
+	// auth.json alone and never merged from another file: startup is refused when any other file in the
+	// catalogue's folder carries an "auth" key, or when auth.json holds anything but this one key,
+	// whether ENABLE_ACCESS_ENFORCEMENT is on or off.
+	// See docs/reference/07-feature-flags.md#with-access-enforcement-on
+	"auth": {
+		// Optional. Global categories no record of this catalogue can carry, declared rather than
+		// defined, so none of them also appears in categories.global.
+		"absentCategories": ["global.restricted"],
+
+		// Each category a record can carry, as the SQON condition a record meets to carry it. A record
+		// carries every category whose condition it matches; one matching none is unmarked, which is
+		// never defined here. A condition reads keyword, date or numeric fields outside any nested
+		// field, lists literal values, and uses no wildcard, exclusion operator, "all" or pivot: exclude
+		// a value with a "not" around an "in". modules/usher-adapter/README.md lists every rule.
+*		"categories": {
+			// Categories the whole platform shares, each named "global.<name>"; {} when none is defined.
+*			"global": {
+				"global.controlled": { "content": { "fieldName": "data_category", "value": ["controlled"] }, "op": "in" }
+			},
+
+			// Optional. Categories that exist only in one resource, by resource and then by name, each
+			// named "resource.<name>" and never "resource.unmarked".
+			"resource": {
+				"STUDY-1": {
+					"resource.embargoed": { "content": { "fieldName": "release_state", "value": ["embargoed"] }, "op": "in" }
+				}
+			}
+		},
+
+		// "record" for a catalogue whose records each belong to a resource and carry categories, or
+		// "open" for one served to every request, whose "auth" is then { "kind": "open" } and nothing else.
+*		"kind": "record",
+
+		// The field holding the resource each record belongs to, such as a study or a program: a keyword
+		// field outside any nested field, holding one value per record, named as the other config files
+		// name fields (unprefixed under nestingPrefix). No condition reads it.
+*		"resourceFieldName": "study_id",
+
+		// Optional. Every resource this catalogue holds; when given, it lists each resource defining
+		// categories of its own. An empty list denies every request.
+		"resources": ["STUDY-1", "STUDY-2"]
 	},
 
 	///////////// Currently in development /////////////
