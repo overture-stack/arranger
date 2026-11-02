@@ -46,6 +46,7 @@ export type ToolCallOutcome = CallOutcome<CallToolResult> | HostOutcome;
 /** A tool message, before any length cap. */
 export type ToolMessage = { text: string; isError: boolean };
 
+/** One block of a tool result's or a prompt message's content. */
 type ContentBlock = CallToolResult['content'][number];
 
 /**

@@ -59,6 +59,7 @@ export type Settled<T> =
 /** How a question closed, for an answer that arrives after it. */
 type Closure = ObjectValues<typeof QUESTION_CLOSURES>;
 
+/** An open question, with the check its answer must pass and the function that settles it. */
 type Entry = {
 	question: PendingQuestion;
 	accept: (answer: Answer) => boolean;

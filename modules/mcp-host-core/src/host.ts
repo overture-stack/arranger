@@ -32,6 +32,7 @@ export class McpHost {
 	#state: ConversationState;
 	#run: Run | undefined;
 
+	/** Private: {@link McpHost.create} checks the options and the state, and connects, before a host exists. */
 	private constructor(options: McpHostOptions, state: ConversationState) {
 		this.#options = options;
 		this.#state = state;
