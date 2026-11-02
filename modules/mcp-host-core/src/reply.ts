@@ -5,6 +5,9 @@ import { type FinalResponse } from './provider.js';
 /** Why a request was sent again. */
 export type RetryKind = 'empty_reply' | 'output_limit';
 
+/** Which retries a consumer allows: one each, after an empty reply and after a reply cut off with no text. */
+export type RetrySettings = { emptyReply: boolean; outputLimit: boolean };
+
 /** What to do with a reply. */
 export type ReplyDecision =
 	/** Run its tool calls, then ask the model again. */
@@ -31,7 +34,7 @@ export type ReplyDecision =
 export const decideReply = (
 	response: Pick<FinalResponse, 'text' | 'toolCalls' | 'stopReason'>,
 	previous: RetryKind | undefined,
-	retries: { emptyReply: boolean; outputLimit: boolean },
+	retries: RetrySettings,
 ): ReplyDecision => {
 	if (response.toolCalls.length > 0) {
 		return { kind: 'tool_calls' };

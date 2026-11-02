@@ -153,10 +153,7 @@ export const fitToWindow = ({
  * Applies only when the request grew and the same results were shortened as last turn, so a smaller count can only
  * mean the server dropped messages.
  */
-export const serverTruncated = (
-	baseline: Baseline | undefined,
-	current: { inputTokens: number; sentChars: number; shortened: string[] },
-): boolean =>
+export const serverTruncated = (baseline: Baseline | undefined, current: Baseline): boolean =>
 	baseline !== undefined &&
 	current.sentChars > baseline.sentChars &&
 	current.shortened.join('\0') === baseline.shortened.join('\0') &&
