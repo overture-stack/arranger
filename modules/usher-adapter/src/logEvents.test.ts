@@ -12,7 +12,16 @@ import { EVENTS, isConfigurationRefusal } from './fixtures/arrangerNames.js';
 import { CATEGORY_CONDITIONS, INDEX_MAPPING, RECORDS_REGISTRATION, RESOURCE_FIELD } from './fixtures/catalogue.js';
 import { createFakeBridge } from './fixtures/fakeBridge.js';
 import { createRecordingLogger, type LoggedLine } from './fixtures/recordingLogger.js';
-import { accessOf, ANONYMOUS, DENY_REASONS, type DenyReason, ROWS, signedIn, SUSPENDED } from './fixtures/results.js';
+import {
+	accessOf,
+	ANONYMOUS,
+	DENY_REASONS,
+	type DenyReason,
+	ROWS,
+	signedIn,
+	SUSPENDED,
+	suspendedConfirmed,
+} from './fixtures/results.js';
 import { createStubProbe } from './fixtures/stubProbe.js';
 import { createUsherAccessControl, type UsherFilterCallback } from './index.js';
 
@@ -45,16 +54,32 @@ const localsFor = (principal: UsherPrincipal, result: Enforcement): Record<strin
 };
 
 suite('the log events', () => {
-	for (const [description, principal, result, userId, suspended] of [
+	for (const [description, principal, result, userId, suspended, credential] of [
 		[
 			'a narrow result, for a signed-in principal',
 			signedIn('subject-ana'),
 			ROWS.heartControlledGrant.result,
 			'subject-ana',
 			false,
+			'confirmed',
 		],
-		['an allow result, for an anonymous principal', ANONYMOUS, ROWS.open.result, null, false],
-		['a narrow result, for a suspended principal', SUSPENDED, ROWS.anonymousBaselineOn.result, null, true],
+		['an allow result, for an anonymous principal', ANONYMOUS, ROWS.open.result, null, false, 'none'],
+		[
+			'a narrow result, for a suspended principal whose credential is unconfirmed',
+			SUSPENDED,
+			ROWS.anonymousBaselineOn.result,
+			null,
+			true,
+			'unconfirmed',
+		],
+		[
+			'a narrow result, for a suspended principal whose credential was confirmed, naming its subject',
+			suspendedConfirmed('subject-ana'),
+			ROWS.anonymousBaselineOn.result,
+			'subject-ana',
+			true,
+			'confirmed',
+		],
 	] as const) {
 		test(`logs one access-permitted event per application of ${description}`, async () => {
 			// Given the callback, and a request holding that result
@@ -63,11 +88,13 @@ suite('the log events', () => {
 			// When the result is applied once
 			callback({ locals: localsFor(principal, result) }, { readPath: 'hits' });
 
-			// Then one permitted event names the subject, whether it is suspended, the arm, the read path and the request
+			// Then one permitted event names the subject and its credential, whether it is suspended, the arm, the read
+			// path and the request
 			assert.deepEqual(lines, [
 				{
 					fields: {
 						catalogue: 'records',
+						credential,
 						enforcement: result.kind,
 						readPath: 'hits',
 						requestId: REQUEST_ID,
@@ -96,6 +123,7 @@ suite('the log events', () => {
 				{
 					fields: {
 						catalogue: 'records',
+						credential: 'none',
 						readPath: 'aggregations',
 						reason,
 						requestId: REQUEST_ID,
@@ -125,6 +153,7 @@ suite('the log events', () => {
 				{
 					fields: {
 						catalogue: 'records',
+						credential: 'unconfirmed',
 						readPath,
 						requestId: REQUEST_ID,
 						suspended: true,

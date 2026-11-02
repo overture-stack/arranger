@@ -349,10 +349,12 @@ A request with no access in the store is the failure case above, logged as
 is a decision, `access_enforcement.unavailable` a decision deferred because the bridge could not confirm
 a signed-in principal, and `access_enforcement.evaluation_failed` a fault in the configuration.
 
-The field set is the one settled in Usher's adapter contract: `catalogue`, `readPath`, `requestId`,
-`suspended` and `userId`, with `enforcement` on a permitted event and `reason` on a denied one,
+The field set is the one settled in Usher's adapter contract: `catalogue`, `credential`, `readPath`,
+`requestId`, `suspended` and `userId`, with `enforcement` on a permitted event and `reason` on a denied one,
 `no-grants`, `unknown-resource` or `no-result`. Each event is one JSON line through the adapter's logger
-shim until the repository's structured logging envelope lands.
+shim until the repository's structured logging envelope lands. `userId` is the bridge's `subjectToLog` of the
+principal, its subject where a credential was confirmed, suspended or not, and null otherwise, and `credential`
+beside it, `none`, `unconfirmed` or `confirmed`, says which, so no state is read from a null.
 
 ---
 

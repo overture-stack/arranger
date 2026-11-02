@@ -169,14 +169,27 @@ export const ABSENT_CATEGORIES_UNMARKED: ResultRow = row(
 	['h1', 'h2', 'l1'],
 );
 
-/** The principal as the bridge presents an anonymous request: no subject, the open tier only. */
-export const ANONYMOUS: UsherPrincipal = { openTierOnly: true, subject: null, suspended: false };
+/** The principal as the bridge presents an anonymous request: no credential, the open tier only. */
+export const ANONYMOUS: UsherPrincipal = { credential: 'none', openTierOnly: true, suspended: false };
 
 /** A signed-in principal whose credential the bridge confirmed. */
-export const signedIn = (subject: string): UsherPrincipal => ({ openTierOnly: false, subject, suspended: false });
+export const signedIn = (subject: string): UsherPrincipal => ({
+	credential: 'confirmed',
+	openTierOnly: false,
+	subject,
+	suspended: false,
+});
 
-/** A signed-in principal the bridge could not confirm: suspended, its subject null, the open tier only. */
-export const SUSPENDED: UsherPrincipal = { openTierOnly: true, subject: null, suspended: true };
+/** A signed-in principal whose credential the bridge could not confirm: suspended, the open tier only. */
+export const SUSPENDED: UsherPrincipal = { credential: 'unconfirmed', openTierOnly: true, suspended: true };
+
+/** A principal whose credential the bridge confirmed before, now suspended, its subject kept for attribution alone. */
+export const suspendedConfirmed = (subject: string): UsherPrincipal => ({
+	attributionOnlySubject: subject,
+	credential: 'confirmed',
+	openTierOnly: true,
+	suspended: true,
+});
 
 /**
  * One request's access as the bridge attaches it.

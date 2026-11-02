@@ -12,6 +12,7 @@ import {
 	type Enforcement,
 	readAccess,
 	resultFor,
+	subjectToLog,
 	type UsherPrincipal,
 	validateRegistration,
 } from '@overture-stack/usher-types';
@@ -113,8 +114,9 @@ const requestFieldsOf = ({
 	catalogue: catalogueId,
 	readPath: readPath ?? null,
 	requestId: typeof locals.requestId === 'string' ? locals.requestId : null,
+	credential: principal.credential,
 	suspended: principal.suspended,
-	userId: principal.subject,
+	userId: subjectToLog(principal),
 });
 
 /**
