@@ -102,7 +102,7 @@ const configsFromEnv = {
 			},
 		},
 	},
-	enableAccessControl: parseEnableAccessControl(env.ENABLE_ACCESS_CONTROL),
+	enableAccessControl: parseEnableAccessControl(env.ENABLE_ACCESS_ENFORCEMENT),
 	[configFeatureFlagProperties.ENABLE_ADMIN]: enableAdmin,
 	[configFeatureFlagProperties.ENABLE_DEBUG]: stringToBool(env.ENABLE_DEBUG),
 	[configFeatureFlagProperties.ENABLE_LOGS]: stringToBool(env.ENABLE_LOGS),

@@ -35,7 +35,7 @@ The case table's principal, Ana, has accepted a grant on HEART_STUDY's `controll
 to a group she belongs to (case 5). The baseline is on, so she also holds `unmarked` everywhere it
 is open. She queries the synthetic catalogue described under the fixtures below.
 
-1. At startup, with access control on, the search-server image constructs the bridge and passes it
+1. At startup, with access enforcement on, the search-server image constructs the bridge and passes it
    to the adapter's factory, with the field names and category mapping for each catalogue it serves.
 2. The adapter's factory returns one `getServerSideFilter` callback per catalogue, and registers
    nothing yet. The image passes each to its own catalogue's GraphQL router, so a callback serves
@@ -67,7 +67,7 @@ deployment without access control sees no difference:
 
 | Step | Today                                                             | The change                                                                                                        |
 | ---- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 2    | the image takes one filter callback for every catalogue           | with access control on, the image passes each catalogue its own callback                                          |
+| 2    | the image takes one filter callback for every catalogue           | with access enforcement on, the image passes each catalogue its own callback                                          |
 | 3    | the GraphQL router keeps the mapping it fetched to itself         | it exposes the resolved mapping                                                                                   |
 | 6    | every read path receives `req.context`, a store of Arranger's own | the store becomes Express's own `res.locals`, with `req.context` a deprecated view kept for existing integrations |
 
@@ -75,7 +75,7 @@ deployment without access control sees no difference:
 factory stays usable by a custom host that builds a GraphQL router per catalogue, which is the shape
 the suites through the GraphQL router below use directly.
 
-**With access control on, the image bounds exports by default.** Where `ENABLE_ACCESS_CONTROL=true`
+**With access enforcement on, the image bounds exports by default.** Where `ENABLE_ACCESS_ENFORCEMENT=true`
 and `DOWNLOAD_MAX_ROWS` is unset, an export stops at 100 rows; without access control, an unset
 limit means no limit, as in 3.0. An explicit value applies either way, `0` meaning every row, and an
 export cut short by a limit says so. The router knows nothing of this: the image chooses its own
@@ -286,7 +286,7 @@ result proves a filter denied rather than that a query failed or matched nothing
 | an anonymous principal's export, the bridge uncertain                     | served as normal, since nothing is reduced for it                                                                                                               |
 | each row above with the bridge normal and one principal's exchange failed | the same answers, since the adapter reads the marks, never the mode                                                                                             |
 | the fake bridge cold, never having reached the controller                 | the request is answered 503, and no query reaches the engine                                                                                                    |
-| the host mounts the GraphQL routers ahead of the bridge's middleware      | GraphQL errors carry `ACCESS_CONTROL_FAILURE_MESSAGE`, an export answers 500 with the same text, and `access_control.evaluation_failed` is logged               |
+| the host mounts the GraphQL routers ahead of the bridge's middleware      | GraphQL errors carry `ACCESS_CONTROL_FAILURE_MESSAGE`, an export answers 500 with the same text, and `access_enforcement.evaluation_failed` is logged               |
 | a configured catalogue absent from a request's results                    | that catalogue denies, and the others answer normally                                                                                                           |
 | the fake bridge refusing the credential                                   | 401 from the bridge's layer, and no query reaches the engine; the status and its text are the bridge's suite's                                                  |
 | a narrow result on every read path                                        | the query composed without writing to the filter, which arrives deeply frozen; a write while composing fails the request closed, never into an unfiltered query |
@@ -309,7 +309,7 @@ one GraphQL request asking for hits and aggregations applies a result more than 
 | a bridge event through the adapter's logger shim | written in the repository's envelope at the bridge's level, `error` for a critical event, with the event's fields unchanged                                                              |
 
 A request with no access in the store is the failure case above, logged as
-`access_control.evaluation_failed`.
+`access_enforcement.evaluation_failed`.
 
 The field set is the provisional one in Usher's `adapter-integration.md`, revisited when the logging
 is implemented, and the events use the repository's structured logging envelope.

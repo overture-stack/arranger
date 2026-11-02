@@ -179,7 +179,7 @@ const failureResponseFor = (error) => {
 		return {
 			event: 'download.failed',
 			log: console.error,
-			reason: 'access_control_query_too_large',
+			reason: 'access_enforcement_query_too_large',
 			status: 500,
 			text: error.message,
 		};
@@ -189,7 +189,7 @@ const failureResponseFor = (error) => {
 		? {
 				event: 'download.failed',
 				log: console.error,
-				reason: 'access_control',
+				reason: 'access_enforcement',
 				status: 500,
 				text: ACCESS_CONTROL_FAILURE_MESSAGE,
 			}
@@ -215,15 +215,15 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 		log(event, error, ...(reason ? [{ reason }] : []));
 	}
 
-	if (reason === 'access_control') {
+	if (reason === 'access_enforcement') {
 		// Also the event GraphQL and network search log for the same failure, so one alert covers every
 		// read path while an alert already counting failed downloads keeps firing.
-		console.error('access_control.evaluation_failed', error.message, { cause: error.cause, route: 'download' });
+		console.error('access_enforcement.evaluation_failed', error.message, { cause: error.cause, route: 'download' });
 	}
 
-	if (reason === 'access_control_query_too_large') {
+	if (reason === 'access_enforcement_query_too_large') {
 		// Also the event GraphQL logs for the same refusal, for the same reason.
-		console.error('access_control.query_too_large', {
+		console.error('access_enforcement.query_too_large', {
 			catalogue: error.catalogue,
 			clauseLimit: error.clauseLimit,
 			readPath: error.readPath,

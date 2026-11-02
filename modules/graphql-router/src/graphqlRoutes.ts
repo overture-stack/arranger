@@ -19,7 +19,7 @@ import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql
 
 import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
-	ACCESS_CONTROL_QUERY_TOO_LARGE_CODE,
+	ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE,
 	type AccessControlError,
 	type AccessControlQueryTooLargeError,
 	isAccessControlError,
@@ -286,7 +286,7 @@ const answerWith = ({
 });
 
 const maskAccessControlError = (error: GraphQLError, accessControlError: AccessControlError): GraphQLFormattedError => {
-	console.error('access_control.evaluation_failed', accessControlError.message, {
+	console.error('access_enforcement.evaluation_failed', accessControlError.message, {
 		cause: accessControlError.cause,
 		path: error.path,
 	});
@@ -299,14 +299,14 @@ const maskAccessControlError = (error: GraphQLError, accessControlError: AccessC
 };
 
 const answerQueryTooLarge = (error: GraphQLError, tooLarge: AccessControlQueryTooLargeError): GraphQLFormattedError => {
-	console.error('access_control.query_too_large', {
+	console.error('access_enforcement.query_too_large', {
 		catalogue: tooLarge.catalogue,
 		clauseLimit: tooLarge.clauseLimit,
 		path: error.path,
 		readPath: tooLarge.readPath,
 	});
 
-	return answerWith({ code: ACCESS_CONTROL_QUERY_TOO_LARGE_CODE, error, message: tooLarge.message });
+	return answerWith({ code: ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE, error, message: tooLarge.message });
 };
 
 // A request's own mistake keeps its message, which graphql-js, Apollo or the router's rules write without the

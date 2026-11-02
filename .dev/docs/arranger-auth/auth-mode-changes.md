@@ -4,7 +4,7 @@ A register of behaviour that differs between an Arranger with no access control 
 Usher adapter. Expected to grow: most entries here were found while working on something else, which
 is the reason for keeping a single list rather than scattering them through the design.
 
-Access control is off by default and every deployment today runs that way, so each of these is a
+Access enforcement is off by default and every deployment today runs that way, so each of these is a
 **default that is correct while nothing needs protecting and wrong once something does**. That makes
 them a checklist for enabling auth rather than defects to fix now. See
 [`roadmap.md`](roadmap.md) § Arranger does not host controlled-access data until Usher ships.

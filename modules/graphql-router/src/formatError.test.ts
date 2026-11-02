@@ -617,8 +617,8 @@ suite("network search reports a local node's access-control failure with fixed t
 
 		// Then a line under the event carries the thrown detail
 		assert.ok(
-			lines.some((line) => line.includes('access_control.evaluation_failed') && line.includes(SECRET_DETAIL)),
-			`expected an access_control.evaluation_failed line carrying the detail, got ${JSON.stringify(lines)}`,
+			lines.some((line) => line.includes('access_enforcement.evaluation_failed') && line.includes(SECRET_DETAIL)),
+			`expected an access_enforcement.evaluation_failed line carrying the detail, got ${JSON.stringify(lines)}`,
 		);
 	});
 });
@@ -719,11 +719,11 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 		});
 		assert.deepEqual(
 			calls
-				.filter(({ args: [event] }) => event === 'access_control.query_too_large')
+				.filter(({ args: [event] }) => event === 'access_enforcement.query_too_large')
 				.map(({ args, method }) => [method, ...args]),
 			['hits', 'aggregations'].map((readPath) => [
 				'error',
-				'access_control.query_too_large',
+				'access_enforcement.query_too_large',
 				{ catalogue: 'donor', clauseLimit: 1024, node: 'local node', readPath },
 			]),
 		);
@@ -1069,16 +1069,16 @@ suite("the search engine's refusal of a read past its clause limit, on the Graph
 				const { errors } = graphQLErrorsOf(response);
 				assert.deepEqual(
 					errors.map(({ extensions, message, path: errorPath }) => [extensions?.code, message, errorPath]),
-					[['ACCESS_CONTROL_QUERY_TOO_LARGE', QUERY_TOO_LARGE_MESSAGE, path]],
+					[['ACCESS_ENFORCEMENT_QUERY_TOO_LARGE', QUERY_TOO_LARGE_MESSAGE, path]],
 				);
 				assert.deepEqual(
 					calls
-						.filter(({ args: [event] }) => event === 'access_control.query_too_large')
+						.filter(({ args: [event] }) => event === 'access_enforcement.query_too_large')
 						.map(({ args, method }) => [method, ...args]),
 					[
 						[
 							'error',
-							'access_control.query_too_large',
+							'access_enforcement.query_too_large',
 							{ catalogue: 'donor', clauseLimit: 1024, path, readPath },
 						],
 					],
@@ -1108,7 +1108,7 @@ suite("the search engine's refusal of a read past its clause limit, on the Graph
 				graphQLErrorsOf(response).errors.map(({ extensions, message }) => [extensions?.code, message]),
 				[['BAD_USER_INPUT', CLAUSE_LIMIT_RULE]],
 			);
-			assert.ok(!lines.some((line) => line.includes('access_control.query_too_large')), inspect(lines));
+			assert.ok(!lines.some((line) => line.includes('access_enforcement.query_too_large')), inspect(lines));
 		});
 	}
 });

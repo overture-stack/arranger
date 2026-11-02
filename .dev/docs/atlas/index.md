@@ -38,7 +38,7 @@ Two files predate this convention and are the same pattern under different names
 
 ## Subsystem docs
 
-- [Arranger auth](../arranger-auth/index.md): access control. The enforcement-seam design (query-building boundary, not transport boundary), auth-work sequencing, a scoped index of access-control-path defects, and the Usher PEP adapter. Includes `auth-mode-changes.md`, the register of what behaves differently once access control is on.
+- [Arranger auth](../arranger-auth/index.md): access control. The enforcement-seam design (query-building boundary, not transport boundary), auth-work sequencing, a scoped index of access-control-path defects, and the Usher PEP adapter. Includes `auth-mode-changes.md`, the register of what behaves differently once access enforcement is on.
 
 ## Proposals, plans, and postmortems
 

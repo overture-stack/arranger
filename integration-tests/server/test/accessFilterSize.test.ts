@@ -378,7 +378,7 @@ suite(
 			assert.deepEqual(names, []);
 			assert.deepEqual(errors, [
 				{
-					code: 'ACCESS_CONTROL_QUERY_TOO_LARGE',
+					code: 'ACCESS_ENFORCEMENT_QUERY_TOO_LARGE',
 					members: ['extensions', 'locations', 'message', 'path'],
 					message: QUERY_TOO_LARGE_MESSAGE,
 					path: [DOCUMENT_TYPE, 'hits'],
@@ -399,7 +399,7 @@ suite(
 				assert.deepEqual(names, []);
 				assert.deepEqual(
 					errors?.map(({ code, message }: { code: string; message: string }) => [code, message]),
-					[['ACCESS_CONTROL_QUERY_TOO_LARGE', QUERY_TOO_LARGE_MESSAGE]],
+					[['ACCESS_ENFORCEMENT_QUERY_TOO_LARGE', QUERY_TOO_LARGE_MESSAGE]],
 				);
 			} else {
 				assert.equal(errors, undefined);

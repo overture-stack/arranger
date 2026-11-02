@@ -9,7 +9,7 @@ const CHILD_TIMEOUT_MS = 30_000;
 const FOLDER_CATALOGUE_IDS = ['alpha', 'beta'];
 const RESTRICTED_STUDY = 'STUDY-A';
 const RESULT_MARKER = '@@image-run-result@@';
-const STARTUP_REFUSED_EVENT = 'access_control.startup_refused';
+const STARTUP_REFUSED_EVENT = 'access_enforcement.startup_refused';
 
 /** What the image logs as the source of its access-control decision. */
 const IMAGE_SOURCE_LOG = {
@@ -74,7 +74,7 @@ type ConfigsLayout = keyof typeof CONFIGS_LAYOUTS;
 
 /**
  * The image reads its whole configuration from the environment, so a developer's own
- * ENABLE_ACCESS_CONTROL, CONFIGS_PATH or ES_* would otherwise decide these outcomes. Only what a
+ * ENABLE_ACCESS_ENFORCEMENT, CONFIGS_PATH or ES_* would otherwise decide these outcomes. Only what a
  * process needs in order to run at all is inherited.
  */
 const inheritedEnvironment = Object.fromEntries(
@@ -285,7 +285,7 @@ const runImage = ({
 				env: {
 					...inheritedEnvironment,
 					...catalogueEnvironment,
-					...(enableAccessControl === undefined ? {} : { ENABLE_ACCESS_CONTROL: enableAccessControl }),
+					...(enableAccessControl === undefined ? {} : { ENABLE_ACCESS_ENFORCEMENT: enableAccessControl }),
 				},
 			},
 		);
@@ -345,7 +345,7 @@ const assertRefusedAtStartup = (run: ImageRun): void => {
 /**
  * Where the reason for a refusal is read. For a rejected startup that is the rejection's message
  * chain and stderr, but not the startup log on stdout: the image logs its access-control source
- * there, which can name ENABLE_ACCESS_CONTROL, and would then satisfy a check on a refusal that
+ * there, which can name ENABLE_ACCESS_ENFORCEMENT, and would then satisfy a check on a refusal that
  * happened for some unrelated reason. A process that exits before reporting leaves only its output.
  */
 const refusalText = (run: ImageRun): string =>
@@ -424,7 +424,7 @@ const valueLabel = (rawValue: string): string => JSON.stringify(rawValue);
 const unsetRun = sharedRun({});
 const explicitFalseRun = sharedRun({ enableAccessControl: 'false' });
 
-suite('search-server image: ENABLE_ACCESS_CONTROL unset', { concurrency: 3 }, () => {
+suite('search-server image: ENABLE_ACCESS_ENFORCEMENT unset', { concurrency: 3 }, () => {
 	test('starts and serves reads, as every deployment that predates the variable does', async () => {
 		const run = await unsetRun();
 
@@ -447,7 +447,7 @@ suite('search-server image: ENABLE_ACCESS_CONTROL unset', { concurrency: 3 }, ()
 	});
 });
 
-suite('search-server image: ENABLE_ACCESS_CONTROL set to false or 0', { concurrency: 4 }, () => {
+suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to false or 0', { concurrency: 4 }, () => {
 	const falseSpellings = [
 		{ rawValue: 'false', run: explicitFalseRun },
 		...['0', 'FALSE', ' False ', '\t0\n'].map((rawValue) => ({
@@ -483,7 +483,7 @@ suite('search-server image: ENABLE_ACCESS_CONTROL set to false or 0', { concurre
 	});
 });
 
-suite('search-server image: ENABLE_ACCESS_CONTROL set to true or 1', { concurrency: 4 }, () => {
+suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to true or 1', { concurrency: 4 }, () => {
 	['true', '1', 'TRUE', ' True ', '\t1\n'].forEach((rawValue) => {
 		test(`refuses to start, saying this build has no Usher adapter, given ${valueLabel(rawValue)}`, async () => {
 			const run = await runImage({ enableAccessControl: rawValue });
@@ -494,7 +494,7 @@ suite('search-server image: ENABLE_ACCESS_CONTROL set to true or 1', { concurren
 	});
 });
 
-suite('search-server image: ENABLE_ACCESS_CONTROL set to any other value', { concurrency: 4 }, () => {
+suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to any other value', { concurrency: 4 }, () => {
 	const unrecognizedValues = [
 		{ rawValue: '', why: 'an empty value, which is not the same as unset' },
 		{ rawValue: '   ', why: 'a whitespace-only value, which trims to empty rather than to unset' },
@@ -525,7 +525,7 @@ suite('search-server image: ENABLE_ACCESS_CONTROL set to any other value', { con
 			const run = await runImage({ enableAccessControl: rawValue });
 
 			assertRefusedAtStartup(run);
-			assert.match(refusalText(run), /ENABLE_ACCESS_CONTROL/);
+			assert.match(refusalText(run), /ENABLE_ACCESS_ENFORCEMENT/);
 			assert.ok(quotesRawValue(refusalText(run), rawValue), describeRun(run));
 		});
 	});
@@ -533,7 +533,7 @@ suite('search-server image: ENABLE_ACCESS_CONTROL set to any other value', { con
 
 const assertRefusedAsContradiction = (run: ImageRun): void => {
 	assertRefusedAtStartup(run);
-	assert.match(refusalText(run), /ENABLE_ACCESS_CONTROL/, describeRun(run));
+	assert.match(refusalText(run), /ENABLE_ACCESS_ENFORCEMENT/, describeRun(run));
 	assert.match(refusalText(run), /filters/, describeRun(run));
 };
 
@@ -541,7 +541,7 @@ suite("search-server image: a host's programmatic filters option", { concurrency
 	// "0" as well as "false": a contradiction check that compares the raw text with "false" would
 	// let every other spelling of false through.
 	['false', '0'].forEach((rawValue) => {
-		test(`refuses to start when filters is combined with ENABLE_ACCESS_CONTROL set to ${valueLabel(rawValue)}, since the two contradict each other`, async () => {
+		test(`refuses to start when filters is combined with ENABLE_ACCESS_ENFORCEMENT set to ${valueLabel(rawValue)}, since the two contradict each other`, async () => {
 			const run = await runImage({ enableAccessControl: rawValue, filtersOption: 'restricting' });
 
 			assertRefusedAsContradiction(run);
@@ -561,7 +561,7 @@ suite("search-server image: a host's programmatic filters option", { concurrency
 		assert.match(refusalText(run), /filters/, describeRun(run));
 	});
 
-	test('refuses to start when filters is combined with ENABLE_ACCESS_CONTROL=true, since a host filter does not stand in for the Usher adapter', async () => {
+	test('refuses to start when filters is combined with ENABLE_ACCESS_ENFORCEMENT=true, since a host filter does not stand in for the Usher adapter', async () => {
 		const run = await runImage({ enableAccessControl: 'true', filtersOption: 'restricting' });
 
 		assertRefusedAtStartup(run);
@@ -576,7 +576,7 @@ suite("search-server image: a host's programmatic filters option", { concurrency
 		assertEveryCatalogueReports(run, ROUTER_LOG.explicit, 1);
 	});
 
-	test("still requires the host's filter on every read when ENABLE_ACCESS_CONTROL is unset", async () => {
+	test("still requires the host's filter on every read when ENABLE_ACCESS_ENFORCEMENT is unset", async () => {
 		const run = await runImage({ filtersOption: 'restricting' });
 
 		assertStarted(run);
@@ -602,7 +602,7 @@ suite('search-server image: catalogues loaded from a configs folder', { concurre
 	folderLayouts.forEach(({ configsLayout, description }) => {
 		const { catalogueCount } = CONFIGS_LAYOUTS[configsLayout];
 
-		test(`with ENABLE_ACCESS_CONTROL=false and ${description}, passes every catalogue's router includeEverything`, async () => {
+		test(`with ENABLE_ACCESS_ENFORCEMENT=false and ${description}, passes every catalogue's router includeEverything`, async () => {
 			const run = await runImage({ configsLayout, enableAccessControl: 'false' });
 
 			assertStarted(run);
@@ -610,14 +610,14 @@ suite('search-server image: catalogues loaded from a configs folder', { concurre
 		});
 	});
 
-	test("with ENABLE_ACCESS_CONTROL unset and a subfolder per catalogue, passes every catalogue's router nothing", async () => {
+	test("with ENABLE_ACCESS_ENFORCEMENT unset and a subfolder per catalogue, passes every catalogue's router nothing", async () => {
 		const run = await runImage({ configsLayout: 'subfolderPerCatalogue' });
 
 		assertStarted(run);
 		assertEveryCatalogueReports(run, ROUTER_LOG.defaulted, CONFIGS_LAYOUTS.subfolderPerCatalogue.catalogueCount);
 	});
 
-	test('with ENABLE_ACCESS_CONTROL=true and a subfolder per catalogue, refuses the whole startup rather than starting with every catalogue failed', async () => {
+	test('with ENABLE_ACCESS_ENFORCEMENT=true and a subfolder per catalogue, refuses the whole startup rather than starting with every catalogue failed', async () => {
 		const run = await runImage({ configsLayout: 'subfolderPerCatalogue', enableAccessControl: 'true' });
 
 		assertRefusedAtStartup(run);
@@ -627,14 +627,14 @@ suite('search-server image: catalogues loaded from a configs folder', { concurre
 
 suite(`search-server image: the ${STARTUP_REFUSED_EVENT} event`, { concurrency: 4 }, () => {
 	const refusals: { description: string; scenario: ImageScenario }[] = [
-		{ description: 'ENABLE_ACCESS_CONTROL set to true', scenario: { enableAccessControl: 'true' } },
-		{ description: 'an unrecognized ENABLE_ACCESS_CONTROL', scenario: { enableAccessControl: 'yes' } },
+		{ description: 'ENABLE_ACCESS_ENFORCEMENT set to true', scenario: { enableAccessControl: 'true' } },
+		{ description: 'an unrecognized ENABLE_ACCESS_ENFORCEMENT', scenario: { enableAccessControl: 'yes' } },
 		{
-			description: 'an unrecognized ENABLE_ACCESS_CONTROL holding a line break',
+			description: 'an unrecognized ENABLE_ACCESS_ENFORCEMENT holding a line break',
 			scenario: { enableAccessControl: 'yes\nno' },
 		},
 		{
-			description: 'filters combined with ENABLE_ACCESS_CONTROL set to false',
+			description: 'filters combined with ENABLE_ACCESS_ENFORCEMENT set to false',
 			scenario: { enableAccessControl: 'false', filtersOption: 'restricting' },
 		},
 	];
@@ -653,8 +653,8 @@ suite(`search-server image: the ${STARTUP_REFUSED_EVENT} event`, { concurrency: 
 	});
 
 	[
-		{ description: 'ENABLE_ACCESS_CONTROL unset', run: unsetRun },
-		{ description: 'ENABLE_ACCESS_CONTROL set to false', run: explicitFalseRun },
+		{ description: 'ENABLE_ACCESS_ENFORCEMENT unset', run: unsetRun },
+		{ description: 'ENABLE_ACCESS_ENFORCEMENT set to false', run: explicitFalseRun },
 	].forEach(({ description, run: startedRun }) => {
 		test(`is not logged when the image starts, given ${description}`, async () => {
 			const run = await startedRun();

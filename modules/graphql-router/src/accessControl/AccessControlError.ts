@@ -32,13 +32,13 @@ export const isAccessControlError = (error: unknown): error is AccessControlErro
 export type ReadPath = 'aggregations' | 'export' | 'hits' | 'network' | 'sets';
 
 /** The GraphQL error code an `AccessControlQueryTooLargeError` is answered with. */
-export const ACCESS_CONTROL_QUERY_TOO_LARGE_CODE = 'ACCESS_CONTROL_QUERY_TOO_LARGE';
+export const ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE = 'ACCESS_ENFORCEMENT_QUERY_TOO_LARGE';
 
 /**
  * The search engine refused a read as larger than it accepts once the catalogue's access filter was applied.
  * Its `message` is fixed text naming the catalogue, written for the client. The GraphQL endpoint answers it
- * with `ACCESS_CONTROL_QUERY_TOO_LARGE_CODE` and the export route with a 500, each logging
- * `access_control.query_too_large` with the catalogue, the read path and the engine's clause limit, and an
+ * with `ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE` and the export route with a 500, each logging
+ * `access_enforcement.query_too_large` with the catalogue, the read path and the engine's clause limit, and an
  * integration catching it from `getAllData` or `dataStream` should do the same.
  */
 export class AccessControlQueryTooLargeError extends Error {

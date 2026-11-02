@@ -52,7 +52,7 @@ const nodeErrorMessageFor = ({
 	nodeName: string;
 }): string => {
 	if (isAccessControlQueryTooLargeError(error)) {
-		console.error('access_control.query_too_large', {
+		console.error('access_enforcement.query_too_large', {
 			catalogue: error.catalogue,
 			clauseLimit: error.clauseLimit,
 			node: nodeName,
@@ -62,7 +62,7 @@ const nodeErrorMessageFor = ({
 	}
 
 	if (isAccessControlError(error)) {
-		console.error('access_control.evaluation_failed', error.message, { cause: error.cause, node: nodeName });
+		console.error('access_enforcement.evaluation_failed', error.message, { cause: error.cause, node: nodeName });
 		return ACCESS_CONTROL_FAILURE_MESSAGE;
 	}
 

@@ -1633,8 +1633,8 @@ suite('download', () => {
 
 						// Then the failed download carries a reason naming access control, and the access-control event is logged too
 						assert.match(logged, /download\.failed/);
-						assert.match(logged, /reason: 'access_control'/);
-						assert.match(logged, /access_control\.evaluation_failed/);
+						assert.match(logged, /reason: 'access_enforcement'/);
+						assert.match(logged, /access_enforcement\.evaluation_failed/);
 					} finally {
 						consoleCapture.restore();
 					}
@@ -1736,10 +1736,10 @@ suite('download', () => {
 							assert.deepEqual(
 								consoleCapture
 									.callsAt('error')
-									.filter(([event]) => event === 'access_control.query_too_large'),
+									.filter(([event]) => event === 'access_enforcement.query_too_large'),
 								[
 									[
-										'access_control.query_too_large',
+										'access_enforcement.query_too_large',
 										{
 											catalogue: 'donor',
 											clauseLimit: 1024,

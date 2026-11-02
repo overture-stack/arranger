@@ -252,7 +252,7 @@ Note `fieldName`, not `field`. A content clause using any other key does not des
 
 `user` stands for whatever the deployment's own authentication established. Set it on `res.locals` in middleware mounted before the router, and the callback reads it on every read path: it receives the application's own `res.locals` keys beneath the router's, which sit under `res.locals.arranger`, so a key the router or `graphqlOptions.context` also sets takes their value. `req.context` is a deprecated view of `res.locals.arranger`; see the [migration guide](../../docs/reference/08-Migration/v3.1.md#per-request-state-res-locals).
 
-The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "The server could not apply its access control because of a problem in its configuration, not in this request.", while the full message and its cause are logged on the server under `access_control.evaluation_failed`.
+The router rejects at construction a `getServerSideFilter` that is neither left out nor a non-async function, `null` included, naming what it received. A callback that throws, returns a promise, or returns no usable filter fails that request with an `AccessControlError`. A GraphQL client then receives the fixed text "The server could not apply its access control because of a problem in its configuration, not in this request.", while the full message and its cause are logged on the server under `access_enforcement.evaluation_failed`.
 
 ### How the filter applies
 
@@ -264,7 +264,7 @@ In multicatalogue mode the filter is global: it applies to all catalogues mounte
 
 Where the filter restricts any record, each search of record queries, aggregations, saved sets and exports sends `allow_partial_search_results: false`, so a shard refusing the search fails the whole read. A filter that is `includeEverything`'s, alone or as every member of an `and`, restricts no record, and its searches leave partial results to the engine.
 
-The search engine limits how many clauses a query may hold. Where it refuses a read past that limit and the filter restricts any record, the read fails with an `AccessControlQueryTooLargeError`, whose message names the catalogue, and the server logs `access_control.query_too_large` with the catalogue, the read path and the engine's limit. Where the filter restricts none, the refusal is the request's own mistake, answered with the rule its filter broke: "The filter must compile to no more clauses than the search engine accepts." See [GraphQL errors](#graphql-errors) and [Export routes](#export-routes) for how each is answered.
+The search engine limits how many clauses a query may hold. Where it refuses a read past that limit and the filter restricts any record, the read fails with an `AccessControlQueryTooLargeError`, whose message names the catalogue, and the server logs `access_enforcement.query_too_large` with the catalogue, the read path and the engine's limit. Where the filter restricts none, the refusal is the request's own mistake, answered with the rule its filter broke: "The filter must compile to no more clauses than the search engine accepts." See [GraphQL errors](#graphql-errors) and [Export routes](#export-routes) for how each is answered.
 
 ---
 
@@ -276,8 +276,8 @@ Each GraphQL error carries its `message`, its `locations` and `path` where it ha
 | --- | --- | --- | --- |
 | The request's own mistake, such as a syntax or validation error, a variable of the wrong type, or batched operations the endpoint refuses | Apollo's own code, such as `GRAPHQL_PARSE_FAILED`, `GRAPHQL_VALIDATION_FAILED` or `BAD_USER_INPUT`, and `INTERNAL_SERVER_ERROR` for the few Apollo raises with no code of their own, such as refused batching | The error's own message, less any field-name suggestion | `graphql.invalid_request`, at info |
 | A filter breaking one of the router's rules, a SQON rule or the clause-limit rule above | `BAD_USER_INPUT` | The rule it broke | `graphql.invalid_request`, at info, with the rule's detail as its cause |
-| Access control cannot be evaluated, an `AccessControlError` | The error's own code, `INTERNAL_SERVER_ERROR` unless it carries another | "The server could not apply its access control because of a problem in its configuration, not in this request." | `access_control.evaluation_failed` |
-| The search engine refused the read past its clause limit once the catalogue's access filter was applied, an `AccessControlQueryTooLargeError` | `ACCESS_CONTROL_QUERY_TOO_LARGE` | The error's own message, naming the catalogue | `access_control.query_too_large` |
+| Access control cannot be evaluated, an `AccessControlError` | The error's own code, `INTERNAL_SERVER_ERROR` unless it carries another | "The server could not apply its access control because of a problem in its configuration, not in this request." | `access_enforcement.evaluation_failed` |
+| The search engine refused the read past its clause limit once the catalogue's access filter was applied, an `AccessControlQueryTooLargeError` | `ACCESS_ENFORCEMENT_QUERY_TOO_LARGE` | The error's own message, naming the catalogue | `access_enforcement.query_too_large` |
 | Anything else, a search engine's failure included | The error's own code, `INTERNAL_SERVER_ERROR` unless it carries another | "The request failed because of a problem on the server, not in the request." | `graphql.failed`, with the whole error and the catalogue |
 
 Network search answers each node's failures by the same rules, in that node's `errors`, logging a local node's server problem as `network.node_failed` and a filter's broken rule as `network.invalid_request`. A remote node's failure is answered with fixed text for its kind, and its URL, its own messages and the request's headers stay out of the answer:
@@ -334,7 +334,7 @@ On a context built some other way, pass the filter function this deployment's ro
 | `AccessControlQueryTooLargeError`, from the package root | The search engine refused the export's search past its clause limit once the catalogue's access filter was applied. Its message is fixed text naming the catalogue, so it is written for the client | `500`, with the error's message |
 | Anything else | A server fault, such as a failed search | `500`, with a fixed text saying the problem is on the server, not in the request |
 
-Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s or an `AccessControlQueryTooLargeError`'s message is written for the client; any other error's message, and every error's cause, is written for the log. An `AccessControlQueryTooLargeError` carries `catalogue`, `readPath` and `clauseLimit`, which `/download` logs as `access_control.query_too_large`, the event GraphQL logs for the same refusal.
+Answer each as plain text, and log the error itself on the server. Only an `InvalidExportRequestError`'s or an `AccessControlQueryTooLargeError`'s message is written for the client; any other error's message, and every error's cause, is written for the log. An `AccessControlQueryTooLargeError` carries `catalogue`, `readPath` and `clauseLimit`, which `/download` logs as `access_enforcement.query_too_large`, the event GraphQL logs for the same refusal.
 
 ### Joining the output to the response
 
@@ -417,7 +417,7 @@ The filter callback that keeps every document, and its deprecated alias. See [Se
 
 What a read fails with when access control cannot be evaluated for it. See [Export routes](#export-routes).
 
-### `AccessControlQueryTooLargeError`, `ACCESS_CONTROL_QUERY_TOO_LARGE_CODE`
+### `AccessControlQueryTooLargeError`, `ACCESS_ENFORCEMENT_QUERY_TOO_LARGE_CODE`
 
 What a read fails with when the search engine refuses it past its clause limit once the catalogue's access filter is applied, and the GraphQL error code it is answered with. See [GraphQL errors](#graphql-errors) and [Export routes](#export-routes).
 

@@ -8,10 +8,10 @@ import configsFromLocalEnv from './localEnvs.js';
 
 /**
  * Overlays the host's programmatic options on the environment's configuration, refusing startup before
- * any catalogue loads when ENABLE_ACCESS_CONTROL cannot be honoured.
+ * any catalogue loads when ENABLE_ACCESS_ENFORCEMENT cannot be honoured.
  *
  * @param externalConfigs the host's programmatic options.
- * @throws {Error} when ENABLE_ACCESS_CONTROL is true or unrecognized, or false alongside a filters option.
+ * @throws {Error} when ENABLE_ACCESS_ENFORCEMENT is true or unrecognized, or false alongside a filters option.
  */
 const configsAggregator = (
 	externalConfigs: ExternalConfigs = {},
@@ -40,7 +40,7 @@ const configsAggregator = (
 	const { enableAccessControl, ...envConfigs } = configsFromLocalEnv;
 	const { getServerSideFilter, source } = resolveImageAccessControl({ enableAccessControl, filters });
 
-	console.log('access_control.image_source', `access control source: ${source}`);
+	console.log('access_enforcement.image_source', `access control source: ${source}`);
 
 	// lodash merge skips missing externalConfigs values, falling back to the localEnvs default.
 	// and first empty {} prevents mutating the configsFromLocalEnv module singleton.
