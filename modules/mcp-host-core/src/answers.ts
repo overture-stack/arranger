@@ -1,6 +1,6 @@
 // Questions waiting on the consumer: pre-call approvals, and server confirmations bridged from `mcp-client`'s
 // resolver. Host-core keeps the only clocks on them, so `respond`, `pending()` and the events always match what the
-// server was sent (MCP Host Plan §2.2, Events).
+// server was sent.
 import { type ElicitResult } from '@overture-stack/arranger-mcp-client';
 
 import { isRecord } from './json.js';

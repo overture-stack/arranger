@@ -8,10 +8,9 @@ Configuration is done through `options`, nothing is read from the environment or
 
 The model is reached through a provider (`LlmProvider`): `OpenAiCompatibleProvider` speaks Chat Completions to Ollama, vLLM, LM Studio or hosted OpenAI, and never retries.
 
-Not published: the package is `private`, and moves to the CRE repository with `apps/mcp-cli` (MCP Host Plan, Phase 5).
+Not published yet: the package is `private` until it moves to a repository of its own.
 
-- Design: [MCP Host Plan](../../.dev/docs/mcp-host/mcp-host-plan.md) §2.2
-- Architecture: [`mcp-host-core` Architecture](docs/architecture.md), and where it sits: [MCP Host: Architecture](../../.dev/docs/mcp-host/architecture.md)
+For how it works inside, see [`mcp-host-core` Architecture](docs/architecture.md).
 
 ## Usage
 
@@ -79,7 +78,7 @@ await host.run({
 | `approvalPolicy`     | Decides each call: `allow`, `deny` or `ask`. Sees only the call: host-core refuses a data crossing before asking.                                                                                                                                                                                                                                                                | **Required** |                    |
 | `confirmations`      | `false` declares no `elicitation`, so servers ask nothing. Otherwise an optional `timeoutMs`, after which the answer is `cancel`.                                                                                                                                                                                                                                                | **Required** |                    |
 | `limits`             | `turns`, `toolCalls` and `wallClockMs`. Reaching one ends the run.                                                                                                                                                                                                                                                                                                               | **Required** |                    |
-| `retries`            | One retry after an empty reply, and after a reply cut off at the output limit with no text. `eval` turns both off.                                                                                                                                                                                                                                                               | **Required** |                    |
+| `retries`            | One retry after an empty reply, and after a reply cut off at the output limit with no text. A consumer that wants every failure to count turns both off.                                                                                                                                                                                                                         | **Required** |                    |
 | `contextWindow`      | The window's `tokens`, the `shorten` or `fail` policy, and `charsPerToken` for the estimate.                                                                                                                                                                                                                                                                                     | **Required** |                    |
 | `onEvent`            | Receives every event. Anything it throws is ignored.                                                                                                                                                                                                                                                                                                                             | **Required** |                    |
 | `clientInfo`         | This host's name and version, sent to each server.                                                                                                                                                                                                                                                                                                                               | **Required** |                    |
@@ -97,7 +96,7 @@ await host.run({
 | `apiKey`           | A bearer token, or an async function giving one before every request. A 401 is reported, never retried.                                                                   | None     |
 | `requestTimeoutMs` | Ends a request that takes longer, as a `timeout` error.                                                                                                                   | No limit |
 | `sendReasoning`    | Sends each assistant turn's reasoning back to the model.                                                                                                                  | `false`  |
-| `stream`           | Streams the reply; `eval` turns it off.                                                                                                                                   | `true`   |
+| `stream`           | Streams the reply; a consumer that needs no deltas can turn it off.                                                                                                       | `true`   |
 | `ollama`           | Reads the loaded context window (`/api/ps`) and the model's digest (`/api/tags`) from Ollama's native API. The run uses the smaller of the configured and loaded windows. | `false`  |
 
 ## Data crossing

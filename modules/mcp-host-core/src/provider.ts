@@ -1,5 +1,4 @@
-// The seam between host-core and a model server (MCP Host Plan §2.2, LLM Provider Interface): nothing here assumes a
-// wire format or how a provider authenticates.
+// The seam between host-core and a model server: nothing here assumes a wire format or how a provider authenticates.
 import { type ConversationItem } from './messages.js';
 import { type ToolDefinition } from './registry.js';
 
@@ -41,7 +40,7 @@ export type ProviderMalformedCall = {
 	kind: 'malformed';
 	id?: string;
 	name?: string;
-	/** The raw output, kept so `eval` can count parse failures. */
+	/** The raw output, kept so a consumer can count parse failures. */
 	raw: string;
 };
 

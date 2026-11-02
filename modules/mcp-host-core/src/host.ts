@@ -126,7 +126,7 @@ export type McpHostOptions = {
 	/** How long an `ask` approval waits; one that times out counts as denied. No limit when unset. */
 	approvalTimeoutMs?: number;
 	limits: RunLimits;
-	/** One retry each, for `chat` and the UI; `eval` sets both off, so every failure counts. */
+	/** One retry each, for an interactive consumer; an evaluation sets both off, so every failure counts. */
 	retries: { emptyReply: boolean; outputLimit: boolean };
 	contextWindow: ContextWindowSettings;
 	/** A cap on each tool message's characters, with the cut noted. Events keep the full result. */
@@ -782,7 +782,7 @@ export class McpHost {
 
 		let request: ProviderRequest = {
 			...model,
-			// A same-seed resend reproduced every Phase 0 empty reply, so the retry changes it.
+			// In testing, a same-seed resend reproduced every empty reply, so the retry changes it.
 			...(retry === 'empty_reply' && model.seed !== undefined && { seed: model.seed + 1 }),
 			systemPrompt: run.surface.systemPrompt,
 			messages: fit.items,
@@ -929,7 +929,7 @@ export class McpHost {
 			arguments: call.arguments,
 		});
 
-		// Refused before the policy, so no one is ever asked to approve a crossing (MCP Host Plan §5, question 4).
+		// Refused before the policy, so no one is ever asked to approve a crossing.
 		// `create` leaves no such call (see `assertServersApart`); this guards against a fault there.
 		const heldFrom = restrictedDataFrom(this.#state.servers, route.server);
 		if (heldFrom.length > 0) {

@@ -126,7 +126,7 @@ suite('fitToWindow', () => {
 suite('serverTruncated', () => {
 	const baseline = { inputTokens: 3_562, sentChars: 10_000, shortened: [] };
 
-	test('flags a longer request counted at fewer tokens, as Phase 0 saw', () => {
+	test('flags a longer request counted at fewer tokens, as Ollama reports after truncating', () => {
 		assert.equal(serverTruncated(baseline, { inputTokens: 3_494, sentChars: 14_000, shortened: [] }), true);
 	});
 

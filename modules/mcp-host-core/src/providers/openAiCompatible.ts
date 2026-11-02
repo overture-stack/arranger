@@ -1,5 +1,5 @@
-// Host-core's own client for OpenAI-compatible Chat Completions (MCP Host Plan §2.2, LLM Provider Interface; Model
-// Provider Analysis). It reads no environment variables and never retries: a failure is reported once, as data.
+// Host-core's own client for OpenAI-compatible Chat Completions. It reads no environment variables and never
+// retries: a failure is reported once, as data.
 import { createParser } from 'eventsource-parser';
 
 import { isRecord } from '../json.js';
@@ -35,11 +35,11 @@ export type OpenAiCompatibleOptions = {
 	/** Ends a request that takes longer, as a `timeout` error. No limit when unset. */
 	requestTimeoutMs?: number;
 	/**
-	 * Sends each assistant turn's reasoning back to the model. Off by default: in Phase 0 it cost a median of 81 to
+	 * Sends each assistant turn's reasoning back to the model. Off by default: in testing it cost a median of 81 to
 	 * 538 prompt tokens per earlier turn with no consistent effect.
 	 */
 	sendReasoning?: boolean;
-	/** Streams the reply. On by default; `eval` turns it off. */
+	/** Streams the reply. On by default; a consumer that needs no deltas, such as an evaluation, can turn it off. */
 	stream?: boolean;
 	/**
 	 * The server is Ollama: read the loaded context window (`/api/ps`) and the model's digest (`/api/tags`) from its

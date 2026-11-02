@@ -92,7 +92,7 @@ export const instructionsHeading = (key: string): string => `Instructions from s
 
 /**
  * The system prompt: the consumer's, then each trusted server's instructions under a heading. Untrusted servers'
- * instructions never enter it (MCP Host Plan §1, rule 5).
+ * instructions never enter it.
  */
 const systemPromptOf = (systemPrompt: string | undefined, servers: readonly SurfaceServer[]): string =>
 	[
@@ -115,7 +115,7 @@ export const toToolDefinition = ({ name, tool }: RegisteredTool): ToolDefinition
 });
 
 /**
- * The model-facing surface, in host-core's neutral form, so `eval` can count its tokens.
+ * The model-facing surface, in host-core's neutral form, so a consumer can count its tokens.
  *
  * @remarks
  * Pure. Tools whose names collide are left out, as {@link buildRegistry} leaves them out.

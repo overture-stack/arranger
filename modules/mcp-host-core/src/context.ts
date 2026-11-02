@@ -1,5 +1,5 @@
 // Host-core never lets the serving stack truncate a conversation: Ollama drops the oldest messages first, the user's
-// question among them, and answers anyway (MCP Host Plan §2.2, Context window).
+// question among them, and answers anyway.
 import {
 	type ConversationItem,
 	functionCallOutput,
@@ -16,7 +16,10 @@ export const DEFAULT_CHARS_PER_TOKEN = 3;
 export type ContextWindowSettings = {
 	/** The model server's context window, in tokens. */
 	tokens: number;
-	/** `shorten` (`chat`, UI) stubs older tool results; `fail` (`eval`) ends the run instead. */
+	/**
+	 * `shorten` stubs older tool results, for an interactive consumer; `fail` ends the run instead, such as for an
+	 * evaluation.
+	 */
 	policy: 'shorten' | 'fail';
 	/** @defaultValue {@link DEFAULT_CHARS_PER_TOKEN} */
 	charsPerToken?: number;

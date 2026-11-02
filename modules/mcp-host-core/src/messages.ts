@@ -1,6 +1,5 @@
-// The conversation's items, shaped after the Responses API's (MCP Host Plan §2.2, Model Provider Analysis §3).
-// Only this file and `state.ts` know the shapes: everything else uses the constructors and readers below, so a
-// change of shape stays here.
+// The conversation's items, shaped after the Responses API's. The rest of host-core uses the constructors and readers
+// below, so a change of shape stays here, apart from each provider, which maps items to its own wire format.
 import { isRecord } from './json.js';
 
 /** A person's message, or a prompt's user turn. */

@@ -1,4 +1,4 @@
-// Every event is plain data, so it crosses IPC unchanged and saves to a file as it is (MCP Host Plan §1, rule 6).
+// Every event is plain data, so it crosses IPC unchanged and saves to a file as it is.
 import { type ElicitResult, type ServerCapabilities } from '@overture-stack/arranger-mcp-client';
 
 import { type ContextWindowSettings, type ShortenedResult } from './context.js';

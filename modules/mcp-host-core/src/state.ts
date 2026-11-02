@@ -1,5 +1,5 @@
-// A conversation's model-neutral, serializable state, which a consumer saves and hands back (MCP Host Plan §2.2,
-// Conversation State). A pending confirmation is never resumed: its call gets the "abandoned" tool message.
+// A conversation's model-neutral, serializable state, which a consumer saves and hands back. A pending confirmation
+// is never resumed: its call gets the "abandoned" tool message.
 import { createHash } from 'node:crypto';
 
 import { isRecord } from './json.js';
@@ -22,13 +22,13 @@ export type CallRecord = {
  * What a server has returned into the conversation: nothing, or data that may cross to other servers
  * (`unrestricted`, from a server the person attests holds only open-access data) or may not (`restricted`, from any
  * other). It only ever rises, in that order, so no change to a server's flag loosens what is already in the
- * conversation (MCP Host Plan §5, question 4).
+ * conversation.
  */
 export type ReturnedData = 'none' | 'unrestricted' | 'restricted';
 
 /**
  * A server the conversation has held, kept after a restore drops it, since what it returned is still in the
- * conversation (data-crossing options §5).
+ * conversation.
  */
 export type ServerRecord = {
 	key: string;
@@ -138,9 +138,9 @@ export const holdsRestrictedData = (servers: readonly ServerRecord[]): boolean =
  * The servers whose restricted data a call would carry out, so host-core refuses the call when there are any.
  *
  * @remarks
- * {@link assertServersApart} leaves no call this refuses (MCP Host Plan §5, question 4), so it guards against a fault
- * in that check. Carried content does not count: the person picked this conversation's servers as its destinations,
- * and a restore cannot add another (see {@link reconcileServers}).
+ * {@link assertServersApart} leaves no call this refuses, so it guards against a fault in that check. Carried
+ * content does not count: the person picked this conversation's servers as its destinations, and a restore cannot
+ * add another (see {@link reconcileServers}).
  *
  * @param servers - Every server the conversation has held.
  * @param server - The call's server, whose own data a call back to it carries nowhere.
@@ -152,7 +152,7 @@ export const restrictedDataFrom = (servers: readonly ServerRecord[], server: str
 
 /**
  * A configuration that a conversation cannot have: a server the person has not flagged sharing it with another, or
- * a server added to a saved one holding restricted data or carried content (MCP Host Plan §5, question 4).
+ * a server added to a saved one holding restricted data or carried content.
  */
 export class ServerSetError extends Error {
 	constructor(message: string) {
@@ -162,8 +162,8 @@ export class ServerSetError extends Error {
 }
 
 /**
- * Keeps each server the person has not flagged alone in its conversation: way (b) of MCP Host Plan §5, question 4,
- * decided 2026-10-29.
+ * Keeps each server the person has not flagged alone in its conversation, so no request to one server can carry
+ * another's restricted data.
  *
  * @remarks
  * A restored conversation is also checked against what it holds: a server whose data became restricted, through its

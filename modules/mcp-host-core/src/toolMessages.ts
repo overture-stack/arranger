@@ -1,10 +1,9 @@
-// Every tool call gets one tool message, with fixed wording so transcripts compare (MCP Host Plan §2.2, Agent Loop).
+// Every tool call gets one tool message, with fixed wording so transcripts compare.
 import { type CallOutcome, type CallToolResult } from '@overture-stack/arranger-mcp-client';
 
 /**
- * The fixed wording of every tool message host-core writes itself, from the plan's tool-message table, so
- * transcripts compare across runs and models. A `result` sends the tool's own content instead, and a crossing
- * refusal uses {@link crossingRefusedMessage}.
+ * The fixed wording of every tool message host-core writes itself, so transcripts compare across runs and models.
+ * A `result` sends the tool's own content instead, and a crossing refusal uses {@link crossingRefusedMessage}.
  */
 export const TOOL_MESSAGES = {
 	outputInvalid: "The result did not match the tool's declared output",
@@ -22,8 +21,7 @@ export const TOOL_MESSAGES = {
 } as const;
 
 /**
- * The tool message for a call host-core refused as a data crossing, naming both sides, so the model can explain it
- * (data-crossing options §5).
+ * The tool message for a call host-core refused as a data crossing, naming both sides, so the model can explain it.
  *
  * @param server - The server the call was to.
  * @param heldFrom - The servers whose restricted data the call would have carried out.
