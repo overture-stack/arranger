@@ -36,7 +36,7 @@ type Harness = {
 	create: () => Promise<McpHost>;
 };
 
-const harness = (
+const createHarness = (
 	server: TestServer,
 	steps: ScriptStep[],
 	overrides: Partial<McpHostOptions> = {},
@@ -102,8 +102,8 @@ const withServer = async (options: TestServerOptions, body: (server: TestServer)
 };
 
 /** Runs one host against `server`, closed however the test ends. */
-const withHost = async (h: Harness, body: (host: McpHost) => Promise<void>) => {
-	const host = await h.create();
+const withHost = async (harness: Harness, body: (host: McpHost) => Promise<void>) => {
+	const host = await harness.create();
 	try {
 		await body(host);
 	} finally {
@@ -124,28 +124,28 @@ suite('McpHost', () => {
 
 	suite('a run', () => {
 		test('ends when the model answers in text, with every event in order', async () => {
-			const h = harness(
+			const harness = createHarness(
 				server,
 				[{ deltas: ['Hel', 'lo'], response: { text: 'Hello', stopReason: 'stop' } }],
 				{},
 				{ digest: 'sha256:abc' },
 			);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'Hi' });
 
 				assert.equal(done.reason, 'answered');
 				assert.deepEqual(
-					h.events.map(({ type }) => type),
+					harness.events.map(({ type }) => type),
 					['run_started', 'model_request', 'token', 'token', 'model_response', 'done'],
 				);
 				assert.deepEqual(
-					h.events.map(({ seq }) => seq),
+					harness.events.map(({ seq }) => seq),
 					[0, 1, 2, 3, 4, 5],
 				);
-				assert.equal(new Set(h.events.map(({ runId }) => runId)).size, 1);
-				const [started] = h.of('run_started');
+				assert.equal(new Set(harness.events.map(({ runId }) => runId)).size, 1);
+				const [started] = harness.of('run_started');
 				assert.equal(started?.modelDigest, 'sha256:abc');
-				assert.equal(started?.providerUrl, h.provider.url);
+				assert.equal(started?.providerUrl, harness.provider.url);
 				assert.equal(started?.servers[0]?.server?.name, 'mcp-host-core-test-server');
 				assert.match(started?.servers[0]?.hash ?? '', /^[0-9a-f]{64}$/);
 				assert.deepEqual(
@@ -156,14 +156,14 @@ suite('McpHost', () => {
 		});
 
 		test('sends the trusted server instructions, every tool, and the model settings', async () => {
-			const h = harness(server, [say('ok')], {
+			const harness = createHarness(server, [say('ok')], {
 				systemPrompt: 'Be brief.',
 				model: { model: 'm', temperature: 0.2, topP: 0.9, seed: 4, maxOutputTokens: 50, extra: { top_k: 1 } },
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'Hi' });
 
-				const [request] = h.provider.requests;
+				const [request] = harness.provider.requests;
 				assert.equal(
 					request?.systemPrompt,
 					`Be brief.\n\n${instructionsHeading('test')}\nUse lookup for items.`,
@@ -178,17 +178,17 @@ suite('McpHost', () => {
 		});
 
 		test("leaves out an untrusted server's instructions", async () => {
-			const h = harness(server, [say('ok')], {
+			const harness = createHarness(server, [say('ok')], {
 				servers: [{ key: 'test', connection: { url: server.url } }],
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'Hi' });
-				assert.equal(h.provider.requests[0]?.systemPrompt, '');
+				assert.equal(harness.provider.requests[0]?.systemPrompt, '');
 			});
 		});
 
 		test('routes calls through the registry, one at a time, and sends each tool message back', async () => {
-			const h = harness(server, [
+			const harness = createHarness(server, [
 				calls(
 					call(name('lookup'), { id: '7' }, 'model-a'),
 					call(name('catalogue.search')),
@@ -196,14 +196,14 @@ suite('McpHost', () => {
 				),
 				say('done'),
 			]);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const executedBefore = server.executed.length;
 				const done = await host.run({ message: 'Find 7' });
 
 				assert.equal(done.reason, 'answered');
 				assert.deepEqual(server.executed.slice(executedBefore), ['lookup', 'catalogue.search', LONG_TOOL_NAME]);
 				assert.deepEqual(
-					h.of('tool_call').map(({ callId, tool, modelCallId }) => [callId, tool, modelCallId]),
+					harness.of('tool_call').map(({ callId, tool, modelCallId }) => [callId, tool, modelCallId]),
 					[
 						['call-1', 'lookup', 'model-a'],
 						['call-2', 'catalogue.search', undefined],
@@ -211,7 +211,7 @@ suite('McpHost', () => {
 					],
 				);
 				assert.deepEqual(
-					outputs(h.provider.requests[1]?.messages ?? []).map(({ output }) => output),
+					outputs(harness.provider.requests[1]?.messages ?? []).map(({ output }) => output),
 					['found 7', 'searched', 'long'],
 				);
 				assert.deepEqual(done.totals.toolCalls, 3);
@@ -219,8 +219,8 @@ suite('McpHost', () => {
 		});
 
 		test('refuses a second run while one is active', async () => {
-			const h = harness(server, [{ hang: true }]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [{ hang: true }]);
+			await withHost(harness, async (host) => {
 				const controller = new AbortController();
 				const first = host.run({ message: 'one' }, { signal: controller.signal });
 
@@ -231,26 +231,26 @@ suite('McpHost', () => {
 		});
 
 		test('lets a listener start the next run from done', async () => {
-			const h = harness(server, [say('one'), say('two')]);
+			const harness = createHarness(server, [say('one'), say('two')]);
 			let next: Promise<unknown> | undefined;
-			h.on((event, host) => {
+			harness.on((event, host) => {
 				if (event.type === 'done' && !next) {
 					next = host.run({ message: 'again' });
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'Hi' });
 				const second = await next;
 				assert.equal((second as { reason: string }).reason, 'answered');
-				assert.equal(h.provider.requests.length, 2);
+				assert.equal(harness.provider.requests.length, 2);
 			});
 		});
 
 		test('keeps every event plain data', async () => {
-			const h = harness(server, [calls(call(name('picture'))), say('ok')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [calls(call(name('picture'))), say('ok')]);
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'Hi' });
-				for (const event of h.events) {
+				for (const event of harness.events) {
 					assert.deepEqual(JSON.parse(JSON.stringify(event)), event, event.type);
 				}
 			});
@@ -263,18 +263,18 @@ suite('McpHost', () => {
 			tool: string,
 			args: unknown = {},
 			overrides: Partial<McpHostOptions> = {},
-			onHost?: (h: Harness) => void,
+			onHost?: (harness: Harness) => void,
 			target: TestServer = server,
 		) => {
-			const h = harness(target, [calls(call(tool, args)), say('ok')], overrides);
-			onHost?.(h);
+			const harness = createHarness(target, [calls(call(tool, args)), say('ok')], overrides);
+			onHost?.(harness);
 			let message: FunctionCallOutput | undefined;
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
 				message = outputs(host.state().items)[0];
 			});
-			const [result] = h.of('tool_result');
-			return { message, result, h };
+			const [result] = harness.of('tool_result');
+			return { message, result, harness };
 		};
 
 		test('a result: its text, and an error only with isError', async () => {
@@ -316,8 +316,8 @@ suite('McpHost', () => {
 						},
 					],
 				},
-				(h) =>
-					h.on((event, host) => {
+				(harness) =>
+					harness.on((event, host) => {
 						if (event.type === 'input_required') {
 							host.respond(event.questionId, { action: 'accept', content: { confirm: true } });
 						}
@@ -328,23 +328,23 @@ suite('McpHost', () => {
 
 		test('transport_error', () =>
 			withServer({}, async (failing) => {
-				const h = harness(failing, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
-				await withHost(h, async (host) => {
+				const harness = createHarness(failing, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
+				await withHost(harness, async (host) => {
 					failing.state.failMethod = 'tools/call';
 					await host.run({ message: 'go' });
 					assert.equal(outputs(host.state().items)[0]?.output, TOOL_MESSAGES.transportError);
-					assert.equal(h.of('tool_result')[0]?.outcome.outcome, 'transport_error');
+					assert.equal(harness.of('tool_result')[0]?.outcome.outcome, 'transport_error');
 				});
 			}));
 
 		test('input_state_rejected, with its event', () =>
 			withServer({ ttlSeconds: 1 }, async (expiring) => {
-				const { message, h } = await callOnce(
+				const { message, harness } = await callOnce(
 					name('confirm'),
 					{},
 					{},
-					(h) =>
-						h.on((event, host) => {
+					(harness) =>
+						harness.on((event, host) => {
 							if (event.type === 'input_required') {
 								setTimeout(
 									() =>
@@ -359,7 +359,7 @@ suite('McpHost', () => {
 					expiring,
 				);
 				assert.equal(message?.output, TOOL_MESSAGES.inputStateRejected);
-				const [rejected] = h.of('input_state_rejected');
+				const [rejected] = harness.of('input_state_rejected');
 				assert.equal(rejected?.server, 'test');
 				assert.ok((rejected?.waitedMs ?? 0) >= 2_000);
 			}));
@@ -386,7 +386,7 @@ suite('McpHost', () => {
 		});
 
 		test('malformed, from the provider or from arguments that are not an object', async () => {
-			const h = harness(server, [
+			const harness = createHarness(server, [
 				calls(
 					malformed('{"id": ', name('lookup')),
 					call(name('lookup'), '{"id": '),
@@ -394,14 +394,14 @@ suite('McpHost', () => {
 				),
 				say('ok'),
 			]);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.deepEqual(
 					outputs(host.state().items).map(({ output }) => output),
 					[TOOL_MESSAGES.malformed, TOOL_MESSAGES.malformed, TOOL_MESSAGES.malformed],
 				);
 				assert.deepEqual(
-					h.of('malformed_tool_call').map(({ call }) => call.raw),
+					harness.of('malformed_tool_call').map(({ call }) => call.raw),
 					['{"id": ', '{"id": ', '[1]'],
 				);
 				assert.equal(done.totals.toolCalls, 3, 'malformed calls count against the call limit');
@@ -430,11 +430,11 @@ suite('McpHost', () => {
 
 	suite('approvals and confirmations', () => {
 		test('asks the consumer, and answers by id', async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
 				approvalPolicy: () => 'ask',
 			});
 			const answers: string[] = [];
-			h.on((event, host) => {
+			harness.on((event, host) => {
 				if (event.type === 'approval_required') {
 					assert.deepEqual(
 						host.pending().map(({ id }) => id),
@@ -445,12 +445,12 @@ suite('McpHost', () => {
 					answers.push(host.respond('call-99/approval', { approve: true }));
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
 				assert.deepEqual(answers, ['accepted', 'already_answered', 'unknown']);
 				assert.equal(outputs(host.state().items)[0]?.output, 'found 1');
 				assert.deepEqual(
-					h.of('approval_answered').map(({ decision, timedOut }) => [decision, timedOut]),
+					harness.of('approval_answered').map(({ decision, timedOut }) => [decision, timedOut]),
 					[['allow', false]],
 				);
 				assert.deepEqual(host.pending(), []);
@@ -459,7 +459,7 @@ suite('McpHost', () => {
 
 		test('shows the policy only the call, and records every call that reached a server, across runs', async () => {
 			const seen: ApprovalRequest[] = [];
-			const h = harness(
+			const harness = createHarness(
 				server,
 				[calls(call(name('lookup'), { id: '1' })), say('ok'), calls(call(name('catalogue.search'))), say('ok')],
 				{
@@ -469,7 +469,7 @@ suite('McpHost', () => {
 					},
 				},
 			);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'one' });
 				await host.run({ message: 'two' });
 				assert.deepEqual(seen[0], {
@@ -483,43 +483,45 @@ suite('McpHost', () => {
 		});
 
 		test('an approval that times out counts as denied', async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
 				approvalPolicy: () => 'ask',
 				approvalTimeoutMs: 30,
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
-				const [required] = h.of('approval_required');
+				const [required] = harness.of('approval_required');
 				assert.equal(outputs(host.state().items)[0]?.output, TOOL_MESSAGES.denied);
-				assert.equal(h.of('approval_answered')[0]?.timedOut, true);
+				assert.equal(harness.of('approval_answered')[0]?.timedOut, true);
 				assert.equal(host.respond(required?.id ?? '', { approve: true }), 'timed_out');
 			});
 		});
 
 		test('passes a server confirmation to the consumer, and its answer to the server', async () => {
-			const h = harness(server, [calls(call(name('confirm'))), say('ok')]);
-			h.on((event, host) => {
+			const harness = createHarness(server, [calls(call(name('confirm'))), say('ok')]);
+			harness.on((event, host) => {
 				if (event.type === 'input_required') {
 					host.respond(event.questionId, { action: 'accept', content: { confirm: true } });
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
-				const [required] = h.of('input_required');
+				const [required] = harness.of('input_required');
 				assert.deepEqual(
 					[required?.questionId, required?.server, required?.message],
 					['call-1/1/confirm', 'test', 'Run it?'],
 				);
-				assert.equal(h.of('input_answered')[0]?.timedOut, false);
+				assert.equal(harness.of('input_answered')[0]?.timedOut, false);
 				assert.equal(outputs(host.state().items)[0]?.output, 'ran');
 			});
 		});
 
 		test('a confirmation that times out is answered cancel', async () => {
-			const h = harness(server, [calls(call(name('confirm'))), say('ok')], { confirmations: { timeoutMs: 30 } });
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [calls(call(name('confirm'))), say('ok')], {
+				confirmations: { timeoutMs: 30 },
+			});
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
-				const [answered] = h.of('input_answered');
+				const [answered] = harness.of('input_answered');
 				assert.deepEqual([answered?.answer, answered?.timedOut], [{ action: 'cancel' }, true]);
 				assert.equal(outputs(host.state().items)[0]?.output, 'not confirmed');
 				assert.equal(host.respond(answered?.questionId ?? '', { action: 'accept' }), 'timed_out');
@@ -527,25 +529,25 @@ suite('McpHost', () => {
 		});
 
 		test('without confirmations, the server is never asked to confirm', async () => {
-			const h = harness(server, [calls(call(name('confirm'))), say('ok')], { confirmations: false });
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [calls(call(name('confirm'))), say('ok')], { confirmations: false });
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
-				assert.deepEqual(h.of('input_required'), []);
-				assert.equal(h.of('tool_result')[0]?.outcome.outcome, 'rejected');
+				assert.deepEqual(harness.of('input_required'), []);
+				assert.equal(harness.of('tool_result')[0]?.outcome.outcome, 'rejected');
 			});
 		});
 	});
 
 	suite('cancellation and limits', () => {
 		test('cancelling during a call cancels it, and stops the calls after it', async () => {
-			const h = harness(server, [calls(call(name('slow')), call(name('lookup'), { id: '1' }))]);
+			const harness = createHarness(server, [calls(call(name('slow')), call(name('lookup'), { id: '1' }))]);
 			const controller = new AbortController();
-			h.on((event) => {
+			harness.on((event) => {
 				if (event.type === 'tool_call' && event.tool === 'slow') {
 					setTimeout(() => controller.abort(), 100);
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const probesBefore = server.probes.length;
 				const done = await host.run({ message: 'go' }, { signal: controller.signal });
 
@@ -560,48 +562,50 @@ suite('McpHost', () => {
 		});
 
 		test('cancelling while a confirmation waits withdraws it', async () => {
-			const h = harness(server, [calls(call(name('confirm')))]);
+			const harness = createHarness(server, [calls(call(name('confirm')))]);
 			const controller = new AbortController();
-			h.on((event) => {
+			harness.on((event) => {
 				if (event.type === 'input_required') {
 					setTimeout(() => controller.abort(), 20);
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' }, { signal: controller.signal });
 				assert.equal(done.reason, 'cancelled');
 				assert.equal(outputs(host.state().items)[0]?.output, TOOL_MESSAGES.cancelled);
 				assert.deepEqual(host.pending(), []);
 				assert.equal(host.respond('call-1/1/confirm', { action: 'accept' }), 'already_answered');
 				assert.deepEqual(
-					h.of('question_withdrawn').map(({ id, kind }) => [id, kind]),
+					harness.of('question_withdrawn').map(({ id, kind }) => [id, kind]),
 					[['call-1/1/confirm', 'confirmation']],
 				);
-				assert.deepEqual(h.of('input_answered'), []);
+				assert.deepEqual(harness.of('input_answered'), []);
 			});
 		});
 
 		test('cancelling while the model generates ends the run without a model error', async () => {
-			const h = harness(server, [{ hang: true }]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [{ hang: true }]);
+			await withHost(harness, async (host) => {
 				const controller = new AbortController();
 				setTimeout(() => controller.abort(), 20);
 				const done = await host.run({ message: 'go' }, { signal: controller.signal });
 				assert.equal(done.reason, 'cancelled');
-				assert.deepEqual(h.of('model_error'), []);
-				assert.equal(h.provider.requests.length, 1, 'nothing is sent after the cancellation');
+				assert.deepEqual(harness.of('model_error'), []);
+				assert.equal(harness.provider.requests.length, 1, 'nothing is sent after the cancellation');
 			});
 		});
 
 		test('cancelling while an approval waits withdraws it, and the call never runs', async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' }))], { approvalPolicy: () => 'ask' });
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' }))], {
+				approvalPolicy: () => 'ask',
+			});
 			const controller = new AbortController();
-			h.on((event) => {
+			harness.on((event) => {
 				if (event.type === 'approval_required') {
 					setTimeout(() => controller.abort(), 20);
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const executedBefore = server.executed.length;
 				const done = await host.run({ message: 'go' }, { signal: controller.signal });
 
@@ -611,18 +615,18 @@ suite('McpHost', () => {
 				assert.deepEqual(host.pending(), []);
 				assert.equal(host.respond('call-1/approval', { approve: true }), 'already_answered');
 				assert.deepEqual(
-					h.of('question_withdrawn').map(({ id, kind, callId }) => [id, kind, callId]),
+					harness.of('question_withdrawn').map(({ id, kind, callId }) => [id, kind, callId]),
 					[['call-1/approval', 'approval', 'call-1']],
 				);
-				assert.deepEqual(h.of('approval_answered'), []);
+				assert.deepEqual(harness.of('approval_answered'), []);
 			});
 		});
 
 		test('a state taken while a call is on the wire says its effect is unknown', async () => {
-			const h = harness(server, [calls(call(name('slow')))]);
+			const harness = createHarness(server, [calls(call(name('slow')))]);
 			const controller = new AbortController();
 			let midCall: string | undefined;
-			h.on((event, host) => {
+			harness.on((event, host) => {
 				if (event.type === 'tool_call') {
 					setTimeout(() => {
 						midCall = outputs(host.state().items)[0]?.output;
@@ -630,17 +634,21 @@ suite('McpHost', () => {
 					}, 50);
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' }, { signal: controller.signal });
 				assert.equal(midCall, TOOL_MESSAGES.transportError);
 			});
 		});
 
 		test('the tool-call limit ends the run, and later calls are not run', async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' }), call(name('lookup'), { id: '2' }))], {
-				limits: { turns: 10, toolCalls: 1, wallClockMs: 30_000 },
-			});
-			await withHost(h, async (host) => {
+			const harness = createHarness(
+				server,
+				[calls(call(name('lookup'), { id: '1' }), call(name('lookup'), { id: '2' }))],
+				{
+					limits: { turns: 10, toolCalls: 1, wallClockMs: 30_000 },
+				},
+			);
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'tool_call_limit');
 				assert.deepEqual(
@@ -651,22 +659,22 @@ suite('McpHost', () => {
 		});
 
 		test('the turn limit ends the run with every call answered', async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' }))], {
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' }))], {
 				limits: { turns: 1, toolCalls: 10, wallClockMs: 30_000 },
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'turn_limit');
-				assert.equal(h.provider.requests.length, 1);
+				assert.equal(harness.provider.requests.length, 1);
 				assert.equal(outputs(host.state().items).length, 1);
 			});
 		});
 
 		test('the time limit ends the run, and a call it cut off is reported as of unknown effect', async () => {
-			const h = harness(server, [calls(call(name('slow')))], {
+			const harness = createHarness(server, [calls(call(name('slow')))], {
 				limits: { turns: 10, toolCalls: 10, wallClockMs: 200 },
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'time_limit');
 				assert.equal(outputs(host.state().items)[0]?.output, TOOL_MESSAGES.transportError);
@@ -677,12 +685,12 @@ suite('McpHost', () => {
 	suite('model replies', () => {
 		test('a model error ends the run without retrying, and the conversation stays valid', async () => {
 			const error = { kind: 'http' as const, message: 'Bad gateway', status: 502, body: 'upstream' };
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), { error }]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' })), { error }]);
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'model_error');
-				assert.deepEqual(h.of('model_error')[0]?.error, error);
-				assert.equal(h.provider.requests.length, 2);
+				assert.deepEqual(harness.of('model_error')[0]?.error, error);
+				assert.equal(harness.provider.requests.length, 2);
 				assert.equal(outputs(host.state().items).length, 1);
 			});
 		});
@@ -692,36 +700,40 @@ suite('McpHost', () => {
 				[{ endEarly: true }, 'stream_ended'],
 				[{ throws: 'socket hang up' }, 'unknown'],
 			] as const) {
-				const h = harness(server, [step]);
-				await withHost(h, async (host) => {
+				const harness = createHarness(server, [step]);
+				await withHost(harness, async (host) => {
 					assert.equal((await host.run({ message: 'go' })).reason, 'model_error');
-					assert.equal(h.of('model_error')[0]?.error.kind, kind);
+					assert.equal(harness.of('model_error')[0]?.error.kind, kind);
 				});
 			}
 		});
 
 		test('an empty reply is retried once with a new seed, and kept out of the conversation', async () => {
-			const h = harness(server, [say('', { usage: { inputTokens: 10, outputTokens: 40 } }), say('Hello')], {
-				model: { model: 'm', temperature: 0, topP: 1, seed: 7, maxOutputTokens: 100 },
-			});
-			await withHost(h, async (host) => {
+			const harness = createHarness(
+				server,
+				[say('', { usage: { inputTokens: 10, outputTokens: 40 } }), say('Hello')],
+				{
+					model: { model: 'm', temperature: 0, topP: 1, seed: 7, maxOutputTokens: 100 },
+				},
+			);
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'Hi' });
 				assert.equal(done.reason, 'answered');
 				assert.equal(done.totals.turns, 2, 'the retry counts as a turn');
 				assert.deepEqual(
-					h.provider.requests.map(({ seed }) => seed),
+					harness.provider.requests.map(({ seed }) => seed),
 					[7, 8],
 				);
-				assert.deepEqual(h.provider.requests[1]?.messages, h.provider.requests[0]?.messages);
-				const [empty] = h.of('empty_reply');
+				assert.deepEqual(harness.provider.requests[1]?.messages, harness.provider.requests[0]?.messages);
+				const [empty] = harness.of('empty_reply');
 				assert.deepEqual([empty?.outputTokens, empty?.retrying], [40, true]);
-				assert.equal(h.of('model_request')[1]?.retryOf, 'empty_reply');
+				assert.equal(harness.of('model_request')[1]?.retryOf, 'empty_reply');
 				assert.equal(host.state().items.length, 2);
 			});
 		});
 
 		test('a second empty reply, or one with retries off, ends the run', async () => {
-			const twice = harness(server, [say(''), say('')]);
+			const twice = createHarness(server, [say(''), say('')]);
 			await withHost(twice, async (host) => {
 				assert.equal((await host.run({ message: 'Hi' })).reason, 'empty_reply');
 				assert.deepEqual(
@@ -730,7 +742,7 @@ suite('McpHost', () => {
 				);
 			});
 
-			const off = harness(server, [say('')], { retries: { emptyReply: false, outputLimit: false } });
+			const off = createHarness(server, [say('')], { retries: { emptyReply: false, outputLimit: false } });
 			await withHost(off, async (host) => {
 				assert.equal((await host.run({ message: 'Hi' })).reason, 'empty_reply');
 				assert.equal(off.provider.requests.length, 1);
@@ -739,7 +751,7 @@ suite('McpHost', () => {
 		});
 
 		test('a reply cut off with no text is retried once, with a request-only nudge and less reasoning', async () => {
-			const h = harness(
+			const harness = createHarness(
 				server,
 				[
 					say('', { stopReason: 'length', reasoning: 'hmm', usage: { inputTokens: 5, outputTokens: 100 } }),
@@ -748,13 +760,13 @@ suite('McpHost', () => {
 				{},
 				{ reduceReasoning: true },
 			);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'Hi' });
 				assert.equal(done.reason, 'answered');
-				const retry = h.provider.requests[1];
+				const retry = harness.provider.requests[1];
 				assert.deepEqual(retry?.messages.at(-1), userMessage(OUTPUT_LIMIT_RETRY_MESSAGE));
 				assert.equal(retry?.extra?.reasoning_effort, 'low');
-				assert.deepEqual(h.of('output_limit')[0]?.retrying, true);
+				assert.deepEqual(harness.of('output_limit')[0]?.retrying, true);
 				assert.deepEqual(
 					host.state().items.map((item) => item.type === 'message' && item.text),
 					['Hi', 'Short'],
@@ -763,11 +775,11 @@ suite('McpHost', () => {
 		});
 
 		test('a reply cut off with text keeps the text, marked, and ends the run', async () => {
-			const h = harness(server, [say('The answer is', { stopReason: 'length' })]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('The answer is', { stopReason: 'length' })]);
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'Hi' });
 				assert.equal(done.reason, 'output_limit');
-				assert.equal(h.provider.requests.length, 1);
+				assert.equal(harness.provider.requests.length, 1);
 				const last = host.state().items.at(-1);
 				assert.deepEqual(last?.type === 'message' && last.role === 'assistant' && [last.text, last.truncated], [
 					'The answer is',
@@ -777,22 +789,25 @@ suite('McpHost', () => {
 		});
 
 		test('an output-limit retry that comes back empty ends the run: one retry per step', async () => {
-			const h = harness(server, [say('', { stopReason: 'length' }), say(''), say('never sent')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('', { stopReason: 'length' }), say(''), say('never sent')]);
+			await withHost(harness, async (host) => {
 				assert.equal((await host.run({ message: 'Hi' })).reason, 'empty_reply');
-				assert.equal(h.provider.requests.length, 2);
+				assert.equal(harness.provider.requests.length, 2);
 				assert.deepEqual(
-					h.of('empty_reply').map(({ retrying }) => retrying),
+					harness.of('empty_reply').map(({ retrying }) => retrying),
 					[false],
 				);
 			});
 		});
 
 		test('a reply cut off twice ends the run', async () => {
-			const h = harness(server, [say('', { stopReason: 'length' }), say('', { stopReason: 'length' })]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [
+				say('', { stopReason: 'length' }),
+				say('', { stopReason: 'length' }),
+			]);
+			await withHost(harness, async (host) => {
 				assert.equal((await host.run({ message: 'Hi' })).reason, 'output_limit');
-				assert.equal(h.provider.requests.length, 2);
+				assert.equal(harness.provider.requests.length, 2);
 			});
 		});
 	});
@@ -811,20 +826,22 @@ suite('McpHost', () => {
 		];
 
 		test('shortens the oldest result in the request only, and says so', async () => {
-			const probe = harness(server, []);
+			const probe = createHarness(server, []);
 			let tokens = 0;
 			await withHost(probe, async (host) => {
 				tokens = await windowFor(host);
 			});
 
-			const h = harness(server, bigTwice(), { contextWindow: { tokens, policy: 'shorten', charsPerToken: 3 } });
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, bigTwice(), {
+				contextWindow: { tokens, policy: 'shorten', charsPerToken: 3 },
+			});
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'answered');
-				const [shortened] = h.of('context_shortened');
+				const [shortened] = harness.of('context_shortened');
 				assert.deepEqual(shortened?.shortened, [{ callId: 'call-1', name: name('big') }]);
 				assert.deepEqual(
-					outputs(h.provider.requests[2]?.messages ?? []).map(({ output }) => output.length),
+					outputs(harness.provider.requests[2]?.messages ?? []).map(({ output }) => output.length),
 					[shortenedResult(name('big')).length, 3_000],
 				);
 				assert.deepEqual(
@@ -835,23 +852,25 @@ suite('McpHost', () => {
 		});
 
 		test('ends the run instead under the fail policy', async () => {
-			const probe = harness(server, []);
+			const probe = createHarness(server, []);
 			let tokens = 0;
 			await withHost(probe, async (host) => {
 				tokens = await windowFor(host);
 			});
 
-			const h = harness(server, bigTwice(), { contextWindow: { tokens, policy: 'fail', charsPerToken: 3 } });
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, bigTwice(), {
+				contextWindow: { tokens, policy: 'fail', charsPerToken: 3 },
+			});
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'context_window');
-				assert.equal(h.provider.requests.length, 2);
-				assert.deepEqual(h.of('context_shortened'), []);
+				assert.equal(harness.provider.requests.length, 2);
+				assert.deepEqual(harness.of('context_shortened'), []);
 			});
 		});
 
 		test('ends the run when the server counts a longer prompt as shorter', async () => {
-			const h = harness(server, [
+			const harness = createHarness(server, [
 				{
 					response: {
 						toolCalls: [call(name('lookup'), { id: '1' })],
@@ -861,10 +880,10 @@ suite('McpHost', () => {
 				},
 				say('Answered without the question', { usage: { inputTokens: 3_494, outputTokens: 5 } }),
 			]);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'context_window');
-				assert.equal(h.of('model_error')[0]?.error.kind, 'truncated');
+				assert.equal(harness.of('model_error')[0]?.error.kind, 'truncated');
 				assert.equal(host.state().items.at(-1)?.type, 'function_call_output', 'the answer is not kept');
 			});
 		});
@@ -874,18 +893,18 @@ suite('McpHost', () => {
 		test('a collision at the start of a run fails it before any model call', () =>
 			withServer({}, async (colliding) => {
 				colliding.state.extraTools.push('dup.name', 'dup_name');
-				const h = harness(colliding, [say('never')]);
-				await withHost(h, async (host) => {
+				const harness = createHarness(colliding, [say('never')]);
+				await withHost(harness, async (host) => {
 					const done = await host.run({ message: 'go' });
 					assert.equal(done.reason, 'tool_collision');
 					assert.match(done.detail ?? '', /dup\.name/);
-					assert.equal(h.provider.requests.length, 0);
+					assert.equal(harness.provider.requests.length, 0);
 				});
 			}));
 
 		test('a collision found between turns leaves both tools out and is reported', () =>
 			withServer({}, async (changing) => {
-				const h = harness(changing, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
+				const harness = createHarness(changing, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
 					servers: [
 						{
 							key: 'test',
@@ -896,7 +915,7 @@ suite('McpHost', () => {
 					],
 					approvalPolicy: () => 'ask',
 				});
-				h.on((event, host) => {
+				harness.on((event, host) => {
 					if (event.type === 'approval_required') {
 						changing.state.extraTools.push('x.y', 'x_y', 'added');
 						// The listen stream is open by now; the SDK debounces changes for 300 ms.
@@ -904,14 +923,14 @@ suite('McpHost', () => {
 						setTimeout(() => host.respond(event.id, { approve: true }), 600);
 					}
 				});
-				await withHost(h, async (host) => {
+				await withHost(harness, async (host) => {
 					await host.run({ message: 'go' });
-					const [changed] = h.of('tools_changed');
+					const [changed] = harness.of('tools_changed');
 					assert.deepEqual(
 						changed?.leftOut.map(({ tool }) => tool),
 						['x.y', 'x_y'],
 					);
-					const second = h.provider.requests[1]?.tools.map(({ name }) => name) ?? [];
+					const second = harness.provider.requests[1]?.tools.map(({ name }) => name) ?? [];
 					assert.ok(second.includes(name('added')));
 					assert.ok(!second.includes(name('x.y')));
 				});
@@ -919,21 +938,21 @@ suite('McpHost', () => {
 
 		test('a server that cannot be re-read fails the run before any model call', () =>
 			withServer({}, async (failing) => {
-				const h = harness(failing, [say('never')]);
-				await withHost(h, async (host) => {
+				const harness = createHarness(failing, [say('never')]);
+				await withHost(harness, async (host) => {
 					failing.state.failMethod = 'server/discover';
 					const done = await host.run({ message: 'go' });
 					assert.equal(done.reason, 'surface_error');
 					assert.match(done.detail ?? '', /^test: /);
-					assert.equal(h.provider.requests.length, 0);
+					assert.equal(harness.provider.requests.length, 0);
 				});
 			}));
 
 		test('a server that now advertises a new list is reconnected once', () =>
 			withServer({}, async (growing) => {
 				growing.state.prompts = false;
-				const h = harness(growing, [say('ok')]);
-				await withHost(h, async (host) => {
+				const harness = createHarness(growing, [say('ok')]);
+				await withHost(harness, async (host) => {
 					growing.state.prompts = true;
 					const done = await host.run({
 						prompt: { server: 'test', name: 'start', arguments: { topic: 'x' } },
@@ -945,14 +964,14 @@ suite('McpHost', () => {
 
 	suite('prompts', () => {
 		test("starts a run from a trusted server's prompt, with its roles", async () => {
-			const h = harness(server, [say('ok')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('ok')]);
+			await withHost(harness, async (host) => {
 				const done = await host.run({
 					prompt: { server: 'test', name: 'start', arguments: { topic: 'mice' } },
 				});
 				assert.equal(done.reason, 'answered');
 				assert.deepEqual(
-					h.provider.requests[0]?.messages.map(
+					harness.provider.requests[0]?.messages.map(
 						(item) => item.type === 'message' && `${item.role}: ${item.text}`,
 					),
 					['user: Tell me about mice', 'assistant: I will look it up.', 'user: Go ahead.'],
@@ -961,43 +980,45 @@ suite('McpHost', () => {
 		});
 
 		test("refuses an untrusted server's prompt before any model call", async () => {
-			const h = harness(server, [say('never')], {
+			const harness = createHarness(server, [say('never')], {
 				servers: [{ key: 'test', connection: { url: server.url } }],
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				const done = await host.run({ prompt: { server: 'test', name: 'start', arguments: { topic: 'x' } } });
 				assert.equal(done.reason, 'prompt_failed');
 				assert.match(done.detail ?? '', /not trusted/);
-				assert.equal(h.provider.requests.length, 0);
+				assert.equal(harness.provider.requests.length, 0);
 			});
 		});
 
 		test('a prompt that cannot be fetched ends the run before any model call', async () => {
-			const h = harness(server, [say('never')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('never')]);
+			await withHost(harness, async (host) => {
 				const done = await host.run({ prompt: { server: 'test', name: 'missing' } });
 				assert.equal(done.reason, 'prompt_failed');
-				assert.equal(h.provider.requests.length, 0);
+				assert.equal(harness.provider.requests.length, 0);
 			});
 		});
 	});
 
 	suite('conversation state', () => {
 		test('a state saved while a confirmation waits is restored with the call abandoned', async () => {
-			const h = harness(server, [calls(call(name('confirm')))]);
+			const harness = createHarness(server, [calls(call(name('confirm')))]);
 			let saved: unknown;
 			const controller = new AbortController();
-			h.on((event, host) => {
+			harness.on((event, host) => {
 				if (event.type === 'input_required') {
 					saved = JSON.parse(JSON.stringify(host.state()));
 					controller.abort();
 				}
 			});
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' }, { signal: controller.signal });
 			});
 
-			const restored = harness(server, [calls(call(name('lookup'), { id: '2' })), say('ok')], { state: saved });
+			const restored = createHarness(server, [calls(call(name('lookup'), { id: '2' })), say('ok')], {
+				state: saved,
+			});
 			await withHost(restored, async (host) => {
 				assert.deepEqual(
 					outputs(host.state().items).map(({ output }) => output),
@@ -1018,14 +1039,14 @@ suite('McpHost', () => {
 		});
 
 		test('a saved state continues the conversation in a new host', async () => {
-			const first = harness(server, [say('Hello')]);
+			const first = createHarness(server, [say('Hello')]);
 			let saved: unknown;
 			await withHost(first, async (host) => {
 				await host.run({ message: 'Hi' });
 				saved = JSON.parse(JSON.stringify(host.state()));
 			});
 
-			const second = harness(server, [say('Again')], { state: saved });
+			const second = createHarness(server, [say('Again')], { state: saved });
 			await withHost(second, async (host) => {
 				await host.run({ message: 'More' });
 				assert.deepEqual(
@@ -1038,38 +1059,45 @@ suite('McpHost', () => {
 
 	suite('create', () => {
 		test('refuses duplicate server keys, and a missing policy', async () => {
-			const h = harness(server, []);
+			const harness = createHarness(server, []);
 			await assert.rejects(
-				McpHost.create({ ...h.options, servers: [...h.options.servers, ...h.options.servers] }),
+				McpHost.create({
+					...harness.options,
+					servers: [...harness.options.servers, ...harness.options.servers],
+				}),
 				TypeError,
 			);
-			await assert.rejects(McpHost.create({ ...h.options, approvalPolicy: undefined as never }), TypeError);
+			await assert.rejects(McpHost.create({ ...harness.options, approvalPolicy: undefined as never }), TypeError);
 		});
 
 		test('refuses a timeout a Node timer cannot hold, or one that is not finite', async () => {
-			const h = harness(server, []);
+			const harness = createHarness(server, []);
 			const tooLong = 2 ** 31;
 			for (const options of [
-				{ limits: { ...h.options.limits, wallClockMs: tooLong } },
-				{ limits: { ...h.options.limits, wallClockMs: Number.POSITIVE_INFINITY } },
+				{ limits: { ...harness.options.limits, wallClockMs: tooLong } },
+				{ limits: { ...harness.options.limits, wallClockMs: Number.POSITIVE_INFINITY } },
 				{ approvalTimeoutMs: tooLong },
 				{ approvalTimeoutMs: 0 },
 				{ confirmations: { timeoutMs: Number.NaN } },
 			]) {
-				await assert.rejects(McpHost.create({ ...h.options, ...options }), TypeError, JSON.stringify(options));
+				await assert.rejects(
+					McpHost.create({ ...harness.options, ...options }),
+					TypeError,
+					JSON.stringify(options),
+				);
 			}
 		});
 
 		test('fails, closing what it opened, when a server cannot be reached', async () => {
 			const closes = mock.method(McpClient.prototype, 'close');
 			try {
-				const h = harness(server, [], {
+				const harness = createHarness(server, [], {
 					servers: [
 						{ key: 'test', containsOnlyOpenData: true, connection: { url: server.url } },
 						{ key: 'gone', containsOnlyOpenData: true, connection: { url: 'http://127.0.0.1:9/mcp' } },
 					],
 				});
-				await assert.rejects(McpHost.create(h.options));
+				await assert.rejects(McpHost.create(harness.options));
 				assert.equal(closes.mock.callCount(), 1, 'the server that connected is closed');
 			} finally {
 				closes.mock.restore();
@@ -1085,8 +1113,8 @@ suite('McpHost', () => {
 		};
 
 		/** A harness whose one server the person attests holds only open-access data. */
-		const openData = (h: Harness) => {
-			h.options.servers = [
+		const openData = (harness: Harness) => {
+			harness.options.servers = [
 				{ key: 'test', trusted: true, containsOnlyOpenData: true, connection: { url: server.url } },
 			];
 		};
@@ -1098,8 +1126,8 @@ suite('McpHost', () => {
 		];
 
 		test('treats a server as restricted unless the person flags it', async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
+			await withHost(harness, async (host) => {
 				assert.equal(host.state().servers[0]?.returnedData, 'none');
 				await host.run({ message: 'go' });
 
@@ -1115,19 +1143,19 @@ suite('McpHost', () => {
 					{ callId: 'call-1', server: 'test', tool: 'lookup', containsOnlyOpenData: false },
 				]);
 				assert.equal(holdsRestrictedData(host.state().servers), true);
-				assert.equal(h.of('run_started')[0]?.servers[0]?.containsOnlyOpenData, false);
+				assert.equal(harness.of('run_started')[0]?.servers[0]?.containsOnlyOpenData, false);
 			});
 		});
 
 		test("records a flagged server's data as unrestricted", async () => {
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
-			openData(h);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
+			openData(harness);
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
 
 				assert.equal(host.state().servers[0]?.returnedData, 'unrestricted');
 				assert.equal(holdsRestrictedData(host.state().servers), false);
-				assert.equal(h.of('run_started')[0]?.servers[0]?.containsOnlyOpenData, true);
+				assert.equal(harness.of('run_started')[0]?.servers[0]?.containsOnlyOpenData, true);
 			});
 		});
 
@@ -1139,8 +1167,8 @@ suite('McpHost', () => {
 				[name('no_such_tool'), 'none'],
 			];
 			for (const [tool, expected] of cases) {
-				const h = harness(server, [calls(call(tool)), say('ok')]);
-				await withHost(h, async (host) => {
+				const harness = createHarness(server, [calls(call(tool)), say('ok')]);
+				await withHost(harness, async (host) => {
 					await host.run({ message: 'go' });
 					assert.equal(host.state().servers[0]?.returnedData, expected, tool);
 				});
@@ -1148,8 +1176,8 @@ suite('McpHost', () => {
 		});
 
 		test('marks a fetched prompt as returned data', async () => {
-			const h = harness(server, [say('ok')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('ok')]);
+			await withHost(harness, async (host) => {
 				await host.run({ prompt: { server: 'test', name: 'start', arguments: { topic: 'x' } } });
 				assert.equal(host.state().servers[0]?.returnedData, 'restricted');
 			});
@@ -1164,8 +1192,8 @@ suite('McpHost', () => {
 					[false, false],
 				];
 				for (const [testFlagged, otherFlagged] of flags) {
-					const h = harness(server, [], { servers: both(testFlagged, otherFlagged) });
-					await assert.rejects(h.create(), (error) => error instanceof ServerSetError);
+					const harness = createHarness(server, [], { servers: both(testFlagged, otherFlagged) });
+					await assert.rejects(harness.create(), (error) => error instanceof ServerSetError);
 				}
 				assert.equal(connects.mock.callCount(), 0);
 			} finally {
@@ -1174,7 +1202,7 @@ suite('McpHost', () => {
 		});
 
 		test('lets flagged servers share a conversation, and call each other with what they returned', async () => {
-			const h = harness(
+			const harness = createHarness(
 				server,
 				[
 					calls(call(name('lookup'), { id: '1' }), call(reduceToolName('other', 'lookup'), { id: '1' })),
@@ -1182,10 +1210,10 @@ suite('McpHost', () => {
 				],
 				{ servers: both(true, true) },
 			);
-			await withHost(h, async (host) => {
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'go' });
 				assert.deepEqual(
-					h.of('tool_result').map(({ outcome }) => outcome.outcome),
+					harness.of('tool_result').map(({ outcome }) => outcome.outcome),
 					['result', 'result'],
 				);
 			});
@@ -1194,7 +1222,7 @@ suite('McpHost', () => {
 		test('refuses to bring a server back beside another whose data is now restricted, before connecting', async () => {
 			// Both flagged, `test` returns data; a restore with `test` alone and unflagged makes that data restricted.
 			// A restore with both flagged again would hold `other`, which every call to it would cross to.
-			const first = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
+			const first = createHarness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
 				servers: both(true, true),
 			});
 			let saved: unknown;
@@ -1202,7 +1230,7 @@ suite('McpHost', () => {
 				await host.run({ message: 'go' });
 				saved = JSON.parse(JSON.stringify(host.state()));
 			});
-			const unflagged = harness(server, [], {
+			const unflagged = createHarness(server, [], {
 				state: saved,
 				servers: [{ key: 'test', connection: { url: server.url } }],
 			});
@@ -1212,9 +1240,9 @@ suite('McpHost', () => {
 
 			const connects = mock.method(McpClient, 'connect');
 			try {
-				const h = harness(server, [], { state: saved, servers: both(true, true) });
+				const harness = createHarness(server, [], { state: saved, servers: both(true, true) });
 				await assert.rejects(
-					h.create(),
+					harness.create(),
 					(error) =>
 						error instanceof ServerSetError &&
 						error.message ===
@@ -1225,7 +1253,7 @@ suite('McpHost', () => {
 				connects.mock.restore();
 			}
 
-			const alone = harness(server, [calls(call(name('lookup'), { id: '2' })), say('ok')], {
+			const alone = createHarness(server, [calls(call(name('lookup'), { id: '2' })), say('ok')], {
 				state: saved,
 				servers: both(true, true).slice(0, 1),
 			});
@@ -1236,18 +1264,18 @@ suite('McpHost', () => {
 		});
 
 		test('refuses to restore a conversation holding restricted data with a server added', async () => {
-			const h = harness(server, [], { state: restrictedState(), servers: both(true, true) });
+			const harness = createHarness(server, [], { state: restrictedState(), servers: both(true, true) });
 			await assert.rejects(
-				h.create(),
+				harness.create(),
 				(error) => error instanceof ServerSetError && /cannot join/.test(error.message),
 			);
 		});
 
 		test('never loosens on restore: flagging a server later leaves its earlier data restricted', async () => {
 			const saved = restrictedState();
-			const h = harness(server, [], { state: saved });
-			openData(h);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [], { state: saved });
+			openData(harness);
+			await withHost(harness, async (host) => {
 				assert.deepEqual(host.state().servers, [
 					{
 						key: 'test',
@@ -1260,10 +1288,10 @@ suite('McpHost', () => {
 		});
 
 		test('refuses a flag that is not a boolean, rather than reading it as truthy', async () => {
-			const h = harness(server, [], {
+			const harness = createHarness(server, [], {
 				servers: [{ key: 'test', containsOnlyOpenData: 'yes', connection: { url: server.url } } as never],
 			});
-			await assert.rejects(h.create(), TypeError);
+			await assert.rejects(harness.create(), TypeError);
 		});
 
 		test('denied, cancelled and failed calls mark nothing as returned', async () => {
@@ -1273,8 +1301,12 @@ suite('McpHost', () => {
 			];
 			for (const [label, overrides, arrange] of cases) {
 				await withServer({}, async (failing) => {
-					const h = harness(failing, [calls(call(name('lookup'), { id: '1' })), say('ok')], overrides);
-					await withHost(h, async (host) => {
+					const harness = createHarness(
+						failing,
+						[calls(call(name('lookup'), { id: '1' })), say('ok')],
+						overrides,
+					);
+					await withHost(harness, async (host) => {
 						arrange(failing);
 						await host.run({ message: 'go' });
 						assert.equal(host.state().servers[0]?.returnedData, 'none', label);
@@ -1282,7 +1314,7 @@ suite('McpHost', () => {
 				});
 			}
 
-			const cancelling = harness(server, [calls(call(name('slow')))]);
+			const cancelling = createHarness(server, [calls(call(name('slow')))]);
 			const controller = new AbortController();
 			cancelling.on((event) => {
 				if (event.type === 'tool_call') {
@@ -1296,7 +1328,7 @@ suite('McpHost', () => {
 		});
 
 		test('records what the person carried in, and refuses to restore it with a server added', async () => {
-			const first = harness(server, [say('ok')]);
+			const first = createHarness(server, [say('ok')]);
 			let saved: unknown;
 			await withHost(first, async (host) => {
 				await host.run({
@@ -1313,7 +1345,7 @@ suite('McpHost', () => {
 				saved = JSON.parse(JSON.stringify(host.state()));
 			});
 
-			const widened = harness(server, [], { state: saved, servers: both(true, true) });
+			const widened = createHarness(server, [], { state: saved, servers: both(true, true) });
 			await assert.rejects(
 				widened.create(),
 				(error) => error instanceof ServerSetError && /carried content/.test(error.message),
@@ -1322,7 +1354,7 @@ suite('McpHost', () => {
 
 		test('treats a key reused for another server as a server added', () =>
 			withServer({}, async (other) => {
-				const moved = harness(server, [], {
+				const moved = createHarness(server, [], {
 					state: restrictedState(),
 					servers: [{ key: 'test', connection: { url: other.url } }],
 				});
@@ -1331,7 +1363,7 @@ suite('McpHost', () => {
 				const open = emptyState([
 					{ key: 'test', ...identifyEndpoint(server.url), containsOnlyOpenData: false },
 				]);
-				const reused = harness(other, [], {
+				const reused = createHarness(other, [], {
 					state: open,
 					servers: [{ key: 'test', connection: { url: other.url } }],
 				});
@@ -1349,15 +1381,15 @@ suite('McpHost', () => {
 		};
 
 		test('starts the conversation labelled as server text, and records the crossing', async () => {
-			const h = harness(server, [say('ok')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('ok')]);
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'Look these up', carried });
 
-				assert.deepEqual(h.provider.requests[0]?.messages, [
+				assert.deepEqual(harness.provider.requests[0]?.messages, [
 					userMessage(`${carriedLabel('overture')}\n${carried.text}`),
 					userMessage('Look these up'),
 				]);
-				const [event] = h.of('content_carried');
+				const [event] = harness.of('content_carried');
 				assert.deepEqual(
 					[event?.text, event?.from, event?.to, event?.carriedAt],
 					[carried.text, carried.from, ['test'], carried.carriedAt],
@@ -1367,8 +1399,8 @@ suite('McpHost', () => {
 		});
 
 		test('is refused once the conversation has begun', async () => {
-			const h = harness(server, [say('ok')]);
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('ok')]);
+			await withHost(harness, async (host) => {
 				await host.run({ message: 'Hi' });
 				await assert.rejects(host.run({ message: 'Now this', carried }), TypeError);
 			});
@@ -1377,21 +1409,21 @@ suite('McpHost', () => {
 
 	suite('reported context window', () => {
 		test("uses the server's window when it is smaller than the configured one", async () => {
-			const h = harness(server, [say('never')], {}, { contextWindow: 50 });
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('never')], {}, { contextWindow: 50 });
+			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'Hi' });
-				assert.equal(h.of('run_started')[0]?.reportedContextWindow, 50);
+				assert.equal(harness.of('run_started')[0]?.reportedContextWindow, 50);
 				assert.equal(done.reason, 'context_window');
 				assert.match(done.detail ?? '', /50-token window/);
-				assert.equal(h.provider.requests.length, 0);
+				assert.equal(harness.provider.requests.length, 0);
 			});
 		});
 
 		test('keeps the configured window when the server reports a larger one', async () => {
-			const h = harness(server, [say('ok')], {}, { contextWindow: 10_000_000 });
-			await withHost(h, async (host) => {
+			const harness = createHarness(server, [say('ok')], {}, { contextWindow: 10_000_000 });
+			await withHost(harness, async (host) => {
 				assert.equal((await host.run({ message: 'Hi' })).reason, 'answered');
-				assert.equal(h.of('run_started')[0]?.reportedContextWindow, 10_000_000);
+				assert.equal(harness.of('run_started')[0]?.reportedContextWindow, 10_000_000);
 			});
 		});
 	});
@@ -1422,10 +1454,10 @@ suite('McpHost', () => {
 							: events(chunk({ content: 'Found it.' }), chunk({}, 'stop'), usageChunk(260, 4)),
 					);
 				});
-				const h = harness(server, [], {
+				const harness = createHarness(server, [], {
 					provider: new OpenAiCompatibleProvider({ baseUrl: model.url }),
 				});
-				await withHost(h, async (host) => {
+				await withHost(harness, async (host) => {
 					const done = await host.run({ message: 'Find 9' });
 
 					assert.equal(done.reason, 'answered');
@@ -1446,7 +1478,7 @@ suite('McpHost', () => {
 						{ role: 'tool', tool_call_id: 'call_x', content: 'found 9' },
 					]);
 					assert.deepEqual(
-						h.of('token').map(({ text }) => text),
+						harness.of('token').map(({ text }) => text),
 						['Found it.'],
 					);
 				});

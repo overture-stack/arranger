@@ -112,8 +112,8 @@ export const emptyState = (servers: readonly ConfiguredServer[]): ConversationSt
 const RETURNED_ORDER: readonly ReturnedData[] = ['none', 'unrestricted', 'restricted'];
 
 /** The higher of two records of returned data. */
-const higher = (a: ReturnedData, b: ReturnedData): ReturnedData =>
-	RETURNED_ORDER.indexOf(a) >= RETURNED_ORDER.indexOf(b) ? a : b;
+const higher = (current: ReturnedData, incoming: ReturnedData): ReturnedData =>
+	RETURNED_ORDER.indexOf(current) >= RETURNED_ORDER.indexOf(incoming) ? current : incoming;
 
 /**
  * Records that a server returned data into the conversation.

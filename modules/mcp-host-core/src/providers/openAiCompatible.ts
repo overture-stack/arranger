@@ -235,7 +235,7 @@ const finalResponse = (gathered: Gathered, durationMs: number): FinalResponse =>
 	text: gathered.text,
 	...(gathered.reasoning && { reasoning: gathered.reasoning }),
 	toolCalls: [...gathered.calls.entries()]
-		.sort(([a], [b]) => a - b)
+		.sort(([leftIndex], [rightIndex]) => leftIndex - rightIndex)
 		.map(([, { id, name, arguments: args }]) => classifyCall(id, name, args)),
 	...(gathered.usage && { usage: gathered.usage }),
 	stopReason: stopReasonOf(gathered.finishReason ?? ''),
@@ -281,12 +281,12 @@ const foldChunk = (gathered: Gathered, chunk: Record<string, unknown>): string =
 		if (typeof fragment.id === 'string' && fragment.id) {
 			call.id = fragment.id;
 		}
-		const fn = isRecord(fragment.function) ? fragment.function : {};
-		if (typeof fn.name === 'string') {
-			call.name += fn.name;
+		const fragmentFunction = isRecord(fragment.function) ? fragment.function : {};
+		if (typeof fragmentFunction.name === 'string') {
+			call.name += fragmentFunction.name;
 		}
-		if (typeof fn.arguments === 'string') {
-			call.arguments += fn.arguments;
+		if (typeof fragmentFunction.arguments === 'string') {
+			call.arguments += fragmentFunction.arguments;
 		}
 	}
 	const text = typeof delta.content === 'string' ? delta.content : '';
