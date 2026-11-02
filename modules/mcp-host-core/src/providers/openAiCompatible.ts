@@ -2,7 +2,6 @@
 // retries: a failure is reported once, as data.
 import { createParser } from 'eventsource-parser';
 
-import { isRecord } from '../json.js';
 import { type ConversationItem } from '../messages.js';
 import {
 	type FinalResponse,
@@ -15,7 +14,7 @@ import {
 	type StopReason,
 	type TokenUsage,
 } from '../provider.js';
-import { assertTimeout } from '../timeouts.js';
+import { assertTimeout, errorMessage, isRecord, parseJson } from '../utils.js';
 
 /** The most of an error response's body kept in a `model_error`. */
 export const MAX_ERROR_BODY_CHARS = 4_096;
@@ -56,16 +55,7 @@ type WireMessage =
 	| { role: 'tool'; tool_call_id: string; content: string };
 
 /** A call's arguments as the server will accept them: a JSON object, with unparseable text wrapped in one. */
-const wireArguments = (raw: string): string => {
-	try {
-		if (isRecord(JSON.parse(raw))) {
-			return raw;
-		}
-	} catch {
-		// Wrapped below.
-	}
-	return JSON.stringify({ unparsed: raw });
-};
+const wireArguments = (raw: string): string => (isRecord(parseJson(raw)) ? raw : JSON.stringify({ unparsed: raw }));
 
 /**
  * Maps the conversation to Chat Completions messages.
@@ -199,13 +189,7 @@ const reasoningOf = (message: Record<string, unknown>): string | undefined => {
  */
 const classifyCall = (id: string | undefined, name: string, args: string): ProviderToolCall | ProviderMalformedCall => {
 	const raw = args.trim() === '' ? '{}' : args;
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(raw);
-	} catch {
-		parsed = undefined;
-	}
-	if (!name || !isRecord(parsed)) {
+	if (!name || !isRecord(parseJson(raw))) {
 		return {
 			kind: 'malformed',
 			...(id && { id }),
@@ -313,7 +297,7 @@ const endedBy = (caller: AbortSignal, timedOut: boolean, error: unknown): ModelE
 	if (timedOut) {
 		return { kind: 'timeout', message: 'The model server did not answer in time' };
 	}
-	return { kind: 'network', message: error instanceof Error ? error.message : String(error) };
+	return { kind: 'network', message: errorMessage(error) };
 };
 
 /** An OpenAI-compatible Chat Completions server, such as Ollama, vLLM, LM Studio or hosted OpenAI. */
@@ -376,10 +360,9 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 			try {
 				headers = await this.#headers(requestSignal);
 			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
 				yield {
 					type: 'error',
-					error: { kind: 'unknown', message: `The API key could not be read: ${message}` },
+					error: { kind: 'unknown', message: `The API key could not be read: ${errorMessage(error)}` },
 				};
 				return;
 			}
@@ -427,10 +410,8 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 							if (data === '[DONE]' || invalid !== undefined) {
 								return;
 							}
-							let chunk: unknown;
-							try {
-								chunk = JSON.parse(data);
-							} catch {
+							const chunk = parseJson(data);
+							if (chunk === undefined) {
 								invalid = data.slice(0, MAX_ERROR_BODY_CHARS);
 								return;
 							}

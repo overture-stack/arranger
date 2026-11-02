@@ -3,18 +3,22 @@
 // server was sent.
 import { type ElicitResult } from '@overture-stack/arranger-mcp-client';
 
-import { isRecord } from './json.js';
+import { isRecord } from './utils.js';
+
+/** A tool call as the approval policy, and a person asked to approve it, see it. */
+export type ApprovalCall = {
+	callId: string;
+	server: string;
+	tool: string;
+	arguments: Record<string, unknown>;
+};
 
 /** A pre-call approval the policy asked the consumer for. */
-export type PendingApproval = {
+export type PendingApproval = ApprovalCall & {
 	kind: 'approval';
 	/** `${callId}/approval`. */
 	id: string;
 	runId: string;
-	callId: string;
-	server: string;
-	tool: string;
-	arguments: unknown;
 	/** When it was asked, as ISO 8601. */
 	askedAt: string;
 };
@@ -52,6 +56,9 @@ export type RespondResult = 'accepted' | 'unknown' | 'already_answered' | 'timed
 /** How a question was settled, and how long it waited. */
 export type Settled<T> = { by: 'answer'; answer: T; waitedMs: number } | { by: 'timeout'; waitedMs: number };
 
+/** How a question closed, for an answer that arrives after it. */
+type Closure = 'answered' | 'timed_out' | 'withdrawn';
+
 type Entry = {
 	question: PendingQuestion;
 	accept: (answer: Answer) => boolean;
@@ -71,7 +78,7 @@ export const confirmationAnswer = (answer: Answer): answer is ElicitResult =>
 /** The open and settled questions of one conversation. */
 export class QuestionTable {
 	readonly #open = new Map<string, Entry>();
-	readonly #closed = new Map<string, 'answered' | 'timed_out' | 'withdrawn'>();
+	readonly #closed = new Map<string, Closure>();
 
 	/**
 	 * Waits for an answer to a question.
@@ -102,7 +109,7 @@ export class QuestionTable {
 			const waited = () => Date.now() - startedMs;
 			const listening = new AbortController();
 			let timer: ReturnType<typeof setTimeout> | undefined;
-			const close = (how: 'answered' | 'timed_out' | 'withdrawn') => {
+			const close = (how: Closure) => {
 				this.#open.delete(id);
 				this.#closed.set(id, how);
 				clearTimeout(timer);

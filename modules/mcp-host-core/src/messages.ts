@@ -1,6 +1,6 @@
 // The conversation's items, shaped after the Responses API's. The rest of host-core uses the constructors and readers
 // below, so a change of shape stays here, apart from each provider, which maps items to its own wire format.
-import { isRecord } from './json.js';
+import { isRecord } from './utils.js';
 
 /** A person's message, or a prompt's user turn. */
 export type UserMessage = { type: 'message'; role: 'user'; text: string };
@@ -143,6 +143,18 @@ export const isConversationItem = (value: unknown): value is ConversationItem =>
 export const unansweredCalls = (items: readonly ConversationItem[]): FunctionCall[] => {
 	const answered = new Set(items.filter(isFunctionCallOutput).map(({ callId }) => callId));
 	return items.filter(isFunctionCall).filter(({ callId }) => !answered.has(callId));
+};
+
+/**
+ * Gives every call that has no tool message one, as an error.
+ *
+ * @param items - The conversation, which is changed.
+ * @param messageFor - The tool message for each unanswered call.
+ */
+export const answerUnanswered = (items: ConversationItem[], messageFor: (callId: string) => string): void => {
+	for (const { callId } of unansweredCalls(items)) {
+		items.push(functionCallOutput(callId, messageFor(callId), true));
+	}
 };
 
 /**

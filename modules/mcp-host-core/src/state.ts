@@ -2,9 +2,9 @@
 // is never resumed: its call gets the "abandoned" tool message.
 import { createHash } from 'node:crypto';
 
-import { isRecord } from './json.js';
-import { type ConversationItem, functionCallOutput, isConversationItem, unansweredCalls } from './messages.js';
+import { answerUnanswered, type ConversationItem, isConversationItem } from './messages.js';
 import { TOOL_MESSAGES } from './toolMessages.js';
+import { isArrayOf, isRecord } from './utils.js';
 
 /** The shape's version, so a later shape can migrate a saved state. */
 export const STATE_VERSION = 1;
@@ -30,15 +30,7 @@ export type ReturnedData = 'none' | 'unrestricted' | 'restricted';
  * A server the conversation has held, kept after a restore drops it, since what it returned is still in the
  * conversation.
  */
-export type ServerRecord = {
-	key: string;
-	/** The origin the key named, kept readable for messages; it holds no path or query. */
-	origin: string;
-	/** Which server the key named, as {@link identifyEndpoint} gives it. */
-	endpointDigest: string;
-	containsOnlyOpenData: boolean;
-	returnedData: ReturnedData;
-};
+export type ServerRecord = ConfiguredServer & { returnedData: ReturnedData };
 
 /** Content the person carried into the conversation, recorded so a restore cannot widen where it may go. */
 export type CarryRecord = {
@@ -66,7 +58,12 @@ export type ConversationState = {
 export type ConfiguredServer = EndpointIdentity & { key: string; containsOnlyOpenData: boolean };
 
 /** Which server a URL reaches, in a form safe to save with the conversation. */
-export type EndpointIdentity = { origin: string; endpointDigest: string };
+export type EndpointIdentity = {
+	/** The URL's origin, kept readable for messages; it holds no path or query. */
+	origin: string;
+	/** Which server the URL reaches, as {@link identifyEndpoint} gives it. */
+	endpointDigest: string;
+};
 
 /**
  * Identifies the server a URL reaches, so a restore can tell when a key now names another server.
@@ -89,6 +86,15 @@ export const identifyEndpoint = (url: string | URL): EndpointIdentity => {
 	return { origin: parsed.origin, endpointDigest: createHash('sha256').update(parsed.href).digest('hex') };
 };
 
+/** The record of a server the conversation has just gained, which has returned nothing yet. */
+const newServerRecord = ({ key, origin, endpointDigest, containsOnlyOpenData }: ConfiguredServer): ServerRecord => ({
+	key,
+	origin,
+	endpointDigest,
+	containsOnlyOpenData,
+	returnedData: 'none',
+});
+
 /**
  * The state of a new conversation.
  *
@@ -99,13 +105,7 @@ export const emptyState = (servers: readonly ConfiguredServer[]): ConversationSt
 	items: [],
 	nextCallSeq: 1,
 	calls: [],
-	servers: servers.map(({ key, origin, endpointDigest, containsOnlyOpenData }) => ({
-		key,
-		origin,
-		endpointDigest,
-		containsOnlyOpenData,
-		returnedData: 'none',
-	})),
+	servers: servers.map(newServerRecord),
 	carried: [],
 });
 
@@ -242,15 +242,7 @@ export const reconcileServers = (
 						: record.returnedData;
 				return { ...record, containsOnlyOpenData, returnedData };
 			}),
-		...added.map(
-			({ key, origin, endpointDigest, containsOnlyOpenData }): ServerRecord => ({
-				key,
-				origin,
-				endpointDigest,
-				containsOnlyOpenData,
-				returnedData: 'none',
-			}),
-		),
+		...added.map(newServerRecord),
 	];
 };
 
@@ -270,14 +262,12 @@ export const withEveryCallAnswered = (
 	standing: (callId: string) => CallStanding,
 ): ConversationState => {
 	const copy = structuredClone(state);
-	for (const { callId } of unansweredCalls(copy.items)) {
-		const message = {
-			confirming: TOOL_MESSAGES.abandoned,
-			in_flight: TOOL_MESSAGES.transportError,
-			queued: TOOL_MESSAGES.notRun,
-		}[standing(callId)];
-		copy.items.push(functionCallOutput(callId, message, true));
-	}
+	const messages = {
+		confirming: TOOL_MESSAGES.abandoned,
+		in_flight: TOOL_MESSAGES.transportError,
+		queued: TOOL_MESSAGES.notRun,
+	};
+	answerUnanswered(copy.items, (callId) => messages[standing(callId)]);
 	return copy;
 };
 
@@ -302,9 +292,6 @@ const isCarryRecord = (value: unknown): value is CarryRecord =>
 	typeof value.from.server === 'string' &&
 	typeof value.carriedAt === 'string';
 
-const every = <T>(value: unknown, check: (entry: unknown) => entry is T): value is T[] =>
-	Array.isArray(value) && value.every(check);
-
 /**
  * Checks a saved state and copies it for a new conversation.
  *
@@ -319,10 +306,10 @@ export const restoreState = (saved: unknown, configured: readonly ConfiguredServ
 		!isRecord(saved) ||
 		saved.version !== STATE_VERSION ||
 		typeof saved.nextCallSeq !== 'number' ||
-		!every(saved.items, isConversationItem) ||
-		!every(saved.calls, isCallRecord) ||
-		!every(saved.servers, isServerRecord) ||
-		!every(saved.carried, isCarryRecord)
+		!isArrayOf(saved.items, isConversationItem) ||
+		!isArrayOf(saved.calls, isCallRecord) ||
+		!isArrayOf(saved.servers, isServerRecord) ||
+		!isArrayOf(saved.carried, isCarryRecord)
 	) {
 		throw new TypeError(`Not a conversation state of version ${STATE_VERSION}`);
 	}

@@ -1,6 +1,7 @@
 // Every event is plain data, so it crosses IPC unchanged and saves to a file as it is.
-import { type ElicitResult, type ServerCapabilities } from '@overture-stack/arranger-mcp-client';
+import { type ElicitResult, type McpClientOptions, type ServerCapabilities } from '@overture-stack/arranger-mcp-client';
 
+import { type ApprovalCall, type PendingQuestion } from './answers.js';
 import { type ContextWindowSettings, type ShortenedResult } from './context.js';
 import {
 	type FinalResponse,
@@ -10,6 +11,8 @@ import {
 	type ProviderRequest,
 } from './provider.js';
 import { type LeftOutTool } from './registry.js';
+import { type RetryKind, type RetrySettings } from './reply.js';
+import { type CarryRecord } from './state.js';
 import { type ToolCallOutcome } from './toolMessages.js';
 
 /** Limits that end a run. */
@@ -83,12 +86,12 @@ export type EventBody =
 			providerUrl: string;
 			modelDigest?: string;
 			limits: RunLimits;
-			retries: { emptyReply: boolean; outputLimit: boolean };
+			retries: RetrySettings;
 			contextWindow: ContextWindowSettings;
 			/** The window the model server reported, when it reports one; the run uses the smaller of the two. */
 			reportedContextWindow?: number;
 			toolResultMaxChars?: number;
-			clientInfo: { name: string; version: string };
+			clientInfo: McpClientOptions['clientInfo'];
 			servers: RunServer[];
 	  }
 	| {
@@ -105,14 +108,14 @@ export type EventBody =
 			request: Omit<ProviderRequest, 'messages'>;
 			messageCount: number;
 			/** Set on a retry, naming what it retries. */
-			retryOf?: 'empty_reply' | 'output_limit';
+			retryOf?: RetryKind;
 	  }
 	| {
 			type: 'content_carried';
 			/** What the person carried, as the model is sent it after its label. */
 			text: string;
 			/** The server it came from, in the conversation it was carried out of. */
-			from: { server: string; name?: string };
+			from: CarryRecord['from'];
 			/** This conversation's servers. */
 			to: string[];
 			/** When the person carried it, as ISO 8601. */
@@ -138,7 +141,7 @@ export type EventBody =
 	  }
 	| { type: 'output_limit'; turn: number; outputTokens?: number; text: string; retrying: boolean }
 	| { type: 'model_error'; turn: number; error: ModelError }
-	| { type: 'approval_required'; id: string; callId: string; server: string; tool: string; arguments: unknown }
+	| (ApprovalCall & { type: 'approval_required'; id: string })
 	| {
 			type: 'approval_answered';
 			id: string;
@@ -177,7 +180,7 @@ export type EventBody =
 			 */
 			type: 'question_withdrawn';
 			id: string;
-			kind: 'approval' | 'confirmation';
+			kind: PendingQuestion['kind'];
 			callId: string;
 	  }
 	| { type: 'input_state_rejected'; callId: string; server: string; waitedMs: number }

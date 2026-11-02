@@ -10,6 +10,7 @@ import {
 
 import {
 	type Answer,
+	type ApprovalCall,
 	approvalAnswer,
 	confirmationAnswer,
 	type PendingQuestion,
@@ -18,8 +19,7 @@ import {
 } from './answers.js';
 import { type Baseline, type ContextWindowSettings, type FitResult, fitToWindow, serverTruncated } from './context.js';
 import { type DoneReason, type EventBody, type HostEvent, type RunLimits, type RunSummary } from './events.js';
-import { isRecord } from './json.js';
-import { assistantMessage, functionCall, functionCallOutput, unansweredCalls, userMessage } from './messages.js';
+import { answerUnanswered, assistantMessage, functionCall, functionCallOutput, userMessage } from './messages.js';
 import {
 	type FinalResponse,
 	type LlmProvider,
@@ -37,10 +37,11 @@ import {
 	toModelSurface,
 	type ToolRegistry,
 } from './registry.js';
-import { decideReply, type RetryKind } from './reply.js';
+import { decideReply, type RetryKind, type RetrySettings } from './reply.js';
 import {
 	assertServersApart,
 	type CallStanding,
+	type CarryRecord,
 	type ConversationState,
 	emptyState,
 	identifyEndpoint,
@@ -49,7 +50,6 @@ import {
 	restrictedDataFrom,
 	withEveryCallAnswered,
 } from './state.js';
-import { assertTimeout } from './timeouts.js';
 import {
 	capToolMessage,
 	type HostOutcome,
@@ -58,6 +58,7 @@ import {
 	type ToolCallOutcome,
 	toolMessageFor,
 } from './toolMessages.js';
+import { assertTimeout, errorMessage, isRecord, parseJson, untilAborted } from './utils.js';
 
 /** One MCP server in a conversation. */
 export type ServerConfig = {
@@ -94,14 +95,7 @@ export type ApprovalDecision = 'allow' | 'deny' | 'ask';
  * An object, so inputs can be added without breaking a policy. The data-crossing rule needs none: host-core refuses
  * a crossing before the policy is asked.
  */
-export type ApprovalRequest = {
-	call: {
-		callId: string;
-		server: string;
-		tool: string;
-		arguments: Record<string, unknown>;
-	};
-};
+export type ApprovalRequest = { call: ApprovalCall };
 
 /**
  * Decides each call that crosses no data before it runs. Required: no run starts without one. A throw counts as
@@ -127,7 +121,7 @@ export type McpHostOptions = {
 	approvalTimeoutMs?: number;
 	limits: RunLimits;
 	/** One retry each, for an interactive consumer; an evaluation sets both off, so every failure counts. */
-	retries: { emptyReply: boolean; outputLimit: boolean };
+	retries: RetrySettings;
 	contextWindow: ContextWindowSettings;
 	/** A cap on each tool message's characters, with the cut noted. Events keep the full result. */
 	toolResultMaxChars?: number;
@@ -138,17 +132,11 @@ export type McpHostOptions = {
 	/** A saved state to continue from. */
 	state?: unknown;
 	/** This host's name and version, sent to each server. */
-	clientInfo: { name: string; version: string };
+	clientInfo: McpClientOptions['clientInfo'];
 };
 
 /** What the person carried out of another conversation, through their own action. */
-export type CarriedContent = {
-	text: string;
-	/** The server it came from, in the conversation it was carried out of. */
-	from: { server: string; name?: string };
-	/** When the person carried it, as ISO 8601. */
-	carriedAt: string;
-};
+export type CarriedContent = CarryRecord & { text: string };
 
 /**
  * How a run starts: a person's message, which a new conversation may lead with carried content, or a trusted
@@ -209,17 +197,6 @@ type Run = {
 	/** The call on the wire, if any. */
 	inFlight?: string;
 };
-
-const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-
-/** Settles with `promise`, or rejects when `signal` aborts first. */
-const untilAborted = <T>(promise: Promise<T>, signal: AbortSignal): Promise<T> =>
-	new Promise<T>((resolve, reject) => {
-		const onAbort = () => reject(signal.reason);
-		signal.throwIfAborted();
-		signal.addEventListener('abort', onAbort, { once: true });
-		promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
-	});
 
 const validate = (options: McpHostOptions): void => {
 	const keys = options.servers.map(({ key }) => key);
@@ -424,9 +401,7 @@ export class McpHost {
 			ended = await this.#execute(run, input);
 		} finally {
 			clearTimeout(timer);
-			for (const { callId } of unansweredCalls(this.#state.items)) {
-				this.#state.items.push(functionCallOutput(callId, TOOL_MESSAGES.notRun, true));
-			}
+			answerUnanswered(this.#state.items, () => TOOL_MESSAGES.notRun);
 			this.#run = undefined;
 		}
 		return this.#done(run, ended);
@@ -901,12 +876,7 @@ export class McpHost {
 			return;
 		}
 
-		let args: unknown;
-		try {
-			args = JSON.parse(call.arguments);
-		} catch {
-			args = undefined;
-		}
+		const args = parseJson(call.arguments);
 		if (!isRecord(args)) {
 			const malformed: ProviderMalformedCall = {
 				kind: 'malformed',
