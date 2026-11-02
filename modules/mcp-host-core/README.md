@@ -111,7 +111,9 @@ A server's data is restricted unless `containsOnlyOpenData` is set to `true`. Re
 
 ## How a run ends
 
-`done.reason` is one of `answered`, `turn_limit`, `tool_call_limit`, `time_limit`, `cancelled`, `model_error`, `context_window`, `output_limit`, `empty_reply`, `prompt_failed`, `surface_error` or `tool_collision`. Every tool call has its tool message first, so the conversation can always continue.
+`done.reason` is one of `answered`, `turn_limit`, `tool_call_limit`, `time_limit`, `cancelled`, `model_error`, `context_window`, `output_limit`, `empty_reply`, `prompt_failed`, `surface_error` or `tool_collision`, also exported as `DONE_REASONS`, such as `DONE_REASONS.ANSWERED`. Every tool call has its tool message first, so the conversation can always continue.
+
+Every other set of values host-core defines is exported the same way, such as `EVENT_TYPES` and `APPROVAL_DECISIONS`. The plain strings stay valid wherever a type expects one.
 
 ## Development
 

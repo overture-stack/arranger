@@ -1,9 +1,11 @@
 // What a run does with each model reply: run its tool calls, keep its answer, or retry or end after a reply cut off
 // at the output limit or an empty one.
+import { REPLY_DECISIONS, type RETRY_KINDS, STOP_REASONS } from './constants.js';
 import { type FinalResponse } from './provider.js';
+import { type ObjectValues } from './utils.js';
 
 /** Why a request was sent again. */
-export type RetryKind = 'empty_reply' | 'output_limit';
+export type RetryKind = ObjectValues<typeof RETRY_KINDS>;
 
 /** Which retries a consumer allows: one each, after an empty reply and after a reply cut off with no text. */
 export type RetrySettings = { emptyReply: boolean; outputLimit: boolean };
@@ -11,13 +13,13 @@ export type RetrySettings = { emptyReply: boolean; outputLimit: boolean };
 /** What to do with a reply. */
 export type ReplyDecision =
 	/** Run its tool calls, then ask the model again. */
-	| { kind: 'tool_calls' }
+	| { kind: typeof REPLY_DECISIONS.TOOL_CALLS }
 	/** Keep its text as the answer, and end the run. */
-	| { kind: 'answered' }
+	| { kind: typeof REPLY_DECISIONS.ANSWERED }
 	/** It reached the output limit: keep any visible text, marked as cut off, and retry or end. */
-	| { kind: 'output_limit'; keepText: boolean; retry: boolean }
+	| { kind: typeof REPLY_DECISIONS.OUTPUT_LIMIT; keepText: boolean; retry: boolean }
 	/** It came back with nothing: retry or end. */
-	| { kind: 'empty_reply'; retry: boolean };
+	| { kind: typeof REPLY_DECISIONS.EMPTY_REPLY; retry: boolean };
 
 /**
  * Decides what to do with a reply.
@@ -37,15 +39,19 @@ export const decideReply = (
 	retries: RetrySettings,
 ): ReplyDecision => {
 	if (response.toolCalls.length > 0) {
-		return { kind: 'tool_calls' };
+		return { kind: REPLY_DECISIONS.TOOL_CALLS };
 	}
 	const hasText = response.text.trim().length > 0;
 	const mayRetry = previous === undefined;
-	if (response.stopReason === 'length') {
-		return { kind: 'output_limit', keepText: hasText, retry: !hasText && mayRetry && retries.outputLimit };
+	if (response.stopReason === STOP_REASONS.LENGTH) {
+		return {
+			kind: REPLY_DECISIONS.OUTPUT_LIMIT,
+			keepText: hasText,
+			retry: !hasText && mayRetry && retries.outputLimit,
+		};
 	}
 	if (!hasText) {
-		return { kind: 'empty_reply', retry: mayRetry && retries.emptyReply };
+		return { kind: REPLY_DECISIONS.EMPTY_REPLY, retry: mayRetry && retries.emptyReply };
 	}
-	return { kind: 'answered' };
+	return { kind: REPLY_DECISIONS.ANSWERED };
 };

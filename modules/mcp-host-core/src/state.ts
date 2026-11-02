@@ -2,9 +2,10 @@
 // is never resumed: its call gets the "abandoned" tool message.
 import { createHash } from 'node:crypto';
 
+import { CALL_STANDINGS, RETURNED_DATA } from './constants.js';
 import { answerUnanswered, type ConversationItem, isConversationItem } from './messages.js';
 import { TOOL_MESSAGES } from './toolMessages.js';
-import { isArrayOf, isRecord } from './utils.js';
+import { isArrayOf, isRecord, type ObjectValues } from './utils.js';
 
 /** The shape's version, so a later shape can migrate a saved state. */
 export const STATE_VERSION = 1;
@@ -24,7 +25,7 @@ export type CallRecord = {
  * other). It only ever rises, in that order, so no change to a server's flag loosens what is already in the
  * conversation.
  */
-export type ReturnedData = 'none' | 'unrestricted' | 'restricted';
+export type ReturnedData = ObjectValues<typeof RETURNED_DATA>;
 
 /**
  * A server the conversation has held, kept after a restore drops it, since what it returned is still in the
@@ -92,7 +93,7 @@ const newServerRecord = ({ key, origin, endpointDigest, containsOnlyOpenData }: 
 	origin,
 	endpointDigest,
 	containsOnlyOpenData,
-	returnedData: 'none',
+	returnedData: RETURNED_DATA.NONE,
 });
 
 /**
@@ -109,7 +110,11 @@ export const emptyState = (servers: readonly ConfiguredServer[]): ConversationSt
 	carried: [],
 });
 
-const RETURNED_ORDER: readonly ReturnedData[] = ['none', 'unrestricted', 'restricted'];
+const RETURNED_ORDER: readonly ReturnedData[] = [
+	RETURNED_DATA.NONE,
+	RETURNED_DATA.UNRESTRICTED,
+	RETURNED_DATA.RESTRICTED,
+];
 
 /** The higher of two records of returned data. */
 const higher = (current: ReturnedData, incoming: ReturnedData): ReturnedData =>
@@ -121,7 +126,10 @@ const higher = (current: ReturnedData, incoming: ReturnedData): ReturnedData =>
  * @param record - The server's record, which is changed.
  */
 export const markReturnedData = (record: ServerRecord): void => {
-	record.returnedData = higher(record.returnedData, record.containsOnlyOpenData ? 'unrestricted' : 'restricted');
+	record.returnedData = higher(
+		record.returnedData,
+		record.containsOnlyOpenData ? RETURNED_DATA.UNRESTRICTED : RETURNED_DATA.RESTRICTED,
+	);
 };
 
 /**
@@ -132,7 +140,7 @@ export const markReturnedData = (record: ServerRecord): void => {
  * records may be saved. Whether a particular call would carry it out is {@link restrictedDataFrom}'s question.
  */
 export const holdsRestrictedData = (servers: readonly ServerRecord[]): boolean =>
-	servers.some(({ returnedData }) => returnedData === 'restricted');
+	servers.some(({ returnedData }) => returnedData === RETURNED_DATA.RESTRICTED);
 
 /**
  * The servers whose restricted data a call would carry out, so host-core refuses the call when there are any.
@@ -148,7 +156,9 @@ export const holdsRestrictedData = (servers: readonly ServerRecord[]): boolean =
  * held them.
  */
 export const restrictedDataFrom = (servers: readonly ServerRecord[], server: string): string[] =>
-	servers.filter(({ key, returnedData }) => returnedData === 'restricted' && key !== server).map(({ key }) => key);
+	servers
+		.filter(({ key, returnedData }) => returnedData === RETURNED_DATA.RESTRICTED && key !== server)
+		.map(({ key }) => key);
 
 /**
  * A configuration that a conversation cannot have: a server the person has not flagged sharing it with another, or
@@ -237,8 +247,8 @@ export const reconcileServers = (
 			.map((record): ServerRecord => {
 				const containsOnlyOpenData = flagNow.get(record.key) ?? record.containsOnlyOpenData;
 				const returnedData =
-					!containsOnlyOpenData && record.returnedData === 'unrestricted'
-						? 'restricted'
+					!containsOnlyOpenData && record.returnedData === RETURNED_DATA.UNRESTRICTED
+						? RETURNED_DATA.RESTRICTED
 						: record.returnedData;
 				return { ...record, containsOnlyOpenData, returnedData };
 			}),
@@ -247,7 +257,7 @@ export const reconcileServers = (
 };
 
 /** Where an unanswered call stood when the state was taken. */
-export type CallStanding = 'confirming' | 'in_flight' | 'queued';
+export type CallStanding = ObjectValues<typeof CALL_STANDINGS>;
 
 /**
  * A copy of the state in which every call has a tool message, so it is valid for any provider.
@@ -262,10 +272,10 @@ export const withEveryCallAnswered = (
 	standing: (callId: string) => CallStanding,
 ): ConversationState => {
 	const copy = structuredClone(state);
-	const messages = {
-		confirming: TOOL_MESSAGES.abandoned,
-		in_flight: TOOL_MESSAGES.transportError,
-		queued: TOOL_MESSAGES.notRun,
+	const messages: Record<CallStanding, string> = {
+		[CALL_STANDINGS.CONFIRMING]: TOOL_MESSAGES.abandoned,
+		[CALL_STANDINGS.IN_FLIGHT]: TOOL_MESSAGES.transportError,
+		[CALL_STANDINGS.QUEUED]: TOOL_MESSAGES.notRun,
 	};
 	answerUnanswered(copy.items, (callId) => messages[standing(callId)]);
 	return copy;
@@ -313,6 +323,6 @@ export const restoreState = (saved: unknown, configured: readonly ConfiguredServ
 	) {
 		throw new TypeError(`Not a conversation state of version ${STATE_VERSION}`);
 	}
-	const state = withEveryCallAnswered(saved as ConversationState, () => 'queued');
+	const state = withEveryCallAnswered(saved as ConversationState, () => CALL_STANDINGS.QUEUED);
 	return { ...state, servers: reconcileServers(state, configured) };
 };

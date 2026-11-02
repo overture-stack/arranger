@@ -1,6 +1,13 @@
 // The seam between host-core and a model server: nothing here assumes a wire format or how a provider authenticates.
+import {
+	type MODEL_ERROR_KINDS,
+	type STOP_REASONS,
+	type STREAM_ITEM_TYPES,
+	type TOOL_CALL_KINDS,
+} from './constants.js';
 import { type ConversationItem } from './messages.js';
 import { type ToolDefinition } from './registry.js';
+import { type ObjectValues } from './utils.js';
 
 /** The model and how to sample it. Every field is recorded in `model_request`. */
 export type ModelSettings = {
@@ -27,7 +34,7 @@ export type ProviderRequest = ModelSettings & {
 
 /** A well-formed tool call. */
 export type ProviderToolCall = {
-	kind: 'call';
+	kind: typeof TOOL_CALL_KINDS.CALL;
 	/** The model's id for the call, if it gave one. */
 	id?: string;
 	name: string;
@@ -37,7 +44,7 @@ export type ProviderToolCall = {
 
 /** A tool call the provider could not parse, with what came back. */
 export type ProviderMalformedCall = {
-	kind: 'malformed';
+	kind: typeof TOOL_CALL_KINDS.MALFORMED;
 	id?: string;
 	name?: string;
 	/** The raw output, kept so a consumer can count parse failures. */
@@ -53,7 +60,7 @@ export type TokenUsage = {
 };
 
 /** Why the model stopped. `length` means it reached the output limit. */
-export type StopReason = 'stop' | 'length' | 'tool_calls' | 'content_filter' | 'other';
+export type StopReason = ObjectValues<typeof STOP_REASONS>;
 
 /** What one `generate()` call produced. */
 export type FinalResponse = {
@@ -71,38 +78,17 @@ export type FinalResponse = {
 	providerItems?: unknown[];
 };
 
-/**
- * Why the model server gave no usable reply.
- *
- * @remarks
- * - `http`: an HTTP error status, with its body.
- * - `timeout`: the provider's own timeout ran out.
- * - `refusal`: the server refused the request.
- * - `stream_ended`: the stream ended without a finish reason, or without a response.
- * - `network`: the request could not be sent or read.
- * - `aborted`: the run's signal aborted the request.
- * - `truncated`: the server counted fewer prompt tokens than the previous turn for a longer request, so it dropped
- *   messages on its own (host-core's backstop, not the provider's).
- * - `unknown`: anything else, including a provider that threw.
- */
-export type ModelErrorKind =
-	| 'http'
-	| 'timeout'
-	| 'refusal'
-	| 'stream_ended'
-	| 'network'
-	| 'aborted'
-	| 'truncated'
-	| 'unknown';
+/** Why the model server gave no usable reply: one of {@link MODEL_ERROR_KINDS}. */
+export type ModelErrorKind = ObjectValues<typeof MODEL_ERROR_KINDS>;
 
 /** A model server error, as plain data. */
 export type ModelError = { kind: ModelErrorKind; message: string; status?: number; body?: string };
 
 /** What a provider's stream yields: text as it arrives, then exactly one response or error. */
 export type ProviderStreamItem =
-	| { type: 'delta'; text: string }
-	| { type: 'response'; response: FinalResponse }
-	| { type: 'error'; error: ModelError };
+	| { type: typeof STREAM_ITEM_TYPES.DELTA; text: string }
+	| { type: typeof STREAM_ITEM_TYPES.RESPONSE; response: FinalResponse }
+	| { type: typeof STREAM_ITEM_TYPES.ERROR; error: ModelError };
 
 /**
  * A model server, behind one method.

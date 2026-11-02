@@ -3,7 +3,8 @@
 // server was sent.
 import { type ElicitResult } from '@overture-stack/arranger-mcp-client';
 
-import { isRecord } from './utils.js';
+import { QUESTION_CLOSURES, QUESTION_KINDS, RESPOND_RESULTS, SETTLED_BY } from './constants.js';
+import { isRecord, type ObjectValues } from './utils.js';
 
 /** A tool call as the approval policy, and a person asked to approve it, see it. */
 export type ApprovalCall = {
@@ -15,7 +16,7 @@ export type ApprovalCall = {
 
 /** A pre-call approval the policy asked the consumer for. */
 export type PendingApproval = ApprovalCall & {
-	kind: 'approval';
+	kind: typeof QUESTION_KINDS.APPROVAL;
 	/** `${callId}/approval`. */
 	id: string;
 	runId: string;
@@ -25,7 +26,7 @@ export type PendingApproval = ApprovalCall & {
 
 /** A server's question, from inside a call. */
 export type PendingConfirmation = {
-	kind: 'confirmation';
+	kind: typeof QUESTION_KINDS.CONFIRMATION;
 	/** The question id, `${callId}/${round}/${key}`. */
 	id: string;
 	runId: string;
@@ -47,17 +48,16 @@ export type Answer = { approve: boolean } | ElicitResult;
 
 /**
  * What {@link QuestionTable.respond} did.
- *
- * @remarks
- * `already_answered` also covers a question withdrawn because its call or run was cancelled.
  */
-export type RespondResult = 'accepted' | 'unknown' | 'already_answered' | 'timed_out';
+export type RespondResult = ObjectValues<typeof RESPOND_RESULTS>;
 
 /** How a question was settled, and how long it waited. */
-export type Settled<T> = { by: 'answer'; answer: T; waitedMs: number } | { by: 'timeout'; waitedMs: number };
+export type Settled<T> =
+	| { by: typeof SETTLED_BY.ANSWER; answer: T; waitedMs: number }
+	| { by: typeof SETTLED_BY.TIMEOUT; waitedMs: number };
 
 /** How a question closed, for an answer that arrives after it. */
-type Closure = 'answered' | 'timed_out' | 'withdrawn';
+type Closure = ObjectValues<typeof QUESTION_CLOSURES>;
 
 type Entry = {
 	question: PendingQuestion;
@@ -119,23 +119,23 @@ export class QuestionTable {
 			signal.addEventListener(
 				'abort',
 				() => {
-					close('withdrawn');
+					close(QUESTION_CLOSURES.WITHDRAWN);
 					reject(signal.reason);
 				},
 				{ once: true, signal: listening.signal },
 			);
 			if (timeoutMs !== undefined) {
 				timer = setTimeout(() => {
-					close('timed_out');
-					resolve({ by: 'timeout', waitedMs: waited() });
+					close(QUESTION_CLOSURES.TIMED_OUT);
+					resolve({ by: SETTLED_BY.TIMEOUT, waitedMs: waited() });
 				}, timeoutMs);
 			}
 			this.#open.set(id, {
 				question,
 				accept,
 				settle: (answer) => {
-					close('answered');
-					resolve({ by: 'answer', answer: answer as T, waitedMs: waited() });
+					close(QUESTION_CLOSURES.ANSWERED);
+					resolve({ by: SETTLED_BY.ANSWER, answer: answer as T, waitedMs: waited() });
 				},
 			});
 		});
@@ -152,14 +152,21 @@ export class QuestionTable {
 	respond(id: string, answer: Answer): RespondResult {
 		const entry = this.#open.get(id);
 		if (!entry) {
-			const closed = this.#closed.get(id);
-			return closed === undefined ? 'unknown' : closed === 'timed_out' ? 'timed_out' : 'already_answered';
+			switch (this.#closed.get(id)) {
+				case undefined:
+					return RESPOND_RESULTS.UNKNOWN;
+				case QUESTION_CLOSURES.TIMED_OUT:
+					return RESPOND_RESULTS.TIMED_OUT;
+				case QUESTION_CLOSURES.ANSWERED:
+				case QUESTION_CLOSURES.WITHDRAWN:
+					return RESPOND_RESULTS.ALREADY_ANSWERED;
+			}
 		}
 		if (!entry.accept(answer)) {
 			throw new TypeError(`The answer does not fit ${entry.question.kind} ${id}`);
 		}
 		entry.settle(answer);
-		return 'accepted';
+		return RESPOND_RESULTS.ACCEPTED;
 	}
 
 	/** The questions still open, oldest first. */
@@ -170,7 +177,7 @@ export class QuestionTable {
 	/** Whether a call is waiting on a server's question. */
 	isConfirming(callId: string): boolean {
 		return [...this.#open.values()].some(
-			({ question }) => question.kind === 'confirmation' && question.callId === callId,
+			({ question }) => question.kind === QUESTION_KINDS.CONFIRMATION && question.callId === callId,
 		);
 	}
 }

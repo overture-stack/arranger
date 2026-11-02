@@ -2,6 +2,7 @@
 import { type ElicitResult, type McpClientOptions, type ServerCapabilities } from '@overture-stack/arranger-mcp-client';
 
 import { type ApprovalCall, type PendingQuestion } from './answers.js';
+import { type APPROVAL_DECISIONS, type DONE_REASONS, type EVENT_TYPES } from './constants.js';
 import { type ContextWindowSettings, type ShortenedResult } from './context.js';
 import {
 	type FinalResponse,
@@ -14,38 +15,13 @@ import { type LeftOutTool } from './registry.js';
 import { type RetryKind, type RetrySettings } from './reply.js';
 import { type CarryRecord } from './state.js';
 import { type ToolCallOutcome } from './toolMessages.js';
+import { type ObjectValues } from './utils.js';
 
 /** Limits that end a run. */
 export type RunLimits = { turns: number; toolCalls: number; wallClockMs: number };
 
-/**
- * Why a run ended.
- *
- * @remarks
- * - `answered`: the model answered in text.
- * - `turn_limit`, `tool_call_limit`, `time_limit`: a limit was reached.
- * - `cancelled`: the consumer's signal aborted the run.
- * - `model_error`: the model server failed; the conversation is still valid.
- * - `context_window`: the request could not fit, or the server truncated it anyway.
- * - `output_limit`: the reply was cut off at the output limit, and was not retried or was cut off again.
- * - `empty_reply`: the model returned nothing, a parse failure, and was not retried or was empty again.
- * - `prompt_failed`: the prompt the run started from could not be fetched, or its server is not trusted.
- * - `surface_error`: a server's surface could not be re-read at the start of the run.
- * - `tool_collision`: two tools reduced to one name at the start of the run.
- */
-export type DoneReason =
-	| 'answered'
-	| 'turn_limit'
-	| 'tool_call_limit'
-	| 'time_limit'
-	| 'cancelled'
-	| 'model_error'
-	| 'context_window'
-	| 'output_limit'
-	| 'empty_reply'
-	| 'prompt_failed'
-	| 'surface_error'
-	| 'tool_collision';
+/** Why a run ended: one of {@link DONE_REASONS}. */
+export type DoneReason = ObjectValues<typeof DONE_REASONS>;
 
 /** A run's totals, in `done`. */
 export type RunTotals = {
@@ -81,7 +57,7 @@ export type EventBase = {
 /** The events of a run, before {@link EventBase} is added. */
 export type EventBody =
 	| {
-			type: 'run_started';
+			type: typeof EVENT_TYPES.RUN_STARTED;
 			model: ModelSettings;
 			providerUrl: string;
 			modelDigest?: string;
@@ -95,14 +71,14 @@ export type EventBody =
 			servers: RunServer[];
 	  }
 	| {
-			type: 'tools_changed';
+			type: typeof EVENT_TYPES.TOOLS_CHANGED;
 			servers: { key: string; hash: string }[];
 			leftOut: LeftOutTool[];
 			/** Servers whose surface could not be re-read; their previous tools are kept. */
 			errors: { key: string; message: string }[];
 	  }
 	| {
-			type: 'model_request';
+			type: typeof EVENT_TYPES.MODEL_REQUEST;
 			turn: number;
 			/** The request, except its messages. */
 			request: Omit<ProviderRequest, 'messages'>;
@@ -111,7 +87,7 @@ export type EventBody =
 			retryOf?: RetryKind;
 	  }
 	| {
-			type: 'content_carried';
+			type: typeof EVENT_TYPES.CONTENT_CARRIED;
 			/** What the person carried, as the model is sent it after its label. */
 			text: string;
 			/** The server it came from, in the conversation it was carried out of. */
@@ -121,37 +97,37 @@ export type EventBody =
 			/** When the person carried it, as ISO 8601. */
 			carriedAt: string;
 	  }
-	| { type: 'token'; turn: number; text: string }
-	| { type: 'model_response'; turn: number; response: FinalResponse }
-	| { type: 'malformed_tool_call'; turn: number; callId: string; call: ProviderMalformedCall }
+	| { type: typeof EVENT_TYPES.TOKEN; turn: number; text: string }
+	| { type: typeof EVENT_TYPES.MODEL_RESPONSE; turn: number; response: FinalResponse }
+	| { type: typeof EVENT_TYPES.MALFORMED_TOOL_CALL; turn: number; callId: string; call: ProviderMalformedCall }
 	| {
-			type: 'empty_reply';
+			type: typeof EVENT_TYPES.EMPTY_REPLY;
 			turn: number;
 			outputTokens?: number;
 			stopReason: FinalResponse['stopReason'];
 			retrying: boolean;
 	  }
 	| {
-			type: 'context_shortened';
+			type: typeof EVENT_TYPES.CONTEXT_SHORTENED;
 			turn: number;
 			shortened: ShortenedResult[];
 			estimateBefore: number;
 			estimateAfter: number;
 			windowTokens: number;
 	  }
-	| { type: 'output_limit'; turn: number; outputTokens?: number; text: string; retrying: boolean }
-	| { type: 'model_error'; turn: number; error: ModelError }
-	| (ApprovalCall & { type: 'approval_required'; id: string })
+	| { type: typeof EVENT_TYPES.OUTPUT_LIMIT; turn: number; outputTokens?: number; text: string; retrying: boolean }
+	| { type: typeof EVENT_TYPES.MODEL_ERROR; turn: number; error: ModelError }
+	| (ApprovalCall & { type: typeof EVENT_TYPES.APPROVAL_REQUIRED; id: string })
 	| {
-			type: 'approval_answered';
+			type: typeof EVENT_TYPES.APPROVAL_ANSWERED;
 			id: string;
 			callId: string;
-			decision: 'allow' | 'deny';
+			decision: typeof APPROVAL_DECISIONS.ALLOW | typeof APPROVAL_DECISIONS.DENY;
 			timedOut: boolean;
 			waitedMs: number;
 	  }
 	| {
-			type: 'tool_call';
+			type: typeof EVENT_TYPES.TOOL_CALL;
 			callId: string;
 			modelCallId?: string;
 			/** The model-facing name. */
@@ -162,7 +138,7 @@ export type EventBody =
 			arguments: string;
 	  }
 	| {
-			type: 'input_required';
+			type: typeof EVENT_TYPES.INPUT_REQUIRED;
 			questionId: string;
 			callId: string;
 			server: string;
@@ -172,20 +148,26 @@ export type EventBody =
 			message: string;
 			requestedSchema: unknown;
 	  }
-	| { type: 'input_answered'; questionId: string; answer: ElicitResult; waitedMs: number; timedOut: boolean }
+	| {
+			type: typeof EVENT_TYPES.INPUT_ANSWERED;
+			questionId: string;
+			answer: ElicitResult;
+			waitedMs: number;
+			timedOut: boolean;
+	  }
 	| {
 			/**
 			 * An open approval or confirmation was closed unanswered, because its run was cancelled or reached its time
 			 * limit. A question that reaches its own timeout is answered instead, with `timedOut` set.
 			 */
-			type: 'question_withdrawn';
+			type: typeof EVENT_TYPES.QUESTION_WITHDRAWN;
 			id: string;
 			kind: PendingQuestion['kind'];
 			callId: string;
 	  }
-	| { type: 'input_state_rejected'; callId: string; server: string; waitedMs: number }
+	| { type: typeof EVENT_TYPES.INPUT_STATE_REJECTED; callId: string; server: string; waitedMs: number }
 	| {
-			type: 'tool_result';
+			type: typeof EVENT_TYPES.TOOL_RESULT;
 			callId: string;
 			server?: string;
 			tool?: string;
@@ -193,10 +175,10 @@ export type EventBody =
 			outcome: ToolCallOutcome;
 			isError: boolean;
 	  }
-	| { type: 'done'; reason: DoneReason; detail?: string; totals: RunTotals };
+	| { type: typeof EVENT_TYPES.DONE; reason: DoneReason; detail?: string; totals: RunTotals };
 
 /** One event, as the consumer's listener receives it. */
 export type HostEvent = EventBody & EventBase;
 
 /** The `done` event, which `run()` also resolves with. */
-export type RunSummary = Extract<HostEvent, { type: 'done' }>;
+export type RunSummary = Extract<HostEvent, { type: typeof EVENT_TYPES.DONE }>;

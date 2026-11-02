@@ -2,6 +2,14 @@
 // retries: a failure is reported once, as data.
 import { createParser } from 'eventsource-parser';
 
+import {
+	ITEM_TYPES,
+	MODEL_ERROR_KINDS,
+	ROLES,
+	STOP_REASONS,
+	STREAM_ITEM_TYPES,
+	TOOL_CALL_KINDS,
+} from '../constants.js';
 import { type ConversationItem } from '../messages.js';
 import {
 	type FinalResponse,
@@ -74,8 +82,8 @@ export const toWireMessages = (
 
 	for (const item of items) {
 		switch (item.type) {
-			case 'message':
-				if (item.role === 'user') {
+			case ITEM_TYPES.MESSAGE:
+				if (item.role === ROLES.USER) {
 					messages.push({ role: 'user', content: item.text });
 				} else {
 					messages.push({
@@ -101,7 +109,7 @@ export const toWireMessages = (
 				}
 				break;
 			}
-			case 'function_call_output':
+			case ITEM_TYPES.FUNCTION_CALL_OUTPUT:
 				messages.push({
 					role: 'tool',
 					tool_call_id: wireIds.get(item.callId) ?? item.callId,
@@ -147,17 +155,20 @@ export const toWireRequest = (
 	...request.extra,
 });
 
+/** Maps the wire's `finish_reason` onto host-core's stop reasons. */
 const stopReasonOf = (finishReason: string): StopReason => {
 	switch (finishReason) {
 		case 'stop':
+			return STOP_REASONS.STOP;
 		case 'length':
+			return STOP_REASONS.LENGTH;
 		case 'tool_calls':
+		case ITEM_TYPES.FUNCTION_CALL:
+			return STOP_REASONS.TOOL_CALLS;
 		case 'content_filter':
-			return finishReason;
-		case 'function_call':
-			return 'tool_calls';
+			return STOP_REASONS.CONTENT_FILTER;
 		default:
-			return 'other';
+			return STOP_REASONS.OTHER;
 	}
 };
 
@@ -191,13 +202,13 @@ const classifyCall = (id: string | undefined, name: string, args: string): Provi
 	const raw = args.trim() === '' ? '{}' : args;
 	if (!name || !isRecord(parseJson(raw))) {
 		return {
-			kind: 'malformed',
+			kind: TOOL_CALL_KINDS.MALFORMED,
 			...(id && { id }),
 			...(name && { name }),
 			raw: args,
 		};
 	}
-	return { kind: 'call', ...(id && { id }), name, arguments: raw };
+	return { kind: TOOL_CALL_KINDS.CALL, ...(id && { id }), name, arguments: raw };
 };
 
 /** One tool call as it is gathered. */
@@ -292,12 +303,12 @@ const gatherWhole = (body: unknown): Gathered => {
 /** The error to report once the request is over, from whichever signal ended it. */
 const endedBy = (caller: AbortSignal, timedOut: boolean, error: unknown): ModelError => {
 	if (caller.aborted) {
-		return { kind: 'aborted', message: 'The request was aborted' };
+		return { kind: MODEL_ERROR_KINDS.ABORTED, message: 'The request was aborted' };
 	}
 	if (timedOut) {
-		return { kind: 'timeout', message: 'The model server did not answer in time' };
+		return { kind: MODEL_ERROR_KINDS.TIMEOUT, message: 'The model server did not answer in time' };
 	}
-	return { kind: 'network', message: errorMessage(error) };
+	return { kind: MODEL_ERROR_KINDS.NETWORK, message: errorMessage(error) };
 };
 
 /** An OpenAI-compatible Chat Completions server, such as Ollama, vLLM, LM Studio or hosted OpenAI. */
@@ -361,8 +372,11 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 				headers = await this.#headers(requestSignal);
 			} catch (error) {
 				yield {
-					type: 'error',
-					error: { kind: 'unknown', message: `The API key could not be read: ${errorMessage(error)}` },
+					type: STREAM_ITEM_TYPES.ERROR,
+					error: {
+						kind: MODEL_ERROR_KINDS.UNKNOWN,
+						message: `The API key could not be read: ${errorMessage(error)}`,
+					},
 				};
 				return;
 			}
@@ -375,7 +389,7 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 					signal: requestSignal,
 				});
 			} catch (error) {
-				yield { type: 'error', error: endedBy(signal, state.timedOut, error) };
+				yield { type: STREAM_ITEM_TYPES.ERROR, error: endedBy(signal, state.timedOut, error) };
 				return;
 			}
 
@@ -387,9 +401,9 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 					// The status is enough to report.
 				}
 				yield {
-					type: 'error',
+					type: STREAM_ITEM_TYPES.ERROR,
 					error: {
-						kind: 'http',
+						kind: MODEL_ERROR_KINDS.HTTP,
 						message: `The model server answered ${response.status} ${response.statusText}`.trim(),
 						status: response.status,
 						...(body && { body }),
@@ -433,18 +447,22 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 					const decoder = new TextDecoder();
 					for await (const bytes of response.body ?? []) {
 						parser.feed(decoder.decode(bytes as Uint8Array, { stream: true }));
-						yield* deltas.splice(0).map((text): ProviderStreamItem => ({ type: 'delta', text }));
+						yield* deltas
+							.splice(0)
+							.map((text): ProviderStreamItem => ({ type: STREAM_ITEM_TYPES.DELTA, text }));
 						if (invalid !== undefined) {
 							break;
 						}
 					}
 					parser.feed(decoder.decode());
-					yield* deltas.splice(0).map((text): ProviderStreamItem => ({ type: 'delta', text }));
+					yield* deltas
+						.splice(0)
+						.map((text): ProviderStreamItem => ({ type: STREAM_ITEM_TYPES.DELTA, text }));
 					if (invalid !== undefined) {
 						yield {
-							type: 'error',
+							type: STREAM_ITEM_TYPES.ERROR,
 							error: {
-								kind: 'unknown',
+								kind: MODEL_ERROR_KINDS.UNKNOWN,
 								message: 'The model server sent an error or an unreadable event',
 								body: invalid,
 							},
@@ -455,23 +473,26 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 					gathered = gatherWhole(await response.json());
 				}
 			} catch (error) {
-				yield { type: 'error', error: endedBy(signal, state.timedOut, error) };
+				yield { type: STREAM_ITEM_TYPES.ERROR, error: endedBy(signal, state.timedOut, error) };
 				return;
 			}
 
 			if (gathered.refusal) {
-				yield { type: 'error', error: { kind: 'refusal', message: gathered.refusal } };
+				yield {
+					type: STREAM_ITEM_TYPES.ERROR,
+					error: { kind: MODEL_ERROR_KINDS.REFUSAL, message: gathered.refusal },
+				};
 				return;
 			}
 			if (gathered.finishReason === undefined) {
 				// Ollama's `/v1` drops an error raised mid-stream and just stops.
 				yield {
-					type: 'error',
-					error: { kind: 'stream_ended', message: 'The reply ended without a finish reason' },
+					type: STREAM_ITEM_TYPES.ERROR,
+					error: { kind: MODEL_ERROR_KINDS.STREAM_ENDED, message: 'The reply ended without a finish reason' },
 				};
 				return;
 			}
-			yield { type: 'response', response: finalResponse(gathered, Date.now() - started) };
+			yield { type: STREAM_ITEM_TYPES.RESPONSE, response: finalResponse(gathered, Date.now() - started) };
 		} finally {
 			done();
 		}

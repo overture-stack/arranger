@@ -1,5 +1,6 @@
 // Host-core never lets the serving stack truncate a conversation: Ollama drops the oldest messages first, the user's
 // question among them, and answers anyway.
+import { CONTEXT_POLICIES } from './constants.js';
 import {
 	type ConversationItem,
 	functionCallOutput,
@@ -8,6 +9,7 @@ import {
 	sentCharacters,
 } from './messages.js';
 import { type ToolDefinition } from './registry.js';
+import { type ObjectValues } from './utils.js';
 
 /** Characters per token for text not yet counted by the model server. Low, so the estimate errs high. */
 export const DEFAULT_CHARS_PER_TOKEN = 3;
@@ -20,7 +22,7 @@ export type ContextWindowSettings = {
 	 * `shorten` stubs older tool results, for an interactive consumer; `fail` ends the run instead, such as for an
 	 * evaluation.
 	 */
-	policy: 'shorten' | 'fail';
+	policy: ObjectValues<typeof CONTEXT_POLICIES>;
 	/** @defaultValue {@link DEFAULT_CHARS_PER_TOKEN} */
 	charsPerToken?: number;
 };
@@ -125,7 +127,7 @@ export const fitToWindow = ({
 	const estimateBefore = estimate(chars);
 	const shortened: ShortenedResult[] = [];
 
-	if (estimateBefore > window.tokens && window.policy === 'shorten') {
+	if (estimateBefore > window.tokens && window.policy === CONTEXT_POLICIES.SHORTEN) {
 		const names = new Map(items.filter(isFunctionCall).map(({ callId, name }) => [callId, name]));
 		for (const [index, item] of items.entries()) {
 			if (estimate(chars) <= window.tokens) {

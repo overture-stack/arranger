@@ -1,6 +1,8 @@
 // Every tool call gets one tool message, with fixed wording so transcripts compare.
 import { type CallOutcome, type CallToolResult } from '@overture-stack/arranger-mcp-client';
 
+import { type DENIED_BY, HOST_OUTCOMES } from './constants.js';
+import { type ObjectValues } from './utils.js';
 /**
  * The fixed wording of every tool message host-core writes itself, so transcripts compare across runs and models.
  * A `result` sends the tool's own content instead, and a crossing refusal uses {@link crossingRefusedMessage}.
@@ -31,12 +33,12 @@ export const crossingRefusedMessage = (server: string, heldFrom: readonly string
 
 /** How a call ended when host-core, not `mcp-client`, decided it. */
 export type HostOutcome =
-	| { outcome: 'denied'; by: 'policy' | 'person' | 'timeout' | 'policy_error'; message?: string }
-	| { outcome: 'malformed' }
-	| { outcome: 'unknown_tool' }
-	| { outcome: 'not_run' }
-	| { outcome: 'abandoned' }
-	| { outcome: 'crossing_refused'; server: string; heldFrom: string[] };
+	| { outcome: typeof HOST_OUTCOMES.DENIED; by: ObjectValues<typeof DENIED_BY>; message?: string }
+	| { outcome: typeof HOST_OUTCOMES.MALFORMED }
+	| { outcome: typeof HOST_OUTCOMES.UNKNOWN_TOOL }
+	| { outcome: typeof HOST_OUTCOMES.NOT_RUN }
+	| { outcome: typeof HOST_OUTCOMES.ABANDONED }
+	| { outcome: typeof HOST_OUTCOMES.CROSSING_REFUSED; server: string; heldFrom: string[] };
 
 /** Every way a tool call can end. Plain data. */
 export type ToolCallOutcome = CallOutcome<CallToolResult> | HostOutcome;
@@ -97,6 +99,7 @@ export const renderToolResult = (result: CallToolResult): string => {
  */
 export const toolMessageFor = (outcome: ToolCallOutcome): ToolMessage => {
 	switch (outcome.outcome) {
+		// `mcp-client`'s outcomes.
 		case 'result':
 			return { text: renderToolResult(outcome.result), isError: outcome.result.isError === true };
 		case 'output_invalid':
@@ -113,17 +116,18 @@ export const toolMessageFor = (outcome: ToolCallOutcome): ToolMessage => {
 			return { text: TOOL_MESSAGES.cancelled, isError: true };
 		case 'transport_error':
 			return { text: TOOL_MESSAGES.transportError, isError: true };
-		case 'denied':
+		// Host-core's own.
+		case HOST_OUTCOMES.DENIED:
 			return { text: TOOL_MESSAGES.denied, isError: true };
-		case 'malformed':
+		case HOST_OUTCOMES.MALFORMED:
 			return { text: TOOL_MESSAGES.malformed, isError: true };
-		case 'unknown_tool':
+		case HOST_OUTCOMES.UNKNOWN_TOOL:
 			return { text: TOOL_MESSAGES.unknownTool, isError: true };
-		case 'not_run':
+		case HOST_OUTCOMES.NOT_RUN:
 			return { text: TOOL_MESSAGES.notRun, isError: true };
-		case 'abandoned':
+		case HOST_OUTCOMES.ABANDONED:
 			return { text: TOOL_MESSAGES.abandoned, isError: true };
-		case 'crossing_refused':
+		case HOST_OUTCOMES.CROSSING_REFUSED:
 			return { text: crossingRefusedMessage(outcome.server, outcome.heldFrom), isError: true };
 	}
 };
