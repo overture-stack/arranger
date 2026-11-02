@@ -1,8 +1,8 @@
 # MCP Host: Data Crossing Connections
 
-A researcher's notebook can connect the model to Overture's MCP server and to a third-party one, such as cBioPortal's, in the same conversation. Data one server returns can then reach the other. This document records the options weighed for preventing that, how they became the decision, and the choice the team still has to make.
+A researcher's notebook can connect the model to Overture's MCP server and to a third-party one, such as cBioPortal's, in the same conversation. Data one server returns can then reach the other. This document records the options weighed for preventing that, how they became the decision, and how the team chose between the two ways of keeping servers apart.
 
-**Status:** decided, except how a conversation keeps servers apart ([MCP Host Plan](mcp-host-plan.md) §5 question 4, and [connection authentication](../arranger-auth/mcp-host-connections.md) §6). The model never gets data from one server into a request to another; only the person carries it across, through an action of their own. The one exception is a server the person attests holds only open-access data, through a flag on its configuration, `containsOnlyOpenData`, that is off by default so the rule fails closed. [§4](#4-the-remaining-choice) sets out the remaining choice, and [§5](#5-what-phase-2-builds-either-way) what Phase 2 builds either way.
+**Status:** decided. A conversation keeps servers apart by way (b), decided 2026-10-29 ([MCP Host Plan](mcp-host-plan.md) §5 question 4, and [connection authentication](../arranger-auth/mcp-host-connections.md) §6); host-core enforces it (decided 2026-10-28). The model never gets data from one server into a request to another; only the person carries it across, through an action of their own. The one exception is a server the person attests holds only open-access data, through a flag on its configuration, `containsOnlyOpenData`, that is off by default so the rule fails closed. [§4](#4-how-servers-are-kept-apart) sets out that choice, and [§5](#5-what-phase-2-builds) what Phase 2 builds.
 
 ---
 
@@ -64,20 +64,20 @@ Three options and several hybrids were set out for the team. The decision takes 
 
 | Weighed                                                                         | Outcome                                                                                                                                                                                                                                     |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Option 1:** refuse external calls once the conversation reads controlled data | Became way (a) in §4, applied to every server the person has not flagged, with no override. It leaves the steering direction open, as it did here.                                                                                          |
+| **Option 1:** refuse external calls once the conversation reads controlled data | Weighed as way (a) in §4, applied to every server the person has not flagged, with no override; not chosen. It leaves the steering direction open, as it did here.                                                                          |
 | **Option 2:** ask the person to confirm each call that crosses a connection     | Rejected. People approve almost every prompt, and a value derived from controlled data reveals something without containing it, so the person would be the only defence against an attack they cannot see.                                  |
-| **Option 3:** never have both kinds of server in one conversation               | Became way (b) in §4, scoped to conversations holding a server the person has not flagged.                                                                                                                                                  |
+| **Option 3:** never have both kinds of server in one conversation               | Became way (b) in §4, the decision, scoped to conversations holding a server the person has not flagged.                                                                                                                                    |
 | **Hybrid:** separate notebooks, with a copy step                                | Adopted as the person's "Send to another server" action: it opens empty, shows exactly what goes where, and is recorded in both conversations.                                                                                              |
 | **Hybrid:** external servers only alongside anonymous Overture access           | Superseded. It took anonymous access to mean open data, leaving every unauthenticated connection unrestricted, but a server that needs no sign-in can still serve controlled data. Only the person's attestation lifts the restriction now. |
 | **Hybrid:** per-result labels from `apps/mcp-server`                            | Not adopted. The server is the unit instead, which needs no change to the search server or the MCP server.                                                                                                                                  |
-| **Hybrid:** two flags, one per direction                                        | Not adopted. The steering direction is handled by `execute_query`'s confirmation under (a), and closed under (b).                                                                                                                           |
+| **Hybrid:** two flags, one per direction                                        | Not adopted. The steering direction is handled by `execute_query`'s confirmation under (a), and closed by (b).                                                                                                                              |
 | **Hybrid:** a quarantined external agent                                        | Not adopted. Two model contexts are the most host-core work, and small local models have tight windows.                                                                                                                                     |
 
 ---
 
-## 4. The Remaining Choice
+## 4. How Servers Are Kept Apart
 
-How a conversation keeps servers apart, settled before Phase 2 fixes the approval policy and server configuration.
+Decided 2026-10-29: way (b), as Phase 2 builds it.
 
 - **(a)** A conversation may connect to several servers; once it holds restricted data, the model's calls to every other server are refused.
 - **(b)** A conversation holding a server the person has not flagged connects to that server only; flagged servers may share a conversation freely.
@@ -92,27 +92,27 @@ Since every server is restricted unless flagged, both ways leave most conversati
 | What host-core enforces                          | A refusal that depends on the conversation's history                                          | Which connections a conversation may hold, checked when it starts |
 | What the researcher meets                        | A refusal naming the server and why, partway through a conversation                           | The choice of servers when the conversation starts                |
 
-Under (a), refusing the model's calls and removing the other servers' tools are two different ways to enforce it ([§6](#6-questions-for-the-team), question 2).
+Under (a), refusing the model's calls or removing the other servers' tools would have needed choosing ([§6](#6-questions-for-the-team), question 2); (b) needs neither.
 
 ---
 
-## 5. What Phase 2 Builds Either Way
+## 5. What Phase 2 Builds
 
 - **A flag per server, `containsOnlyOpenData`,** the person's attestation that it holds only open-access data, off by default so the rule fails closed.
 - **A record in conversation state of what each server has returned, and whether it may cross,** surviving saves, restores, forks and context shortening, and never loosened by a later change to a flag.
 - **The conversation's servers, saved with its state** and checked when it is restored, each identified by its endpoint, so a key reused for another server counts as one added. Adding one, flagged or not, to a conversation holding restricted data or carried content is a crossing.
 - **Starting a conversation from carried content,** labelled as server text, with an event naming what was carried, from which server, to which, and when, and a record in state, so a restore cannot add a destination the person never chose.
-- **A refusal that names the server and why,** as a tool message the model can explain.
+- **Enforcement in host-core, so `chat`, `eval` and the CRE all get it** (decided 2026-10-28). Before connecting, it refuses a configuration that puts an unflagged server beside any other, and a restore that would put any server beside another whose data is restricted, as one whose flag was turned off and on again is: that is way (b). It also refuses, before the approval policy is asked, any call that would carry another server's restricted data out, with a tool message naming both servers that the model can explain. No such call remains, so that refusal guards against a fault in the checks before it.
 
 ---
 
 ## 6. Questions for the Team
 
-1. Way (a) or way (b)?
-2. Under (a), refuse the model's calls, or remove the other servers' tools once restricted data is in? The plan says both that the model never proposes a crossing and that a refused call names the server and why.
-3. Until count suppression exists, do aggregate results from an unflagged server count as restricted? Under the decision they do, since the rule follows the server; confirm that is intended.
-4. Do the data access agreements for iMicroSeq's data require more than this, such as way (b)?
-5. May the app's shipped configuration set `containsOnlyOpenData` for servers known to hold only open data, as it sets `trusted`, or does only the person set it?
+1. Way (a) or way (b)? Decided 2026-10-29: (b).
+2. Under (a), refuse the model's calls, or remove the other servers' tools once restricted data is in? Moot under (b).
+3. Until count suppression exists, do aggregate results from an unflagged server count as restricted? Under the decision they do, since the rule follows the server; confirm that is intended. Open (team review item 7).
+4. Do the data access agreements for iMicroSeq's data require more than this? Moved to a separate review of those agreements (2026-10-29). (b) is chosen; what remains is whether they require more, such as not saving its records locally.
+5. May the app's shipped configuration set `containsOnlyOpenData` for servers known to hold only open data, as it sets `trusted`, or does only the person set it? Open (team review item 10).
 
 ---
 
