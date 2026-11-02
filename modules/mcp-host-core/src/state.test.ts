@@ -3,13 +3,14 @@ import { suite, test } from 'node:test';
 
 import { functionCall, functionCallOutput, userMessage } from './messages.js';
 import {
-	carriesRestrictedData,
+	assertServersApart,
 	emptyState,
 	holdsRestrictedData,
 	identifyEndpoint,
 	markReturnedData,
 	reconcileServers,
 	restoreState,
+	restrictedDataFrom,
 	type ServerRecord,
 	ServerSetError,
 	STATE_VERSION,
@@ -102,19 +103,61 @@ suite('returned data', () => {
 	});
 
 	test("a call carries restricted data out only when another server's data is restricted", () => {
-		const connections = [record('overture', OVERTURE, false, 'restricted'), record('genes', GENES, true, 'none')];
+		const servers = [record('overture', OVERTURE, false, 'restricted'), record('genes', GENES, true, 'none')];
 
-		assert.equal(carriesRestrictedData({ call: { server: 'overture' }, connections }), false, 'its own follow-up');
-		assert.equal(carriesRestrictedData({ call: { server: 'genes' }, connections }), true);
-		assert.equal(
-			carriesRestrictedData({
-				call: { server: 'overture' },
-				connections: [
-					record('overture', OVERTURE, false, 'none'),
-					record('genes', GENES, true, 'unrestricted'),
-				],
-			}),
-			false,
+		assert.deepEqual(restrictedDataFrom(servers, 'overture'), [], 'its own follow-up');
+		assert.deepEqual(restrictedDataFrom(servers, 'genes'), ['overture']);
+		assert.deepEqual(
+			restrictedDataFrom(
+				[record('overture', OVERTURE, false, 'none'), record('genes', GENES, true, 'unrestricted')],
+				'overture',
+			),
+			[],
+		);
+	});
+});
+
+suite('assertServersApart', () => {
+	const configured = (key: string, url: string, containsOnlyOpenData: boolean) => ({
+		key,
+		...identifyEndpoint(url),
+		containsOnlyOpenData,
+	});
+
+	test('accepts one unflagged server alone, or any number of flagged ones', () => {
+		assertServersApart([configured('overture', OVERTURE, false)], []);
+		assertServersApart([configured('overture', OVERTURE, true), configured('genes', GENES, true)], []);
+		assertServersApart([], []);
+	});
+
+	test('refuses an unflagged server beside any other, flagged or not', () => {
+		for (const genesFlagged of [true, false]) {
+			assert.throws(
+				() =>
+					assertServersApart(
+						[configured('genes', GENES, genesFlagged), configured('overture', OVERTURE, false)],
+						[],
+					),
+				(error) => error instanceof ServerSetError && /"(overture|genes)" is not flagged/.test(error.message),
+			);
+		}
+	});
+
+	test("keeps every other server out once one server's data is restricted, even with every flag on", () => {
+		const held = [record('overture', OVERTURE, true, 'restricted'), record('genes', GENES, true, 'none')];
+
+		assertServersApart([configured('overture', OVERTURE, true)], held);
+		assert.throws(
+			() => assertServersApart([configured('overture', OVERTURE, true), configured('genes', GENES, true)], held),
+			(error) =>
+				error instanceof ServerSetError &&
+				error.message ===
+					'Server "genes" cannot join a conversation holding restricted data from server "overture"',
+		);
+		assert.throws(
+			() => assertServersApart([configured('genes', GENES, true)], held),
+			ServerSetError,
+			'a dropped server still keeps others out',
 		);
 	});
 });

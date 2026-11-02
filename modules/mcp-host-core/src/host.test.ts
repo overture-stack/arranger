@@ -22,7 +22,7 @@ import { type ConversationItem, type FunctionCallOutput, isFunctionCallOutput, u
 import { OpenAiCompatibleProvider } from './providers/openAiCompatible.js';
 import { instructionsHeading, reduceToolName } from './registry.js';
 import { emptyState, holdsRestrictedData, identifyEndpoint, ServerSetError } from './state.js';
-import { crossingRefusedMessage, TOOL_MESSAGES } from './toolMessages.js';
+import { TOOL_MESSAGES } from './toolMessages.js';
 
 const name = (tool: string) => reduceToolName('test', tool);
 
@@ -457,14 +457,14 @@ suite('McpHost', () => {
 			});
 		});
 
-		test('shows the policy every earlier call, across runs', async () => {
-			const seen: string[][] = [];
+		test('shows the policy only the call, and records every call that reached a server, across runs', async () => {
+			const seen: ApprovalRequest[] = [];
 			const h = harness(
 				server,
 				[calls(call(name('lookup'), { id: '1' })), say('ok'), calls(call(name('catalogue.search'))), say('ok')],
 				{
-					approvalPolicy: ({ history }) => {
-						seen.push(history.map(({ server, tool }) => `${server}/${tool}`));
+					approvalPolicy: (request) => {
+						seen.push(request);
 						return 'allow';
 					},
 				},
@@ -472,7 +472,13 @@ suite('McpHost', () => {
 			await withHost(h, async (host) => {
 				await host.run({ message: 'one' });
 				await host.run({ message: 'two' });
-				assert.deepEqual(seen, [[], ['test/lookup']]);
+				assert.deepEqual(seen[0], {
+					call: { callId: 'call-1', server: 'test', tool: 'lookup', arguments: { id: '1' } },
+				});
+				assert.deepEqual(
+					host.state().calls.map(({ server, tool }) => `${server}/${tool}`),
+					['test/lookup', 'test/catalogue.search'],
+				);
 			});
 		});
 
@@ -1059,8 +1065,8 @@ suite('McpHost', () => {
 			try {
 				const h = harness(server, [], {
 					servers: [
-						{ key: 'test', connection: { url: server.url } },
-						{ key: 'gone', connection: { url: 'http://127.0.0.1:9/mcp' } },
+						{ key: 'test', containsOnlyOpenData: true, connection: { url: server.url } },
+						{ key: 'gone', containsOnlyOpenData: true, connection: { url: 'http://127.0.0.1:9/mcp' } },
 					],
 				});
 				await assert.rejects(McpHost.create(h.options));
@@ -1071,7 +1077,7 @@ suite('McpHost', () => {
 		});
 	});
 
-	suite('data crossing inputs', () => {
+	suite('data crossing', () => {
 		/** A saved conversation whose one server, `test`, returned restricted data. */
 		const restrictedState = () => {
 			const state = emptyState([{ key: 'test', ...identifyEndpoint(server.url), containsOnlyOpenData: false }]);
@@ -1085,34 +1091,19 @@ suite('McpHost', () => {
 			];
 		};
 
+		/** `test` and `other`, both on the test server, flagged as given. */
+		const both = (testFlagged: boolean, otherFlagged: boolean): McpHostOptions['servers'] => [
+			{ key: 'test', containsOnlyOpenData: testFlagged, connection: { url: server.url } },
+			{ key: 'other', containsOnlyOpenData: otherFlagged, connection: { url: server.url } },
+		];
+
 		test('treats a server as restricted unless the person flags it', async () => {
-			const seen: ApprovalRequest[] = [];
-			const h = harness(
-				server,
-				[calls(call(name('lookup'), { id: '1' })), calls(call(name('catalogue.search'))), say('ok')],
-				{
-					approvalPolicy: (request) => {
-						seen.push(request);
-						return 'allow';
-					},
-				},
-			);
+			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
 			await withHost(h, async (host) => {
+				assert.equal(host.state().servers[0]?.returnedData, 'none');
 				await host.run({ message: 'go' });
 
-				assert.equal(seen[0]?.call.containsOnlyOpenData, false);
-				assert.deepEqual(seen[0]?.connections, [
-					{
-						key: 'test',
-						...identifyEndpoint(server.url),
-						containsOnlyOpenData: false,
-						returnedData: 'none',
-					},
-				]);
-				assert.deepEqual(seen[1]?.history, [
-					{ callId: 'call-1', server: 'test', tool: 'lookup', containsOnlyOpenData: false },
-				]);
-				assert.deepEqual(seen[1]?.connections, [
+				assert.deepEqual(host.state().servers, [
 					{
 						key: 'test',
 						...identifyEndpoint(server.url),
@@ -1120,24 +1111,20 @@ suite('McpHost', () => {
 						returnedData: 'restricted',
 					},
 				]);
+				assert.deepEqual(host.state().calls, [
+					{ callId: 'call-1', server: 'test', tool: 'lookup', containsOnlyOpenData: false },
+				]);
 				assert.equal(holdsRestrictedData(host.state().servers), true);
 				assert.equal(h.of('run_started')[0]?.servers[0]?.containsOnlyOpenData, false);
 			});
 		});
 
-		test("records a flagged server's data as unrestricted, and shows the policy the flag", async () => {
-			const seen: ApprovalRequest[] = [];
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
-				approvalPolicy: (request) => {
-					seen.push(request);
-					return 'allow';
-				},
-			});
+		test("records a flagged server's data as unrestricted", async () => {
+			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')]);
 			openData(h);
 			await withHost(h, async (host) => {
 				await host.run({ message: 'go' });
 
-				assert.equal(seen[0]?.call.containsOnlyOpenData, true);
 				assert.equal(host.state().servers[0]?.returnedData, 'unrestricted');
 				assert.equal(holdsRestrictedData(host.state().servers), false);
 				assert.equal(h.of('run_started')[0]?.servers[0]?.containsOnlyOpenData, true);
@@ -1168,36 +1155,92 @@ suite('McpHost', () => {
 			});
 		});
 
-		test('a refusal does not run the call, and names the server and why', async () => {
-			const reason = 'this conversation holds data from another server';
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
-				approvalPolicy: () => ({ refuse: reason }),
-			});
+		test('refuses an unflagged server beside any other, before connecting anything', async () => {
+			const connects = mock.method(McpClient, 'connect');
+			try {
+				const flags: [boolean, boolean][] = [
+					[false, true],
+					[true, false],
+					[false, false],
+				];
+				for (const [testFlagged, otherFlagged] of flags) {
+					const h = harness(server, [], { servers: both(testFlagged, otherFlagged) });
+					await assert.rejects(h.create(), (error) => error instanceof ServerSetError);
+				}
+				assert.equal(connects.mock.callCount(), 0);
+			} finally {
+				connects.mock.restore();
+			}
+		});
+
+		test('lets flagged servers share a conversation, and call each other with what they returned', async () => {
+			const h = harness(
+				server,
+				[
+					calls(call(name('lookup'), { id: '1' }), call(reduceToolName('other', 'lookup'), { id: '1' })),
+					say('ok'),
+				],
+				{ servers: both(true, true) },
+			);
 			await withHost(h, async (host) => {
-				const executedBefore = server.executed.length;
 				await host.run({ message: 'go' });
-				assert.equal(server.executed.length, executedBefore);
-				assert.equal(outputs(host.state().items)[0]?.output, crossingRefusedMessage('test', reason));
-				assert.deepEqual(h.of('tool_result')[0]?.outcome, {
-					outcome: 'crossing_refused',
-					server: 'test',
-					reason,
-				});
+				assert.deepEqual(
+					h.of('tool_result').map(({ outcome }) => outcome.outcome),
+					['result', 'result'],
+				);
 			});
 		});
 
-		test('refuses to restore a conversation holding restricted data with any server added, flagged or not', async () => {
-			const saved = restrictedState();
-			for (const containsOnlyOpenData of [false, true]) {
-				const h = harness(server, [], {
-					state: saved,
-					servers: [
-						{ key: 'test', connection: { url: server.url } },
-						{ key: 'other', containsOnlyOpenData, connection: { url: server.url } },
-					],
-				});
-				await assert.rejects(h.create(), ServerSetError);
+		test('refuses to bring a server back beside another whose data is now restricted, before connecting', async () => {
+			// Both flagged, `test` returns data; a restore with `test` alone and unflagged makes that data restricted.
+			// A restore with both flagged again would hold `other`, which every call to it would cross to.
+			const first = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
+				servers: both(true, true),
+			});
+			let saved: unknown;
+			await withHost(first, async (host) => {
+				await host.run({ message: 'go' });
+				saved = JSON.parse(JSON.stringify(host.state()));
+			});
+			const unflagged = harness(server, [], {
+				state: saved,
+				servers: [{ key: 'test', connection: { url: server.url } }],
+			});
+			await withHost(unflagged, async (host) => {
+				saved = JSON.parse(JSON.stringify(host.state()));
+			});
+
+			const connects = mock.method(McpClient, 'connect');
+			try {
+				const h = harness(server, [], { state: saved, servers: both(true, true) });
+				await assert.rejects(
+					h.create(),
+					(error) =>
+						error instanceof ServerSetError &&
+						error.message ===
+							'Server "other" cannot join a conversation holding restricted data from server "test"',
+				);
+				assert.equal(connects.mock.callCount(), 0);
+			} finally {
+				connects.mock.restore();
 			}
+
+			const alone = harness(server, [calls(call(name('lookup'), { id: '2' })), say('ok')], {
+				state: saved,
+				servers: both(true, true).slice(0, 1),
+			});
+			await withHost(alone, async (host) => {
+				await host.run({ message: 'again' });
+				assert.equal(alone.of('tool_result')[0]?.outcome.outcome, 'result', "the data's own server still runs");
+			});
+		});
+
+		test('refuses to restore a conversation holding restricted data with a server added', async () => {
+			const h = harness(server, [], { state: restrictedState(), servers: both(true, true) });
+			await assert.rejects(
+				h.create(),
+				(error) => error instanceof ServerSetError && /cannot join/.test(error.message),
+			);
 		});
 
 		test('never loosens on restore: flagging a server later leaves its earlier data restricted', async () => {
@@ -1223,10 +1266,9 @@ suite('McpHost', () => {
 			await assert.rejects(h.create(), TypeError);
 		});
 
-		test('denied, refused, cancelled and failed calls mark nothing as returned', async () => {
+		test('denied, cancelled and failed calls mark nothing as returned', async () => {
 			const cases: [string, Partial<McpHostOptions>, (failing: TestServer) => void][] = [
 				['denied', { approvalPolicy: () => 'deny' }, () => undefined],
-				['refused', { approvalPolicy: () => ({ refuse: 'no' }) }, () => undefined],
 				['transport_error', {}, (failing) => (failing.state.failMethod = 'tools/call')],
 			];
 			for (const [label, overrides, arrange] of cases) {
@@ -1253,7 +1295,7 @@ suite('McpHost', () => {
 			});
 		});
 
-		test('refuses to restore a conversation holding carried content with a server added', async () => {
+		test('records what the person carried in, and refuses to restore it with a server added', async () => {
 			const first = harness(server, [say('ok')]);
 			let saved: unknown;
 			await withHost(first, async (host) => {
@@ -1265,18 +1307,17 @@ suite('McpHost', () => {
 						carriedAt: '2026-10-27T10:00:00.000Z',
 					},
 				});
+				assert.deepEqual(host.state().carried, [
+					{ from: { server: 'overture' }, carriedAt: '2026-10-27T10:00:00.000Z' },
+				]);
 				saved = JSON.parse(JSON.stringify(host.state()));
 			});
-			assert.equal((saved as { carried: unknown[] }).carried.length, 1);
 
-			const widened = harness(server, [], {
-				state: saved,
-				servers: [
-					{ key: 'test', connection: { url: server.url } },
-					{ key: 'cbio', connection: { url: server.url } },
-				],
-			});
-			await assert.rejects(widened.create(), ServerSetError);
+			const widened = harness(server, [], { state: saved, servers: both(true, true) });
+			await assert.rejects(
+				widened.create(),
+				(error) => error instanceof ServerSetError && /carried content/.test(error.message),
+			);
 		});
 
 		test('treats a key reused for another server as a server added', () =>
@@ -1298,25 +1339,6 @@ suite('McpHost', () => {
 					assert.equal(host.state().servers[0]?.endpointDigest, identifyEndpoint(other.url).endpointDigest);
 				});
 			}));
-
-		test('shows the policy what the person carried in', async () => {
-			const seen: ApprovalRequest[] = [];
-			const h = harness(server, [calls(call(name('lookup'), { id: '1' })), say('ok')], {
-				approvalPolicy: (request) => {
-					seen.push(request);
-					return 'allow';
-				},
-			});
-			await withHost(h, async (host) => {
-				await host.run({
-					message: 'go',
-					carried: { text: 'x', from: { server: 'overture' }, carriedAt: '2026-10-27T10:00:00.000Z' },
-				});
-				assert.deepEqual(seen[0]?.carried, [
-					{ from: { server: 'overture' }, carriedAt: '2026-10-27T10:00:00.000Z' },
-				]);
-			});
-		});
 	});
 
 	suite('carried content', () => {

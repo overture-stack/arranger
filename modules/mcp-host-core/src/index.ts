@@ -45,7 +45,6 @@ export {
 export {
 	type CallRecord,
 	type CarryRecord,
-	carriesRestrictedData,
 	type ConversationState,
 	type EndpointIdentity,
 	holdsRestrictedData,

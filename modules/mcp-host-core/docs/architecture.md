@@ -43,22 +43,22 @@ flowchart LR
     client --> servers
 ```
 
-| File                            | Owns                                                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `host.ts`                       | `McpHost`: options, connecting the clients, the run and its loop, tool calls, approvals, and bridging server questions to `respond`. |
-| `reply.ts`                      | `decideReply`: what a run does with a model reply, including the one retry per model step.                                           |
-| `context.ts`                    | The token estimate, shortening older tool results in the request, and the backstop for a server that truncated anyway.               |
-| `registry.ts`                   | Reducing `mcp__<server>__<tool>` names, the collision check, the routing map, and the model-facing surface.                          |
-| `answers.ts`                    | `QuestionTable`: open approvals and confirmations, their clocks, and `respond`'s four results.                                       |
-| `state.ts`                      | The conversation's saved state: server records, what each returned, carried content, endpoint identity, and the checks on restore.   |
-| `toolMessages.ts`               | The fixed tool-message wording, rendering a tool result as text, and the length cap.                                                 |
-| `messages.ts`                   | The conversation items, shaped after the Responses API. Only this file and `state.ts` build or read their shapes.                    |
-| `events.ts`                     | The event union. Every event is plain data.                                                                                          |
-| `provider.ts`                   | The `LlmProvider` seam: requests, stream items, final responses and model errors.                                                    |
-| `providers/openAiCompatible.ts` | The Chat Completions client on `eventsource-parser`, and Ollama's native window and digest reads.                                    |
-| `timeouts.ts`                   | `assertTimeout`, since a Node timer above 2^31−1 ms fires at once.                                                                   |
+| File                            | Owns                                                                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `host.ts`                       | `McpHost`: options, connecting the clients, the run and its loop, tool calls, approvals, and bridging server questions to `respond`.  |
+| `reply.ts`                      | `decideReply`: what a run does with a model reply, including the one retry per model step.                                            |
+| `context.ts`                    | The token estimate, shortening older tool results in the request, and the backstop for a server that truncated anyway.                |
+| `registry.ts`                   | Reducing `mcp__<server>__<tool>` names, the collision check, the routing map, and the model-facing surface.                           |
+| `answers.ts`                    | `QuestionTable`: open approvals and confirmations, their clocks, and `respond`'s four results.                                        |
+| `state.ts`                      | The conversation's saved state: server records, what each returned, carried content, endpoint identity, and the data-crossing checks. |
+| `toolMessages.ts`               | The fixed tool-message wording, rendering a tool result as text, and the length cap.                                                  |
+| `messages.ts`                   | The conversation items, shaped after the Responses API. Only this file and `state.ts` build or read their shapes.                     |
+| `events.ts`                     | The event union. Every event is plain data.                                                                                           |
+| `provider.ts`                   | The `LlmProvider` seam: requests, stream items, final responses and model errors.                                                     |
+| `providers/openAiCompatible.ts` | The Chat Completions client on `eventsource-parser`, and Ollama's native window and digest reads.                                     |
+| `timeouts.ts`                   | `assertTimeout`, since a Node timer above 2^31−1 ms fires at once.                                                                    |
 
-**Not in this module:** presentation, persistence, reading configuration or the environment, Arranger knowledge, and enforcing the data-crossing rule. Host-core supplies the rule's inputs; how a conversation keeps servers apart waits on the plan's §5, question 4.
+**Not in this module:** presentation, persistence, reading configuration or the environment, and Arranger knowledge. The data-crossing rule is in it, so every consumer gets it: see [State and data crossing](#state-and-data-crossing).
 
 The loop never builds a conversation item or a tool message literally: it calls `messages.ts` and `toolMessages.ts`, so a change of shape or wording stays in one place.
 
@@ -83,6 +83,8 @@ sequenceDiagram
         H->>S: restoreState(saved, servers)
         Note over S: Checks every item and record,<br/>answers any unanswered call "not run",<br/>then reconcileServers
     end
+    H->>S: assertServersApart(servers, state.servers)
+    Note over S: An unflagged server beside any other,<br/>or any server beside restricted data<br/>from another, throws ServerSetError;<br/>nothing connects
     par each server
         H->>M: McpClient.connect, with host-core's resolver,<br/>change callback and onError
     end
@@ -96,7 +98,7 @@ sequenceDiagram
 
 The resolver and the change callback are host-core's own, which is why host-core connects the clients rather than taking connected ones: `McpClient.connect` fixes both at connect.
 
-**Tested in** `host.test.ts` (`create`, `data crossing inputs`) and `state.test.ts` (`restoreState`).
+**Tested in** `host.test.ts` (`create`, `data crossing`) and `state.test.ts` (`assertServersApart`, `restoreState`).
 
 ## A run
 
@@ -171,9 +173,10 @@ flowchart TD
     malformed -->|"no"| route{"In the registry's map?"}
     route -->|"no"| unknown(["unknown_tool"])
     route -->|"yes"| toolCall["tool_call event"]
-    toolCall --> policy["approvalPolicy: the call, history,<br/>connections, carried"]
+    toolCall --> crossing{"Another server has<br/>returned restricted data?"}
+    crossing -->|"yes"| refused(["crossing_refused,<br/>naming both servers"])
+    crossing -->|"no"| policy["approvalPolicy: the call"]
     policy -->|"deny, throw, or not a decision"| denied(["denied"])
-    policy -->|"refuse"| refused(["crossing_refused,<br/>with the policy's reason"])
     policy -->|"ask"| ask["approval_required:<br/>wait for respond, timeout or abort"]
     ask -->|"declined or timed out"| denied
     ask -->|"withdrawn"| withdrawn(["question_withdrawn, not_run"])
@@ -237,9 +240,9 @@ Ollama truncates silently past its window, dropping the oldest messages, the per
 
 **Tested in** `context.test.ts` and `host.test.ts` (`context window`, `reported context window`).
 
-## State and the data-crossing inputs
+## State and data crossing
 
-The state is plain data a consumer saves and hands back. Beside the items it records what the rule on data crossing connections needs.
+The state is plain data a consumer saves and hands back. Beside the items it records what the rule on data crossing connections needs, and host-core enforces the rule from it.
 
 ```mermaid
 stateDiagram-v2
@@ -254,11 +257,13 @@ stateDiagram-v2
 - **`servers`:** every server the conversation has held, kept after a restore drops it, each with `returnedData` above. It only ever rises, so no change to a flag loosens what is already in the conversation.
 - **Endpoint identity:** `identifyEndpoint` keeps the readable origin and a SHA-256 of the URL without user info or fragment. Path and query both count, and neither is saved, so a key carried in the URL never reaches the state. A key rotated in the URL therefore counts as another server.
 - **`carried`:** what the person carried in. It marks no server, but it closes the server set, since the person picked its destinations.
+- **When a conversation starts,** `assertServersApart` refuses a server not flagged `containsOnlyOpenData` beside any other, and, on a restore, any server beside another whose data is restricted, as one whose flag was turned off and on again is. Nothing has connected yet. This is way (b), the plan's question 4.
 - **On restore,** `reconcileServers` refuses any server added, including a key whose endpoint changed, when the conversation holds restricted data or carried content.
-- **For a policy:** `holdsRestrictedData` says whether any restricted data is present; `carriesRestrictedData` says whether a call would carry another server's restricted data out, the test under way (a).
+- **Before each call,** `restrictedDataFrom` names any other server that has returned restricted data, and the call ends as `crossing_refused` before the policy is asked. No such call remains, so it guards against a fault in the checks before it.
+- **For a consumer:** `holdsRestrictedData` says whether any restricted data is present, for its own rules, such as saving.
 - **`state()`** returns a copy with every unanswered call answered (`withEveryCallAnswered`): "abandoned" for one waiting on a confirmation, which is never resumed, and the transport-error wording for one on the wire.
 
-**Tested in** `state.test.ts` and `host.test.ts` (`conversation state`, `data crossing inputs`).
+**Tested in** `state.test.ts` and `host.test.ts` (`conversation state`, `data crossing`).
 
 ## The OpenAI-compatible provider
 
