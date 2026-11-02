@@ -53,11 +53,18 @@ suite('toolMessageFor', () => {
 		[{ outcome: 'not_run' }, TOOL_MESSAGES.notRun, true],
 		[{ outcome: 'abandoned' }, TOOL_MESSAGES.abandoned, true],
 		[
-			{ outcome: 'crossing_refused', server: 'other', reason: 'this conversation holds signed-in data' },
-			'Calls to server "other" are refused in this conversation: this conversation holds signed-in data',
+			{ outcome: 'crossing_refused', server: 'cbio', heldFrom: ['overture'] },
+			'Not run: this conversation holds data from server "overture", which may not reach server "cbio". Only the user can carry data to another server.',
 			true,
 		],
 	];
+
+	test('names every server a refused crossing holds data from', () => {
+		assert.equal(
+			toolMessageFor({ outcome: 'crossing_refused', server: 'cbio', heldFrom: ['overture', 'genes'] }).text,
+			'Not run: this conversation holds data from servers "overture", "genes", which may not reach server "cbio". Only the user can carry data to another server.',
+		);
+	});
 
 	for (const [outcome, text, isError] of rows) {
 		test(`writes the ${outcome.outcome} message`, () => {

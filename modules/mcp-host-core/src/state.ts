@@ -128,32 +128,31 @@ export const markReturnedData = (record: ServerRecord): void => {
  * Whether any server has returned data that the model may not carry to another server.
  *
  * @remarks
- * This says whether the conversation holds restricted data at all. Whether a particular call would carry it out is
- * {@link carriesRestrictedData}'s question: calls back to the server it came from carry nothing out.
+ * This says whether the conversation holds restricted data at all, for a consumer's own rules, such as whether its
+ * records may be saved. Whether a particular call would carry it out is {@link restrictedDataFrom}'s question.
  */
 export const holdsRestrictedData = (servers: readonly ServerRecord[]): boolean =>
 	servers.some(({ returnedData }) => returnedData === 'restricted');
 
 /**
- * Whether a call could carry restricted data out of the server it came from: the test a policy applies under way
- * (a) of MCP Host Plan §5, question 4.
+ * The servers whose restricted data a call would carry out, so host-core refuses the call when there are any.
  *
  * @remarks
- * Carried content does not count: the person picked this conversation's servers as its destinations, and a restore
- * cannot add another (see {@link reconcileServers}).
+ * {@link assertServersApart} leaves no call this refuses (MCP Host Plan §5, question 4), so it guards against a fault
+ * in that check. Carried content does not count: the person picked this conversation's servers as its destinations,
+ * and a restore cannot add another (see {@link reconcileServers}).
  *
- * @param request - The call's server, and every server's record, as an approval request carries them.
- * @returns `true` when a server other than the call's has returned restricted data.
+ * @param servers - Every server the conversation has held.
+ * @param server - The call's server, whose own data a call back to it carries nowhere.
+ * @returns The keys of every other server that has returned restricted data, in the order the conversation first
+ * held them.
  */
-export const carriesRestrictedData = (request: {
-	call: { server: string };
-	connections: readonly ServerRecord[];
-}): boolean =>
-	request.connections.some(({ key, returnedData }) => returnedData === 'restricted' && key !== request.call.server);
+export const restrictedDataFrom = (servers: readonly ServerRecord[], server: string): string[] =>
+	servers.filter(({ key, returnedData }) => returnedData === 'restricted' && key !== server).map(({ key }) => key);
 
 /**
- * A configuration that a saved conversation cannot continue with: adding a server to one holding restricted data or
- * carried content is a crossing (MCP Host Plan §5, question 4).
+ * A configuration that a conversation cannot have: a server the person has not flagged sharing it with another, or
+ * a server added to a saved one holding restricted data or carried content (MCP Host Plan §5, question 4).
  */
 export class ServerSetError extends Error {
 	constructor(message: string) {
@@ -161,6 +160,36 @@ export class ServerSetError extends Error {
 		this.name = 'ServerSetError';
 	}
 }
+
+/**
+ * Keeps each server the person has not flagged alone in its conversation: way (b) of MCP Host Plan §5, question 4,
+ * decided 2026-10-29.
+ *
+ * @remarks
+ * A restored conversation is also checked against what it holds: a server whose data became restricted, through its
+ * flag being turned off on a restore, keeps every other server out, even after its flag is turned on again.
+ *
+ * @param configured - The servers the conversation connects to.
+ * @param servers - Every server the conversation has held, as a restore leaves them.
+ * @throws {@link ServerSetError} when an unflagged server shares the conversation with any other, or a server would
+ * join one holding another server's restricted data.
+ */
+export const assertServersApart = (configured: readonly ConfiguredServer[], servers: readonly ServerRecord[]): void => {
+	const unflagged = configured.find(({ containsOnlyOpenData }) => !containsOnlyOpenData);
+	if (unflagged && configured.length > 1) {
+		throw new ServerSetError(
+			`Server "${unflagged.key}" is not flagged as holding only open-access data, so it cannot share a conversation with other servers`,
+		);
+	}
+	for (const { key } of configured) {
+		const [from] = restrictedDataFrom(servers, key);
+		if (from !== undefined) {
+			throw new ServerSetError(
+				`Server "${key}" cannot join a conversation holding restricted data from server "${from}"`,
+			);
+		}
+	}
+};
 
 /**
  * Checks a configuration's servers against a saved conversation's.

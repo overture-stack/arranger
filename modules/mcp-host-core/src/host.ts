@@ -39,15 +39,14 @@ import {
 } from './registry.js';
 import { decideReply, type RetryKind } from './reply.js';
 import {
-	type CallRecord,
+	assertServersApart,
 	type CallStanding,
-	type CarryRecord,
 	type ConversationState,
 	emptyState,
 	identifyEndpoint,
 	markReturnedData,
 	restoreState,
-	type ServerRecord,
+	restrictedDataFrom,
 	withEveryCallAnswered,
 } from './state.js';
 import { assertTimeout } from './timeouts.js';
@@ -73,9 +72,8 @@ export type ServerConfig = {
 	trusted?: boolean;
 	/**
 	 * The person's attestation that the server holds only open-access data, which anyone may read: no registered and
-	 * no controlled data. Only such a server's data may reach another server's requests; every other server's stays
-	 * in its conversation unless the person carries it across (MCP Host Plan §5, question 4). Off unless set, so a
-	 * server is restricted by default.
+	 * no controlled data. Restricted data never reaches another server's requests unless the person carries it there.
+	 * Off unless set, so a server is restricted by default.
 	 *
 	 * @defaultValue false
 	 */
@@ -86,38 +84,29 @@ export type ServerConfig = {
 	changeNotifications?: boolean;
 };
 
-/**
- * A pre-call decision. `ask` puts the call in front of the consumer. `refuse` declines it as a data crossing, and
- * its reason reaches the model in the tool message, so the model can explain it.
- */
-export type ApprovalDecision = 'allow' | 'deny' | 'ask' | { refuse: string };
+/** A pre-call decision. `ask` puts the call in front of the consumer. */
+export type ApprovalDecision = 'allow' | 'deny' | 'ask';
 
 /**
  * What the approval policy sees.
  *
  * @remarks
- * An object, so inputs can be added without breaking a policy.
+ * An object, so inputs can be added without breaking a policy. The data-crossing rule needs none: host-core refuses
+ * a crossing before the policy is asked.
  */
 export type ApprovalRequest = {
 	call: {
 		callId: string;
 		server: string;
 		tool: string;
-		containsOnlyOpenData: boolean;
 		arguments: Record<string, unknown>;
 	};
-	/** Every earlier call in the conversation that reached a server, across runs, oldest first. */
-	history: CallRecord[];
-	/**
-	 * Every server the conversation has held, with what each has returned into it, including through a prompt,
-	 * which no call shows.
-	 */
-	connections: ServerRecord[];
-	/** What the person carried into the conversation, whose destinations are this conversation's servers. */
-	carried: CarryRecord[];
 };
 
-/** Decides each call before it runs. Required: no run starts without one. A throw counts as `deny`. */
+/**
+ * Decides each call that crosses no data before it runs. Required: no run starts without one. A throw counts as
+ * `deny`.
+ */
 export type ApprovalPolicy = (request: ApprovalRequest) => ApprovalDecision | Promise<ApprovalDecision>;
 
 /** Configuration for {@link McpHost.create}. */
@@ -281,10 +270,11 @@ export class McpHost {
 	 * @param options - The servers, provider, model, policy, limits and listener.
 	 * @param signal - Aborts connecting.
 	 * @returns A host ready to run.
-	 * @throws `TypeError` for invalid options or saved state; {@link ServerSetError} when a saved conversation holding
-	 * restricted data or carried content would gain a server, including a key that now reaches another endpoint (see
-	 * `identifyEndpoint`); and
-	 * whatever connecting throws, after closing any server already connected.
+	 * @throws `TypeError` for invalid options or saved state; `ServerSetError`, before connecting anything, when a
+	 * server not flagged `containsOnlyOpenData` shares the conversation with another, a server would join one holding
+	 * another server's restricted data, or a saved conversation holding restricted data or carried content would gain
+	 * a server, including a key that now reaches another endpoint (see `identifyEndpoint`); and whatever connecting
+	 * throws, after closing any server already connected.
 	 */
 	static async create(options: McpHostOptions, signal?: AbortSignal): Promise<McpHost> {
 		validate(options);
@@ -293,10 +283,9 @@ export class McpHost {
 			...identifyEndpoint(connection.url),
 			containsOnlyOpenData: containsOnlyOpenData === true,
 		}));
-		const host = new McpHost(
-			options,
-			options.state === undefined ? emptyState(configured) : restoreState(options.state, configured),
-		);
+		const state = options.state === undefined ? emptyState(configured) : restoreState(options.state, configured);
+		assertServersApart(configured, state.servers);
+		const host = new McpHost(options, state);
 
 		const connected = await Promise.allSettled(options.servers.map((config) => host.#connect(config, signal)));
 		const failure = connected.find((result) => result.status === 'rejected');
@@ -940,6 +929,14 @@ export class McpHost {
 			arguments: call.arguments,
 		});
 
+		// Refused before the policy, so no one is ever asked to approve a crossing (MCP Host Plan §5, question 4).
+		// `create` leaves no such call (see `assertServersApart`); this guards against a fault there.
+		const heldFrom = restrictedDataFrom(this.#state.servers, route.server);
+		if (heldFrom.length > 0) {
+			this.#answer(run, callId, { outcome: 'crossing_refused', server: route.server, heldFrom }, route);
+			return;
+		}
+
 		const approval = await this.#approve(run, callId, route, args);
 		if (approval === 'stopped') {
 			this.#answer(run, callId, { outcome: 'not_run' }, route);
@@ -987,20 +984,12 @@ export class McpHost {
 		callId: string,
 		route: RegisteredTool,
 		args: Record<string, unknown>,
-	): Promise<'allow' | 'stopped' | Extract<HostOutcome, { outcome: 'denied' | 'crossing_refused' }>> {
+	): Promise<'allow' | 'stopped' | Extract<HostOutcome, { outcome: 'denied' }>> {
 		const call = { callId, server: route.server, tool: route.tool.name, arguments: args };
-		const containsOnlyOpenData = this.#servers.get(route.server)?.containsOnlyOpenData === true;
 		let decision: unknown;
 		try {
 			decision = await untilAborted(
-				Promise.resolve(
-					this.#options.approvalPolicy({
-						call: { ...call, containsOnlyOpenData },
-						history: structuredClone(this.#state.calls),
-						connections: structuredClone(this.#state.servers),
-						carried: structuredClone(this.#state.carried),
-					}),
-				),
+				Promise.resolve(this.#options.approvalPolicy({ call: structuredClone(call) })),
 				run.signal,
 			);
 		} catch (error) {
@@ -1013,9 +1002,6 @@ export class McpHost {
 		}
 		if (decision === 'deny') {
 			return { outcome: 'denied', by: 'policy' };
-		}
-		if (isRecord(decision) && typeof decision.refuse === 'string') {
-			return { outcome: 'crossing_refused', server: route.server, reason: decision.refuse };
 		}
 		if (decision !== 'ask') {
 			return { outcome: 'denied', by: 'policy_error', message: `Not a decision: ${JSON.stringify(decision)}` };

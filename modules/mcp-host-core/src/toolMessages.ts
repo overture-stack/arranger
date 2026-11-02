@@ -22,14 +22,14 @@ export const TOOL_MESSAGES = {
 } as const;
 
 /**
- * The tool message for a call the approval policy refused as a crossing, naming the server and why, so the model
- * can explain it (data-crossing options §5).
+ * The tool message for a call host-core refused as a data crossing, naming both sides, so the model can explain it
+ * (data-crossing options §5).
  *
  * @param server - The server the call was to.
- * @param reason - The policy's reason, verbatim.
+ * @param heldFrom - The servers whose restricted data the call would have carried out.
  */
-export const crossingRefusedMessage = (server: string, reason: string): string =>
-	`Calls to server "${server}" are refused in this conversation: ${reason}`;
+export const crossingRefusedMessage = (server: string, heldFrom: readonly string[]): string =>
+	`Not run: this conversation holds data from ${heldFrom.length === 1 ? 'server' : 'servers'} ${heldFrom.map((key) => `"${key}"`).join(', ')}, which may not reach server "${server}". Only the user can carry data to another server.`;
 
 /** How a call ended when host-core, not `mcp-client`, decided it. */
 export type HostOutcome =
@@ -38,7 +38,7 @@ export type HostOutcome =
 	| { outcome: 'unknown_tool' }
 	| { outcome: 'not_run' }
 	| { outcome: 'abandoned' }
-	| { outcome: 'crossing_refused'; server: string; reason: string };
+	| { outcome: 'crossing_refused'; server: string; heldFrom: string[] };
 
 /** Every way a tool call can end. Plain data. */
 export type ToolCallOutcome = CallOutcome<CallToolResult> | HostOutcome;
@@ -126,7 +126,7 @@ export const toolMessageFor = (outcome: ToolCallOutcome): ToolMessage => {
 		case 'abandoned':
 			return { text: TOOL_MESSAGES.abandoned, isError: true };
 		case 'crossing_refused':
-			return { text: crossingRefusedMessage(outcome.server, outcome.reason), isError: true };
+			return { text: crossingRefusedMessage(outcome.server, outcome.heldFrom), isError: true };
 	}
 };
 
