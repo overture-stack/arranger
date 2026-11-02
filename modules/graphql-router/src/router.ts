@@ -135,9 +135,11 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		const accessControlRecord = createAccessControlRecord(getServerSideFilter);
 
-		console.log('access_enforcement.startup', `access control: ${describeAccessControlRecord(accessControlRecord)}`, {
-			catalogue: label,
-		});
+		console.log(
+			'server_side_filter.startup',
+			`server-side filter: ${describeAccessControlRecord(accessControlRecord)}`,
+			{ catalogue: label },
+		);
 
 		if (getRequester !== undefined && typeof getRequester !== 'function') {
 			throw new Error(

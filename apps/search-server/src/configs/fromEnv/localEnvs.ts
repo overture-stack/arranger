@@ -48,7 +48,7 @@ const parseSearchEngine = (value: string | undefined): SearchEngineType | undefi
 	return undefined;
 };
 
-const enableAccessControl = parseEnableAccessControl(env.ENABLE_ACCESS_ENFORCEMENT);
+const enableAccessControl = parseEnableAccessControl(env.ENABLE_ACCESS_ENFORCEMENT, env.ENABLE_ACCESS_CONTROL);
 
 // With access enforcement on, an export is bounded unless the deployment says otherwise, since a file is
 // the read most easily taken further; without it, unset means every row, as in 3.0.

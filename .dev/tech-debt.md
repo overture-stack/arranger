@@ -549,6 +549,12 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 
 ## apps/search-server
 
+### A deployment cannot add its own data scope to Usher's access enforcement
+
+standalone: yes
+context: With ENABLE_ACCESS_ENFORCEMENT true, the search server refuses to start when it is also given a filters option. Each catalogue takes one filter and Usher's fills it, so a deployment cannot add its own data scope to Usher's access enforcement.
+fix: apply both as one filter, each narrowing what is served; a refusal from Usher's still refuses, whatever the other returns; a failure's log names which filter failed; who made a request comes from Usher alone.
+
 ### `ENABLE_ADMIN` is read from the environment and reaches no consumer, and the docs describe the wrong channel
 
 **Files:** `apps/search-server/src/configs/fromEnv/localEnvs.ts:84`; `apps/search-server/src/configs/fromEnv/aggregator.ts:17,42`; `apps/search-server/src/server.ts:21`; `docs/reference/07-feature-flags.md:44,48`

@@ -42,7 +42,7 @@ export const describeAccessControlRecord = <Context>(record: AccessControlRecord
 		? 'none (defaulted)'
 		: record.getServerSideFilter === includeEverything
 			? 'none (explicit)'
-			: 'filter configured';
+			: 'configured';
 
 /**
  * The record a router left on a request context, or undefined for any context no router built,

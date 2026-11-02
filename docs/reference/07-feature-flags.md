@@ -70,18 +70,18 @@ Unlike the flags above, these apply to the whole server process, not to an indiv
 
 ## Access control
 
-`ENABLE_ACCESS_ENFORCEMENT` says whether the server applies access control. It applies to the whole server and cannot be set per catalogue.
+`ENABLE_ACCESS_ENFORCEMENT` says whether the server enforces Usher's access decisions. It applies to the whole server and cannot be set per catalogue. A server-side filter is a separate thing: an embedding application's own `filters` option scopes data, for reasons that may have nothing to do with principals, and applies whenever access enforcement is off.
 
 | `ENABLE_ACCESS_ENFORCEMENT` | Effect | Startup log |
 | --- | --- | --- |
-| Unset | No access control, unless a host application passes its own `filters` option, which then applies | `access control source: defaulted (unset)`, or `access control source: configured by host` when such filters apply |
-| `false` or `0` | No access control, stated explicitly: every catalogue's router is given `includeEverything`, the filter that keeps every document | `access control source: explicit (set to false)` |
-| `true` or `1` | The Usher adapter applies access control to every catalogue; see [With access enforcement on](#with-access-enforcement-on) | `access control source: Usher adapter` |
+| Unset | No access enforcement. An embedding application's `filters` option applies | `access enforcement: off (ENABLE_ACCESS_ENFORCEMENT unset)`, and `server-side filter source: none`, or `server-side filter source: the embedding application` when such filters apply |
+| `false` or `0` | No access enforcement, stated explicitly. An embedding application's `filters` option applies; with none, every catalogue's router is given `includeEverything`, the filter that keeps every document | `access enforcement: off (ENABLE_ACCESS_ENFORCEMENT false)`, and `server-side filter source: none` or `server-side filter source: the embedding application` |
+| `true` or `1` | The Usher adapter enforces access on every catalogue; see [With access enforcement on](#with-access-enforcement-on) | `access enforcement: on (ENABLE_ACCESS_ENFORCEMENT true)`, and `server-side filter source: Usher` |
 | Anything else, an empty value included | The server refuses to start | `access_enforcement.startup_refused`, quoting the value |
 
-Values are trimmed and read in any case. Unlike every other flag on this page, an unrecognized value refuses startup instead of taking the default, since a mistyped value taking the default could leave access control off unnoticed.
+Values are trimmed and read in any case. Unlike every other flag on this page, an unrecognized value refuses startup instead of taking the default, since a mistyped value taking the default could leave access enforcement off unnoticed. `ENABLE_ACCESS_CONTROL`, an earlier name for the variable, refuses startup whenever it is set, empty included, naming `ENABLE_ACCESS_ENFORCEMENT`.
 
-A host application that starts the server with its own `filters` option cannot also set `ENABLE_ACCESS_ENFORCEMENT`: with `false` the two contradict each other, and with `true` a `filters` option does not stand in for the Usher adapter, so the server refuses to start either way. Leave the variable unset to apply those filters.
+With `true`, the server refuses to start when the code starting it also passes a `filters` function, since each catalogue takes one filter and Usher's fills it, or a `getRequester` function, since who made a request comes from Usher alone. Leave the variable unset, or set it to `false`, to apply those functions.
 
 ### With access enforcement on
 

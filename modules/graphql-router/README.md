@@ -205,7 +205,7 @@ For the query shape, per-node status reporting, failure behaviour, and full limi
 
 ### A deployment with no access control passes nothing
 
-Leave `getServerSideFilter` out of `arrangerRouter`'s options. The router then applies `includeEverything`, the filter that keeps every document, records that it chose it because nothing was passed, and logs `access control: none (defaulted)` at startup.
+Leave `getServerSideFilter` out of `arrangerRouter`'s options. The router then applies `includeEverything`, the filter that keeps every document, records that it chose it because nothing was passed, and logs `server-side filter: none (defaulted)` at startup.
 
 Every read still carries a filter, because the code has to tell two situations apart that would otherwise look identical:
 
@@ -221,7 +221,7 @@ So a deployment with no access control writes nothing, and a read path that lose
 | Where | When |
 | --- | --- |
 | Returned from a callback: `return includeEverything(context);` | The callback allows this request without restricting it |
-| Passed to the router: `getServerSideFilter: includeEverything` | Optionally, to state that the deployment applies no access control. The startup log then reads `access control: none (explicit)` |
+| Passed to the router: `getServerSideFilter: includeEverything` | Optionally, to state that the deployment applies no access control. The startup log then reads `server-side filter: none (explicit)` |
 | Passed to `getAllData` or `dataStream` as `getServerSideFilter` | In code that builds its own context without the router, for a deployment with no access control. See [Export routes](#export-routes) |
 
 `getDefaultServerSideFilter` is a deprecated alias for `includeEverything`, the same function. Both take the request context, so call them with it, or pass the function itself.

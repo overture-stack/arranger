@@ -55,11 +55,11 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 
   | State, as logged | Recorded source | What the router was given |
   |---|---|---|
-  | `filter configured` | `configured` | a callback other than `includeEverything` |
+  | `configured` | `configured` | a callback other than `includeEverything` |
   | `none (explicit)` | `configured` | `includeEverything` itself |
   | `none (defaulted)` | `defaulted` | nothing, so it applies `includeEverything` |
 
-  **"Explicit" is a report, never a decision.** It is recognized by identity at logging time, so a wrapper around `includeEverything` reads as `filter configured`, and nothing downstream branches on it. Exports branch only on whether a record is present at all.
+  **"Explicit" is a report, never a decision.** It is recognized by identity at logging time, so a wrapper around `includeEverything` reads as `configured`, and nothing downstream branches on it. Exports branch only on whether a record is present at all.
 - **Request state:** what Arranger keeps about one request, and the base of what every read path hands the filter callback: the application's own `res.locals` keys, beneath the router's namespace `res.locals.arranger`, whose keys take precedence. The GraphQL paths add keys of their own after it. Parameter docs saying "the request context" mean this. `req.context` is a deprecated view of the namespace alone, so the application's root keys are not visible through it.
 - **Requested filter:** the filter asked for by a search. The proposed name for `compileFilter`'s other input; not yet settled.
 - **Server-side filter:** the GraphQL layer's name for the constraint, as the deployment supplies it. Correct in the router's API (`getServerSideFilter`, `includeEverything`, `getDefaultServerSideFilter`, `GetServerSideFilterFn`) and nowhere below it.

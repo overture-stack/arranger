@@ -282,7 +282,7 @@ const appWithContextProbe = ({ beforeRouter, router }: { beforeRouter?: RequestH
 	};
 };
 
-const accessControlLinesIn = (lines: string[]) => lines.filter((line) => line.includes('access control:'));
+const accessControlLinesIn = (lines: string[]) => lines.filter((line) => line.includes('server-side filter:'));
 
 const assertOnlyAccessControlLine = (lines: string[], expected: string) => {
 	const accessControlLines = accessControlLinesIn(lines);
@@ -611,17 +611,17 @@ suite("the router's access-control record on the request context", () => {
 	});
 });
 
-suite('the startup log line for access control', () => {
-	test('reads "access control: filter configured" for a configured function', async () => {
+suite('the startup log line for the server-side filter', () => {
+	test('reads "server-side filter: configured" for a configured function', async () => {
 		// Given a restricting function
 		// When a router is built with it
 		const { logLines } = await buildRouter({ getServerSideFilter: STUDY_A });
 
-		// Then exactly one access-control line is logged, in the configured form
-		assertOnlyAccessControlLine(logLines, 'access control: filter configured');
+		// Then exactly one server-side filter line is logged, in the configured form
+		assertOnlyAccessControlLine(logLines, 'server-side filter: configured');
 	});
 
-	test('reads "access control: none (explicit)" for includeEverything and its deprecated alias', async () => {
+	test('reads "server-side filter: none (explicit)" for includeEverything and its deprecated alias', async () => {
 		// Given includeEverything and getDefaultServerSideFilter, one function under two names
 		assert.equal(typeof packageRoot.includeEverything, 'function');
 
@@ -632,7 +632,7 @@ suite('the startup log line for access control', () => {
 		];
 
 		// Then each logs the explicit form
-		builds.forEach(({ logLines }) => assertOnlyAccessControlLine(logLines, 'access control: none (explicit)'));
+		builds.forEach(({ logLines }) => assertOnlyAccessControlLine(logLines, 'server-side filter: none (explicit)'));
 	});
 
 	test('reports a wrapper around includeEverything as a configured filter, recognizing includeEverything by identity alone', async () => {
@@ -645,16 +645,16 @@ suite('the startup log line for access control', () => {
 		const { logLines } = await buildRouter({ getServerSideFilter: wrapper });
 
 		// Then it is reported as configured, since behaviour is never inspected
-		assertOnlyAccessControlLine(logLines, 'access control: filter configured');
+		assertOnlyAccessControlLine(logLines, 'server-side filter: configured');
 	});
 
-	test('reads "access control: none (defaulted)" when nothing was passed, or undefined was', async () => {
+	test('reads "server-side filter: none (defaulted)" when nothing was passed, or undefined was', async () => {
 		// Given getServerSideFilter left out, and set to undefined
 		// When a router is built with each
 		const builds = [await buildRouter({}), await buildRouter({ getServerSideFilter: undefined })];
 
 		// Then each logs the defaulted form
-		builds.forEach(({ logLines }) => assertOnlyAccessControlLine(logLines, 'access control: none (defaulted)'));
+		builds.forEach(({ logLines }) => assertOnlyAccessControlLine(logLines, 'server-side filter: none (defaulted)'));
 	});
 
 	test('logs one line per catalogue when several are built at once, and none per request', async () => {
@@ -669,8 +669,8 @@ suite('the startup log line for access control', () => {
 		// Then construction logged one line for each catalogue, and serving logged none
 		const constructionLines = accessControlLinesIn(lines);
 		assert.equal(constructionLines.length, 2, JSON.stringify(constructionLines));
-		assert.ok(constructionLines.some((line) => line.includes('access control: filter configured')));
-		assert.ok(constructionLines.some((line) => line.includes('access control: none (defaulted)')));
+		assert.ok(constructionLines.some((line) => line.includes('server-side filter: configured')));
+		assert.ok(constructionLines.some((line) => line.includes('server-side filter: none (defaulted)')));
 		assert.deepEqual(accessControlLinesIn(requestLines), []);
 	});
 });

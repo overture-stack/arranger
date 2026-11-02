@@ -11,17 +11,27 @@ const RESTRICTED_STUDY = 'STUDY-A';
 const RESULT_MARKER = '@@image-run-result@@';
 const STARTUP_REFUSED_EVENT = 'access_enforcement.startup_refused';
 
-/** What the image logs as the source of its access-control decision. */
-const IMAGE_SOURCE_LOG = {
-	explicitFalse: 'explicit (set to false)',
-	unset: 'defaulted (unset)',
+/** What the image logs about access enforcement, and how ENABLE_ACCESS_ENFORCEMENT decided it. */
+const ENFORCEMENT_LOG = {
+	explicitFalse: 'access enforcement: off (ENABLE_ACCESS_ENFORCEMENT false)',
+	unset: 'access enforcement: off (ENABLE_ACCESS_ENFORCEMENT unset)',
 };
+
+/** What the image logs as the source of the server-side filter every catalogue applies. */
+const FILTER_SOURCE_LOG = {
+	embedding: 'server-side filter source: the embedding application',
+	none: 'server-side filter source: none',
+};
+
+/** The refusal of a filters function beside ENABLE_ACCESS_ENFORCEMENT set to true, word for word. */
+const FILTERS_BESIDE_USHER_REFUSAL =
+	"The code starting this server passes it a `filters` function while ENABLE_ACCESS_ENFORCEMENT is true, but Arranger cannot yet apply both to the same catalogue. Remove `filters` from that code to use Usher's access enforcement alone, or unset ENABLE_ACCESS_ENFORCEMENT to use that function alone.";
 
 /** What each catalogue's router logs about the filter it was given, one line per catalogue. */
 const ROUTER_LOG = {
-	configured: 'access control: filter configured',
-	defaulted: 'access control: none (defaulted)',
-	explicit: 'access control: none (explicit)',
+	configured: 'server-side filter: configured',
+	defaulted: 'server-side filter: none (defaulted)',
+	explicit: 'server-side filter: none (explicit)',
 };
 
 const graphqlRouterUrl = import.meta.resolve('@overture-stack/arranger-graphql-router');
@@ -147,6 +157,9 @@ const filtersOptionEntry = async (filtersOption) => {
 	return {};
 };
 
+const requesterOptionEntry = (requesterOption) =>
+	requesterOption === 'given' ? { getRequester: () => ({ kind: 'anonymous' }) } : {};
+
 const askForHits = async (port, graphqlPath) => {
 	const response = await fetch('http://127.0.0.1:' + port + graphqlPath, {
 		body: JSON.stringify({ query: '{ file { hits { total } } }' }),
@@ -172,6 +185,7 @@ const run = async () => {
 				esClient: stubSearchClient,
 				serverPort: 0,
 				...filters.entry,
+				...requesterOptionEntry(scenario.requesterOption),
 			}),
 		)
 		.then(
@@ -201,6 +215,10 @@ type ImageScenario = {
 	/** Left out of the child's environment entirely when undefined, which is what "unset" means. */
 	enableAccessControl?: string;
 	filtersOption?: FiltersOption;
+	/** `given` passes the image a getRequester function of the host's own. */
+	requesterOption?: 'absent' | 'given';
+	/** ENABLE_ACCESS_CONTROL, the variable's earlier name, left out of the environment when undefined. */
+	retiredVariable?: string;
 };
 
 type ImageRun = {
@@ -263,6 +281,8 @@ const runImage = ({
 	configsLayout = 'none',
 	enableAccessControl,
 	filtersOption = 'absent',
+	requesterOption = 'absent',
+	retiredVariable,
 }: ImageScenario): Promise<ImageRun> =>
 	new Promise((resolve) => {
 		const { catalogueConfigsPath, graphqlPaths } = CONFIGS_LAYOUTS[configsLayout];
@@ -270,6 +290,7 @@ const runImage = ({
 			catalogueConfigsPath,
 			filtersOption,
 			graphqlPaths,
+			requesterOption,
 			graphqlRouterUrl,
 			restrictedStudy: RESTRICTED_STUDY,
 			resultMarker: RESULT_MARKER,
@@ -286,6 +307,7 @@ const runImage = ({
 					...inheritedEnvironment,
 					...catalogueEnvironment,
 					...(enableAccessControl === undefined ? {} : { ENABLE_ACCESS_ENFORCEMENT: enableAccessControl }),
+					...(retiredVariable === undefined ? {} : { ENABLE_ACCESS_CONTROL: retiredVariable }),
 				},
 			},
 		);
@@ -359,12 +381,16 @@ const quotesRawValue = (text: string, rawValue: string): boolean =>
 		text.includes(quoted),
 	);
 
-const assertImageLoggedSource = (run: ImageRun, source: string): void => {
-	Object.values(IMAGE_SOURCE_LOG).forEach((phrase) => {
+/** Asserts the image logged `enforcement` and `filter`, and none of the other lines of each kind. */
+const assertImageLogged = (run: ImageRun, { enforcement, filter }: { enforcement: string; filter: string }): void => {
+	[
+		...Object.values(ENFORCEMENT_LOG).map((phrase) => [phrase, enforcement] as const),
+		...Object.values(FILTER_SOURCE_LOG).map((phrase) => [phrase, filter] as const),
+	].forEach(([phrase, expected]) => {
 		assert.equal(
 			run.output.includes(phrase),
-			phrase === source,
-			`expected the image to log "${source}" as its access-control source, and no other\n${describeRun(run)}`,
+			phrase === expected,
+			`expected the image to log "${enforcement}" and "${filter}", and no other\n${describeRun(run)}`,
 		);
 	});
 };
@@ -432,14 +458,14 @@ suite('search-server image: ENABLE_ACCESS_ENFORCEMENT unset', { concurrency: 3 }
 		assertServedReads(run);
 	});
 
-	test('logs the source of its access-control decision as defaulted (unset)', async () => {
+	test('logs access enforcement as off, decided by the unset variable, and no server-side filter', async () => {
 		const run = await unsetRun();
 
 		assertStarted(run);
-		assertImageLoggedSource(run, IMAGE_SOURCE_LOG.unset);
+		assertImageLogged(run, { enforcement: ENFORCEMENT_LOG.unset, filter: FILTER_SOURCE_LOG.none });
 	});
 
-	test('passes the router no filter at all, so the catalogue reports access control as none (defaulted)', async () => {
+	test('passes the router no filter at all, so the catalogue reports its server-side filter as none (defaulted)', async () => {
 		const run = await unsetRun();
 
 		assertStarted(run);
@@ -457,11 +483,11 @@ suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to false or 0', { conc
 	];
 
 	falseSpellings.forEach(({ rawValue, run: falseRun }) => {
-		test(`starts and logs the source as explicit (set to false), given ${valueLabel(rawValue)}`, async () => {
+		test(`starts and logs access enforcement as off, decided by false, and no server-side filter, given ${valueLabel(rawValue)}`, async () => {
 			const run = await falseRun();
 
 			assertStarted(run);
-			assertImageLoggedSource(run, IMAGE_SOURCE_LOG.explicitFalse);
+			assertImageLogged(run, { enforcement: ENFORCEMENT_LOG.explicitFalse, filter: FILTER_SOURCE_LOG.none });
 		});
 
 		test(`passes the router includeEverything, so the catalogue reports none (explicit), given ${valueLabel(rawValue)}`, async () => {
@@ -472,7 +498,7 @@ suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to false or 0', { conc
 		});
 	});
 
-	test('serves exactly the reads an unset variable serves, since both mean no access control', async () => {
+	test('serves exactly the reads an unset variable serves, since both mean no access enforcement', async () => {
 		const [unset, explicitFalse] = await Promise.all([unsetRun(), explicitFalseRun()]);
 
 		assertStarted(unset);
@@ -485,7 +511,7 @@ suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to false or 0', { conc
 
 suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to true or 1', { concurrency: 4 }, () => {
 	['true', '1', 'TRUE', ' True ', '\t1\n'].forEach((rawValue) => {
-		test(`refuses to start without the Usher configuration access control needs, naming it, given ${valueLabel(rawValue)}`, async () => {
+		test(`refuses to start without the Usher configuration access enforcement needs, naming it, given ${valueLabel(rawValue)}`, async () => {
 			const run = await runImage({ enableAccessControl: rawValue });
 
 			assertRefusedAtStartup(run);
@@ -531,63 +557,105 @@ suite('search-server image: ENABLE_ACCESS_ENFORCEMENT set to any other value', {
 	});
 });
 
-const assertRefusedAsContradiction = (run: ImageRun): void => {
-	assertRefusedAtStartup(run);
-	assert.match(refusalText(run), /ENABLE_ACCESS_ENFORCEMENT/, describeRun(run));
-	assert.match(refusalText(run), /filters/, describeRun(run));
+/** Asserts every search the image ran held the host's restricting filter. */
+const assertEveryReadHeldHostFilter = (run: ImageRun): void => {
+	assert.ok(run.searchBodies.length > 0, describeRun(run));
+	run.searchBodies.forEach((searchBody) => {
+		const query = isRecord(searchBody) ? searchBody.query : undefined;
+		assert.deepEqual(
+			[...new Set(requiredTermsValues(query, 'study'))],
+			[RESTRICTED_STUDY],
+			JSON.stringify(searchBody),
+		);
+	});
 };
 
 suite("search-server image: a host's programmatic filters option", { concurrency: 4 }, () => {
-	// "0" as well as "false": a contradiction check that compares the raw text with "false" would
-	// let every other spelling of false through.
+	// "0" as well as "false": a check that compares the raw text with "false" would miss every other spelling.
 	['false', '0'].forEach((rawValue) => {
-		test(`refuses to start when filters is combined with ENABLE_ACCESS_ENFORCEMENT set to ${valueLabel(rawValue)}, since the two contradict each other`, async () => {
+		test(`applies the host's filter on every read with ENABLE_ACCESS_ENFORCEMENT set to ${valueLabel(rawValue)}, access enforcement off`, async () => {
 			const run = await runImage({ enableAccessControl: rawValue, filtersOption: 'restricting' });
 
-			assertRefusedAsContradiction(run);
+			assertStarted(run);
+			assertServedReads(run);
+			assertEveryReadHeldHostFilter(run);
+			assertImageLogged(run, { enforcement: ENFORCEMENT_LOG.explicitFalse, filter: FILTER_SOURCE_LOG.embedding });
+			assertEveryCatalogueReports(run, ROUTER_LOG.configured, 1);
 		});
 	});
 
-	test("refuses includeEverything as filters combined with false too, since includeEverything's identity is only ever reported, never decided on", async () => {
+	test("starts with includeEverything as filters beside false, applying it as the host's own", async () => {
 		const run = await runImage({ enableAccessControl: 'false', filtersOption: 'includeEverything' });
 
-		assertRefusedAsContradiction(run);
+		assertStarted(run);
+		assertImageLogged(run, { enforcement: ENFORCEMENT_LOG.explicitFalse, filter: FILTER_SOURCE_LOG.embedding });
 	});
 
-	test('refuses a null filters option combined with false, rather than reading null as absent the way undefined is', async () => {
-		const run = await runImage({ enableAccessControl: 'false', filtersOption: 'null' });
+	test('treats a null filters option beside false as beside an unset variable, the catalogue failing to load', async () => {
+		const [unset, explicitFalse] = await Promise.all([
+			runImage({ filtersOption: 'null' }),
+			runImage({ enableAccessControl: 'false', filtersOption: 'null' }),
+		]);
 
-		assertRefusedAtStartup(run);
-		assert.match(refusalText(run), /filters/, describeRun(run));
+		[unset, explicitFalse].forEach((run) => {
+			assertStarted(run);
+			assert.match(run.output, /failed to load/, describeRun(run));
+		});
 	});
 
-	test('refuses to start when filters is combined with ENABLE_ACCESS_ENFORCEMENT=true, since a host filter does not stand in for the Usher adapter', async () => {
+	test('refuses to start when filters is passed beside ENABLE_ACCESS_ENFORCEMENT=true, saying how to use either alone', async () => {
 		const run = await runImage({ enableAccessControl: 'true', filtersOption: 'restricting' });
 
 		assertRefusedAtStartup(run);
-		assert.match(refusalText(run), /usher/i, describeRun(run));
+		assert.equal(run.messages[0], FILTERS_BESIDE_USHER_REFUSAL, describeRun(run));
+	});
+
+	test('refuses to start when getRequester is passed beside ENABLE_ACCESS_ENFORCEMENT=true, since who is asking comes from Usher alone', async () => {
+		const run = await runImage({ enableAccessControl: 'true', requesterOption: 'given' });
+
+		assertRefusedAtStartup(run);
+		assert.match(refusalText(run), /`getRequester`/, describeRun(run));
+		assert.match(refusalText(run), /ENABLE_ACCESS_ENFORCEMENT/, describeRun(run));
 	});
 
 	test('treats an explicitly undefined filters option as absent, so false still starts and passes includeEverything', async () => {
 		const run = await runImage({ enableAccessControl: 'false', filtersOption: 'explicitlyUndefined' });
 
 		assertStarted(run);
-		assertImageLoggedSource(run, IMAGE_SOURCE_LOG.explicitFalse);
+		assertImageLogged(run, { enforcement: ENFORCEMENT_LOG.explicitFalse, filter: FILTER_SOURCE_LOG.none });
 		assertEveryCatalogueReports(run, ROUTER_LOG.explicit, 1);
 	});
 
-	test("still requires the host's filter on every read when ENABLE_ACCESS_ENFORCEMENT is unset", async () => {
+	test("applies the host's filter on every read when ENABLE_ACCESS_ENFORCEMENT is unset", async () => {
 		const run = await runImage({ filtersOption: 'restricting' });
 
 		assertStarted(run);
 		assertServedReads(run);
-		assert.ok(run.searchBodies.length > 0, describeRun(run));
-		run.searchBodies.forEach((searchBody) => {
-			const query = isRecord(searchBody) ? searchBody.query : undefined;
-			assert.deepEqual(
-				[...new Set(requiredTermsValues(query, 'study'))],
-				[RESTRICTED_STUDY],
-				JSON.stringify(searchBody),
+		assertEveryReadHeldHostFilter(run);
+		assertImageLogged(run, { enforcement: ENFORCEMENT_LOG.unset, filter: FILTER_SOURCE_LOG.embedding });
+	});
+});
+
+suite("search-server image: ENABLE_ACCESS_CONTROL, the variable's earlier name", { concurrency: 4 }, () => {
+	const retiredSettings: { description: string; scenario: ImageScenario }[] = [
+		{ description: 'set to true', scenario: { retiredVariable: 'true' } },
+		{ description: 'set to false', scenario: { retiredVariable: 'false' } },
+		{ description: 'set empty', scenario: { retiredVariable: '' } },
+		{
+			description: 'set to true beside ENABLE_ACCESS_ENFORCEMENT set to false',
+			scenario: { enableAccessControl: 'false', retiredVariable: 'true' },
+		},
+	];
+
+	retiredSettings.forEach(({ description, scenario }) => {
+		test(`refuses to start when it is ${description}, naming ENABLE_ACCESS_ENFORCEMENT as its replacement`, async () => {
+			const run = await runImage(scenario);
+
+			assertRefusedAtStartup(run);
+			assert.equal(
+				run.messages[0],
+				'ENABLE_ACCESS_CONTROL is set, but the variable that turns on access enforcement is ENABLE_ACCESS_ENFORCEMENT, and the server will not guess what the earlier name meant. Set ENABLE_ACCESS_ENFORCEMENT instead, and remove ENABLE_ACCESS_CONTROL.',
+				describeRun(run),
 			);
 		});
 	});
@@ -634,9 +702,10 @@ suite(`search-server image: the ${STARTUP_REFUSED_EVENT} event`, { concurrency: 
 			scenario: { enableAccessControl: 'yes\nno' },
 		},
 		{
-			description: 'filters combined with ENABLE_ACCESS_ENFORCEMENT set to false',
-			scenario: { enableAccessControl: 'false', filtersOption: 'restricting' },
+			description: 'filters beside ENABLE_ACCESS_ENFORCEMENT set to true',
+			scenario: { enableAccessControl: 'true', filtersOption: 'restricting' },
 		},
+		{ description: 'ENABLE_ACCESS_CONTROL set', scenario: { retiredVariable: 'true' } },
 	];
 
 	refusals.forEach(({ description, scenario }) => {
