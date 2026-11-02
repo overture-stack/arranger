@@ -52,11 +52,11 @@ suite('fitToWindow', () => {
 
 	test('sends the conversation unchanged when it fits', () => {
 		const items = conversation(10);
-		const fitted = fitToWindow({ ...settings, items, window: { tokens: 10_000, policy: 'shorten' } });
+		const fit = fitToWindow({ ...settings, items, window: { tokens: 10_000, policy: 'shorten' } });
 
-		assert.equal(fitted.fits, true);
-		assert.deepEqual(fitted.items, items);
-		assert.deepEqual(fitted.shortened, []);
+		assert.equal(fit.fits, true);
+		assert.deepEqual(fit.items, items);
+		assert.deepEqual(fit.shortened, []);
 	});
 
 	test('shortens the oldest results first, and never the latest turn or the question', () => {
@@ -64,16 +64,16 @@ suite('fitToWindow', () => {
 		const full = requestCharacters('sys', [], items);
 		// Room for everything but one earlier result.
 		const tokens = Math.ceil((full - 2_500) / 3) + 100;
-		const fitted = fitToWindow({ ...settings, items, window: { tokens, policy: 'shorten', charsPerToken: 3 } });
+		const fit = fitToWindow({ ...settings, items, window: { tokens, policy: 'shorten', charsPerToken: 3 } });
 
-		assert.equal(fitted.fits, true);
-		assert.deepEqual(fitted.shortened, [{ callId: 'call-1', name: 'mcp__s__first' }]);
+		assert.equal(fit.fits, true);
+		assert.deepEqual(fit.shortened, [{ callId: 'call-1', name: 'mcp__s__first' }]);
 		assert.equal(
-			fitted.items[2]?.type === 'function_call_output' && fitted.items[2].output,
+			fit.items[2]?.type === 'function_call_output' && fit.items[2].output,
 			shortenedResult('mcp__s__first'),
 		);
-		assert.deepEqual(fitted.items.slice(3), items.slice(3));
-		assert.ok(fitted.estimateAfter < fitted.estimateBefore);
+		assert.deepEqual(fit.items.slice(3), items.slice(3));
+		assert.ok(fit.estimateAfter < fit.estimateBefore);
 		assert.equal(
 			items[2]?.type === 'function_call_output' && items[2].output.length,
 			3_000,
@@ -83,24 +83,24 @@ suite('fitToWindow', () => {
 
 	test('reports that it cannot fit once only the latest turn is left', () => {
 		const items = conversation(3_000);
-		const fitted = fitToWindow({
+		const fit = fitToWindow({
 			...settings,
 			items,
 			window: { tokens: 1_000, policy: 'shorten', charsPerToken: 3 },
 		});
 
-		assert.equal(fitted.fits, false);
+		assert.equal(fit.fits, false);
 		assert.deepEqual(
-			fitted.shortened.map(({ callId }) => callId),
+			fit.shortened.map(({ callId }) => callId),
 			['call-1', 'call-2'],
 		);
-		const latest = fitted.items.filter(isFunctionCallOutput).at(-1);
+		const latest = fit.items.filter(isFunctionCallOutput).at(-1);
 		assert.equal(latest?.output.length, 3_000);
 	});
 
 	test('may shorten every result once a new question starts a run', () => {
 		const items = [...conversation(3_000), assistantMessage('answer'), userMessage('next')];
-		const fitted = fitToWindow({
+		const fit = fitToWindow({
 			...settings,
 			items,
 			latestCalls: new Set(),
@@ -108,18 +108,18 @@ suite('fitToWindow', () => {
 		});
 
 		assert.deepEqual(
-			fitted.shortened.map(({ callId }) => callId),
+			fit.shortened.map(({ callId }) => callId),
 			['call-1', 'call-2', 'call-3'],
 		);
 	});
 
 	test('shortens nothing under the fail policy', () => {
 		const items = conversation(3_000);
-		const fitted = fitToWindow({ ...settings, items, window: { tokens: 1_000, policy: 'fail' } });
+		const fit = fitToWindow({ ...settings, items, window: { tokens: 1_000, policy: 'fail' } });
 
-		assert.equal(fitted.fits, false);
-		assert.deepEqual(fitted.shortened, []);
-		assert.deepEqual(fitted.items, items);
+		assert.equal(fit.fits, false);
+		assert.deepEqual(fit.shortened, []);
+		assert.deepEqual(fit.items, items);
 	});
 });
 

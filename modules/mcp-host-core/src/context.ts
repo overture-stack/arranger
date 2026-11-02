@@ -74,7 +74,7 @@ export const estimateTokens = ({
 		: Math.ceil(chars / charsPerToken)) + maxOutputTokens;
 
 /** A request's messages after fitting them to the window. */
-export type Fitted = {
+export type FitResult = {
 	items: ConversationItem[];
 	chars: number;
 	shortened: ShortenedResult[];
@@ -113,7 +113,7 @@ export const fitToWindow = ({
 	sendsReasoning?: boolean;
 	baseline: Baseline | undefined;
 	maxOutputTokens: number;
-}): Fitted => {
+}): FitResult => {
 	const charsPerToken = window.charsPerToken ?? DEFAULT_CHARS_PER_TOKEN;
 	const estimate = (chars: number) => estimateTokens({ chars, baseline, charsPerToken, maxOutputTokens });
 
