@@ -30,20 +30,24 @@ export {
 	type ShortenedResult,
 	shortenedResult,
 } from './context.js';
+export {
+	type EndpointIdentity,
+	holdsRestrictedData,
+	type ReturnedData,
+	type ServerRecord,
+	ServerSetError,
+} from './crossing.js';
 export type * from './events.js';
+export { McpHost, RunActiveError } from './host.js';
 export {
 	type ApprovalDecision,
 	type ApprovalPolicy,
 	type ApprovalRequest,
 	type CarriedContent,
-	carriedLabel,
-	McpHost,
 	type McpHostOptions,
-	OUTPUT_LIMIT_RETRY_MESSAGE,
-	RunActiveError,
 	type RunInput,
 	type ServerConfig,
-} from './host.js';
+} from './options.js';
 export type { AssistantMessage, ConversationItem, FunctionCall, FunctionCallOutput, UserMessage } from './messages.js';
 export type * from './provider.js';
 export {
@@ -61,17 +65,8 @@ export {
 	type ToolDefinition,
 	toModelSurface,
 } from './registry.js';
-export {
-	type CallRecord,
-	type CarryRecord,
-	type ConversationState,
-	type EndpointIdentity,
-	holdsRestrictedData,
-	type ReturnedData,
-	type ServerRecord,
-	ServerSetError,
-	STATE_VERSION,
-} from './state.js';
+export { carriedLabel, OUTPUT_LIMIT_RETRY_MESSAGE } from './run.js';
+export { type CallRecord, type CarryRecord, type ConversationState, STATE_VERSION } from './state.js';
 export {
 	crossingRefusedMessage,
 	type HostOutcome,
