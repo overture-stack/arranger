@@ -16,7 +16,7 @@ import {
 	QuestionTable,
 	type RespondResult,
 } from './answers.js';
-import { type Baseline, type ContextWindowSettings, type Fitted, fitToWindow, serverTruncated } from './context.js';
+import { type Baseline, type ContextWindowSettings, type FitResult, fitToWindow, serverTruncated } from './context.js';
 import { type DoneReason, type EventBody, type HostEvent, type RunLimits, type RunSummary } from './events.js';
 import { isRecord } from './json.js';
 import { assistantMessage, functionCall, functionCallOutput, unansweredCalls, userMessage } from './messages.js';
@@ -152,7 +152,7 @@ export type McpHostOptions = {
 	clientInfo: { name: string; version: string };
 };
 
-/** What the person carried out of another conversation, through their own action (MCP Host Plan §5, question 4). */
+/** What the person carried out of another conversation, through their own action. */
 export type CarriedContent = {
 	text: string;
 	/** The server it came from, in the conversation it was carried out of. */
@@ -171,7 +171,7 @@ export type RunInput =
 
 /**
  * The label carried content goes to the model under: it stays server text, so instructions hidden in it gain no
- * authority (MCP Host Plan §1, rule 5).
+ * authority.
  *
  * @param server - The server it came from.
  */
@@ -349,7 +349,7 @@ export class McpHost {
 	}
 
 	/**
-	 * Answers an approval or a confirmation by id. Idempotent: only the first answer counts.
+	 * Answers an approval or a confirmation by id. Only the first answer counts.
 	 *
 	 * @param id - The id from `approval_required`, `input_required` or {@link McpHost.pending}.
 	 * @param answer - `{ approve }` for an approval; an `ElicitResult` for a confirmation, where `decline` and
@@ -518,7 +518,7 @@ export class McpHost {
 		return this.#loop(run);
 	}
 
-	/** Re-reads every server's surface, reconnecting once a server that needs it. */
+	/** Re-reads every server's surface. A server that requires a reconnect gets one attempt. */
 	async #refreshAll(run: Run): Promise<Ended | undefined> {
 		const failures = await Promise.all(
 			[...this.#servers.values()].map(async (server): Promise<string | undefined> => {
@@ -650,7 +650,7 @@ export class McpHost {
 		const { limits, retries } = this.#options;
 		let retry: RetryKind | undefined;
 
-		for (;;) {
+		while (true) {
 			if (run.signal.aborted) {
 				return this.#stopped(run);
 			}
@@ -770,14 +770,14 @@ export class McpHost {
 		}
 	}
 
-	/** Builds the next request, fitted to the context window, or reports that it cannot fit. */
-	#prepare(run: Run, retry: RetryKind | undefined): Fitted & { request: ProviderRequest | undefined } {
+	/** Builds the next request, fit to the context window, or reports that it cannot fit. */
+	#prepare(run: Run, retry: RetryKind | undefined): FitResult & { request: ProviderRequest | undefined } {
 		const { model, contextWindow, provider } = this.#options;
 		const items =
 			retry === 'output_limit'
 				? [...this.#state.items, userMessage(OUTPUT_LIMIT_RETRY_MESSAGE)]
 				: this.#state.items;
-		const fitted = fitToWindow({
+		const fit = fitToWindow({
 			systemPrompt: run.surface.systemPrompt,
 			tools: run.surface.tools,
 			items,
@@ -787,8 +787,8 @@ export class McpHost {
 			baseline: run.baseline,
 			maxOutputTokens: model.maxOutputTokens,
 		});
-		if (!fitted.fits) {
-			return { ...fitted, request: undefined };
+		if (!fit.fits) {
+			return { ...fit, request: undefined };
 		}
 
 		let request: ProviderRequest = {
@@ -796,13 +796,13 @@ export class McpHost {
 			// A same-seed resend reproduced every Phase 0 empty reply, so the retry changes it.
 			...(retry === 'empty_reply' && model.seed !== undefined && { seed: model.seed + 1 }),
 			systemPrompt: run.surface.systemPrompt,
-			messages: fitted.items,
+			messages: fit.items,
 			tools: run.surface.tools,
 		};
 		if (retry === 'output_limit' && provider.reduceReasoning) {
 			request = provider.reduceReasoning(request);
 		}
-		return { ...fitted, request };
+		return { ...fit, request };
 	}
 
 	async #generate(
