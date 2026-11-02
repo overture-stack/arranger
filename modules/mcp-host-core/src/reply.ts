@@ -1,5 +1,5 @@
-// What a run does with each model reply (MCP Host Plan §2.2, Agent Loop): run its tool calls, keep its answer, or
-// retry or end after a reply cut off at the output limit or an empty one.
+// What a run does with each model reply: run its tool calls, keep its answer, or retry or end after a reply cut off
+// at the output limit or an empty one.
 import { type FinalResponse } from './provider.js';
 
 /** Why a request was sent again. */

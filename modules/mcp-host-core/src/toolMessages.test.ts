@@ -12,7 +12,7 @@ import {
 const timing = { wireMs: 1, waitingMs: 0, rounds: 0 };
 
 suite('toolMessageFor', () => {
-	// Every row of the plan's tool-message table, and the unknown-tool and crossing rows this module adds.
+	// Every outcome, each with its tool message and whether it is an error.
 	const rows: [ToolCallOutcome, string, boolean][] = [
 		[{ outcome: 'result', result: { content: [{ type: 'text', text: 'ok' }] }, ...timing }, 'ok', false],
 		[

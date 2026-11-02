@@ -1,6 +1,6 @@
 # mcp-host-core: Architecture
 
-How `@overture-stack/mcp-host-core` works inside, drawn from its source. The [README](../README.md) covers usage, options and how a run ends. The [MCP Host Plan](../../../.dev/docs/mcp-host/mcp-host-plan.md) §2.2 records why each choice was made, and [Data Crossing Connections](../../../.dev/docs/mcp-host/data-crossing-options.md) the rule on data moving between servers. For where this module sits among the other pieces, see [MCP Host: Architecture](../../../.dev/docs/mcp-host/architecture.md).
+How `@overture-stack/mcp-host-core` works inside, drawn from its source. The [README](../README.md) covers usage, options and how a run ends. The rule on data moving between servers is under [State and data crossing](#state-and-data-crossing), and the source comments give the reasons behind its choices.
 
 Each section names the functions it draws and the test files that cover them.
 
@@ -10,7 +10,7 @@ A consumer creates one `McpHost` per conversation. `McpHost` holds one `McpClien
 
 ```mermaid
 flowchart LR
-    consumer["Consumer<br/>(chat, eval, CRE main process)"]
+    consumer["Consumer"]
 
     subgraph module["@overture-stack/mcp-host-core"]
         host["McpHost<br/>host.ts"]
@@ -257,7 +257,7 @@ stateDiagram-v2
 - **`servers`:** every server the conversation has held, kept after a restore drops it, each with `returnedData` above. It only ever rises, so no change to a flag loosens what is already in the conversation.
 - **Endpoint identity:** `identifyEndpoint` keeps the readable origin and a SHA-256 of the URL without user info or fragment. Path and query both count, and neither is saved, so a key carried in the URL never reaches the state. A key rotated in the URL therefore counts as another server.
 - **`carried`:** what the person carried in. It marks no server, but it closes the server set, since the person picked its destinations.
-- **When a conversation starts,** `assertServersApart` refuses a server not flagged `containsOnlyOpenData` beside any other, and, on a restore, any server beside another whose data is restricted, as one whose flag was turned off and on again is. Nothing has connected yet. This is way (b), the plan's question 4.
+- **When a conversation starts,** `assertServersApart` refuses a server not flagged `containsOnlyOpenData` beside any other, and, on a restore, any server beside another whose data is restricted, as one whose flag was turned off and on again is. Nothing has connected yet.
 - **On restore,** `reconcileServers` refuses any server added, including a key whose endpoint changed, when the conversation holds restricted data or carried content.
 - **Before each call,** `restrictedDataFrom` names any other server that has returned restricted data, and the call ends as `crossing_refused` before the policy is asked. No such call remains, so it guards against a fault in the checks before it.
 - **For a consumer:** `holdsRestrictedData` says whether any restricted data is present, for its own rules, such as saving.
@@ -285,4 +285,4 @@ stateDiagram-v2
 | `testing/scriptedProvider.ts` | A provider that replays scripted replies, hangs, errors or throws, and records every request.                         |
 | `testing/modelServer.ts`      | A loopback Chat Completions server whose stream a test writes byte by byte.                                           |
 
-None of these is built or exported. The test server is host-core's own rather than `mcp-client`'s, so it moves with host-core in Phase 5.
+None of these is built or exported. The test server is host-core's own rather than `mcp-client`'s, so it moves with host-core to its own repository.
