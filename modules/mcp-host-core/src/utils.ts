@@ -59,3 +59,6 @@ export const assertTimeout = (name: string, ms: number): void => {
 		throw new TypeError(`${name} must be a positive number of milliseconds, at most ${MAX_TIMER_MS}`);
 	}
 };
+
+/** The union of an `as const` object's values, the type each vocabulary in `constants.ts` names. */
+export type ObjectValues<T> = T[keyof T];

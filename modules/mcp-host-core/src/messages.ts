@@ -1,14 +1,15 @@
 // The conversation's items, shaped after the Responses API's. The rest of host-core uses the constructors and readers
 // below, so a change of shape stays here, apart from each provider, which maps items to its own wire format.
+import { ITEM_TYPES, ROLES } from './constants.js';
 import { isRecord } from './utils.js';
 
 /** A person's message, or a prompt's user turn. */
-export type UserMessage = { type: 'message'; role: 'user'; text: string };
+export type UserMessage = { type: typeof ITEM_TYPES.MESSAGE; role: typeof ROLES.USER; text: string };
 
 /** The model's text, or a prompt's assistant turn. */
 export type AssistantMessage = {
-	type: 'message';
-	role: 'assistant';
+	type: typeof ITEM_TYPES.MESSAGE;
+	role: typeof ROLES.ASSISTANT;
 	text: string;
 	/** Reasoning the model returned. The provider decides whether to send it back. */
 	reasoning?: string;
@@ -20,7 +21,7 @@ export type AssistantMessage = {
 
 /** A tool call the model made, well-formed or not. */
 export type FunctionCall = {
-	type: 'function_call';
+	type: typeof ITEM_TYPES.FUNCTION_CALL;
 	/** Host-core's id, unique within the conversation. */
 	callId: string;
 	/** The id the model gave the call, as received. */
@@ -33,7 +34,7 @@ export type FunctionCall = {
 
 /** The tool message for one call: what the model is sent about it. */
 export type FunctionCallOutput = {
-	type: 'function_call_output';
+	type: typeof ITEM_TYPES.FUNCTION_CALL_OUTPUT;
 	callId: string;
 	output: string;
 	isError: boolean;
@@ -47,7 +48,7 @@ export type ConversationItem = UserMessage | AssistantMessage | FunctionCall | F
  *
  * @param text - What they wrote, or a prompt's user turn.
  */
-export const userMessage = (text: string): UserMessage => ({ type: 'message', role: 'user', text });
+export const userMessage = (text: string): UserMessage => ({ type: ITEM_TYPES.MESSAGE, role: ROLES.USER, text });
 
 /**
  * The model's text.
@@ -59,8 +60,8 @@ export const assistantMessage = (
 	text: string,
 	extras: Pick<AssistantMessage, 'reasoning' | 'truncated' | 'providerItems'> = {},
 ): AssistantMessage => ({
-	type: 'message',
-	role: 'assistant',
+	type: ITEM_TYPES.MESSAGE,
+	role: ROLES.ASSISTANT,
 	text,
 	...(extras.reasoning !== undefined && { reasoning: extras.reasoning }),
 	...(extras.truncated && { truncated: true }),
@@ -73,7 +74,7 @@ export const assistantMessage = (
  * @param call - Host-core's call id, the model's own id when it gave one, and the name and arguments as received.
  */
 export const functionCall = (call: Omit<FunctionCall, 'type'>): FunctionCall => ({
-	type: 'function_call',
+	type: ITEM_TYPES.FUNCTION_CALL,
 	callId: call.callId,
 	...(call.modelCallId !== undefined && { modelCallId: call.modelCallId }),
 	name: call.name,
@@ -88,21 +89,22 @@ export const functionCall = (call: Omit<FunctionCall, 'type'>): FunctionCall => 
  * @param isError - Whether the call failed, or did not run.
  */
 export const functionCallOutput = (callId: string, output: string, isError: boolean): FunctionCallOutput => ({
-	type: 'function_call_output',
+	type: ITEM_TYPES.FUNCTION_CALL_OUTPUT,
 	callId,
 	output,
 	isError,
 });
 
 /** Whether an item is a tool call. */
-export const isFunctionCall = (item: ConversationItem): item is FunctionCall => item.type === 'function_call';
+export const isFunctionCall = (item: ConversationItem): item is FunctionCall => item.type === ITEM_TYPES.FUNCTION_CALL;
 
 /** Whether an item is a tool message. */
 export const isFunctionCallOutput = (item: ConversationItem): item is FunctionCallOutput =>
-	item.type === 'function_call_output';
+	item.type === ITEM_TYPES.FUNCTION_CALL_OUTPUT;
 
 /** Whether an item is a person's or the model's message. */
-export const isMessage = (item: ConversationItem): item is UserMessage | AssistantMessage => item.type === 'message';
+export const isMessage = (item: ConversationItem): item is UserMessage | AssistantMessage =>
+	item.type === ITEM_TYPES.MESSAGE;
 
 /**
  * Checks that a value read back from storage has an item's shape.
@@ -115,15 +117,15 @@ export const isConversationItem = (value: unknown): value is ConversationItem =>
 		return false;
 	}
 	switch (value.type) {
-		case 'message':
-			return (value.role === 'user' || value.role === 'assistant') && typeof value.text === 'string';
-		case 'function_call':
+		case ITEM_TYPES.MESSAGE:
+			return (value.role === ROLES.USER || value.role === ROLES.ASSISTANT) && typeof value.text === 'string';
+		case ITEM_TYPES.FUNCTION_CALL:
 			return (
 				typeof value.callId === 'string' &&
 				typeof value.name === 'string' &&
 				typeof value.arguments === 'string'
 			);
-		case 'function_call_output':
+		case ITEM_TYPES.FUNCTION_CALL_OUTPUT:
 			return (
 				typeof value.callId === 'string' &&
 				typeof value.output === 'string' &&
@@ -166,11 +168,13 @@ export const answerUnanswered = (items: ConversationItem[], messageFor: (callId:
  */
 export const sentCharacters = (item: ConversationItem, sendsReasoning = false): number => {
 	switch (item.type) {
-		case 'message':
-			return item.text.length + (sendsReasoning && item.role === 'assistant' ? (item.reasoning?.length ?? 0) : 0);
-		case 'function_call':
+		case ITEM_TYPES.MESSAGE:
+			return (
+				item.text.length + (sendsReasoning && item.role === ROLES.ASSISTANT ? (item.reasoning?.length ?? 0) : 0)
+			);
+		case ITEM_TYPES.FUNCTION_CALL:
 			return item.name.length + item.arguments.length;
-		case 'function_call_output':
+		case ITEM_TYPES.FUNCTION_CALL_OUTPUT:
 			return item.output.length;
 	}
 };

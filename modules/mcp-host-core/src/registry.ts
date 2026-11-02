@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 
 import { type SurfaceSnapshot, type Tool } from '@overture-stack/arranger-mcp-client';
 
+import { LEFT_OUT_REASONS } from './constants.js';
+import { type ObjectValues } from './utils.js';
 /** The longest tool name OpenAI-style APIs accept. */
 export const MAX_TOOL_NAME_LENGTH = 64;
 
@@ -33,7 +35,7 @@ export const reduceToolName = (server: string, tool: string): string => {
 export type RegisteredTool = { name: string; server: string; tool: Tool };
 
 /** A tool the model is not offered, and why. */
-export type LeftOutTool = { server: string; tool: string; name: string; reason: 'collision' };
+export type LeftOutTool = { server: string; tool: string; name: string; reason: ObjectValues<typeof LEFT_OUT_REASONS> };
 
 /** The tools of every server, by model-facing name. */
 export type ToolRegistry = {
@@ -64,7 +66,14 @@ export const buildRegistry = (servers: readonly { key: string; tools: readonly T
 	const tools = candidates.filter(({ name }) => counts.get(name) === 1);
 	const leftOut = candidates
 		.filter(({ name }) => counts.get(name) !== 1)
-		.map(({ name, server, tool }): LeftOutTool => ({ server, tool: tool.name, name, reason: 'collision' }));
+		.map(
+			({ name, server, tool }): LeftOutTool => ({
+				server,
+				tool: tool.name,
+				name,
+				reason: LEFT_OUT_REASONS.COLLISION,
+			}),
+		);
 
 	return { tools, byName: new Map(tools.map((entry) => [entry.name, entry])), leftOut };
 };

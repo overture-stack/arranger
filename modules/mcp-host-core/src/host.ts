@@ -17,6 +17,23 @@ import {
 	QuestionTable,
 	type RespondResult,
 } from './answers.js';
+import {
+	APPROVAL_DECISIONS,
+	CALL_STANDINGS,
+	DENIED_BY,
+	DONE_REASONS,
+	EVENT_TYPES,
+	HOST_OUTCOMES,
+	ID_PREFIXES,
+	MODEL_ERROR_KINDS,
+	QUESTION_KINDS,
+	REPLY_DECISIONS,
+	RETRY_KINDS,
+	SETTLED_BY,
+	STOPPED,
+	STREAM_ITEM_TYPES,
+	TOOL_CALL_KINDS,
+} from './constants.js';
 import { type Baseline, type ContextWindowSettings, type FitResult, fitToWindow, serverTruncated } from './context.js';
 import { type DoneReason, type EventBody, type HostEvent, type RunLimits, type RunSummary } from './events.js';
 import { answerUnanswered, assistantMessage, functionCall, functionCallOutput, userMessage } from './messages.js';
@@ -58,7 +75,7 @@ import {
 	type ToolCallOutcome,
 	toolMessageFor,
 } from './toolMessages.js';
-import { assertTimeout, errorMessage, isRecord, parseJson, untilAborted } from './utils.js';
+import { assertTimeout, errorMessage, isRecord, type ObjectValues, parseJson, untilAborted } from './utils.js';
 
 /** One MCP server in a conversation. */
 export type ServerConfig = {
@@ -86,7 +103,7 @@ export type ServerConfig = {
 };
 
 /** A pre-call decision. `ask` puts the call in front of the consumer. */
-export type ApprovalDecision = 'allow' | 'deny' | 'ask';
+export type ApprovalDecision = ObjectValues<typeof APPROVAL_DECISIONS>;
 
 /**
  * What the approval policy sees.
@@ -342,9 +359,9 @@ export class McpHost {
 	state(): ConversationState {
 		return withEveryCallAnswered(this.#state, (callId): CallStanding => {
 			if (this.#questions.isConfirming(callId)) {
-				return 'confirming';
+				return CALL_STANDINGS.CONFIRMING;
 			}
-			return this.#run?.inFlight === callId ? 'in_flight' : 'queued';
+			return this.#run?.inFlight === callId ? CALL_STANDINGS.IN_FLIGHT : CALL_STANDINGS.QUEUED;
 		});
 	}
 
@@ -419,7 +436,7 @@ export class McpHost {
 
 	#done(run: Run, { reason, detail }: Ended): RunSummary {
 		return this.#emit(run, {
-			type: 'done',
+			type: EVENT_TYPES.DONE,
 			reason,
 			...(detail !== undefined && { detail }),
 			totals: {
@@ -433,7 +450,7 @@ export class McpHost {
 	}
 
 	#stopped(run: Run): Ended {
-		return { reason: run.timedOut ? 'time_limit' : 'cancelled' };
+		return { reason: run.timedOut ? DONE_REASONS.TIME_LIMIT : DONE_REASONS.CANCELLED };
 	}
 
 	#surfaceServers(): SurfaceServer[] {
@@ -462,7 +479,7 @@ export class McpHost {
 		this.#useSurface(run);
 		if (run.registry.leftOut.length > 0) {
 			const names = run.registry.leftOut.map(({ server, tool, name }) => `${server}/${tool} as ${name}`);
-			return { reason: 'tool_collision', detail: `Tool names collide: ${names.join(', ')}` };
+			return { reason: DONE_REASONS.TOOL_COLLISION, detail: `Tool names collide: ${names.join(', ')}` };
 		}
 
 		await this.#runStarted(run);
@@ -505,7 +522,7 @@ export class McpHost {
 			}),
 		);
 		const messages = failures.filter((failure) => failure !== undefined);
-		return messages.length > 0 ? { reason: 'surface_error', detail: messages.join('; ') } : undefined;
+		return messages.length > 0 ? { reason: DONE_REASONS.SURFACE_ERROR, detail: messages.join('; ') } : undefined;
 	}
 
 	async #runStarted(run: Run): Promise<void> {
@@ -526,7 +543,7 @@ export class McpHost {
 			run.windowTokens = Math.min(contextWindow.tokens, reportedContextWindow);
 		}
 		this.#emit(run, {
-			type: 'run_started',
+			type: EVENT_TYPES.RUN_STARTED,
 			model,
 			providerUrl: provider.url,
 			...(modelDigest !== undefined && { modelDigest }),
@@ -553,16 +570,16 @@ export class McpHost {
 	): Promise<Ended | undefined> {
 		const server = this.#servers.get(prompt.server);
 		if (!server) {
-			return { reason: 'prompt_failed', detail: `No server "${prompt.server}" in this conversation` };
+			return { reason: DONE_REASONS.PROMPT_FAILED, detail: `No server "${prompt.server}" in this conversation` };
 		}
 		if (!server.trusted) {
 			return {
-				reason: 'prompt_failed',
+				reason: DONE_REASONS.PROMPT_FAILED,
 				detail: `Server "${prompt.server}" is not trusted, so its prompts cannot start a run`,
 			};
 		}
 
-		const outcome = await server.client.getPrompt(this.#nextId('prompt'), prompt.name, prompt.arguments, {
+		const outcome = await server.client.getPrompt(this.#nextId(ID_PREFIXES.PROMPT), prompt.name, prompt.arguments, {
 			signal: run.signal,
 		});
 		if (run.signal.aborted) {
@@ -570,7 +587,10 @@ export class McpHost {
 		}
 		if (outcome.outcome !== 'result') {
 			const message = 'message' in outcome ? `: ${outcome.message}` : '';
-			return { reason: 'prompt_failed', detail: `Prompt "${prompt.name}": ${outcome.outcome}${message}` };
+			return {
+				reason: DONE_REASONS.PROMPT_FAILED,
+				detail: `Prompt "${prompt.name}": ${outcome.outcome}${message}`,
+			};
 		}
 		this.#markReturned(prompt.server);
 		for (const { role, content } of outcome.result.messages) {
@@ -590,7 +610,7 @@ export class McpHost {
 		this.#state.items.push(userMessage(text));
 		this.#state.carried.push({ from: { ...carried.from }, carriedAt: carried.carriedAt });
 		this.#emit(run, {
-			type: 'content_carried',
+			type: EVENT_TYPES.CONTENT_CARRIED,
 			text: carried.text,
 			from: carried.from,
 			to: [...this.#servers.keys()],
@@ -606,7 +626,7 @@ export class McpHost {
 		}
 	}
 
-	#nextId(prefix: 'call' | 'prompt'): string {
+	#nextId(prefix: ObjectValues<typeof ID_PREFIXES>): string {
 		return `${prefix}-${this.#state.nextCallSeq++}`;
 	}
 
@@ -619,7 +639,7 @@ export class McpHost {
 				return this.#stopped(run);
 			}
 			if (run.turns >= limits.turns) {
-				return { reason: 'turn_limit' };
+				return { reason: DONE_REASONS.TURN_LIMIT };
 			}
 			if (run.turns > 0 && !retry) {
 				await this.#refreshStale(run);
@@ -629,7 +649,7 @@ export class McpHost {
 			const turn = run.turns + 1;
 			if (prepared.shortened.length > 0) {
 				this.#emit(run, {
-					type: 'context_shortened',
+					type: EVENT_TYPES.CONTEXT_SHORTENED,
 					turn,
 					shortened: prepared.shortened,
 					estimateBefore: prepared.estimateBefore,
@@ -639,7 +659,7 @@ export class McpHost {
 			}
 			if (!prepared.request) {
 				return {
-					reason: 'context_window',
+					reason: DONE_REASONS.CONTEXT_WINDOW,
 					detail: `The request needs about ${prepared.estimateAfter} tokens of a ${run.windowTokens}-token window`,
 				};
 			}
@@ -647,18 +667,18 @@ export class McpHost {
 			run.turns = turn;
 			const { messages, ...rest } = prepared.request;
 			this.#emit(run, {
-				type: 'model_request',
+				type: EVENT_TYPES.MODEL_REQUEST,
 				turn,
 				request: rest,
 				messageCount: messages.length,
 				...(retry && { retryOf: retry }),
 			});
 			const result = await this.#generate(run, turn, prepared.request);
-			if (result === 'stopped') {
+			if (result === STOPPED) {
 				return this.#stopped(run);
 			}
 			if ('error' in result) {
-				return { reason: 'model_error', detail: result.error.message };
+				return { reason: DONE_REASONS.MODEL_ERROR, detail: result.error.message };
 			}
 			const { response } = result;
 
@@ -672,14 +692,17 @@ export class McpHost {
 				};
 				if (!retry && serverTruncated(run.baseline, current)) {
 					this.#emit(run, {
-						type: 'model_error',
+						type: EVENT_TYPES.MODEL_ERROR,
 						turn,
 						error: {
-							kind: 'truncated',
+							kind: MODEL_ERROR_KINDS.TRUNCATED,
 							message: `The server counted ${current.inputTokens} prompt tokens, no more than the previous turn's ${run.baseline?.inputTokens}, for a longer request`,
 						},
 					});
-					return { reason: 'context_window', detail: 'The model server truncated the conversation' };
+					return {
+						reason: DONE_REASONS.CONTEXT_WINDOW,
+						detail: 'The model server truncated the conversation',
+					};
 				}
 				if (!retry) {
 					run.baseline = current;
@@ -689,7 +712,7 @@ export class McpHost {
 			const decision = decideReply(response, retry, retries);
 			const outputTokens = response.usage?.outputTokens;
 			switch (decision.kind) {
-				case 'tool_calls': {
+				case REPLY_DECISIONS.TOOL_CALLS: {
 					retry = undefined;
 					this.#keepAssistantTurn(response, false);
 					const ended = await this.#runCalls(run, turn, response.toolCalls);
@@ -698,9 +721,9 @@ export class McpHost {
 					}
 					continue;
 				}
-				case 'output_limit':
+				case REPLY_DECISIONS.OUTPUT_LIMIT:
 					this.#emit(run, {
-						type: 'output_limit',
+						type: EVENT_TYPES.OUTPUT_LIMIT,
 						turn,
 						...(outputTokens !== undefined && { outputTokens }),
 						text: response.text,
@@ -710,26 +733,26 @@ export class McpHost {
 						this.#keepAssistantTurn(response, true);
 					}
 					if (!decision.retry) {
-						return { reason: 'output_limit' };
+						return { reason: DONE_REASONS.OUTPUT_LIMIT };
 					}
-					retry = 'output_limit';
+					retry = RETRY_KINDS.OUTPUT_LIMIT;
 					continue;
-				case 'empty_reply':
+				case REPLY_DECISIONS.EMPTY_REPLY:
 					this.#emit(run, {
-						type: 'empty_reply',
+						type: EVENT_TYPES.EMPTY_REPLY,
 						turn,
 						...(outputTokens !== undefined && { outputTokens }),
 						stopReason: response.stopReason,
 						retrying: decision.retry,
 					});
 					if (!decision.retry) {
-						return { reason: 'empty_reply' };
+						return { reason: DONE_REASONS.EMPTY_REPLY };
 					}
-					retry = 'empty_reply';
+					retry = RETRY_KINDS.EMPTY_REPLY;
 					continue;
-				case 'answered':
+				case REPLY_DECISIONS.ANSWERED:
 					this.#keepAssistantTurn(response, false);
-					return { reason: 'answered' };
+					return { reason: DONE_REASONS.ANSWERED };
 			}
 		}
 	}
@@ -738,7 +761,7 @@ export class McpHost {
 	#prepare(run: Run, retry: RetryKind | undefined): FitResult & { request: ProviderRequest | undefined } {
 		const { model, contextWindow, provider } = this.#options;
 		const items =
-			retry === 'output_limit'
+			retry === RETRY_KINDS.OUTPUT_LIMIT
 				? [...this.#state.items, userMessage(OUTPUT_LIMIT_RETRY_MESSAGE)]
 				: this.#state.items;
 		const fit = fitToWindow({
@@ -758,12 +781,12 @@ export class McpHost {
 		let request: ProviderRequest = {
 			...model,
 			// In testing, a same-seed resend reproduced every empty reply, so the retry changes it.
-			...(retry === 'empty_reply' && model.seed !== undefined && { seed: model.seed + 1 }),
+			...(retry === RETRY_KINDS.EMPTY_REPLY && model.seed !== undefined && { seed: model.seed + 1 }),
 			systemPrompt: run.surface.systemPrompt,
 			messages: fit.items,
 			tools: run.surface.tools,
 		};
-		if (retry === 'output_limit' && provider.reduceReasoning) {
+		if (retry === RETRY_KINDS.OUTPUT_LIMIT && provider.reduceReasoning) {
 			request = provider.reduceReasoning(request);
 		}
 		return { ...fit, request };
@@ -773,7 +796,7 @@ export class McpHost {
 		run: Run,
 		turn: number,
 		request: ProviderRequest,
-	): Promise<'stopped' | { error: ModelError } | { response: FinalResponse }> {
+	): Promise<typeof STOPPED | { error: ModelError } | { response: FinalResponse }> {
 		let response: FinalResponse | undefined;
 		let error: ModelError | undefined;
 		try {
@@ -781,9 +804,9 @@ export class McpHost {
 				if (run.signal.aborted) {
 					break;
 				}
-				if (item.type === 'delta') {
-					this.#emit(run, { type: 'token', turn, text: item.text });
-				} else if (item.type === 'response') {
+				if (item.type === STREAM_ITEM_TYPES.DELTA) {
+					this.#emit(run, { type: EVENT_TYPES.TOKEN, turn, text: item.text });
+				} else if (item.type === STREAM_ITEM_TYPES.RESPONSE) {
 					response = item.response;
 					break;
 				} else {
@@ -792,19 +815,21 @@ export class McpHost {
 				}
 			}
 		} catch (thrown) {
-			error = { kind: 'unknown', message: errorMessage(thrown) };
+			error = { kind: MODEL_ERROR_KINDS.UNKNOWN, message: errorMessage(thrown) };
 		}
 
 		if (run.signal.aborted) {
-			return 'stopped';
+			return STOPPED;
 		}
-		error ??= response ? undefined : { kind: 'stream_ended', message: 'The stream ended without a response' };
+		error ??= response
+			? undefined
+			: { kind: MODEL_ERROR_KINDS.STREAM_ENDED, message: 'The stream ended without a response' };
 		if (error || !response) {
-			const reported = error ?? { kind: 'unknown', message: 'No response' };
-			this.#emit(run, { type: 'model_error', turn, error: reported });
+			const reported = error ?? { kind: MODEL_ERROR_KINDS.UNKNOWN, message: 'No response' };
+			this.#emit(run, { type: EVENT_TYPES.MODEL_ERROR, turn, error: reported });
 			return { error: reported };
 		}
-		this.#emit(run, { type: 'model_response', turn, response });
+		this.#emit(run, { type: EVENT_TYPES.MODEL_RESPONSE, turn, response });
 		return { response };
 	}
 
@@ -827,7 +852,7 @@ export class McpHost {
 		turn: number,
 		calls: readonly (ProviderToolCall | ProviderMalformedCall)[],
 	): Promise<Ended | undefined> {
-		const numbered = calls.map((call) => ({ call, callId: this.#nextId('call') }));
+		const numbered = calls.map((call) => ({ call, callId: this.#nextId(ID_PREFIXES.CALL) }));
 		run.latestCalls = new Set(numbered.map(({ callId }) => callId));
 		for (const { call, callId } of numbered) {
 			this.#state.items.push(
@@ -835,7 +860,7 @@ export class McpHost {
 					callId,
 					...(call.id !== undefined && { modelCallId: call.id }),
 					name: call.name ?? '',
-					arguments: call.kind === 'call' ? call.arguments : call.raw,
+					arguments: call.kind === TOOL_CALL_KINDS.CALL ? call.arguments : call.raw,
 				}),
 			);
 		}
@@ -846,10 +871,10 @@ export class McpHost {
 				ended = this.#stopped(run);
 			}
 			if (!ended && run.toolCalls >= this.#options.limits.toolCalls) {
-				ended = { reason: 'tool_call_limit' };
+				ended = { reason: DONE_REASONS.TOOL_CALL_LIMIT };
 			}
 			if (ended) {
-				this.#answer(run, callId, { outcome: 'not_run' });
+				this.#answer(run, callId, { outcome: HOST_OUTCOMES.NOT_RUN });
 				continue;
 			}
 			run.toolCalls += 1;
@@ -864,33 +889,33 @@ export class McpHost {
 		call: ProviderToolCall | ProviderMalformedCall,
 		callId: string,
 	): Promise<void> {
-		if (call.kind === 'malformed') {
-			this.#emit(run, { type: 'malformed_tool_call', turn, callId, call });
-			this.#answer(run, callId, { outcome: 'malformed' });
+		if (call.kind === TOOL_CALL_KINDS.MALFORMED) {
+			this.#emit(run, { type: EVENT_TYPES.MALFORMED_TOOL_CALL, turn, callId, call });
+			this.#answer(run, callId, { outcome: HOST_OUTCOMES.MALFORMED });
 			return;
 		}
 
 		const route = run.registry.byName.get(call.name);
 		if (!route) {
-			this.#answer(run, callId, { outcome: 'unknown_tool' });
+			this.#answer(run, callId, { outcome: HOST_OUTCOMES.UNKNOWN_TOOL });
 			return;
 		}
 
 		const args = parseJson(call.arguments);
 		if (!isRecord(args)) {
 			const malformed: ProviderMalformedCall = {
-				kind: 'malformed',
+				kind: TOOL_CALL_KINDS.MALFORMED,
 				...(call.id !== undefined && { id: call.id }),
 				name: call.name,
 				raw: call.arguments,
 			};
-			this.#emit(run, { type: 'malformed_tool_call', turn, callId, call: malformed });
-			this.#answer(run, callId, { outcome: 'malformed' });
+			this.#emit(run, { type: EVENT_TYPES.MALFORMED_TOOL_CALL, turn, callId, call: malformed });
+			this.#answer(run, callId, { outcome: HOST_OUTCOMES.MALFORMED });
 			return;
 		}
 
 		this.#emit(run, {
-			type: 'tool_call',
+			type: EVENT_TYPES.TOOL_CALL,
 			callId,
 			...(call.id !== undefined && { modelCallId: call.id }),
 			name: call.name,
@@ -903,23 +928,28 @@ export class McpHost {
 		// `create` leaves no such call (see `assertServersApart`); this guards against a fault there.
 		const heldFrom = restrictedDataFrom(this.#state.servers, route.server);
 		if (heldFrom.length > 0) {
-			this.#answer(run, callId, { outcome: 'crossing_refused', server: route.server, heldFrom }, route);
+			this.#answer(
+				run,
+				callId,
+				{ outcome: HOST_OUTCOMES.CROSSING_REFUSED, server: route.server, heldFrom },
+				route,
+			);
 			return;
 		}
 
 		const approval = await this.#approve(run, callId, route, args);
-		if (approval === 'stopped') {
-			this.#answer(run, callId, { outcome: 'not_run' }, route);
+		if (approval === STOPPED) {
+			this.#answer(run, callId, { outcome: HOST_OUTCOMES.NOT_RUN }, route);
 			return;
 		}
-		if (approval !== 'allow') {
+		if (approval !== APPROVAL_DECISIONS.ALLOW) {
 			this.#answer(run, callId, approval, route);
 			return;
 		}
 
 		const server = this.#servers.get(route.server);
 		if (!server) {
-			this.#answer(run, callId, { outcome: 'unknown_tool' });
+			this.#answer(run, callId, { outcome: HOST_OUTCOMES.UNKNOWN_TOOL });
 			return;
 		}
 		run.inFlight = callId;
@@ -938,7 +968,7 @@ export class McpHost {
 
 		if (outcome.outcome === 'input_state_rejected') {
 			this.#emit(run, {
-				type: 'input_state_rejected',
+				type: EVENT_TYPES.INPUT_STATE_REJECTED,
 				callId,
 				server: route.server,
 				waitedMs: outcome.waitedMs,
@@ -954,7 +984,11 @@ export class McpHost {
 		callId: string,
 		route: RegisteredTool,
 		args: Record<string, unknown>,
-	): Promise<'allow' | 'stopped' | Extract<HostOutcome, { outcome: 'denied' }>> {
+	): Promise<
+		| typeof APPROVAL_DECISIONS.ALLOW
+		| typeof STOPPED
+		| Extract<HostOutcome, { outcome: typeof HOST_OUTCOMES.DENIED }>
+	> {
 		const call = { callId, server: route.server, tool: route.tool.name, arguments: args };
 		let decision: unknown;
 		try {
@@ -964,49 +998,57 @@ export class McpHost {
 			);
 		} catch (error) {
 			return run.signal.aborted
-				? 'stopped'
-				: { outcome: 'denied', by: 'policy_error', message: errorMessage(error) };
+				? STOPPED
+				: { outcome: HOST_OUTCOMES.DENIED, by: DENIED_BY.POLICY_ERROR, message: errorMessage(error) };
 		}
-		if (decision === 'allow') {
-			return 'allow';
-		}
-		if (decision === 'deny') {
-			return { outcome: 'denied', by: 'policy' };
-		}
-		if (decision !== 'ask') {
-			return { outcome: 'denied', by: 'policy_error', message: `Not a decision: ${JSON.stringify(decision)}` };
+		switch (decision) {
+			case APPROVAL_DECISIONS.ALLOW:
+				return APPROVAL_DECISIONS.ALLOW;
+			case APPROVAL_DECISIONS.DENY:
+				return { outcome: HOST_OUTCOMES.DENIED, by: DENIED_BY.POLICY };
+			case APPROVAL_DECISIONS.ASK:
+				break;
+			default:
+				return {
+					outcome: HOST_OUTCOMES.DENIED,
+					by: DENIED_BY.POLICY_ERROR,
+					message: `Not a decision: ${JSON.stringify(decision)}`,
+				};
 		}
 
 		if (run.signal.aborted) {
-			return 'stopped';
+			return STOPPED;
 		}
 		const id = `${callId}/approval`;
 		// Registered before the event, so a listener can answer from inside it.
 		const asked = this.#questions.ask(
-			{ kind: 'approval', id, runId: run.id, ...call, askedAt: new Date().toISOString() },
+			{ kind: QUESTION_KINDS.APPROVAL, id, runId: run.id, ...call, askedAt: new Date().toISOString() },
 			approvalAnswer,
 			this.#options.approvalTimeoutMs,
 			run.signal,
 		);
-		this.#emit(run, { type: 'approval_required', id, ...call });
+		this.#emit(run, { type: EVENT_TYPES.APPROVAL_REQUIRED, id, ...call });
 		try {
 			const settled = await asked;
-			const approved = settled.by === 'answer' && settled.answer.approve;
+			const approved = settled.by === SETTLED_BY.ANSWER && settled.answer.approve;
 			this.#emit(run, {
-				type: 'approval_answered',
+				type: EVENT_TYPES.APPROVAL_ANSWERED,
 				id,
 				callId,
-				decision: approved ? 'allow' : 'deny',
-				timedOut: settled.by === 'timeout',
+				decision: approved ? APPROVAL_DECISIONS.ALLOW : APPROVAL_DECISIONS.DENY,
+				timedOut: settled.by === SETTLED_BY.TIMEOUT,
 				waitedMs: settled.waitedMs,
 			});
 			if (approved) {
-				return 'allow';
+				return APPROVAL_DECISIONS.ALLOW;
 			}
-			return { outcome: 'denied', by: settled.by === 'timeout' ? 'timeout' : 'person' };
+			return {
+				outcome: HOST_OUTCOMES.DENIED,
+				by: settled.by === SETTLED_BY.TIMEOUT ? DENIED_BY.TIMEOUT : DENIED_BY.PERSON,
+			};
 		} catch {
-			this.#emit(run, { type: 'question_withdrawn', id, kind: 'approval', callId });
-			return 'stopped';
+			this.#emit(run, { type: EVENT_TYPES.QUESTION_WITHDRAWN, id, kind: QUESTION_KINDS.APPROVAL, callId });
+			return STOPPED;
 		}
 	}
 
@@ -1016,7 +1058,7 @@ export class McpHost {
 		const text = override ?? capToolMessage(message.text, this.#options.toolResultMaxChars);
 		this.#state.items.push(functionCallOutput(callId, text, message.isError));
 		this.#emit(run, {
-			type: 'tool_result',
+			type: EVENT_TYPES.TOOL_RESULT,
 			callId,
 			...(route && { server: route.server, tool: route.tool.name }),
 			outcome,
@@ -1041,7 +1083,7 @@ export class McpHost {
 		}
 		this.#useSurface(run);
 		this.#emit(run, {
-			type: 'tools_changed',
+			type: EVENT_TYPES.TOOLS_CHANGED,
 			servers: stale.map(({ config, client }) => ({ key: config.key, hash: client.surface.hash })),
 			leftOut: run.registry.leftOut,
 			errors,
@@ -1061,7 +1103,7 @@ export class McpHost {
 		// Registered before the event, so a listener can answer from inside it.
 		const asked = this.#questions.ask(
 			{
-				kind: 'confirmation',
+				kind: QUESTION_KINDS.CONFIRMATION,
 				id: questionId,
 				runId: run.id,
 				callId,
@@ -1076,21 +1118,35 @@ export class McpHost {
 			confirmations === false ? undefined : confirmations.timeoutMs,
 			signal,
 		);
-		this.#emit(run, { type: 'input_required', questionId, callId, server, round, key, message, requestedSchema });
+		this.#emit(run, {
+			type: EVENT_TYPES.INPUT_REQUIRED,
+			questionId,
+			callId,
+			server,
+			round,
+			key,
+			message,
+			requestedSchema,
+		});
 		let settled: Awaited<typeof asked>;
 		try {
 			settled = await asked;
 		} catch (error) {
-			this.#emit(run, { type: 'question_withdrawn', id: questionId, kind: 'confirmation', callId });
+			this.#emit(run, {
+				type: EVENT_TYPES.QUESTION_WITHDRAWN,
+				id: questionId,
+				kind: QUESTION_KINDS.CONFIRMATION,
+				callId,
+			});
 			throw error;
 		}
-		const answer: ElicitResult = settled.by === 'answer' ? settled.answer : { action: 'cancel' };
+		const answer: ElicitResult = settled.by === SETTLED_BY.ANSWER ? settled.answer : { action: 'cancel' };
 		this.#emit(run, {
-			type: 'input_answered',
+			type: EVENT_TYPES.INPUT_ANSWERED,
 			questionId,
 			answer,
 			waitedMs: settled.waitedMs,
-			timedOut: settled.by === 'timeout',
+			timedOut: settled.by === SETTLED_BY.TIMEOUT,
 		});
 		return answer;
 	}
