@@ -59,6 +59,7 @@ export type RunContext = {
  * a run's behalf.
  */
 export class Run {
+	/** The run's id, in every event it emits. */
 	readonly id = randomUUID();
 	readonly options: McpHostOptions;
 	readonly state: ConversationState;

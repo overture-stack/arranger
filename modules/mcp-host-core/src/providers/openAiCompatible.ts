@@ -55,8 +55,10 @@ export type OpenAiCompatibleOptions = {
 	ollama?: boolean;
 };
 
+/** One tool call as Chat Completions sends it on an assistant message. */
 type WireToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } };
 
+/** One Chat Completions message. */
 type WireMessage =
 	| { role: 'system' | 'user'; content: string }
 	| { role: 'assistant'; content: string | null; reasoning?: string; tool_calls?: WireToolCall[] }
@@ -172,6 +174,7 @@ const stopReasonOf = (finishReason: string): StopReason => {
 	}
 };
 
+/** Reads the wire's token counts, or `undefined` when the server sent none it could be read from. */
 const usageOf = (usage: unknown): TokenUsage | undefined => {
 	if (!isRecord(usage) || typeof usage.prompt_tokens !== 'number' || typeof usage.completion_tokens !== 'number') {
 		return undefined;
@@ -226,6 +229,7 @@ type Gathered = {
 	refusal?: string;
 };
 
+/** Builds the response from what was gathered, with each call classified and in the server's index order. */
 const finalResponse = (gathered: Gathered, durationMs: number): FinalResponse => ({
 	text: gathered.text,
 	...(gathered.reasoning && { reasoning: gathered.reasoning }),
@@ -238,6 +242,7 @@ const finalResponse = (gathered: Gathered, durationMs: number): FinalResponse =>
 	durationMs,
 });
 
+/** A reply with nothing gathered yet. */
 const emptyGathered = (): Gathered => ({ text: '', reasoning: '', calls: new Map() });
 
 /**
@@ -333,6 +338,7 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 		this.sendsReasoning = options.sendReasoning === true;
 	}
 
+	/** One request's headers, with the bearer token read fresh from `apiKey` when it is a function. */
 	async #headers(signal: AbortSignal): Promise<Record<string, string>> {
 		const { apiKey } = this.#options;
 		const key = typeof apiKey === 'function' ? await apiKey(signal) : apiKey;
@@ -362,6 +368,14 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 		};
 	}
 
+	/**
+	 * Sends one Chat Completions request, streamed unless `stream` is off.
+	 *
+	 * @remarks
+	 * Every failure is yielded as an `error` item, never thrown: a key that cannot be read, a network error, a
+	 * timeout or an abort, an HTTP error status, an error or unreadable event mid-stream, a refusal, or a reply with
+	 * no finish reason.
+	 */
 	async *generate(request: ProviderRequest, signal: AbortSignal): AsyncIterable<ProviderStreamItem> {
 		const stream = this.#options.stream ?? true;
 		const started = Date.now();

@@ -7,7 +7,9 @@ import { type ObjectValues } from './utils.js';
 /** The longest tool name OpenAI-style APIs accept. */
 export const MAX_TOOL_NAME_LENGTH = 64;
 
+/** Every character a model-facing tool name may not contain. */
 const DISALLOWED = /[^a-zA-Z0-9_-]/g;
+/** The hex characters of a cut name's hash suffix. */
 const HASH_SUFFIX_LENGTH = 8;
 
 /**

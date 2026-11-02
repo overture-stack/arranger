@@ -85,6 +85,7 @@ export const withEveryCallAnswered = (
 	return copy;
 };
 
+/** Whether a value read back from storage has a call record's shape. */
 const isCallRecord = (value: unknown): value is CallRecord =>
 	isRecord(value) &&
 	typeof value.callId === 'string' &&
@@ -92,6 +93,7 @@ const isCallRecord = (value: unknown): value is CallRecord =>
 	typeof value.tool === 'string' &&
 	typeof value.containsOnlyOpenData === 'boolean';
 
+/** Whether a value read back from storage has a server record's shape. */
 const isServerRecord = (value: unknown): value is ServerRecord =>
 	isRecord(value) &&
 	typeof value.key === 'string' &&
@@ -100,6 +102,7 @@ const isServerRecord = (value: unknown): value is ServerRecord =>
 	typeof value.containsOnlyOpenData === 'boolean' &&
 	isReturnedData(value.returnedData);
 
+/** Whether a value read back from storage has a carry record's shape. */
 const isCarryRecord = (value: unknown): value is CarryRecord =>
 	isRecord(value) &&
 	isRecord(value.from) &&
