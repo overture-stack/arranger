@@ -138,9 +138,36 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **File:** `modules/mcp-host-core/src/index.ts`
 **Severity:** low until the module is published
 **Kind:** API surface
-**Issue:** The index exports helpers a consumer rarely needs, such as `TOOL_MESSAGES`, `reduceToolName`, `carriedLabel` and `MAX_ERROR_BODY_CHARS`. If the MCP host plan's question 3 settles on `apps/mcp-eval` with a published, pinned host-core, every export becomes API whose change needs a new major version.
+**Issue:** The index exports helpers a consumer rarely needs, such as `TOOL_MESSAGES`, `reduceToolName`, `carriedLabel` and `MAX_ERROR_BODY_CHARS`, and every public vocabulary in `constants.ts`, from `EVENT_TYPES` to `LEFT_OUT_REASONS`. If the MCP host plan's question 3 settles on `apps/mcp-eval` with a published, pinned host-core, every export becomes API whose change needs a new major version.
 **Fix:** Before the first publish, keep what `chat`, `eval` and the CRE main process actually import, and move the rest out of the index.
 **Standalone:** no; decide with the plan's question 3, before Phase 5
+
+### Servers are ordered by when they connected, not by their configuration
+
+**File:** `modules/mcp-host-core/src/connections.ts` (`connect`, `all`), `src/host.ts` (`create`)
+**Severity:** low
+**Kind:** determinism
+**Issue:** `create` connects every server in parallel, and each joins the connection map when its own connect resolves, so the registry, the model surface, `run_started` and `content_carried` list servers in the order they finished connecting. `buildRegistry`'s doc promises configuration order. Two hosts with the same configuration can offer the model its tools in different orders, which works against comparing transcripts across runs. It affects only conversations with more than one server, which now requires every server to be flagged `containsOnlyOpenData`. Reproduced with two in-process test servers, one behind a proxy that delays each request by 300 ms: whichever server was delayed came last in the tool list, `run_started` and `content_carried`, whatever its place in the configuration.
+**Fix:** Keep the configuration's order, such as by reserving each key's slot in `options.servers` order before connecting, or by ordering `Connections.all()` by it.
+**Standalone:** yes
+
+### Re-reading a changed surface between turns never reconnects
+
+**File:** `modules/mcp-host-core/src/connections.ts` (`refreshStale`, `refreshAll`)
+**Severity:** low
+**Kind:** behaviour
+**Issue:** `refreshAll`, at the start of each run, reconnects once when a surface read throws `ReconnectRequiredError`. `refreshStale`, between turns, records the same error in `tools_changed` and keeps the server's previous tools until the next run re-reads it. Nothing records whether the difference is intended.
+**Fix:** Decide whether a between-turn read should reconnect too; if so, give `refreshStale` the same single attempt, and otherwise say why in its doc.
+**Standalone:** yes
+
+### A policy's `deny` reaches the model as the user declining
+
+**File:** `modules/mcp-host-core/src/toolMessages.ts` (`toolMessageFor`, `TOOL_MESSAGES.denied`)
+**Severity:** low
+**Kind:** model-facing wording
+**Issue:** Every `denied` outcome gets "The user declined the call", whether `by` is `person`, `timeout`, `policy` or `policy_error`, so a call the policy denied without asking anyone tells the model a person refused it.
+**Fix:** Give `denied` a fixed wording for each `by`, such as "The call was not permitted" for a policy, so the model is told what happened and transcripts still compare.
+**Standalone:** yes
 
 ---
 
