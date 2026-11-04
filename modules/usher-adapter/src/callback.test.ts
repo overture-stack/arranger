@@ -26,7 +26,7 @@ import {
 
 import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback } from './index.js';
 
-/** The callback for the `records` catalogue, verified, as the host hands it to that catalogue's router. */
+/** The verified filter callback for the `records` catalogue. */
 const verifiedCallback = async (): Promise<UsherFilterCallback> => {
 	const bridge = createFakeBridge({ anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: {} });
 	const { logger } = createRecordingLogger();

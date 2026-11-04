@@ -32,10 +32,9 @@ import {
 import { createUsherAccessControl, type UsherFilterCallback } from './index.js';
 
 /**
- * The log events: written now and reviewed with the rest, then committed only with the logging that
- * makes them pass, so no branch carries them failing. The callback emits them, since only it knows a
- * result was applied, once per application. Field names follow Usher's provisional audit set, camelCase;
- * the request identifier is the one the image assigns per request in `res.locals.requestId`.
+ * The filter callback logs one event per application of a result, since only it knows a result was
+ * applied. Field names are camelCase, as Usher's audit fields are, and the request identifier is the one
+ * in `res.locals.requestId`.
  */
 
 const REQUEST_ID = 'request-7f3a';

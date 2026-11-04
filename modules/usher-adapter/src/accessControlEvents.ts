@@ -1,7 +1,4 @@
-/**
- * The events the adapter logs: its callback's, once per application of a result or refusal, and its
- * startup checks', once per finding.
- */
+/** The name each access-enforcement event is logged under, one per outcome of a read or a startup check. */
 export const ACCESS_CONTROL_EVENTS = Object.freeze({
 	categoryMatchesNoRecord: 'access_enforcement.category_matches_no_record',
 	conditionRefused: 'access_enforcement.condition_refused',

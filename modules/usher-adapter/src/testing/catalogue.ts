@@ -4,7 +4,7 @@ import type { OpenKeyRegistration, RecordKeyRegistration } from '@overture-stack
 import type { CatalogueRecord } from './types.js';
 
 /**
- * The synthetic catalogue the adapter's suites run on, configured as Usher's case table configures it:
+ * The synthetic catalogue the suites run on, configured as Usher's case table configures it:
  * HEART_STUDY carries `controlled`, LUNG_COHORT carries no concrete category, and REEF_ARCHIVE carries
  * `controlled` and `community-governed`. Each category is the condition that its records hold its value
  * in the category field, and a record holding `general` there carries none: a record lacking a field a
@@ -43,9 +43,9 @@ export const INDEX_MAPPING = {
 } as const;
 
 /**
- * The records, one per row of the plan's fixture table. Beyond access, `sample_type` is a keyword
- * missing on r2, and l1 holds two files, each meeting one of the pivot's two conditions and neither
- * meeting both, which is the case a lost pivot would let through.
+ * The records, one per fixture row. Beyond access, `sample_type` is a keyword missing on r2, and l1
+ * holds two files, each meeting one of the pivot's two conditions and neither meeting both, which is the
+ * case a lost pivot would let through.
  */
 export const RECORDS: readonly CatalogueRecord[] = [
 	{
@@ -90,7 +90,7 @@ export const RECORDS: readonly CatalogueRecord[] = [
 /** Every record's name, x1 included. */
 export const EVERY_RECORD: readonly string[] = RECORDS.map(({ name }) => name);
 
-/** The catalogue as the adapter's configuration names it, defining both concrete categories. */
+/** The catalogue as its configuration names it, defining both concrete categories. */
 export const RECORDS_REGISTRATION: RecordKeyRegistration = {
 	categories: { global: CATEGORY_CONDITIONS },
 	kind: 'record',

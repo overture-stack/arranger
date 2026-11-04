@@ -206,14 +206,13 @@ const categoryProblemOf = async (options: CategoryCheckOptions): Promise<string 
 };
 
 /**
- * Every reason access cannot be enforced on a record catalogue as its index holds it, asked of the
- * engine through the catalogue's probe once its registration and mapping have passed. No record may hold
- * more than one value in the resource field. Every category condition, global and each resource's own,
- * must be one the engine accepts, and is then counted, a resource's own within that resource: a
- * condition matching no record is logged as a warning rather than refused. A check the engine fails to
- * answer refuses the catalogue, its cause logged at error as `access_enforcement.startup_check_failed`. Each
- * reason names the catalogue, and the field or category and its resource, never a value; the engine's
- * explanation of a refused condition is logged at error beside it.
+ * Every reason access cannot be enforced on a record catalogue as its index holds it, asked of the engine
+ * through the catalogue's probe. No record may hold more than one value in the resource field. Every
+ * category condition, global and each resource's own, must be one the engine accepts, and is then counted,
+ * a resource's own within that resource: a condition matching no record is logged as a warning rather than
+ * refused. A check the engine fails to answer refuses the catalogue, its cause logged at error as
+ * `access_enforcement.startup_check_failed`. Each reason names the catalogue, and the field or category and
+ * its resource, never a value; the engine's explanation of a refused condition is logged at error beside it.
  *
  * @param options the catalogue's key, its validated registration, its index's probe, and the logger
  *   each finding is written to.

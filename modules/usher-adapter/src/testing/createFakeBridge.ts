@@ -4,19 +4,15 @@ import type { UsherRequestAccess } from '@overture-stack/usher-types';
 import { accessOf, ANONYMOUS, signedIn, SUSPENDED } from './results.js';
 import type { FakeBridge, FakeBridgeMode, FakeBridgeTable } from './types.js';
 
-/**
- * The fake bridge, the adapter's only stand-in for Usher. It holds a fixed, hand-written table of
- * results and refuses anything outside it: a principal it was not given is recorded in `unexpected`
- * and answered unavailable, and the suites fail on any entry there, since the real Express layer
- * turns a throw from `resolve` into a 503 that would pass for the cold row. It implements `BridgeCore`,
- * so a fake that drifts from the real bridge stops compiling, and the hosts in the suites mount the
- * bridge's real Express layer over it.
- */
-
 const answered = (access: UsherRequestAccess): ResolveOutcome => ({ access, kind: 'access' });
 
 /**
- * Creates a fake bridge answering from `table`.
+ * Creates a fake bridge, the suites' only stand-in for Usher, answering from a fixed, hand-written
+ * `table` and refusing anything outside it. A principal it was not given is recorded in `unexpected`
+ * and answered unavailable rather than thrown: the real Express layer turns a throw from `resolve` into
+ * the same 503 as the cold row, so only `unexpected` tells the two apart. It implements `BridgeCore`, so
+ * a fake that drifts from the real bridge stops compiling and the bridge's real Express layer can be
+ * mounted over it.
  *
  * @param table the fixed results it answers with.
  * @param mode the behaviour it starts in; normal by default.

@@ -367,26 +367,25 @@ const resourceCategoryProblemsOf = (catalogue: string, mapping: unknown, resourc
 };
 
 /**
- * Every reason access cannot be enforced on a record registration, against the catalogue's index
- * mapping as the GraphQL router fetched it. The resource field must be a keyword, a multi-field's keyword
- * subfield included, outside any nested mapping. Each field a condition names, in the global categories and
- * in every resource's own, must resolve through the mapping's properties or a field's multi-fields, lie
- * outside any nested mapping, and be a keyword, date or numeric field, a date_nanos field being none of
- * them: `in` suits any of them, and a range only a date or numeric one. A date field must name no format,
- * or one whose every alternative, split on `||`, is `date_optional_time`, `epoch_millis` or
- * `strict_date_optional_time`.
+ * Every reason access cannot be enforced on a record registration, against the catalogue's index mapping.
+ * The resource field must be a keyword, a multi-field's keyword subfield included, outside any nested
+ * mapping. Each field a condition names, in the global categories and in every resource's own, must resolve
+ * through the mapping's properties or a field's multi-fields, lie outside any nested mapping, and be a
+ * keyword, date or numeric field, a date_nanos field being none of them: `in` suits any of them, and a
+ * range only a date or numeric one. A date field must name no format, or one whose every alternative, split
+ * on `||`, is `date_optional_time`, `epoch_millis` or `strict_date_optional_time`.
  *
  * Each value a condition holds in `content.value`, a list or a single value standing as a list of one, must
  * be one its field's type holds: a non-empty string on a keyword field, a finite number on a numeric one,
  * and on a date field a full ISO 8601 date, or date-time to the minute or finer down to the millisecond,
  * naming a real calendar date and time. A date `between` lists the bound starting earlier first, its bounds
- * compared as instants and a time without an offset read in UTC, while the bounds starting at one instant may
- * stand in either order. Values are checked only on a condition with no other reason. The
- * rest of a value's shape, such as how many values each operator takes, is Usher's to check, as is the
- * registration's shape. Each of SQON's operator aliases counts as the operator it stands for. Whatever the
- * walk cannot read, an operator other than `in` and the ranges included, is a reason rather than a pass.
- * Each reason names the catalogue, the category and the field or node at fault, all of them configuration
- * rather than data, and names a value only by its position, never by what it holds.
+ * compared as instants and a time without an offset read in UTC, while the bounds starting at one instant
+ * may stand in either order. Values are checked only on a condition with no other reason. The rest of a
+ * value's shape, such as how many values each operator takes, is Usher's to check, as is the registration's
+ * shape. Each of SQON's operator aliases counts as the operator it stands for. Whatever the walk cannot
+ * read, an operator other than `in` and the ranges included, is a reason rather than a pass. Each reason
+ * names the catalogue, the category and the field or node at fault, all of them configuration rather than
+ * data, and names a value only by its position, never by what it holds.
  *
  * @param catalogueId the catalogue's key.
  * @param registration what the catalogue is to register, read defensively, so a part it cannot read is a

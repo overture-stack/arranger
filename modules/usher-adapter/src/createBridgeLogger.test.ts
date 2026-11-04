@@ -6,8 +6,7 @@ import type { BridgeEventData, BridgeLogger } from '@overture-stack/usher-expres
 import { createBridgeLogger } from './index.js';
 
 /**
- * The adapter's logger shim: the one `BridgeLogger` the image builds and hands both the bridge and the
- * adapter. Each line is written in the repository's envelope, one JSON object per line holding the
+ * The logger shim writes each line in the repository's envelope, one JSON object per line holding the
  * level, the fixed message, and the event's own fields unchanged.
  */
 

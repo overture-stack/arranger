@@ -19,7 +19,7 @@ export type DenialKind = 'access-too-broad' | 'misconfigured' | 'no-access';
 /** Why the bridge denies a catalogue. */
 export type DenyReason = Extract<Enforcement, { kind: 'deny' }>['reason'];
 
-/** The fake, with what it recorded. */
+/** The fake bridge, with what it recorded. */
 export type FakeBridge = Readonly<{
 	core: BridgeCore;
 
@@ -57,7 +57,7 @@ export type LoggedLine = Readonly<{ fields: Record<string, unknown>; level: keyo
 /** One question put to a stub probe: which check, and what it was asked about. */
 export type ProbeCall = Readonly<{ argument: unknown; check: keyof IndexProbe }>;
 
-/** One row of the plan's fixture table: the case it traces to, the result, and the records it reveals. */
+/** One fixture row: the case it traces to, the result, and the records it reveals. */
 export type ResultRow = Readonly<{
 	case: string;
 	description: string;

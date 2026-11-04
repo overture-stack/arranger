@@ -68,7 +68,7 @@ const adapterOver = (catalogues: Readonly<Record<string, KeyRegistration>>) => {
 	return { accessControl, bridge, lines };
 };
 
-/** A catalogue's index as its GraphQL router hands it over: its mapping, and a probe answering by default. */
+/** A catalogue's index: its mapping, and a probe answering by default. */
 const indexOf = (
 	mapping: Readonly<Record<string, unknown>> = INDEX_MAPPING,
 	probe: IndexProbe = createStubProbe().probe,

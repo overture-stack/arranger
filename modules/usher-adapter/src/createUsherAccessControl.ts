@@ -34,7 +34,7 @@ const quotedList = (values: readonly string[]): string => values.map((value) => 
 /**
  * The router's denial kind for a deny's reason: the principal's own lack of access, grants more than the
  * catalogue's filter can express, and otherwise the operator's configuration or the system's fault, a reason
- * the adapter does not know included.
+ * not listed here included.
  */
 const denialKindOf = (reason: Extract<Enforcement, { kind: 'deny' }>['reason']): AccessControlDenialKind => {
 	switch (reason) {
@@ -47,7 +47,7 @@ const denialKindOf = (reason: Extract<Enforcement, { kind: 'deny' }>['reason']):
 	}
 };
 
-/** What every event logged by the callback says about its request, never a token, payload or record. */
+/** What each event says about its request: never a token, payload or record. */
 const requestFieldsOf = ({
 	catalogueId,
 	locals,
@@ -68,10 +68,10 @@ const requestFieldsOf = ({
 });
 
 /**
- * Creates the Usher adapter: a translator from the bridge's enforcement results to each catalogue's
- * GraphQL router filter, which decides nothing itself. A `narrow` result's filter is returned
- * unchanged, `allow` returns the router's allow-all value, and `deny`, or no result for the
- * catalogue, is thrown as the router's denial of the catalogue, of the kind its reason maps to.
+ * Translates the bridge's enforcement results into each catalogue's GraphQL router filter, deciding
+ * nothing itself. A `narrow` result's filter is returned unchanged, `allow` returns the router's
+ * allow-all value, and `deny`, or no result for the catalogue, is thrown as the router's denial of the
+ * catalogue, of the kind its reason maps to.
  *
  * @param options the bridge, each catalogue's registration, and the logger events are written to.
  */
@@ -80,8 +80,8 @@ export const createUsherAccessControl = ({
 	catalogues,
 	logger,
 }: UsherAccessControlOptions): UsherAccessControl => {
-	// Unstarted until `verify` is called, then the catalogues it checked once it has registered them: the
-	// one piece of state the adapter keeps.
+	// The only state kept: whether verification has started, and once it has registered them, the
+	// catalogues it checked.
 	let verification:
 		| Readonly<{ kind: 'started' | 'unstarted' }>
 		| Readonly<{ catalogues: ReadonlySet<string>; kind: 'verified' }> = { kind: 'unstarted' };
@@ -123,9 +123,9 @@ export const createUsherAccessControl = ({
 				logger.info({ ...fields, reason: 'no-result' }, ACCESS_CONTROL_EVENTS.denied);
 				throw new AccessControlDeniedError({ catalogue: catalogueId, kind: 'misconfigured' });
 			default: {
-				// readAccess admits no other kind, and this assignment fails to compile once Enforcement gains
-				// a kind the cases above do not handle. One arriving anyway is refused here rather than left to
-				// the router.
+				// This assignment fails to compile if Enforcement gains a kind the cases above do not handle.
+				// readAccess admits no other kind, and one arriving anyway is refused rather than left to the
+				// router.
 				const unknownResult: never = result;
 				throw new Error(
 					`Catalogue "${catalogueId}" received an enforcement result of a kind the adapter does not know.`,

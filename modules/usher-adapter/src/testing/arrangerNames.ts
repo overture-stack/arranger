@@ -1,13 +1,16 @@
 /**
- * The names Arranger owns that the suites assert on: the adapter's log events, and how the GraphQL
- * router marks a denial of the catalogue and the refusal a suspended principal's export or write meets.
- * Held in one place, so a rename touches one file, beside the check telling those from a configuration
- * failure.
+ * The names Arranger owns that the suites assert on: the access-enforcement log events, and how the
+ * GraphQL router marks a denial of the catalogue and the refusal a suspended principal's export or write
+ * meets. Held in one place, so a rename touches one file, beside the check telling those from a
+ * configuration failure.
  */
 
 import type { DenialKind } from './types.js';
 
-/** The fixed message of each event the adapter logs: its callback's, and its startup checks'. */
+/**
+ * The fixed message of each access-enforcement event. Written out rather than imported from
+ * `ACCESS_CONTROL_EVENTS`, so a renamed event fails the suites instead of changing with them.
+ */
 export const EVENTS = {
 	categoryMatchesNoRecord: 'access_enforcement.category_matches_no_record',
 	conditionRefused: 'access_enforcement.condition_refused',

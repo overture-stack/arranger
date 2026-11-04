@@ -1,8 +1,7 @@
 /**
- * What the adapter refuses a read with when the bridge could not confirm the principal and the read cannot
- * be served from the open tier alone: a copy of the bridge's own 503 text, which the GraphQL router logs while
- * answering its own fixed text, and the bridge's wait, which reaches the client as `Retry-After`. A test pins
- * it to the bridge's values, since the adapter never loads the bridge at runtime.
+ * The answer to a suspended principal's read that the open tier cannot settle: the bridge's own 503 text,
+ * and its wait in seconds. A copy, since only the bridge's types are imported here; a test holds it equal
+ * to the bridge's values.
  */
 export const UNAVAILABLE_ANSWER: Readonly<{ retryAfterSeconds: number; text: string }> = Object.freeze({
 	retryAfterSeconds: 5,

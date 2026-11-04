@@ -14,10 +14,9 @@ const lineOf = (fields: object, level: Level, message: string): string => {
 };
 
 /**
- * The one `BridgeLogger` an image hands both the bridge and the adapter. Each event becomes one JSON
- * line: the event's own fields, then the level it was logged at and its fixed message, which a field
- * of the same name never replaces. It never throws, as the bridge requires of its logger, so a writer
- * that fails loses its line.
+ * A `BridgeLogger` writing each event as one JSON line: the event's own fields, then the level it was
+ * logged at and its fixed message, which a field of the same name never replaces. It never throws, as
+ * the bridge requires of its logger, so a writer that fails loses its line.
  *
  * @param options `write`, called once with each line.
  */

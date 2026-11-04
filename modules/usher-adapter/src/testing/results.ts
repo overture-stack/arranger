@@ -12,11 +12,11 @@ import { CATEGORY_CONDITIONS, CONFIGURED_RESOURCES, EVERY_RECORD, RESOURCE_FIELD
 import type { DenialKind, DenyReason, ResultRow } from './types.js';
 
 /**
- * The fixtures are enforcement results, not payloads, since the adapter never receives a payload. Each
- * row is what the bridge would hand the adapter for one case of Usher's case table and this catalogue's
- * category conditions, and the same rows become the bridge's expected outputs in its own step. The
- * narrow filters are rendered in the canonical form `@overture-stack/usher-types` defines, so a row and
- * the bridge's rendering of its case are compared by the records each returns, never by structure.
+ * The fixtures are enforcement results, not payloads, since the bridge hands over results alone. Each row
+ * is what the bridge would hand over for one case of Usher's case table and this catalogue's category
+ * conditions. The narrow filters are rendered in the canonical form `@overture-stack/usher-types`
+ * defines, so a row and the bridge's rendering of its case are compared by the records each returns,
+ * never by structure.
  */
 
 type Resource = (typeof CONFIGURED_RESOURCES)[number];
@@ -60,8 +60,8 @@ export const DENY_REASONS: Readonly<Record<DenyReason, string>> = {
 };
 
 /**
- * The GraphQL router's denial kind the adapter throws for each deny reason: the principal's own lack of access,
- * grants more than the catalogue's filter can express, and the operator's configuration or the system's fault.
+ * The GraphQL router's denial kind each deny reason is thrown as: the principal's own lack of access, grants
+ * more than the catalogue's filter can express, and the operator's configuration or the system's fault.
  */
 export const DENIAL_KINDS: Readonly<Record<DenyReason, DenialKind>> = {
 	'filter-limit': 'access-too-broad',
@@ -172,7 +172,7 @@ export const signedIn = (subject: string): UsherPrincipal => ({
 /** A signed-in principal whose credential the bridge could not confirm: suspended, the open tier only. */
 export const SUSPENDED: UsherPrincipal = { credential: 'unconfirmed', openTierOnly: true, suspended: true };
 
-/** A principal whose credential the bridge confirmed before, now suspended, its subject kept for attribution alone. */
+/** A suspended principal whose credential the bridge had confirmed, its subject kept for attribution alone. */
 export const suspendedConfirmed = (subject: string): UsherPrincipal => ({
 	attributionOnlySubject: subject,
 	credential: 'confirmed',
