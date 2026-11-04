@@ -1,7 +1,6 @@
 import type { BridgeLogger } from '@overture-stack/usher-express-bridge';
 
-/** One line a `BridgeLogger` was given: its level, its fields and its fixed message. */
-export type LoggedLine = Readonly<{ fields: Record<string, unknown>; level: keyof BridgeLogger; message: string }>;
+import type { LoggedLine } from './types.js';
 
 /**
  * A `BridgeLogger` that records every line, so a suite can assert what was logged and that nothing

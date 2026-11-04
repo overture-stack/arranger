@@ -8,8 +8,8 @@ import {
 	type UsherRequestAccess,
 } from '@overture-stack/usher-types';
 
-import type { DenialKind } from './arrangerNames.js';
 import { CATEGORY_CONDITIONS, CONFIGURED_RESOURCES, EVERY_RECORD, RESOURCE_FIELD } from './catalogue.js';
+import type { DenialKind, DenyReason, ResultRow } from './types.js';
 
 /**
  * The fixtures are enforcement results, not payloads, since the adapter never receives a payload. Each
@@ -42,21 +42,10 @@ const narrowing = (
 	}),
 });
 
-/** One row of the plan's fixture table: the case it traces to, the result, and the records it reveals. */
-export type ResultRow = Readonly<{
-	case: string;
-	description: string;
-	result: Enforcement;
-	visible: readonly string[];
-}>;
-
 const row = (description: string, caseName: string, result: Enforcement, visible: readonly string[]): ResultRow =>
 	Object.freeze({ case: caseName, description, result, visible });
 
 const NO_GRANTS: Enforcement = { kind: 'deny', reason: 'no-grants' };
-
-/** Why the bridge denies a catalogue. */
-export type DenyReason = Extract<Enforcement, { kind: 'deny' }>['reason'];
 
 /**
  * Every reason the bridge denies a catalogue with, each described, so a reason the bridge adds fails to

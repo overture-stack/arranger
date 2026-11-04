@@ -1,6 +1,8 @@
 import type { SqonNode } from '@overture-stack/sqon';
 import type { OpenKeyRegistration, RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
 
+import type { CatalogueRecord } from './types.js';
+
 /**
  * The synthetic catalogue the adapter's suites run on, configured as Usher's case table configures it:
  * HEART_STUDY carries `controlled`, LUNG_COHORT carries no concrete category, and REEF_ARCHIVE carries
@@ -39,15 +41,6 @@ export const INDEX_MAPPING = {
 	sample_type: { type: 'keyword' },
 	study_id: { type: 'keyword' },
 } as const;
-
-/** One record of the synthetic catalogue, named by `name` so a suite can say which it expects. */
-export type CatalogueRecord = Readonly<{
-	data_category?: string;
-	files: readonly Readonly<{ file_type: string }>[];
-	name: string;
-	sample_type?: string;
-	study_id: string;
-}>;
 
 /**
  * The records, one per row of the plan's fixture table. Beyond access, `sample_type` is a keyword

@@ -1,10 +1,6 @@
 import type { IndexProbe } from '@overture-stack/arranger-graphql-router';
 
-/** One question put to a stub probe: which check, and what it was asked about. */
-export type ProbeCall = Readonly<{ argument: unknown; check: keyof IndexProbe }>;
-
-/** A stub probe, with every question put to it in the order asked. */
-export type StubProbe = Readonly<{ calls: readonly ProbeCall[]; probe: IndexProbe }>;
+import type { ProbeCall, StubProbe } from './types.js';
 
 /**
  * Creates an `IndexProbe` answering without an engine: by default every condition is valid and matches

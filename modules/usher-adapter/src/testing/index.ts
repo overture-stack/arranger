@@ -6,7 +6,6 @@ export {
 	UNAVAILABLE_ERROR_NAME,
 	UNAVAILABLE_GRAPHQL_CODE,
 } from './arrangerNames.js';
-export type { DenialKind } from './arrangerNames.js';
 export {
 	ABSENT_CATEGORIES_REGISTRATION,
 	CATEGORY_CONDITIONS,
@@ -22,13 +21,9 @@ export {
 	RESOURCE_CATEGORY_REGISTRATION,
 	RESOURCE_FIELD,
 } from './catalogue.js';
-export type { CatalogueRecord } from './catalogue.js';
 export { createFakeBridge } from './createFakeBridge.js';
-export type { FakeBridge, FakeBridgeMode, FakeBridgeTable } from './createFakeBridge.js';
 export { createRecordingLogger } from './createRecordingLogger.js';
-export type { LoggedLine } from './createRecordingLogger.js';
 export { createStubProbe } from './createStubProbe.js';
-export type { ProbeCall, StubProbe } from './createStubProbe.js';
 export {
 	ABSENT_CATEGORIES_UNMARKED,
 	accessOf,
@@ -41,4 +36,15 @@ export {
 	SUSPENDED,
 	suspendedConfirmed,
 } from './results.js';
-export type { DenyReason, ResultRow } from './results.js';
+export type {
+	CatalogueRecord,
+	DenialKind,
+	DenyReason,
+	FakeBridge,
+	FakeBridgeMode,
+	FakeBridgeTable,
+	LoggedLine,
+	ProbeCall,
+	ResultRow,
+	StubProbe,
+} from './types.js';

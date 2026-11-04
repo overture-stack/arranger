@@ -1,7 +1,8 @@
 import type { BridgeCore, KeyRegistration, ResolveOutcome } from '@overture-stack/usher-express-bridge';
-import type { Enforcement, UsherRequestAccess } from '@overture-stack/usher-types';
+import type { UsherRequestAccess } from '@overture-stack/usher-types';
 
 import { accessOf, ANONYMOUS, signedIn, SUSPENDED } from './results.js';
+import type { FakeBridge, FakeBridgeMode, FakeBridgeTable } from './types.js';
 
 /**
  * The fake bridge, the adapter's only stand-in for Usher. It holds a fixed, hand-written table of
@@ -11,40 +12,6 @@ import { accessOf, ANONYMOUS, signedIn, SUSPENDED } from './results.js';
  * so a fake that drifts from the real bridge stops compiling, and the hosts in the suites mount the
  * bridge's real Express layer over it.
  */
-
-type Results = Readonly<Record<string, Enforcement>>;
-
-/** What the fake answers: the open tier's results, and each signed-in principal's by credential. */
-export type FakeBridgeTable = Readonly<{
-	anonymous: Results;
-	principals: Readonly<Record<string, Readonly<{ results: Results; subject: string }>>>;
-}>;
-
-/**
- * The bridge's own behaviours the fake reproduces. `uncertain` attaches the open tier, the anonymous
- * principal marked open-tier only and every signed-in one suspended with a null subject;
- * `exchangeFailed` does the same for one credential alone, the bridge being normal.
- */
-export type FakeBridgeMode =
-	| Readonly<{ kind: 'cold' }>
-	| Readonly<{ credential: string; kind: 'exchangeFailed' }>
-	| Readonly<{ kind: 'normal' }>
-	| Readonly<{ kind: 'refused' }>
-	| Readonly<{ kind: 'uncertain' }>;
-
-/** The fake, with what it recorded. */
-export type FakeBridge = Readonly<{
-	core: BridgeCore;
-
-	/** Every registration handed to `register`, in order. */
-	registered: readonly Readonly<Record<string, KeyRegistration>>[];
-
-	/** Switches the behaviour the next requests meet. */
-	setMode(mode: FakeBridgeMode): void;
-
-	/** Every credential `resolve` was asked for that the table does not hold. */
-	unexpected: readonly (string | null)[];
-}>;
 
 const answered = (access: UsherRequestAccess): ResolveOutcome => ({ access, kind: 'access' });
 

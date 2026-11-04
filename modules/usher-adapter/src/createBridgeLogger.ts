@@ -1,7 +1,6 @@
 import type { BridgeLogger } from '@overture-stack/usher-express-bridge';
 
-/** Where the logger shim sends each line: one JSON object, holding no line break of its own. */
-export type LineWriter = (line: string) => void;
+import type { LineWriter } from './types.js';
 
 type Level = keyof BridgeLogger;
 

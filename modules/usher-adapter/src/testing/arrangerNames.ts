@@ -5,6 +5,8 @@
  * failure.
  */
 
+import type { DenialKind } from './types.js';
+
 /** The fixed message of each event the adapter logs: its callback's, and its startup checks'. */
 export const EVENTS = {
 	categoryMatchesNoRecord: 'access_enforcement.category_matches_no_record',
@@ -17,9 +19,6 @@ export const EVENTS = {
 
 /** The name the GraphQL router recognizes a callback's denial of the catalogue by. */
 export const DENIED_ERROR_NAME = 'AccessControlDeniedError';
-
-/** A kind of denial, as the GraphQL router names it. */
-export type DenialKind = 'access-too-broad' | 'misconfigured' | 'no-access';
 
 /**
  * What a client is answered for each kind of denial of `catalogue`: the GraphQL error code, the export's status
