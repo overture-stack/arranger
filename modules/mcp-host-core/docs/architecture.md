@@ -102,7 +102,7 @@ sequenceDiagram
         Note over S: Checks every item and record,<br/>answers any unanswered call "not run",<br/>then reconcileServers
     end
     H->>X: assertServersApart(servers, state.servers)
-    Note over X: An unflagged server beside any other,<br/>or any server beside restricted data<br/>from another, throws ServerSetError;<br/>nothing connects
+    Note over X: A restricted server beside any other,<br/>or any server beside restricted data<br/>from another, throws ServerSetError<br/>and nothing connects
     par each server
         H->>M: McpClient.connect, with host-core's resolver,<br/>change callback and onError
     end

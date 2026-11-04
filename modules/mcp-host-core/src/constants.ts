@@ -1,7 +1,6 @@
-// The module's vocabularies, one `as const` object each. Every union type is derived from its object, in the file
-// that owns the type, so code compares against a constant rather than a hand-typed string, and a consumer may still
-// pass or compare the plain string. Strings that belong to another party stay as they are: `mcp-client`'s call
-// outcomes, the MCP specification's elicitation actions, and the OpenAI wire format.
+// The module's vocabularies as `as const` objects. Each union type is derived from its object in the file that owns
+// the type, so code checks against a named constant while consumers can still use the plain string. Other parties'
+// strings are left alone: `mcp-client`'s call outcomes, MCP's elicitation actions, the OpenAI wire format.
 
 /** Every event's `type`. */
 export const EVENT_TYPES = {
