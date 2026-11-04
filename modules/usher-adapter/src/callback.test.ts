@@ -5,21 +5,25 @@ import { includeEverything } from '@overture-stack/arranger-graphql-router';
 import { ANSWERS, RETRY_AFTER_SECONDS } from '@overture-stack/usher-express-bridge';
 import { attachAccess, type Enforcement, UsherContractError } from '@overture-stack/usher-types';
 
-import { DENIED_ERROR_NAME, isConfigurationRefusal, UNAVAILABLE_ERROR_NAME } from './fixtures/arrangerNames.js';
-import { INDEX_MAPPING, RECORDS_REGISTRATION } from './fixtures/catalogue.js';
-import { createFakeBridge } from './fixtures/fakeBridge.js';
-import { createRecordingLogger } from './fixtures/recordingLogger.js';
 import {
 	accessOf,
 	ANONYMOUS,
+	createFakeBridge,
+	createRecordingLogger,
+	createStubProbe,
 	DENIAL_KINDS,
+	DENIED_ERROR_NAME,
 	DENY_REASONS,
 	type DenyReason,
+	INDEX_MAPPING,
+	isConfigurationRefusal,
+	RECORDS_REGISTRATION,
 	ROWS,
 	signedIn,
 	SUSPENDED,
-} from './fixtures/results.js';
-import { createStubProbe } from './fixtures/stubProbe.js';
+	UNAVAILABLE_ERROR_NAME,
+} from './testing/index.js';
+
 import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback } from './index.js';
 
 /** The callback for the `records` catalogue, verified, as the host hands it to that catalogue's router. */

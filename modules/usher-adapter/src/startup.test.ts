@@ -14,24 +14,29 @@ import {
 } from '@overture-stack/usher-express-bridge';
 import { attachAccess, REGISTRATION_RULES, UsherContractError } from '@overture-stack/usher-types';
 
-import { EVENTS, isConfigurationRefusal } from './fixtures/arrangerNames.js';
 import {
 	ABSENT_CATEGORIES_REGISTRATION,
+	accessOf,
+	ANONYMOUS,
 	CATEGORY_CONDITIONS,
 	CATEGORY_FIELD,
 	categoryCondition,
+	CONTROLLED_ONLY_ANONYMOUS,
 	CONTROLLED_ONLY_REGISTRATION,
+	createFakeBridge,
+	createRecordingLogger,
+	createStubProbe,
 	EMPTY_LIST_REGISTRATION,
+	EVENTS,
 	INDEX_MAPPING,
+	isConfigurationRefusal,
 	OPEN_REGISTRATION,
 	RECORDS_REGISTRATION,
 	RESOURCE_CATEGORY_REGISTRATION,
 	RESOURCE_FIELD,
-} from './fixtures/catalogue.js';
-import { createFakeBridge } from './fixtures/fakeBridge.js';
-import { createRecordingLogger } from './fixtures/recordingLogger.js';
-import { accessOf, ANONYMOUS, CONTROLLED_ONLY_ANONYMOUS, ROWS } from './fixtures/results.js';
-import { createStubProbe } from './fixtures/stubProbe.js';
+	ROWS,
+} from './testing/index.js';
+
 import { type CatalogueIndex, createBridgeLogger, createUsherAccessControl } from './index.js';
 
 const TEST_KEY = Buffer.alloc(32, 7).toString('base64url');

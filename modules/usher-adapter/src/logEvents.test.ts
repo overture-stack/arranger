@@ -8,21 +8,27 @@ import {
 	type UsherPrincipal,
 } from '@overture-stack/usher-types';
 
-import { EVENTS, isConfigurationRefusal } from './fixtures/arrangerNames.js';
-import { CATEGORY_CONDITIONS, INDEX_MAPPING, RECORDS_REGISTRATION, RESOURCE_FIELD } from './fixtures/catalogue.js';
-import { createFakeBridge } from './fixtures/fakeBridge.js';
-import { createRecordingLogger, type LoggedLine } from './fixtures/recordingLogger.js';
 import {
 	accessOf,
 	ANONYMOUS,
+	CATEGORY_CONDITIONS,
+	createFakeBridge,
+	createRecordingLogger,
+	createStubProbe,
 	DENY_REASONS,
 	type DenyReason,
+	EVENTS,
+	INDEX_MAPPING,
+	isConfigurationRefusal,
+	type LoggedLine,
+	RECORDS_REGISTRATION,
+	RESOURCE_FIELD,
 	ROWS,
 	signedIn,
 	SUSPENDED,
 	suspendedConfirmed,
-} from './fixtures/results.js';
-import { createStubProbe } from './fixtures/stubProbe.js';
+} from './testing/index.js';
+
 import { createUsherAccessControl, type UsherFilterCallback } from './index.js';
 
 /**

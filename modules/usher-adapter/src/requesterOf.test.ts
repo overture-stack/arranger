@@ -3,7 +3,8 @@ import { suite, test } from 'node:test';
 
 import { attachAccess, type UsherPrincipal } from '@overture-stack/usher-types';
 
-import { accessOf, ANONYMOUS, ROWS, signedIn, SUSPENDED, suspendedConfirmed } from './fixtures/results.js';
+import { accessOf, ANONYMOUS, ROWS, signedIn, SUSPENDED, suspendedConfirmed } from './testing/index.js';
+
 import { requesterOf, UNAVAILABLE_ANSWER } from './index.js';
 
 /** A request context as the GraphQL router builds it, its store holding the access the bridge attached. */

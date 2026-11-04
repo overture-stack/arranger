@@ -755,6 +755,16 @@ Done when: each of the four functions above has a property test in its own packa
 
 _The `compileFilter` case is the one to do first: it is the only one on a security path, and it currently has zero coverage rather than partial coverage._
 
+### Decide where shared test support lives
+
+_Priority: low. Structure, independent of feature work._
+
+`modules/usher-adapter/src/testing/` holds the adapter's test support: the fake bridge, the recording logger, the stub probe, the synthetic catalogue and its result rows. The adapter's own suites use most of it, and the `usherAdapter` and `categoryParity` suites in `integration-tests/server` import it beside their own `harness/`. Part of it serves only those integration suites: the records, which records each principal sees, and the GraphQL router's answers. The only other module keeping test support of its own is `modules/mcp-client`, whose `src/testing/` holds one test server for its own suite.
+
+Done when: whether other modules need shared test support is settled. If they do, it moves into one test-support package they all depend on. If they do not, the integration-only parts move into `integration-tests/server/harness/`, and the adapter's `testing/` keeps what its own suites use.
+
+_A module's suites never import from `integration-tests`, so moving all of it into `harness/` is ruled out._
+
 ### Consolidate code sorting onto one tool
 
 _Priority: low. Tooling cleanup, independent of everything else._

@@ -19,39 +19,34 @@ import arrangerRouter, {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
 } from '../../../modules/graphql-router/src/index.js';
-import {
-	type DenialKind,
-	denialAnswerFor,
-	EVENTS,
-	UNAVAILABLE_GRAPHQL_CODE,
-} from '../../../modules/usher-adapter/src/fixtures/arrangerNames.js';
+import { type CatalogueIndex, createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
 import {
 	ABSENT_CATEGORIES_REGISTRATION,
+	ABSENT_CATEGORIES_UNMARKED,
 	CATEGORY_CONDITIONS,
 	CATEGORY_FIELD,
 	categoryCondition,
+	CONTROLLED_ONLY_ANONYMOUS,
 	CONTROLLED_ONLY_REGISTRATION,
-	EVERY_RECORD,
-	INDEX_MAPPING,
-	RECORDS,
-	RECORDS_REGISTRATION,
-	RESOURCE_FIELD,
-} from '../../../modules/usher-adapter/src/fixtures/catalogue.js';
-import {
 	createFakeBridge,
+	createRecordingLogger,
+	DENIAL_KINDS,
+	denialAnswerFor,
+	type DenialKind,
+	EVENTS,
+	EVERY_RECORD,
 	type FakeBridge,
 	type FakeBridgeMode,
 	type FakeBridgeTable,
-} from '../../../modules/usher-adapter/src/fixtures/fakeBridge.js';
-import { createRecordingLogger, type LoggedLine } from '../../../modules/usher-adapter/src/fixtures/recordingLogger.js';
-import {
-	ABSENT_CATEGORIES_UNMARKED,
-	CONTROLLED_ONLY_ANONYMOUS,
-	DENIAL_KINDS,
+	INDEX_MAPPING,
+	type LoggedLine,
+	RECORDS,
+	RECORDS_REGISTRATION,
+	RESOURCE_FIELD,
 	type ResultRow,
 	ROWS,
-} from '../../../modules/usher-adapter/src/fixtures/results.js';
-import { type CatalogueIndex, createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
+	UNAVAILABLE_GRAPHQL_CODE,
+} from '../../../modules/usher-adapter/src/testing/index.js';
 import {
 	asUisSend,
 	clause,

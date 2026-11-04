@@ -17,9 +17,12 @@ import dotenv from 'dotenv';
 import express from 'express';
 
 import arrangerRouter from '../../../modules/graphql-router/src/index.js';
-import { createFakeBridge, type FakeBridge } from '../../../modules/usher-adapter/src/fixtures/fakeBridge.js';
-import { createRecordingLogger } from '../../../modules/usher-adapter/src/fixtures/recordingLogger.js';
 import { type CatalogueIndex, createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
+import {
+	createFakeBridge,
+	createRecordingLogger,
+	type FakeBridge,
+} from '../../../modules/usher-adapter/src/testing/index.js';
 import {
 	type Catalogue,
 	type CatalogueRecord,

@@ -1,4 +1,4 @@
 {
-	"exclude": ["src/**/*.test.ts", "src/fixtures/**/*"],
+	"exclude": ["src/**/*.test.ts", "src/testing/**/*"],
 	"extends": "./tsconfig.json"
 }
