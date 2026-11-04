@@ -120,13 +120,53 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Fix:** Time each request leg separately and report their sum beside `wireMs`, or report the pauses and `onRound` time as their own fields so the harness can subtract them.
 **Standalone:** no; decide with the harness's metric definitions when Phase 4 resumes
 
-### Keeping `mcp-client` off npm relies on the Jenkins agent's npm skipping private workspaces
+### Keeping `mcp-client` and `mcp-host-core` off npm relies on the Jenkins agent's npm skipping private workspaces
 
-**File:** `modules/mcp-client/package.json` (`"private": true`); the npm publish stage in `vars/pipelineOvertureArranger.groovy` (`jenkins-pipeline-library`)
+**File:** `modules/mcp-client/package.json` and `modules/mcp-host-core/package.json` (`"private": true`); the npm publish stage in `vars/pipelineOvertureArranger.groovy` (`jenkins-pipeline-library`)
 **Severity:** low
 **Kind:** release pipeline
-**Issue:** The publish stage runs `npm publish -w` for every `modules/*` package whose version differs from npm (`.dev/docs/release-process.md` § 3). npm 11.19 skips a private workspace with a warning and continues (`lib/commands/publish.js`), but the agent's npm version is unchecked. An npm that throws instead would fail the stage at `mcp-client`, and the packages after it would not publish.
+**Issue:** The publish stage runs `npm publish -w` for every `modules/*` package whose version differs from npm (`.dev/docs/release-process.md` § 3). npm 11.19 skips a private workspace with a warning and continues (`lib/commands/publish.js`), but the agent's npm version is unchecked. An npm that throws instead would fail the stage at `mcp-client`, and the packages after it would not publish. `mcp-host-core` has the same exposure, and stays private for good in this repository (it moves to the CRE repository in Phase 5).
 **Fix:** Check `npm --version` in the agent's image. If it does not skip private workspaces, add a `private` check to the loop, as `scripts/verify-pack.mjs` already does.
+**Standalone:** yes
+
+---
+
+## modules/mcp-host-core
+
+### Trim the exported surface before `mcp-host-core` is published
+
+**File:** `modules/mcp-host-core/src/index.ts`
+**Severity:** low until the module is published
+**Kind:** API surface
+**Issue:** The index exports helpers a consumer rarely needs, such as `TOOL_MESSAGES`, `reduceToolName`, `carriedLabel` and `MAX_ERROR_BODY_CHARS`, and every public vocabulary in `constants.ts`, from `EVENT_TYPES` to `LEFT_OUT_REASONS`. If the MCP host plan's question 3 settles on `apps/mcp-eval` with a published, pinned host-core, every export becomes API whose change needs a new major version.
+**Fix:** Before the first publish, keep what `chat`, `eval` and the CRE main process actually import, and move the rest out of the index.
+**Standalone:** no; decide with the plan's question 3, before Phase 5
+
+### Servers are ordered by when they connected, not by their configuration
+
+**File:** `modules/mcp-host-core/src/connections.ts` (`connect`, `all`), `src/host.ts` (`create`)
+**Severity:** low
+**Kind:** determinism
+**Issue:** `create` connects every server in parallel, and each joins the connection map when its own connect resolves, so the registry, the model surface, `run_started` and `content_carried` list servers in the order they finished connecting. `buildRegistry`'s doc promises configuration order. Two hosts with the same configuration can offer the model its tools in different orders, which works against comparing transcripts across runs. It affects only conversations with more than one server, which now requires every server to be flagged `containsOnlyOpenData`. Reproduced with two in-process test servers, one behind a proxy that delays each request by 300 ms: whichever server was delayed came last in the tool list, `run_started` and `content_carried`, whatever its place in the configuration.
+**Fix:** Keep the configuration's order, such as by reserving each key's slot in `options.servers` order before connecting, or by ordering `Connections.all()` by it.
+**Standalone:** yes
+
+### Re-reading a changed surface between turns never reconnects
+
+**File:** `modules/mcp-host-core/src/connections.ts` (`refreshStale`, `refreshAll`)
+**Severity:** low
+**Kind:** behaviour
+**Issue:** `refreshAll`, at the start of each run, reconnects once when a surface read throws `ReconnectRequiredError`. `refreshStale`, between turns, records the same error in `tools_changed` and keeps the server's previous tools until the next run re-reads it. Nothing records whether the difference is intended.
+**Fix:** Decide whether a between-turn read should reconnect too; if so, give `refreshStale` the same single attempt, and otherwise say why in its doc.
+**Standalone:** yes
+
+### A policy's `deny` reaches the model as the user declining
+
+**File:** `modules/mcp-host-core/src/toolMessages.ts` (`toolMessageFor`, `TOOL_MESSAGES.denied`)
+**Severity:** low
+**Kind:** model-facing wording
+**Issue:** Every `denied` outcome gets "The user declined the call", whether `by` is `person`, `timeout`, `policy` or `policy_error`, so a call the policy denied without asking anyone tells the model a person refused it.
+**Fix:** Give `denied` a fixed wording for each `by`, such as "The call was not permitted" for a policy, so the model is told what happened and transcripts still compare.
 **Standalone:** yes
 
 ---
@@ -143,10 +183,10 @@ context: npm's flat hoisting causes esbuild binary version conflicts across work
 standalone: no
 context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm hoisting problem above: tsup@8.5.1 brings esbuild@^0.27.0, which conflicts with tsx's esbuild@~0.28.0 and bundle-require's peer dep resolution under npm. Revisit after pnpm migration.
 
-### `apps/search-server`, `apps/mcp-server` and `integration-tests/server` don't rebuild `file:`-referenced workspace packages before testing
+### `apps/search-server`, `apps/mcp-server`, `integration-tests/server` and `modules/mcp-host-core` don't rebuild `file:`-referenced workspace packages before testing
 
 standalone: yes
-context: `apps/search-server` depends on `modules/graphql-router` via `"file:../../modules/graphql-router"`, resolved through that package's `dist/` (its `package.json`'s `main`), never live source. `apps/mcp-server` has the same exposure through `"@overture-stack/sqon": "file:../../modules/sqon"` (added to this entry 2026-08-10): its own source runs from `src/` under `tsx`, but every `SqonBuilder`, `addFilterClause`, `SqonSchema`, and `getSqonFieldOperatorDetails` call resolves to `modules/sqon/dist`, and `build_sqon` depends on all four for the operator set it advertises, the fold, validation, and root normalization. A stale `dist/` there means its unit tests pass against SQON semantics no longer present in the module, with no warning; the same holds for `integration-tests/mcp-server`, which imports the app from source. Running `search-server`'s or `integration-tests/server`'s tests without first running `npm run build -w modules/graphql-router` silently tests against whatever `dist/` was last built, no warning that it's stale. Concretely hit during the multicatalogue partial-availability work (2026-07-24): the `{ cause: err }` fix in `fetchMapping.ts`/`router.ts` passed every unit test (which import from source via internal path aliases, never crossing the package boundary) but silently produced `unknown_error` instead of `index_not_found` when exercised through a real integration test, because `dist/` was 8 days stale at that point. Only caught because a real end-to-end integration test against live Elasticsearch was written and run (see `integration-tests/server/test/partialAvailability.test.ts`); a unit test alone could not have caught this, by construction.
+context: `apps/search-server` depends on `modules/graphql-router` via `"file:../../modules/graphql-router"`, resolved through that package's `dist/` (its `package.json`'s `main`), never live source. `apps/mcp-server` has the same exposure through `"@overture-stack/sqon": "file:../../modules/sqon"` (added to this entry 2026-08-10): its own source runs from `src/` under `tsx`, but every `SqonBuilder`, `addFilterClause`, `SqonSchema`, and `getSqonFieldOperatorDetails` call resolves to `modules/sqon/dist`, and `build_sqon` depends on all four for the operator set it advertises, the fold, validation, and root normalization. A stale `dist/` there means its unit tests pass against SQON semantics no longer present in the module, with no warning; the same holds for `integration-tests/mcp-server`, which imports the app from source. `modules/mcp-host-core` depends on `"@overture-stack/arranger-mcp-client": "file:../mcp-client"`, so its tests run against `modules/mcp-client/dist` (added to this entry 2026-10-22). Running `search-server`'s or `integration-tests/server`'s tests without first running `npm run build -w modules/graphql-router` silently tests against whatever `dist/` was last built, no warning that it's stale. Concretely hit during the multicatalogue partial-availability work (2026-07-24): the `{ cause: err }` fix in `fetchMapping.ts`/`router.ts` passed every unit test (which import from source via internal path aliases, never crossing the package boundary) but silently produced `unknown_error` instead of `index_not_found` when exercised through a real integration test, because `dist/` was 8 days stale at that point. Only caught because a real end-to-end integration test against live Elasticsearch was written and run (see `integration-tests/server/test/partialAvailability.test.ts`); a unit test alone could not have caught this, by construction.
 fix: add a `pretest` step to `apps/search-server`, `apps/mcp-server`, `integration-tests/server` and `integration-tests/mcp-server` that rebuilds their local `file:` dependencies first, or wire `turbo:test`'s dependency graph to do this automatically (Turbo already tracks the monorepo's build graph); at minimum, document prominently in `AGENTS.md`'s "Running tests" section that changes to `modules/*` require an explicit rebuild before testing any consumer app, the current guidance to "always run from the monorepo root" doesn't by itself guarantee a fresh build.
 
 ### No OpenSearch service in `docker-compose.yml`
@@ -297,10 +337,10 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
 
 ### No `typecheck` script runs automatically
 
-**File:** root `package.json` (`test:dev`); `modules/mcp-client/package.json` (`typecheck`)
+**File:** root `package.json` (`test:dev`); `modules/mcp-client/package.json` and `modules/mcp-host-core/package.json` (`typecheck`)
 **Severity:** low
 **Kind:** CI gap
-**Issue:** `modules/mcp-client` has the only `typecheck` script in the repository, and neither `test:dev` nor the Jenkins pipeline runs it. `tsx --test` strips types without checking them, so a type error in a test, or in source the build does not reach, merges unnoticed. The entries proposing `typecheck` scripts for `modules/sqon` and `integration-tests/mcp-server` would add scripts with the same gap.
+**Issue:** `modules/mcp-client` and `modules/mcp-host-core` have the only `typecheck` scripts in the repository, and neither `test:dev` nor the Jenkins pipeline runs them. `tsx --test` strips types without checking them, so a type error in a test, or in source the build does not reach, merges unnoticed. The entries proposing `typecheck` scripts for `modules/sqon` and `integration-tests/mcp-server` would add scripts with the same gap.
 **Fix:** Add a root `typecheck` script that runs `npm run typecheck --workspaces --if-present`, and run it in the pipeline beside the tests.
 **Standalone:** yes
 
@@ -539,6 +579,15 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Kind:** model-facing friction
 **Issue:** `combination` is required even with one clause and no `existingSqon`, where it joins nothing. In Phase 0, `gemma4:12b` and `qwen3:14b` both omitted it there and were refused ([results](docs/mcp-host/phase0-results.md#do-models-call-the-tools-correctly)).
 **Fix:** Default it to `and` in that case; keep it required otherwise.
+**Standalone:** yes
+
+### A declined `execute_query` reads to the model as a successful call (URGENT: block demo deployment)
+
+**File:** `apps/mcp-server/src/mcp/executeQueryTool.ts` (the `declined` branch)
+**Severity:** critical (the model can answer with a made-up result after the person refused the query, which breaks the trust the server's results depend on)
+**Kind:** model-facing wording
+**Issue:** A declined confirmation returns `successResult` with `executed: false` and a `message` saying the user declined, so the model gets an ordinary, non-error tool result shaped like a real one. Through `mcp-host-core` against a local Arranger, `gemma4:e4b` answered "1,234,567 files" for an index holding 486, and `qwen3:14b` told the person the query was still waiting for their confirmation.
+**Fix:** Return the decline as `isError: true` with text that leads with the outcome and states what to do next, such as "Not run: the user declined this query. No data was returned. Do not state a result. Ask whether to change the query or stop." Then rerun the decline scenario on both models.
 **Standalone:** yes
 
 ## apps/search-server
