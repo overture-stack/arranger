@@ -581,6 +581,15 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Fix:** Default it to `and` in that case; keep it required otherwise.
 **Standalone:** yes
 
+### A declined `execute_query` reads to the model as a successful call (URGENT: block demo deployment)
+
+**File:** `apps/mcp-server/src/mcp/executeQueryTool.ts` (the `declined` branch)
+**Severity:** critical (the model can answer with a made-up result after the person refused the query, which breaks the trust the server's results depend on)
+**Kind:** model-facing wording
+**Issue:** A declined confirmation returns `successResult` with `executed: false` and a `message` saying the user declined, so the model gets an ordinary, non-error tool result shaped like a real one. Through `mcp-host-core` against a local Arranger, `gemma4:e4b` answered "1,234,567 files" for an index holding 486, and `qwen3:14b` told the person the query was still waiting for their confirmation.
+**Fix:** Return the decline as `isError: true` with text that leads with the outcome and states what to do next, such as "Not run: the user declined this query. No data was returned. Do not state a result. Ask whether to change the query or stop." Then rerun the decline scenario on both models.
+**Standalone:** yes
+
 ## apps/search-server
 
 ### `ENABLE_ADMIN` is read from the environment and reaches no consumer, and the docs describe the wrong channel
