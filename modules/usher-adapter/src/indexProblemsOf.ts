@@ -2,7 +2,7 @@ import type { ConditionValidation, IndexProbe } from '@overture-stack/arranger-g
 import type { SqonNode } from '@overture-stack/sqon';
 import type { BridgeLogger, RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
 
-import { ACCESS_CONTROL_EVENTS } from './events.js';
+import { ACCESS_CONTROL_EVENTS } from './accessControlEvents.js';
 
 /** One category condition to check: its scoped name, and the resource it belongs to when it is that resource's own. */
 type CategoryCheck = Readonly<{ categoryName: string; condition: SqonNode; resourceId?: string }>;

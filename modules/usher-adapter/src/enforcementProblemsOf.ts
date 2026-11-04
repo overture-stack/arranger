@@ -1,6 +1,6 @@
 import type { KeyRegistration } from '@overture-stack/usher-express-bridge';
 
-import { conditionProblemsOf } from './conditionFields.js';
+import { conditionProblemsOf } from './conditionProblemsOf.js';
 
 /**
  * Every reason access cannot be enforced on a catalogue as registered, against its index mapping as the

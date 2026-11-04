@@ -17,11 +17,11 @@ import {
 	validateRegistration,
 } from '@overture-stack/usher-types';
 
-import { ACCESS_CONTROL_EVENTS } from './events.js';
-import { requesterOf } from './requester.js';
-import { indexProblemsOf } from './indexChecks.js';
+import { ACCESS_CONTROL_EVENTS } from './accessControlEvents.js';
+import { requesterOf } from './requesterOf.js';
+import { indexProblemsOf } from './indexProblemsOf.js';
 import { UNAVAILABLE_ANSWER } from './unavailableAnswer.js';
-import { enforcementProblemsOf } from './verifyFields.js';
+import { enforcementProblemsOf } from './enforcementProblemsOf.js';
 
 /**
  * One loaded catalogue's index, as its GraphQL router hands it to `onIndexMapping`: the mapping the

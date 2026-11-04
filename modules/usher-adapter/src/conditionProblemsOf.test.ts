@@ -4,7 +4,7 @@ import { suite, test } from 'node:test';
 import type { SqonCombinationOp, SqonNode } from '@overture-stack/sqon';
 import type { RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
 
-import { conditionProblemsOf } from './conditionFields.js';
+import { conditionProblemsOf } from './conditionProblemsOf.js';
 
 /**
  * Names no reason's prose would contain by chance, so a check that a reason names one cannot pass on its

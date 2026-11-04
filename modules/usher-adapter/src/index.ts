@@ -1,5 +1,5 @@
 export { createBridgeLogger, type LineWriter } from './createBridgeLogger.js';
-export { ACCESS_CONTROL_EVENTS } from './events.js';
+export { ACCESS_CONTROL_EVENTS } from './accessControlEvents.js';
 export {
 	type CatalogueIndex,
 	createUsherAccessControl,
@@ -7,5 +7,5 @@ export {
 	type UsherAccessControlOptions,
 	type UsherFilterCallback,
 } from './createUsherAccessControl.js';
-export { requesterOf } from './requester.js';
+export { requesterOf } from './requesterOf.js';
 export { UNAVAILABLE_ANSWER } from './unavailableAnswer.js';
