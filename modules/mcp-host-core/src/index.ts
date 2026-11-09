@@ -1,3 +1,5 @@
+// `create` and the provider throw it, so a consumer can catch it without depending on mcp-client.
+export { InsecureTransportError } from '@overture-stack/arranger-mcp-client';
 export {
 	type Answer,
 	type PendingApproval,

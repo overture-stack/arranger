@@ -38,7 +38,7 @@ await client.close();
 
 `connect` and `refreshSurface` throw on failure; `callTool`, `getPrompt` and `readResource` never do.
 
-`connect` throws `InsecureTransportError`, a `TypeError` with the `host`, before any request when `auth` would go over plain HTTP to a non-loopback host without `allowInsecureHttp`. A host can apply the same rule to its own credentials with the exported `assertCredentialTransport`.
+`connect` throws `InsecureTransportError`, a `TypeError` with the `host`, before any request when `auth` would go over plain HTTP to a non-loopback host without `allowInsecureHttp`. A host can apply the same rule to its own credentials with the exported `assertCredentialTransport`, as `mcp-host-core`'s provider does for its API key.
 
 `refreshSurface` throws `ReconnectRequiredError`, naming the lists, when a redeploy advertises a list the client did not see at connect. The SDK checks capabilities as they stood at connect, so it would read that list as empty; connect a new client instead. Whenever `refreshSurface` throws, `surface` keeps the previous snapshot.
 

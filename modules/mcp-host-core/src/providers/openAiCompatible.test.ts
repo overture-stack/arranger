@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { after, before, suite, test } from 'node:test';
 
+import { InsecureTransportError } from '@overture-stack/arranger-mcp-client';
+
 import { chunk, events, type ModelServer, startModelServer, usageChunk, writeStream } from '#testing/modelServer.js';
 
 import { assistantMessage, functionCall, functionCallOutput, userMessage } from '../messages.js';
@@ -179,6 +181,34 @@ suite('OpenAiCompatibleProvider', () => {
 
 		test('needs a base URL', () => {
 			assert.throws(() => new OpenAiCompatibleProvider({ baseUrl: '' }), TypeError);
+			assert.throws(() => new OpenAiCompatibleProvider({ baseUrl: 'not a url' }), TypeError);
+		});
+
+		test('refuses an API key over plain HTTP to a host other than this machine', () => {
+			const baseUrl = 'http://model.example.test/v1';
+			for (const apiKey of ['secret', async () => 'secret']) {
+				assert.throws(
+					() => new OpenAiCompatibleProvider({ baseUrl, apiKey }),
+					(error: unknown) =>
+						error instanceof InsecureTransportError &&
+						/^Refusing to send the API key over plain HTTP to model\.example\.test: /.test(error.message),
+				);
+			}
+			assert.doesNotThrow(
+				() => new OpenAiCompatibleProvider({ baseUrl, apiKey: 'secret', allowInsecureHttp: true }),
+			);
+			assert.doesNotThrow(() => new OpenAiCompatibleProvider({ baseUrl }));
+			assert.doesNotThrow(() => new OpenAiCompatibleProvider({ baseUrl, apiKey: '' }));
+			assert.doesNotThrow(
+				() => new OpenAiCompatibleProvider({ baseUrl: 'https://model.example.test/v1', apiKey: 'secret' }),
+			);
+			for (const loopback of [
+				'http://localhost:11434/v1',
+				'http://127.0.0.1:11434/v1',
+				'http://[::1]:11434/v1',
+			]) {
+				assert.doesNotThrow(() => new OpenAiCompatibleProvider({ baseUrl: loopback, apiKey: 'secret' }));
+			}
 		});
 
 		test('refuses a request timeout a Node timer cannot hold', () => {

@@ -1,5 +1,5 @@
 // What a consumer configures an `McpHost` with, and the checks `McpHost.create` runs on it before anything connects.
-import { type McpClientOptions } from '@overture-stack/arranger-mcp-client';
+import { assertCredentialTransport, type McpClientOptions } from '@overture-stack/arranger-mcp-client';
 
 import { type ApprovalCall } from './answers.js';
 import { type APPROVAL_DECISIONS } from './constants.js';
@@ -104,8 +104,10 @@ export type RunInput =
  * here rather than a run that misbehaves later.
  *
  * @param options - The options given to `McpHost.create`.
- * @throws `TypeError` for a missing or repeated server key, a `containsOnlyOpenData` that is not a boolean, a
- * missing approval policy, a limit or window that is not positive, or a timeout a Node timer cannot hold.
+ * @throws `InsecureTransportError`, a `TypeError`, when a server's `auth` would go over plain HTTP to a non-loopback
+ * host without `allowInsecureHttp`. `TypeError` for a missing or repeated server key, an invalid server URL, a
+ * non-boolean `containsOnlyOpenData`, a missing approval policy, a limit or window that is not positive, or a timeout
+ * a Node timer cannot hold.
  */
 export const validateOptions = (options: McpHostOptions): void => {
 	const keys = options.servers.map(({ key }) => key);
@@ -115,6 +117,13 @@ export const validateOptions = (options: McpHostOptions): void => {
 	// Anything but a boolean is refused rather than read as truthy, so the flag fails closed.
 	if (options.servers.some(({ containsOnlyOpenData }) => ![undefined, true, false].includes(containsOnlyOpenData))) {
 		throw new TypeError("A server's containsOnlyOpenData must be true or false");
+	}
+	// `McpClient.connect` checks this too, but checking here refuses before any server connects.
+	for (const { connection } of options.servers) {
+		assertCredentialTransport(new URL(connection.url), {
+			hasCredential: Boolean(connection.auth),
+			allowInsecureHttp: connection.allowInsecureHttp,
+		});
 	}
 	if (typeof options.approvalPolicy !== 'function') {
 		throw new TypeError('An approval policy is required');

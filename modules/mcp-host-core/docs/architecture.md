@@ -93,7 +93,7 @@ sequenceDiagram
     participant M as McpClient
 
     C->>H: create(options, signal)
-    H->>H: validateOptions: unique keys, boolean flags,<br/>a policy, positive limits, assertTimeout
+    H->>H: validateOptions: unique keys, boolean flags,<br/>assertCredentialTransport for each server,<br/>a policy, positive limits, assertTimeout
     H->>X: identifyEndpoint(url) for each server
     alt a new conversation
         H->>S: emptyState(servers)
@@ -288,7 +288,7 @@ stateDiagram-v2
 `OpenAiCompatibleProvider.generate` sends one request and yields deltas, then exactly one `response` or `error`. It never throws, never retries and reads no environment variables.
 
 - **The request:** `toWireMessages` groups a turn's calls on one assistant message and keys each tool result by the model's own call id. A malformed call's text is sent back wrapped as `{"unparsed": ...}`, since a server may refuse arguments that are not an object. `extra` is spread last.
-- **The key:** a string, or a function called before every request. A 401 is a `model_error` with its status.
+- **The key:** a string, or a function called before every request. A 401 is a `model_error` with its status. Unless `allowInsecureHttp` is set, the constructor refuses a key over plain HTTP to a non-loopback host, using `mcp-client`'s `assertCredentialTransport`, so both packages throw the same `InsecureTransportError`. Ollama's native endpoints share the origin, so the check covers them.
 - **The stream:** `eventsource-parser` frames events, with an 8 MiB cap on one event. `foldChunk` gathers text, reasoning and tool-call fragments by index, then sorts them, so indexes may start anywhere and arrive in any order. A whole reply folds through the same function as one chunk.
 - **Errors:** an HTTP status with a bounded body; `aborted`, `timeout` and `network`, told apart by which signal ended the request; an error event or unreadable data in the stream; a refusal; and a stream with no `finish_reason`, which Ollama's `/v1` sends when it drops an error mid-stream.
 - **Ollama:** with `ollama`, `contextWindow()` reads `/api/ps` and `modelDigest()` reads `/api/tags`. Every model call still goes through `/v1`.

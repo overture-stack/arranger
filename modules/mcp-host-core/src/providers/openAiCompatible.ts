@@ -1,5 +1,6 @@
 // Host-core's own client for OpenAI-compatible Chat Completions. It reads no environment variables and never
 // retries: a failure is reported once, as data.
+import { assertCredentialTransport } from '@overture-stack/arranger-mcp-client';
 import { createParser } from 'eventsource-parser';
 
 import {
@@ -39,6 +40,11 @@ export type OpenAiCompatibleOptions = {
 	 * between requests; a 401 is reported, never retried.
 	 */
 	apiKey?: string | ((signal: AbortSignal) => Promise<string | undefined>);
+	/**
+	 * Allows `apiKey` over plain HTTP to a non-loopback host, which exposes it on the network. Off, the constructor
+	 * throws `InsecureTransportError`.
+	 */
+	allowInsecureHttp?: boolean;
 	/** Ends a request that takes longer, as a `timeout` error. No limit when unset. */
 	requestTimeoutMs?: number;
 	/**
@@ -324,12 +330,21 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 
 	/**
 	 * @param options - The server's base URL, its key, and how to call it.
-	 * @throws `TypeError` when the base URL is missing, or `requestTimeoutMs` is not a usable timeout.
+	 * @throws `InsecureTransportError`, a `TypeError`, when `apiKey` is set for plain HTTP to a non-loopback host
+	 * without `allowInsecureHttp`. `TypeError` when the base URL is missing or invalid, or `requestTimeoutMs` is not a
+	 * usable timeout.
 	 */
 	constructor(options: OpenAiCompatibleOptions) {
 		if (!options.baseUrl) {
 			throw new TypeError('The provider needs a base URL');
 		}
+		const url = new URL(options.baseUrl);
+		// Ollama's native endpoints share this origin, so the check covers them too.
+		assertCredentialTransport(url, {
+			hasCredential: Boolean(options.apiKey),
+			allowInsecureHttp: options.allowInsecureHttp,
+			credentialDescription: 'the API key',
+		});
 		if (options.requestTimeoutMs !== undefined) {
 			assertTimeout('requestTimeoutMs', options.requestTimeoutMs);
 		}

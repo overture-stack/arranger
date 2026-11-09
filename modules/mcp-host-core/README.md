@@ -53,7 +53,13 @@ const saved = host.state(); // hand back later as `state`
 await host.close();
 ```
 
-`create` throws when a server cannot be reached, a timeout is not a usable number of milliseconds (`TypeError`), or its servers would break the data-crossing rule (`ServerSetError`, see [Data crossing](#data-crossing)).
+`create` throws, before connecting anything:
+
+- `TypeError` for invalid options, such as a timeout that is not a usable number of milliseconds.
+- `InsecureTransportError`, a `TypeError` re-exported from `mcp-client`, when a server's `auth` would go over plain HTTP to a non-loopback host.
+- `ServerSetError` when its servers would break the data-crossing rule (see [Data crossing](#data-crossing)).
+
+After that, it throws whatever connecting throws, such as for an unreachable server, once it has closed the others.
 
 `run` throws only when a run is already active, or carried content is given to a conversation that has begun, and otherwise resolves with the `done` event, emitted once the run is over.
 
@@ -90,14 +96,15 @@ await host.run({
 
 ## The provider
 
-| Option             | Description                                                                                                                                                               | Default  |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `baseUrl`          | The OpenAI-compatible base URL. Required, with no default, so a missing setting is an error.                                                                              |          |
-| `apiKey`           | A bearer token, or an async function giving one before every request. A 401 is reported, never retried.                                                                   | None     |
-| `requestTimeoutMs` | Ends a request that takes longer, as a `timeout` error.                                                                                                                   | No limit |
-| `sendReasoning`    | Sends each assistant turn's reasoning back to the model.                                                                                                                  | `false`  |
-| `stream`           | Streams the reply; a consumer that needs no deltas can turn it off.                                                                                                       | `true`   |
-| `ollama`           | Reads the loaded context window (`/api/ps`) and the model's digest (`/api/tags`) from Ollama's native API. The run uses the smaller of the configured and loaded windows. | `false`  |
+| Option              | Description                                                                                                                                                                | Default  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `baseUrl`           | The OpenAI-compatible base URL. Required, with no default, so a missing setting is an error.                                                                               |          |
+| `apiKey`            | A bearer token, or an async function giving one before every request. A 401 is reported, never retried.                                                                    | None     |
+| `allowInsecureHttp` | Allows `apiKey` over plain HTTP to a non-loopback host, which exposes it on the network. Off, the constructor throws `InsecureTransportError`, which this package exports. | `false`  |
+| `requestTimeoutMs`  | Ends a request that takes longer, as a `timeout` error.                                                                                                                    | No limit |
+| `sendReasoning`     | Sends each assistant turn's reasoning back to the model.                                                                                                                   | `false`  |
+| `stream`            | Streams the reply; a consumer that needs no deltas can turn it off.                                                                                                        | `true`   |
+| `ollama`            | Reads the loaded context window (`/api/ps`) and the model's digest (`/api/tags`) from Ollama's native API. The run uses the smaller of the configured and loaded windows.  | `false`  |
 
 ## Data crossing
 

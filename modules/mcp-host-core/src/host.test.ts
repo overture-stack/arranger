@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, mock, suite, test } from 'node:test';
 
-import { McpClient } from '@overture-stack/arranger-mcp-client';
+import { InsecureTransportError, McpClient } from '@overture-stack/arranger-mcp-client';
 
 import { createHarness, name, outputs, withHost, withServer } from '#testing/harness.js';
 import { chunk, events, startModelServer, usageChunk, writeStream } from '#testing/modelServer.js';
@@ -14,6 +14,8 @@ import { OpenAiCompatibleProvider } from './providers/openAiCompatible.js';
 import { instructionsHeading, reduceToolName } from './registry.js';
 import { carriedLabel } from './run.js';
 import { TOOL_MESSAGES } from './toolMessages.js';
+
+import { InsecureTransportError as ExportedInsecureTransportError } from './index.js';
 
 suite('McpHost', () => {
 	let server: TestServer;
@@ -189,6 +191,34 @@ suite('McpHost', () => {
 					TypeError,
 					JSON.stringify(options),
 				);
+			}
+		});
+
+		test("refuses a server's credential over plain HTTP, before connecting any server", async () => {
+			const connects = mock.method(McpClient, 'connect');
+			try {
+				const harness = createHarness(server, [], {
+					servers: [
+						{ key: 'test', containsOnlyOpenData: true, connection: { url: server.url } },
+						{
+							key: 'remote',
+							containsOnlyOpenData: true,
+							connection: {
+								url: 'http://mcp.example.test/mcp',
+								auth: { headers: { authorization: 'Bearer x' } },
+							},
+						},
+					],
+				});
+				await assert.rejects(McpHost.create(harness.options), InsecureTransportError);
+				assert.equal(
+					InsecureTransportError,
+					ExportedInsecureTransportError,
+					'the index re-exports the same class',
+				);
+				assert.equal(connects.mock.callCount(), 0);
+			} finally {
+				connects.mock.restore();
 			}
 		});
 
