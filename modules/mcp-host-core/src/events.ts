@@ -78,6 +78,15 @@ export type EventBody =
 			errors: { key: string; message: string }[];
 	  }
 	| {
+			/**
+			 * Emitted before each call to the provider: an attempt, not a request the server received.
+			 *
+			 * @remarks
+			 * One `model_response` or `model_error` follows in the same turn, or `done` if the run is stopped first. A
+			 * `model_response` may also be followed by a `model_error` of kind `truncated`, for the same request. A
+			 * `model_error` can mean nothing reached the server, so count answered requests, and their tokens, from
+			 * `model_response`.
+			 */
 			type: typeof EVENT_TYPES.MODEL_REQUEST;
 			turn: number;
 			/** The request, except its messages. */

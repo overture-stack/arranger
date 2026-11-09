@@ -160,7 +160,8 @@ flowchart TD
     turns -->|"no"| stale["Between turns: re-read servers that<br/>reported a change, emit tools_changed"]
     stale --> prepare["prepare: fitToWindow, then the request,<br/>with the retry's nudge or new seed"]
     prepare -->|"cannot fit"| window(["context_window"])
-    prepare --> generate["generate: token events,<br/>then a response or an error"]
+    prepare --> request["model_request"]
+    request --> generate["generate: token events,<br/>then a response or an error"]
     generate -->|"error, or no response"| modelError(["model_error"])
     generate --> backstop{"Longer request,<br/>no more prompt tokens?"}
     backstop -->|"yes"| truncated(["model_error, kind truncated,<br/>then context_window"])
@@ -175,8 +176,9 @@ flowchart TD
 - **One retry per model step.** `decideReply` retries only a reply to a request that was not itself a retry, so a cut-off reply whose retry comes back empty ends the run.
 - **A retry changes only the request.** The output-limit retry adds `OUTPUT_LIMIT_RETRY_MESSAGE` and lets the provider `reduceReasoning`; the empty-reply retry uses `seed + 1`. The failed attempt stays in the events, never the state.
 - **A retry counts as a turn.**
+- **`model_request` marks an attempt, not a request the server received.** Exactly one `model_response` or `model_error` follows it in the same turn, or `done` when the run is stopped first. A `model_response` can then be followed by a `model_error` of kind `truncated`, when the server answered but dropped part of the conversation: the same request, not another. A `model_error` can come from a request that never left, such as an unreadable key or a refused connection, so count answered requests from `model_response`.
 
-**Tested in** `reply.test.ts` and `run.test.ts` (`model replies`, `cancellation and limits`).
+**Tested in** `reply.test.ts`, `run.test.ts` (`model replies`, `cancellation and limits`) and `host.test.ts` (`a run`).
 
 ## One tool call
 

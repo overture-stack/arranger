@@ -124,6 +124,77 @@ suite('McpHost', () => {
 			});
 		});
 
+		test('model_request is followed by exactly one model_response or model_error, or by done when stopped', async () => {
+			const harness = createHarness(server, [
+				say('ok'),
+				{ error: { kind: 'http', message: 'The model server answered 500', status: 500 } },
+				{ hang: true },
+			]);
+			const controller = new AbortController();
+			harness.on((event) => {
+				if (event.type === 'model_request' && event.turn === 1 && harness.of('model_request').length === 3) {
+					setTimeout(() => controller.abort(), 20);
+				}
+			});
+			await withHost(harness, async (host) => {
+				await host.run({ message: 'replies' });
+				await host.run({ message: 'fails' });
+				await host.run({ message: 'stopped' }, { signal: controller.signal });
+			});
+
+			const pairing = harness.events
+				.filter(({ type }) => ['model_request', 'model_response', 'model_error', 'done'].includes(type))
+				.map((event) => (event.type === 'done' ? `done:${event.reason}` : event.type));
+			assert.deepEqual(pairing, [
+				'model_request',
+				'model_response',
+				'done:answered',
+				'model_request',
+				'model_error',
+				'done:model_error',
+				'model_request',
+				'done:cancelled',
+			]);
+		});
+
+		test('a model_response can be followed by a truncated model_error for the same request', async () => {
+			const harness = createHarness(server, [
+				{
+					response: {
+						toolCalls: [call(name('lookup'), { id: '1' })],
+						stopReason: 'tool_calls',
+						usage: { inputTokens: 3_562, outputTokens: 5 },
+					},
+				},
+				say('Answered without the question', { usage: { inputTokens: 3_494, outputTokens: 5 } }),
+			]);
+			await withHost(harness, async (host) => {
+				await host.run({ message: 'go' });
+			});
+
+			const pairing = harness.events
+				.filter(({ type }) => ['model_request', 'model_response', 'model_error', 'done'].includes(type))
+				.map((event) => {
+					if (event.type === 'done') {
+						return `done:${event.reason}`;
+					}
+					if (event.type === 'model_error') {
+						return `model_error:${event.error.kind}:${event.turn}`;
+					}
+					return event.type === 'model_request' || event.type === 'model_response'
+						? `${event.type}:${event.turn}`
+						: event.type;
+				});
+			assert.deepEqual(pairing, [
+				'model_request:1',
+				'model_response:1',
+				'model_request:2',
+				'model_response:2',
+				'model_error:truncated:2',
+				'done:context_window',
+			]);
+		});
+
 		test('refuses a second run while one is active', async () => {
 			const harness = createHarness(server, [{ hang: true }]);
 			await withHost(harness, async (host) => {
