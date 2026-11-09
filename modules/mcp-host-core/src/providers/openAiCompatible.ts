@@ -417,6 +417,18 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 		};
 	}
 
+	/**
+	 * Refuses, when a host is created, settings every request would refuse.
+	 *
+	 * @throws `TypeError` naming each reserved field `extra` sets, and what to use instead.
+	 */
+	assertSettings(settings: ModelSettings): void {
+		const reserved = reservedFieldsMessage(settings.extra);
+		if (reserved !== undefined) {
+			throw new TypeError(reserved);
+		}
+	}
+
 	/** One request's signal: the caller's, joined with the provider's own timeout. */
 	#requestSignal(caller: AbortSignal): { signal: AbortSignal; state: { timedOut: boolean }; done: () => void } {
 		const timeout = new AbortController();
@@ -450,7 +462,7 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 		const started = Date.now();
 		const { signal: requestSignal, state, done } = this.#requestSignal(signal);
 		try {
-			// Refused before anything is sent, since the request would replace what host-core records.
+			// A host refuses these when it is created. This covers a caller without one.
 			const reserved = reservedFieldsMessage(request.extra);
 			if (reserved !== undefined) {
 				yield { type: STREAM_ITEM_TYPES.ERROR, error: { kind: MODEL_ERROR_KINDS.UNKNOWN, message: reserved } };

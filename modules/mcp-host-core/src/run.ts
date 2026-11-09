@@ -366,7 +366,7 @@ export class Run {
 			if (!prepared.request) {
 				return {
 					reason: DONE_REASONS.CONTEXT_WINDOW,
-					detail: `The request needs about ${prepared.estimateAfter} tokens of a ${this.windowTokens}-token window`,
+					detail: `The request needs about ${prepared.estimateAfter} tokens of a ${this.windowTokens}-token window, ${this.options.model.maxOutputTokens} of them reserved for the reply (\`maxOutputTokens\`)`,
 				};
 			}
 

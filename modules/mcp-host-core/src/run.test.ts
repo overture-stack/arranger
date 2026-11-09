@@ -348,6 +348,10 @@ suite('McpHost', () => {
 			await withHost(harness, async (host) => {
 				const done = await host.run({ message: 'go' });
 				assert.equal(done.reason, 'context_window');
+				assert.match(
+					done.detail ?? '',
+					/^The request needs about \d+ tokens of a \d+-token window, 100 of them reserved for the reply \(`maxOutputTokens`\)$/,
+				);
 				assert.equal(harness.provider.requests.length, 2);
 				assert.deepEqual(harness.of('context_shortened'), []);
 			});

@@ -194,6 +194,54 @@ suite('McpHost', () => {
 			}
 		});
 
+		test('refuses a reply cap that is not a positive whole number', async () => {
+			const harness = createHarness(server, []);
+			for (const maxOutputTokens of [0, -1, 1.5, Number.NaN]) {
+				await assert.rejects(
+					McpHost.create({ ...harness.options, model: { ...harness.options.model, maxOutputTokens } }),
+					TypeError,
+					String(maxOutputTokens),
+				);
+			}
+		});
+
+		test('refuses a reply cap that leaves no room in the window', async () => {
+			const harness = createHarness(server, [], { contextWindow: { tokens: 1_000, policy: 'shorten' } });
+			for (const maxOutputTokens of [1_000, 1_001]) {
+				await assert.rejects(
+					McpHost.create({ ...harness.options, model: { ...harness.options.model, maxOutputTokens } }),
+					{
+						name: 'TypeError',
+						message: `model.maxOutputTokens (${maxOutputTokens}) must be less than contextWindow.tokens (1000), or no request fits`,
+					},
+					String(maxOutputTokens),
+				);
+			}
+			const fits = await McpHost.create({
+				...harness.options,
+				model: { ...harness.options.model, maxOutputTokens: 999 },
+			});
+			await fits.close();
+		});
+
+		test('refuses model settings the provider refuses, before connecting anything', async () => {
+			const connects = mock.method(McpClient, 'connect');
+			try {
+				const harness = createHarness(server, []);
+				await assert.rejects(
+					McpHost.create({
+						...harness.options,
+						provider: new OpenAiCompatibleProvider({ baseUrl: 'http://127.0.0.1:9/v1' }),
+						model: { ...harness.options.model, extra: { seed: 1 } },
+					}),
+					{ name: 'TypeError', message: /seed \(use `model\.seed`\)/ },
+				);
+				assert.equal(connects.mock.callCount(), 0);
+			} finally {
+				connects.mock.restore();
+			}
+		});
+
 		test("refuses a server's credential over plain HTTP, before connecting any server", async () => {
 			const connects = mock.method(McpClient, 'connect');
 			try {

@@ -147,6 +147,18 @@ suite('OpenAiCompatibleProvider', () => {
 			assert.equal('max_tokens' in body, false);
 		});
 
+		test('refuses settings whose `extra` sets a reserved field, naming what to use instead', () => {
+			const provider = new OpenAiCompatibleProvider({ baseUrl: model.url });
+
+			assert.throws(() => provider.assertSettings(request({ extra: { top_k: 1, seed: 1, max_tokens: 50 } })), {
+				name: 'TypeError',
+				message:
+					"`model.extra` sets reserved fields: seed (use `model.seed`), max_tokens (use `model.maxOutputTokens`, and the provider's `outputLimitField`)",
+			});
+			assert.doesNotThrow(() => provider.assertSettings(request({ extra: { top_k: 1, toString: 'x' } })));
+			assert.doesNotThrow(() => provider.assertSettings(request()));
+		});
+
 		test('refuses an `extra` that sets a reserved field, without sending anything', async () => {
 			const before = model.requests.length;
 

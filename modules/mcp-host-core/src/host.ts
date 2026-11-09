@@ -45,12 +45,12 @@ export class McpHost {
 	 * @param options - The servers, provider, model, policy, limits and listener.
 	 * @param signal - Aborts connecting.
 	 * @returns A host ready to run.
-	 * @throws Before connecting anything: `TypeError` for invalid options or saved state, and `InsecureTransportError`
-	 * (also a `TypeError`) for a server's `auth` over plain HTTP. `ServerSetError` when a server not flagged
-	 * `containsOnlyOpenData` shares the conversation with another, a server would join one holding another server's
-	 * restricted data, or a saved conversation holding restricted data or carried content would gain a server,
-	 * including a key that now reaches another endpoint (see `identifyEndpoint`). After that, whatever connecting
-	 * throws, once any server already connected is closed.
+	 * @throws Before connecting anything: `TypeError` for invalid options or saved state (including model settings
+	 * the provider refuses), and `InsecureTransportError` (also a `TypeError`) for a server's `auth` over plain HTTP.
+	 * `ServerSetError` when a server not flagged `containsOnlyOpenData` shares the conversation with another, a server
+	 * would join one holding another server's restricted data, or a saved conversation holding restricted data or
+	 * carried content would gain a server, including a key that now reaches another endpoint (see `identifyEndpoint`).
+	 * After that, whatever connecting throws, once any server already connected is closed.
 	 */
 	static async create(options: McpHostOptions, signal?: AbortSignal): Promise<McpHost> {
 		validateOptions(options);

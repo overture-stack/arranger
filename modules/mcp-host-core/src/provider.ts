@@ -139,6 +139,14 @@ export type LlmProvider = {
 	contextWindow?(model: string, signal: AbortSignal): Promise<number | undefined>;
 
 	/**
+	 * Called when a host is created, so settings this provider would refuse on every request fail before anything
+	 * connects.
+	 *
+	 * @throws `TypeError` naming each setting it refuses, and what to use instead.
+	 */
+	assertSettings?(settings: ModelSettings): void;
+
+	/**
 	 * Lowers the reasoning effort for the retry after a reply cut off at the output limit, where the provider
 	 * supports it.
 	 *

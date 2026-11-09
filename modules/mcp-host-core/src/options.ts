@@ -106,8 +106,9 @@ export type RunInput =
  * @param options - The options given to `McpHost.create`.
  * @throws `InsecureTransportError`, a `TypeError`, when a server's `auth` would go over plain HTTP to a non-loopback
  * host without `allowInsecureHttp`. `TypeError` for a missing or repeated server key, an invalid server URL, a
- * non-boolean `containsOnlyOpenData`, a missing approval policy, a limit or window that is not positive, or a timeout
- * a Node timer cannot hold.
+ * non-boolean `containsOnlyOpenData`, a missing approval policy, a limit or window that is not positive, a
+ * `maxOutputTokens` that is not a positive whole number below `contextWindow.tokens`, a timeout a Node timer cannot
+ * hold, or model settings the provider refuses.
  */
 export const validateOptions = (options: McpHostOptions): void => {
 	const keys = options.servers.map(({ key }) => key);
@@ -139,4 +140,16 @@ export const validateOptions = (options: McpHostOptions): void => {
 	if (options.confirmations !== false && options.confirmations.timeoutMs !== undefined) {
 		assertTimeout('confirmations.timeoutMs', options.confirmations.timeoutMs);
 	}
+	const { maxOutputTokens } = options.model;
+	if (!Number.isInteger(maxOutputTokens) || maxOutputTokens <= 0) {
+		throw new TypeError('model.maxOutputTokens must be a positive whole number');
+	}
+	// Every request reserves the cap and has at least one prompt token, so a cap this large never fits.
+	if (maxOutputTokens >= options.contextWindow.tokens) {
+		throw new TypeError(
+			`model.maxOutputTokens (${maxOutputTokens}) must be less than contextWindow.tokens (${options.contextWindow.tokens}), or no request fits`,
+		);
+	}
+	// Last, so the provider only sees settings host-core has accepted.
+	options.provider.assertSettings?.(options.model);
 };
