@@ -305,7 +305,11 @@ const foldChunk = (gathered: Gathered, chunk: Record<string, unknown>): string =
 		gathered.modelId = chunk.model;
 	}
 	gathered.usage = usageOf(chunk.usage) ?? gathered.usage;
-	const choice = Array.isArray(chunk.choices) && isRecord(chunk.choices[0]) ? chunk.choices[0] : undefined;
+	// Only the first choice is read. A choice without a numeric index, as in a whole reply, counts as the first.
+	const choice = (Array.isArray(chunk.choices) ? chunk.choices : []).find(
+		(entry): entry is Record<string, unknown> =>
+			isRecord(entry) && (typeof entry.index !== 'number' || entry.index === 0),
+	);
 	if (!choice) {
 		return '';
 	}
@@ -350,6 +354,28 @@ const gatherWhole = (body: unknown): Gathered => {
 	const choice = Array.isArray(body.choices) && isRecord(body.choices[0]) ? body.choices[0] : {};
 	foldChunk(gathered, { ...body, choices: [{ finish_reason: choice.finish_reason, delta: choice.message }] });
 	return gathered;
+};
+
+/**
+ * Where a redirect pointed, for its error message, with any credentials, query and fragment removed.
+ *
+ * @returns An empty string when the response is not a redirect with a readable `Location`.
+ */
+const redirectNote = (response: Response, requestUrl: string): string => {
+	const location = response.status >= 300 && response.status < 400 ? response.headers.get('location') : null;
+	if (!location) {
+		return '';
+	}
+	let target: URL;
+	try {
+		target = new URL(location, requestUrl);
+	} catch {
+		return '';
+	}
+	target.username = target.password = target.search = target.hash = '';
+	const from = new URL(requestUrl);
+	const upgrade = from.protocol === 'http:' && target.protocol === 'https:' && from.hostname === target.hostname;
+	return `, to ${target.href}, which is not followed${upgrade ? '. Use https in `baseUrl`' : ''}`;
 };
 
 /** The error to report once the request is over, from whichever signal ended it. */
@@ -452,10 +478,10 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 	 * Sends one Chat Completions request, streamed unless `stream` is off.
 	 *
 	 * @remarks
-	 * Every failure is yielded as an `error` item, never thrown: an `extra` that sets a reserved field, a key that
-	 * cannot be read, a network error, a
-	 * timeout or an abort, an HTTP error status, an error or unreadable event mid-stream, a refusal, or a reply with
-	 * no finish reason.
+	 * Every failure is yielded as an `error` item, never thrown: an `extra` that sets a reserved field, a request
+	 * that cannot be serialized, a key that cannot be read, a network error, a timeout or an abort, an HTTP error
+	 * status, including an unfollowed redirect, an error or unreadable event mid-stream, a refusal, or a reply with no
+	 * finish reason.
 	 */
 	async *generate(request: ProviderRequest, signal: AbortSignal): AsyncIterable<ProviderStreamItem> {
 		const stream = this.#options.stream ?? true;
@@ -466,6 +492,25 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 			const reserved = reservedFieldsMessage(request.extra);
 			if (reserved !== undefined) {
 				yield { type: STREAM_ITEM_TYPES.ERROR, error: { kind: MODEL_ERROR_KINDS.UNKNOWN, message: reserved } };
+				return;
+			}
+			let requestBody: string;
+			try {
+				requestBody = JSON.stringify(
+					toWireRequest(request, {
+						stream,
+						sendReasoning: this.sendsReasoning,
+						outputLimitField: this.#options.outputLimitField,
+					}),
+				);
+			} catch (error) {
+				yield {
+					type: STREAM_ITEM_TYPES.ERROR,
+					error: {
+						kind: MODEL_ERROR_KINDS.UNKNOWN,
+						message: `The request could not be serialized: ${errorMessage(error)}`,
+					},
+				};
 				return;
 			}
 			let headers: Record<string, string>;
@@ -481,18 +526,15 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 				};
 				return;
 			}
+			const endpoint = `${this.url}/chat/completions`;
 			let response: Response;
 			try {
-				response = await fetch(`${this.url}/chat/completions`, {
+				response = await fetch(endpoint, {
 					method: 'POST',
 					headers,
-					body: JSON.stringify(
-						toWireRequest(request, {
-							stream,
-							sendReasoning: this.sendsReasoning,
-							outputLimitField: this.#options.outputLimitField,
-						}),
-					),
+					body: requestBody,
+					// A redirect is reported as its status: following one would re-send the conversation elsewhere.
+					redirect: 'manual',
 					signal: requestSignal,
 				});
 			} catch (error) {
@@ -511,7 +553,9 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 					type: STREAM_ITEM_TYPES.ERROR,
 					error: {
 						kind: MODEL_ERROR_KINDS.HTTP,
-						message: `The model server answered ${response.status} ${response.statusText}`.trim(),
+						message:
+							`The model server answered ${response.status} ${response.statusText}`.trim() +
+							redirectNote(response, endpoint),
 						status: response.status,
 						...(body && { body }),
 					},
@@ -608,7 +652,11 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 	/** Reads one of Ollama's native endpoints, at the root the `/v1` base URL sits under. */
 	async #native(path: '/api/ps' | '/api/tags', signal: AbortSignal): Promise<unknown> {
 		const root = this.url.replace(/\/v1$/, '');
-		const response = await fetch(`${root}${path}`, { headers: await this.#headers(signal), signal });
+		const response = await fetch(`${root}${path}`, {
+			headers: await this.#headers(signal),
+			redirect: 'manual',
+			signal,
+		});
 		return response.ok ? response.json() : undefined;
 	}
 

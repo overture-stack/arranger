@@ -180,6 +180,19 @@ suite('OpenAiCompatibleProvider', () => {
 			assert.equal(model.requests.length, before);
 		});
 
+		test('reports a request that cannot be serialized, without sending anything', async () => {
+			const before = model.requests.length;
+
+			const items = await collect(
+				new OpenAiCompatibleProvider({ baseUrl: model.url }),
+				request({ extra: { seed_big: 1n } }),
+			);
+
+			assert.equal(items.length, 1);
+			assert.equal(errorKind(items), 'unknown');
+			assert.equal(model.requests.length, before);
+		});
+
 		test("groups a turn's calls on its assistant message, and keys each result by the model's call id", () => {
 			const messages = toWireMessages(
 				'',
@@ -343,6 +356,40 @@ suite('OpenAiCompatibleProvider', () => {
 	});
 
 	suite('the stream', () => {
+		test('reads only the first choice, when a server sends more than one', async () => {
+			const choice = (index: number, delta: Record<string, unknown>, finishReason?: string) =>
+				JSON.stringify({
+					choices: [{ index, delta, ...(finishReason !== undefined && { finish_reason: finishReason }) }],
+				});
+			model.answer((_request, response) =>
+				writeStream(
+					response,
+					events(
+						choice(0, { content: 'First ' }),
+						choice(1, { content: 'Second ' }),
+						choice(0, {
+							tool_calls: [{ index: 0, id: 'a', function: { name: 'search', arguments: '{}' } }],
+						}),
+						choice(1, {
+							tool_calls: [{ index: 0, id: 'b', function: { name: 'count', arguments: '{}' } }],
+						}),
+						choice(1, {}, 'stop'),
+						choice(0, {}, 'tool_calls'),
+					),
+				),
+			);
+			const final = last(await collect(new OpenAiCompatibleProvider({ baseUrl: model.url })));
+
+			assert.equal(final?.type, 'response');
+			if (final?.type === 'response') {
+				assert.equal(final.response.text, 'First ');
+				assert.deepEqual(final.response.toolCalls, [
+					{ kind: 'call', id: 'a', name: 'search', arguments: '{}' },
+				]);
+				assert.equal(final.response.stopReason, 'tool_calls');
+			}
+		});
+
 		test('yields text as it arrives, then the response with exact usage and the model id', async () => {
 			model.answer((_request, response) =>
 				writeStream(
@@ -494,6 +541,49 @@ suite('OpenAiCompatibleProvider', () => {
 			}
 		});
 
+		test('reports a redirect as its status, and never follows it', async () => {
+			const elsewhere = await startModelServer();
+			try {
+				const target = new URL(`${elsewhere.url}/chat/completions?token=x#part`);
+				target.username = 'user';
+				target.password = 'secret';
+				model.answer((_request, response) => {
+					response.writeHead(307, { location: target.href }).end();
+				});
+				const final = last(await collect(new OpenAiCompatibleProvider({ baseUrl: model.url })));
+
+				assert.equal(final?.type, 'error');
+				if (final?.type === 'error') {
+					assert.equal(final.error.kind, 'http');
+					assert.equal(final.error.status, 307);
+					assert.equal(
+						final.error.message,
+						`The model server answered 307 Temporary Redirect, to ${elsewhere.url}/chat/completions, which is not followed`,
+					);
+				}
+				assert.equal(elsewhere.requests.length, 0);
+			} finally {
+				await elsewhere.close();
+			}
+		});
+
+		test('suggests https when a plain HTTP base URL redirects to it', async () => {
+			const https = new URL(model.url);
+			https.protocol = 'https:';
+			model.answer((_request, response) => {
+				response.writeHead(308, { location: `${https.href}/chat/completions` }).end();
+			});
+			const final = last(await collect(new OpenAiCompatibleProvider({ baseUrl: model.url })));
+
+			assert.equal(final?.type, 'error');
+			if (final?.type === 'error') {
+				assert.match(
+					final.error.message,
+					/^The model server answered 308 Permanent Redirect, to https:.*\. Use https in `baseUrl`$/,
+				);
+			}
+		});
+
 		test('reports a 401 once, and never retries', async () => {
 			model.answer((_request, response) => {
 				response.writeHead(401).end('{"error":"expired"}');
@@ -616,6 +706,21 @@ suite('OpenAiCompatibleProvider', () => {
 			assert.equal(await provider.contextWindow('qwen3:14b', signal), 16_384);
 			assert.equal(await provider.modelDigest('qwen3:14b', signal), 'sha256:abc');
 			assert.equal(await provider.contextWindow('not-loaded', signal), undefined);
+		});
+
+		test('never follows a redirect from a native endpoint', async () => {
+			const elsewhere = await startModelServer();
+			try {
+				model.answer((request, response) => {
+					response.writeHead(307, { location: `${elsewhere.url.replace(/\/v1$/, '')}${request.path}` }).end();
+				});
+				const provider = new OpenAiCompatibleProvider({ baseUrl: model.url, ollama: true });
+
+				assert.equal(await provider.contextWindow('qwen3:14b', new AbortController().signal), undefined);
+				assert.equal(elsewhere.requests.length, 0);
+			} finally {
+				await elsewhere.close();
+			}
 		});
 
 		test('reads nothing natively unless configured for Ollama', async () => {
