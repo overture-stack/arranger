@@ -21,7 +21,12 @@ export type ModelSettings = {
 	maxOutputTokens: number;
 	/** A JSON Schema the output must match. */
 	responseFormat?: unknown;
-	/** Engine-specific fields, such as `top_k` or `reasoning_effort`, passed through unchanged. */
+	/**
+	 * Engine-specific fields, such as `top_k` or `reasoning_effort`, passed through unchanged.
+	 *
+	 * @remarks
+	 * A provider may refuse a field host-core sets or relies on, such as the model, messages, tools, seed or reply cap.
+	 */
 	extra?: Record<string, unknown>;
 };
 

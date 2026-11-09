@@ -16,6 +16,7 @@ import {
 	type FinalResponse,
 	type LlmProvider,
 	type ModelError,
+	type ModelSettings,
 	type ProviderMalformedCall,
 	type ProviderRequest,
 	type ProviderStreamItem,
@@ -31,6 +32,12 @@ export const MAX_ERROR_BODY_CHARS = 4_096;
 /** The largest single stream event read, so a server that never ends a line cannot exhaust memory. */
 const MAX_EVENT_BYTES = 8 * 1024 * 1024;
 
+/** The request fields that can carry the reply cap. */
+export const OUTPUT_LIMIT_FIELDS = ['max_tokens', 'max_completion_tokens'] as const;
+
+/** The request field that carries the reply cap. */
+export type OutputLimitField = (typeof OUTPUT_LIMIT_FIELDS)[number];
+
 /** Configuration for {@link OpenAiCompatibleProvider}. */
 export type OpenAiCompatibleOptions = {
 	/** The server's OpenAI-compatible base URL, such as `http://localhost:11434/v1`. Required: there is no default. */
@@ -45,6 +52,12 @@ export type OpenAiCompatibleOptions = {
 	 * throws `InsecureTransportError`.
 	 */
 	allowInsecureHttp?: boolean;
+	/**
+	 * The field that carries `maxOutputTokens`: `max_tokens` by default, which Ollama reads, or
+	 * `max_completion_tokens`, which OpenAI's reasoning models require. The latter is refused with `ollama`, which
+	 * ignores it.
+	 */
+	outputLimitField?: OutputLimitField;
 	/** Ends a request that takes longer, as a `timeout` error. No limit when unset. */
 	requestTimeoutMs?: number;
 	/**
@@ -130,15 +143,41 @@ export const toWireMessages = (
 };
 
 /**
+ * Fields `extra` may not set, with what to use instead. Each would send something other than host-core records,
+ * defeat its context fitting or retry seed, or break reading the reply.
+ */
+const RESERVED_EXTRA_KEYS: Readonly<Record<string, string>> = {
+	model: 'use `model.model`',
+	messages: 'host-core builds the conversation',
+	tools: "host-core sends the servers' tools",
+	stream: "use the provider's `stream` option",
+	stream_options: 'host-core asks for usage when streaming',
+	n: 'only the first reply is read',
+	seed: 'use `model.seed`',
+	max_tokens: "use `model.maxOutputTokens`, and the provider's `outputLimitField`",
+	max_completion_tokens: "use `model.maxOutputTokens`, and the provider's `outputLimitField`",
+};
+
+/** Names each reserved field `extra` sets and what to use instead, or `undefined` when it sets none. */
+const reservedFieldsMessage = (extra: ModelSettings['extra']): string | undefined => {
+	const reserved = Object.entries(RESERVED_EXTRA_KEYS).filter(
+		([key]) => extra !== undefined && Object.hasOwn(extra, key),
+	);
+	return reserved.length === 0
+		? undefined
+		: `\`model.extra\` sets reserved fields: ${reserved.map(([key, instead]) => `${key} (${instead})`).join(', ')}`;
+};
+
+/**
  * The request body.
  *
  * @remarks
- * `max_tokens` rather than `max_completion_tokens`, which Ollama ignores. `extra` goes last, so an engine field
- * can override any other.
+ * `extra` goes last, so it can override `temperature`, `top_p` and `response_format`. The
+ * {@link RESERVED_EXTRA_KEYS} are dropped from it.
  */
 export const toWireRequest = (
 	request: ProviderRequest,
-	options: { stream: boolean; sendReasoning: boolean },
+	options: { stream: boolean; sendReasoning: boolean; outputLimitField?: OutputLimitField },
 ): Record<string, unknown> => ({
 	model: request.model,
 	messages: toWireMessages(request.systemPrompt, request.messages, options.sendReasoning),
@@ -151,7 +190,7 @@ export const toWireRequest = (
 	temperature: request.temperature,
 	top_p: request.topP,
 	...(request.seed !== undefined && { seed: request.seed }),
-	max_tokens: request.maxOutputTokens,
+	[options.outputLimitField ?? 'max_tokens']: request.maxOutputTokens,
 	...(request.responseFormat !== undefined && {
 		response_format: {
 			type: 'json_schema',
@@ -160,7 +199,9 @@ export const toWireRequest = (
 	}),
 	stream: options.stream,
 	...(options.stream && { stream_options: { include_usage: true } }),
-	...request.extra,
+	...Object.fromEntries(
+		Object.entries(request.extra ?? {}).filter(([key]) => !Object.hasOwn(RESERVED_EXTRA_KEYS, key)),
+	),
 });
 
 /** Maps the wire's `finish_reason` onto host-core's stop reasons. */
@@ -331,8 +372,8 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 	/**
 	 * @param options - The server's base URL, its key, and how to call it.
 	 * @throws `InsecureTransportError`, a `TypeError`, when `apiKey` is set for plain HTTP to a non-loopback host
-	 * without `allowInsecureHttp`. `TypeError` when the base URL is missing or invalid, or `requestTimeoutMs` is not a
-	 * usable timeout.
+	 * without `allowInsecureHttp`. `TypeError` when the base URL is missing or invalid, `outputLimitField` is not a
+	 * known field or is `max_completion_tokens` with `ollama`, or `requestTimeoutMs` is not a usable timeout.
 	 */
 	constructor(options: OpenAiCompatibleOptions) {
 		if (!options.baseUrl) {
@@ -345,6 +386,18 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 			allowInsecureHttp: options.allowInsecureHttp,
 			credentialDescription: 'the API key',
 		});
+		if (
+			options.outputLimitField !== undefined &&
+			!(OUTPUT_LIMIT_FIELDS as readonly string[]).includes(options.outputLimitField)
+		) {
+			throw new TypeError(`outputLimitField must be one of ${OUTPUT_LIMIT_FIELDS.join(', ')}`);
+		}
+		// Ollama ignores `max_completion_tokens` (checked on 0.34.3), so the reply would have no cap.
+		if (options.ollama && options.outputLimitField === 'max_completion_tokens') {
+			throw new TypeError(
+				'Ollama ignores max_completion_tokens, which would leave the reply uncapped: use max_tokens',
+			);
+		}
 		if (options.requestTimeoutMs !== undefined) {
 			assertTimeout('requestTimeoutMs', options.requestTimeoutMs);
 		}
@@ -387,7 +440,8 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 	 * Sends one Chat Completions request, streamed unless `stream` is off.
 	 *
 	 * @remarks
-	 * Every failure is yielded as an `error` item, never thrown: a key that cannot be read, a network error, a
+	 * Every failure is yielded as an `error` item, never thrown: an `extra` that sets a reserved field, a key that
+	 * cannot be read, a network error, a
 	 * timeout or an abort, an HTTP error status, an error or unreadable event mid-stream, a refusal, or a reply with
 	 * no finish reason.
 	 */
@@ -396,6 +450,12 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 		const started = Date.now();
 		const { signal: requestSignal, state, done } = this.#requestSignal(signal);
 		try {
+			// Refused before anything is sent, since the request would replace what host-core records.
+			const reserved = reservedFieldsMessage(request.extra);
+			if (reserved !== undefined) {
+				yield { type: STREAM_ITEM_TYPES.ERROR, error: { kind: MODEL_ERROR_KINDS.UNKNOWN, message: reserved } };
+				return;
+			}
 			let headers: Record<string, string>;
 			try {
 				headers = await this.#headers(requestSignal);
@@ -414,7 +474,13 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 				response = await fetch(`${this.url}/chat/completions`, {
 					method: 'POST',
 					headers,
-					body: JSON.stringify(toWireRequest(request, { stream, sendReasoning: this.sendsReasoning })),
+					body: JSON.stringify(
+						toWireRequest(request, {
+							stream,
+							sendReasoning: this.sendsReasoning,
+							outputLimitField: this.#options.outputLimitField,
+						}),
+					),
 					signal: requestSignal,
 				});
 			} catch (error) {

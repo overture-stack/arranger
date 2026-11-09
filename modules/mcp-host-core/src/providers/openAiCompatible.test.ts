@@ -8,7 +8,7 @@ import { chunk, events, type ModelServer, startModelServer, usageChunk, writeStr
 import { assistantMessage, functionCall, functionCallOutput, userMessage } from '../messages.js';
 import { type ProviderRequest, type ProviderStreamItem } from '../provider.js';
 
-import { MAX_ERROR_BODY_CHARS, OpenAiCompatibleProvider, toWireMessages } from './openAiCompatible.js';
+import { MAX_ERROR_BODY_CHARS, OpenAiCompatibleProvider, toWireMessages, toWireRequest } from './openAiCompatible.js';
 
 const request = (overrides: Partial<ProviderRequest> = {}): ProviderRequest => ({
 	model: 'test-model',
@@ -92,6 +92,80 @@ suite('OpenAiCompatibleProvider', () => {
 				stream_options: { include_usage: true },
 				top_k: 1,
 			});
+		});
+
+		test('lets `extra` override a sampling field, and drops every reserved field from it', () => {
+			const body = toWireRequest(
+				request({
+					seed: 4,
+					tools: [{ name: 't', parameters: { type: 'object' } }],
+					extra: {
+						model: 'other',
+						messages: [],
+						tools: [],
+						stream: false,
+						stream_options: { include_usage: false },
+						n: 2,
+						seed: 9,
+						max_tokens: 1,
+						max_completion_tokens: 9_999,
+						temperature: 0.5,
+						top_k: 1,
+					},
+				}),
+				{ stream: true, sendReasoning: false },
+			);
+
+			assert.deepEqual(
+				{ ...body, messages: (body.messages as unknown[]).length, tools: (body.tools as unknown[]).length },
+				{
+					model: 'test-model',
+					messages: 2,
+					tools: 1,
+					temperature: 0.5,
+					top_p: 1,
+					seed: 4,
+					max_tokens: 100,
+					stream: true,
+					stream_options: { include_usage: true },
+					top_k: 1,
+				},
+			);
+		});
+
+		test('sends the reply cap in the configured field', async () => {
+			model.answer((_request, response) => writeStream(response, events(chunk({ content: 'ok' }, 'stop'))));
+			const before = model.requests.length;
+
+			await collect(
+				new OpenAiCompatibleProvider({ baseUrl: model.url, outputLimitField: 'max_completion_tokens' }),
+			);
+
+			const [sent] = model.requests.slice(before);
+			const body = sent?.body as Record<string, unknown>;
+			assert.equal(body.max_completion_tokens, 100);
+			assert.equal('max_tokens' in body, false);
+		});
+
+		test('refuses an `extra` that sets a reserved field, without sending anything', async () => {
+			const before = model.requests.length;
+
+			const items = await collect(
+				new OpenAiCompatibleProvider({ baseUrl: model.url }),
+				request({ extra: { top_k: 1, messages: [], n: 2, seed: 1, max_completion_tokens: 50 } }),
+			);
+
+			assert.deepEqual(items, [
+				{
+					type: 'error',
+					error: {
+						kind: 'unknown',
+						message:
+							"`model.extra` sets reserved fields: messages (host-core builds the conversation), n (only the first reply is read), seed (use `model.seed`), max_completion_tokens (use `model.maxOutputTokens`, and the provider's `outputLimitField`)",
+					},
+				},
+			]);
+			assert.equal(model.requests.length, before);
 		});
 
 		test("groups a turn's calls on its assistant message, and keys each result by the model's call id", () => {
@@ -209,6 +283,36 @@ suite('OpenAiCompatibleProvider', () => {
 			]) {
 				assert.doesNotThrow(() => new OpenAiCompatibleProvider({ baseUrl: loopback, apiKey: 'secret' }));
 			}
+		});
+
+		test('refuses an output limit field it does not know', () => {
+			assert.throws(
+				() =>
+					new OpenAiCompatibleProvider({
+						baseUrl: model.url,
+						outputLimitField: 'max_output_tokens' as 'max_tokens',
+					}),
+				TypeError,
+			);
+		});
+
+		test('refuses max_completion_tokens for Ollama, which ignores it', () => {
+			assert.throws(
+				() =>
+					new OpenAiCompatibleProvider({
+						baseUrl: model.url,
+						ollama: true,
+						outputLimitField: 'max_completion_tokens',
+					}),
+				{ name: 'TypeError', message: /Ollama ignores max_completion_tokens/ },
+			);
+			assert.doesNotThrow(
+				() =>
+					new OpenAiCompatibleProvider({ baseUrl: model.url, ollama: true, outputLimitField: 'max_tokens' }),
+			);
+			assert.doesNotThrow(
+				() => new OpenAiCompatibleProvider({ baseUrl: model.url, outputLimitField: 'max_completion_tokens' }),
+			);
 		});
 
 		test('refuses a request timeout a Node timer cannot hold', () => {
