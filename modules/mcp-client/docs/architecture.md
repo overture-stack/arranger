@@ -67,7 +67,7 @@ sequenceDiagram
 
     H->>C: connect(options, signal)
     C->>C: assertCredentialTransport(url)
-    Note over C: Throws if auth would go over plain HTTP<br/>to a non-loopback host without allowInsecureHttp
+    Note over C: Throws InsecureTransportError if auth would go<br/>over plain HTTP to a non-loopback host<br/>without allowInsecureHttp
     C->>S: new Client(clientInfo, options)
     Note over C,S: versionNegotiation pins 2026-07-28<br/>inputRequired.autoFulfill is false<br/>elicitation form is declared only with a resolver<br/>listChanged handlers only on opt-in
     C->>S: connect(StreamableHTTPClientTransport)

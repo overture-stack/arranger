@@ -113,24 +113,58 @@ const serverInfoOf = (discover: Awaited<ReturnType<Client['discover']>>): Surfac
 	return typeof name === 'string' && typeof version === 'string' ? { name, version } : undefined;
 };
 
-const isLoopback = (url: URL) =>
+/**
+ * Whether a URL points at this machine.
+ *
+ * @param url - The URL to check.
+ * @returns `true` for `localhost`, `[::1]`, and any `127.x.x.x` address.
+ */
+const isLoopback = (url: URL): boolean =>
 	url.hostname === 'localhost' || url.hostname === '[::1]' || /^127(\.\d{1,3}){3}$/.test(url.hostname);
+
+/**
+ * A credential would go over plain HTTP to a host other than this machine, without `allowInsecureHttp`.
+ *
+ * @remarks
+ * A `TypeError` subclass, so a caller can tell it from a network failure, which `fetch` also reports as a `TypeError`.
+ */
+export class InsecureTransportError extends TypeError {
+	/** The host the credential would have gone to. */
+	readonly host: string;
+
+	/**
+	 * @param host - The host the credential would have gone to.
+	 * @param credentialDescription - How the message names what would have been sent, such as "the API key". Never
+	 * the credential itself.
+	 */
+	constructor(host: string, credentialDescription: string) {
+		super(
+			`Refusing to send ${credentialDescription} over plain HTTP to ${host}: use https, a loopback address, or set allowInsecureHttp`,
+		);
+		this.name = 'InsecureTransportError';
+		this.host = host;
+	}
+}
 
 /**
  * Refuses to send a credential over plain HTTP to a host other than this machine.
  *
- * @param url - The server's endpoint.
- * @param options - The client's credential, and whether plain HTTP is allowed anyway.
- * @throws `Error` when `auth` is set, `url` is plain HTTP to a non-loopback host, and `allowInsecureHttp` is not set.
+ * @param url - Where the credential would go.
+ * @param options - Whether there is a credential, whether plain HTTP is allowed anyway, and how the message names
+ * it, such as "the API key". Never the credential itself.
+ * @throws {@link InsecureTransportError} when there is a credential, `url` is plain HTTP to a non-loopback host, and
+ * `allowInsecureHttp` is not set.
  */
 export const assertCredentialTransport = (
 	url: URL,
-	{ auth, allowInsecureHttp }: Pick<McpClientOptions, 'auth' | 'allowInsecureHttp'>,
+	{
+		hasCredential,
+		allowInsecureHttp,
+		credentialDescription = 'credentials',
+	}: { hasCredential: boolean; allowInsecureHttp?: boolean; credentialDescription?: string },
 ): void => {
-	if (auth && url.protocol === 'http:' && !isLoopback(url) && !allowInsecureHttp) {
-		throw new Error(
-			`Refusing to send credentials over plain HTTP to ${url.host}; use https, a loopback address, or set allowInsecureHttp`,
-		);
+	if (hasCredential && url.protocol === 'http:' && !isLoopback(url) && !allowInsecureHttp) {
+		throw new InsecureTransportError(url.host, credentialDescription);
 	}
 };
 
@@ -175,12 +209,15 @@ export class McpClient {
 	 * @param options - The server, credentials and resolver.
 	 * @param signal - Aborts connecting.
 	 * @returns A connected client.
-	 * @throws `Error` when `auth` would be sent over plain HTTP (see {@link McpClientOptions.auth}), and whatever the
-	 * SDK throws when connecting or reading the surface fails.
+	 * @throws {@link InsecureTransportError} when `auth` would be sent over plain HTTP (see
+	 * {@link McpClientOptions.auth}), and whatever the SDK throws when connecting or reading the surface fails.
 	 */
 	static async connect(options: McpClientOptions, signal?: AbortSignal): Promise<McpClient> {
 		const url = new URL(options.url);
-		assertCredentialTransport(url, options);
+		assertCredentialTransport(url, {
+			hasCredential: Boolean(options.auth),
+			allowInsecureHttp: options.allowInsecureHttp,
+		});
 
 		const clientOptions: ClientOptions = {
 			versionNegotiation: { mode: { pin: PROTOCOL_REVISION } },
