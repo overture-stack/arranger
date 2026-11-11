@@ -385,17 +385,6 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
    **Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
    **Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
 
-### `mcp-server` types its handlers with Express 4 while the MCP SDK serves them on its own Express 5
-
-**File:** `apps/mcp-server/src/http/app.ts`
-**Severity:** low (one Express major in the request path as of 2026-09-01; the type/runtime skew remains, with no compile-time signal)
-**Kind:** dependency management
-**Issue:** `http/app.ts:80` builds the serving app with `createMcpExpressApp` from `@modelcontextprotocol/sdk/server/express`, so the object handling every request is the SDK's own Express 5 (`node_modules/@modelcontextprotocol/sdk/node_modules/express` at 5.2.1). `http/app.ts:7` types that object and its handlers with `Express`, `Request`, and `Response` from Express 4. The mismatch does not surface as a type error because the root `overrides` block pins `@types/express` to `4.17.25` tree-wide, so the SDK's own `server/express.d.ts` resolves against Express 4 declarations too.
-
-Partially resolved 2026-09-01: `express` and `cors` are no longer declared by `apps/mcp-server`, so it no longer pulls a second Express 4 copy of its own. `@types/express` stays, since `http/app.ts` needs `Request` and `Response` for `req.body` and `res.status().json()`, and the `createMcpExpressApp` return type resolves against it. What remains is the version skew between those types and the Express 5 runtime.
-**Fix:** Align `@types/express` with the Express 5 runtime, or drop the Express typings in favour of whatever `@modelcontextprotocol/express@2` exposes at the SDK v2 migration, where `express` becomes a peer deliberately declared by the consumer.
-**Standalone:** no; the `@types/express` pin is shared with `apps/search-server` and `modules/graphql-router`, so realigning it is gated on those, and the cleanest resolution rides with the MCP SDK v2 migration
-
 ### MCP endpoint has no authentication (URGENT: block demo deployment)
 
 **File:** `apps/mcp-server/src/http/app.ts` (`createHttpApp`); `apps/mcp-server/src/utils/config.ts` (`envSchema`)

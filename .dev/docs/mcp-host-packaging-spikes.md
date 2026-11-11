@@ -2,6 +2,8 @@
 
 Three spikes, short throwaway experiments, run on 2026-10-16 and 2026-10-19, each testing one packaging claim by building something real: whether Ink compiles into a standalone binary, whether Tauri's sidecar survives real macOS entitlements, and whether Electron holds up under the same checks.
 
+§4 rechecks the Tauri and Electron findings against the releases current on 2026-11-11, from release notes and documentation rather than new builds.
+
 This document is the full record: exact versions, exact commands, exact errors, exact fixes. [`mcp-host-plan.md`](mcp-host/mcp-host-plan.md) carries the resulting decisions in condensed form; this is where to check them, reproduce them, or find the gap if a later Tauri, Electron or Node release changes the facts underneath them.
 
 Terms used below:
@@ -163,11 +165,13 @@ Because the sidecar tested here is a real Node/V8 standalone binary, exactly the
 
 ### The upstream issue's status
 
-`tauri-apps/tauri#16211` and its proposed fix, draft PR `#16212`, were filed by the same account (`author_association: NONE`) two minutes apart, drew no comments, and were both closed within about an hour, the PR unmerged, with no maintainer response on either. The issue's closed status therefore says nothing about whether Tauri has fixed the defect: to check a later release, re-run the reproduction above.
+`tauri-apps/tauri#16211` and its proposed fix, draft PR `#16212`, were filed by the same account (`author_association: NONE`) two minutes apart on 2026-10-05, drew no comments, and were both closed within about an hour by that same account, the issue as "not planned" and the PR unmerged, with no maintainer response on either. They were withdrawn, not rejected, and the issue's closed status says nothing about whether Tauri has fixed the defect: to check a later release, re-run the reproduction above.
 
 ### Outcome
 
-Tauri is ruled out. The failure is real, current (Tauri 2.12.4, Rust 1.99.1), CI-invisible, and structurally worse for this project specifically than for a generic Tauri app, because this project's sidecar is Node/V8 and therefore needs its own distinct entitlement that current Tauri has no clean way to grant separately from the main app's. §3 tests Electron against the same checks.
+The defect is real, current (Tauri 2.12.4, Rust 1.99.1), CI-invisible, and structurally worse for this project specifically than for a generic Tauri app, because this project's sidecar is Node/V8 and therefore needs its own distinct entitlement that current Tauri has no clean way to grant separately from the main app's.
+
+It rules Tauri out only for a main app holding a restricted entitlement, one that needs a provisioning profile. The CRE as planned holds none: it signs in through the system browser with a loopback redirect, and keeps tokens as ordinary keychain items. The choice of Electron therefore rests on its main process being Node, which runs `mcp-client` and host-core unchanged, where Tauri needs them compiled into a sidecar for every platform and a channel to its Rust core ([`mcp-host-plan.md`](mcp-host/mcp-host-plan.md) §2.4). The defect becomes decisive as well if the CRE ever needs a restricted entitlement. §3 tests Electron against the same checks.
 
 ---
 
@@ -175,7 +179,7 @@ Tauri is ruled out. The failure is real, current (Tauri 2.12.4, Rust 1.99.1), CI
 
 ### Why this was in question
 
-The Tauri spike above rules Tauri out but does not test Electron, and the separate Electron test it records (§2) never launched a process. This spike finds that test's cause, then runs the Tauri spike's checks against Electron: a real main-process workload, ad-hoc signed, under the hardened runtime, including the direct counterpart to Tauri's entitlement-leakage defect.
+The Tauri spike above reproduces Tauri's defect but does not test Electron, and the separate Electron test it records (§2) never launched a process. This spike finds that test's cause, then runs the Tauri spike's checks against Electron: a real main-process workload, ad-hoc signed, under the hardened runtime, including the direct counterpart to Tauri's entitlement-leakage defect.
 
 ### The root cause of the earlier inconclusive attempt: an inherited `ELECTRON_RUN_AS_NODE`
 
@@ -233,6 +237,8 @@ As with the Tauri spike's equivalent note, the case that matters most, a main ap
 
 No GUI keychain prompt appeared. `safeStorage` instead created a generic password item directly in the login keychain, named after the app with a `Safe Storage` suffix (account named with a `Key` suffix), the same naming convention already visible on this machine for other Chromium- and Electron-based apps (Chrome, Zoom and Steam each have their own). The app name used is `app.getName()`'s default, the nearest `package.json`'s own `name` field, not the packaged bundle's display name, worth knowing since a build pipeline that sets one but not the other would see a keychain item named after the wrong one. The test item was deleted immediately after confirming it.
 
+This round trip used the synchronous methods, which Electron 45 deprecates and 46 removes (§4). The asynchronous methods the CRE must use instead have not been run in a packaged, signed app.
+
 ### The fuses this plan requires, verified read back after signing
 
 `@electron/fuses`' `flipFuses` set the five fuses [§2.4](mcp-host/mcp-host-plan.md#24-cre-main-process) requires: `RunAsNode` off, `EnableNodeOptionsEnvironmentVariable` off, `EnableNodeCliInspectArguments` off, `EnableEmbeddedAsarIntegrityValidation` on, `OnlyLoadAppFromAsar` on. `getCurrentFuseWire` read every one back as set, both immediately after flipping and again after the final hardened-runtime signing pass that necessarily follows it, since flipping a fuse patches the binary, which invalidates any existing signature. The app, packaged with its default `app.asar` already in place, still launched cleanly afterward and completed the same JIT-plus-loopback workload as the control above, confirming `OnlyLoadAppFromAsar` does not stop the app's own code from running from inside the archive it is required to run from.
@@ -247,10 +253,53 @@ No GUI keychain prompt appeared. `safeStorage` instead created a generic passwor
 | Entitlement leakage to a helper                         | None, once entitlements are set per file | `codesign -d --entitlements -` on all 5 binaries                                                                                         |
 | Main app launch with the restricted entitlement, ad-hoc | Killed, as Tauri's was                   | Exit 137; amfid Code -424                                                                                                                |
 | Asymmetric case (valid main, bare helpers)              | Not tested                               | Needs a real Developer ID certificate and provisioning profile, which this environment lacks; the same holds for Tauri's equivalent case |
-| `safeStorage` round trip                                | Pass                                     | Encrypt/decrypt match; keychain item created silently, then deleted                                                                      |
+| `safeStorage` round trip                                | Pass                                     | Encrypt/decrypt match; keychain item created silently, then deleted. Synchronous methods only, now deprecated (§4)                       |
 | Required fuses, read back after signing                 | Pass                                     | All 5 read back set; app still launches                                                                                                  |
 
 Electron clears the same bar Tauri failed: no entitlement leakage to a helper, confirmed by inspecting every binary, provided the build gives each binary its entitlements explicitly rather than relying on `@electron/osx-sign`'s own defaults; and every other mechanism this plan's §2.4 depends on (a main-process workload modelled on host-core running under `allow-jit`, `safeStorage`, the required fuses) verified working under the hardened runtime. The one gap Tauri also has, the asymmetric real-certificate case, needs the same real signing credentials for both frameworks; it does not favour either one over the other.
+
+---
+
+## 4. State as of 2026-11-11
+
+A recheck of §2 and §3 against the releases current on 2026-11-11, read from release notes, issue trackers and documentation. Nothing was rebuilt.
+
+### Tauri
+
+- **Latest releases:** `tauri` 2.12.5 (2026-10-21), `@tauri-apps/cli` 2.12.4, `tauri-plugin-shell` 2.6.0 (2026-10-28), and 3.0.0-alpha.6 (2026-11-06), with no beta. None touches how sidecars are signed. Searching the Tauri repository for sidecar or `externalBin` entitlements finds only #16211 and #16212. The older #11992, on signing and notarizing `externalBin`, is still open. The §2 defect therefore stands.
+- **No official way to run JavaScript in Tauri's core.** `tauri-plugin-js` spawns Bun, Node or Deno as child processes or sidecars, the same model as §2, and `tauri-plugin-deno` embeds Deno and has not been updated since March 2025. Both are small community projects. Deno announced on 2026-10-09 that it is joining Cloudflare and will receive monthly fixes for one more year before development ends, which also applies to `deno desktop`, an experimental feature added in Deno 2.9.
+- **Secret storage:** the Stronghold plugin was deprecated on 2026-07-16 and will not ship in Tauri 3. The keychain plugin planned to replace it is a draft pull request (`plugins-workspace#2900`), last updated in May 2026. The Rust `keyring` crate (4.2.0) remains available.
+
+### Electron
+
+- **Versions:** Electron 45 is stable (released 2026-10-20). Electron 44, which §3 ran, reaches end of life on 2027-03-02 (tentative), and a new major arrives about every eight weeks.
+- **`safeStorage`:** Electron 45 deprecates the synchronous methods §3 used (`encryptString`, `decryptString`, `isEncryptionAvailable`), and Electron 46 removes them. `decryptStringAsync` can read data the synchronous methods wrote, and returns an object with a `result` field rather than a string. Availability is checked with `isAsyncEncryptionAvailable`.
+- **Linux:** with no secret store, an unrecognised desktop environment, or `--password-store="basic"`, `safeStorage` falls back to `basic_text`, encrypting with a hardcoded password, and `getSelectedStorageBackend()` reports it. Whether that call also reports the backend the asynchronous methods reach through the Freedesktop Portal, as in a Flatpak, is undocumented.
+- **ASAR integrity** is supported on macOS (Electron 16 and later) and Windows (30 and later), not Linux, and stays off unless the `EnableEmbeddedAsarIntegrityValidation` fuse is set.
+- **Electron 45 also changes:**
+    - A sandboxed preload script loses Node's `Buffer` and `setImmediate` globals.
+    - A `window.open()` child whose sandbox differs from its opener's gets its own process.
+    - A file inside the ASAR can only be opened through `fs`.
+- **Electron 46:** a utility process's `kill()` sends only SIGTERM.
+- **Unchanged:**
+    - Context isolation and sandbox defaults.
+    - The fuses' defaults, with `@electron/fuses` still 2.1.3.
+    - `@electron/osx-sign` (2.7.2) still applies `default.darwin.plist`, with camera, microphone, Bluetooth, USB, printing, location and photo-library entitlements, to any file `optionsForFile` gives no entitlements. §3's requirement to set each binary's entitlements explicitly stands.
+
+### Electrobun
+
+Electrobun runs its main process on Bun and draws with the system web view. At 2.0.6 (2026-11-04), it is the one new contender that would run `mcp-client` and host-core without a sidecar. It does not meet this plan's requirements yet:
+
+- It has no keychain interface. Bun's own `Bun.secrets` is labelled experimental.
+- Its build tool does not sign Windows releases.
+- Its documentation describes one entitlements file for executable and app signing, which looks like Tauri's §2 model. This was read from its documentation, not its code.
+- `mcp-client` and host-core are tested on Node, not Bun.
+
+### Outcome
+
+Electron stays. The decision rests on its Node main process (§2, Outcome). For the CRE, the changes since the spikes are the asynchronous `safeStorage` methods, the Linux `basic_text` check, and starting on Electron 45 or later, all now in `mcp-host-plan.md` §2.4. Still untested on any framework: the asymmetric real-certificate case, Windows, Linux, and the asynchronous `safeStorage` methods in a packaged, signed app.
+
+Sources: [Tauri releases](https://github.com/tauri-apps/tauri/releases), [tauri#16211](https://github.com/tauri-apps/tauri/issues/16211), [Stronghold deprecation](https://github.com/tauri-apps/plugins-workspace/issues/3494), [Deno joins Cloudflare](https://deno.com/blog/cloudflare), [Electron 45 release](https://www.electronjs.org/blog/electron-45-0), [Electron breaking changes](https://github.com/electron/electron/blob/main/docs/breaking-changes.md), [Electron release schedule](https://releases.electronjs.org/schedule), [`safeStorage`](https://github.com/electron/electron/blob/main/docs/api/safe-storage.md), [ASAR integrity](https://github.com/electron/electron/blob/main/docs/tutorial/asar-integrity.md), [Electrobun releases](https://github.com/blackboardsh/electrobun/releases), [Electrobun code signing](https://github.com/blackboardsh/electrobun/blob/main/docs/src/content/docs/electrobun/guides/code-signing.mdx), [`Bun.secrets`](https://github.com/oven-sh/bun/blob/main/docs/runtime/secrets.mdx).
 
 ---
 
@@ -258,3 +307,4 @@ Electron clears the same bar Tauri failed: no entitlement leakage to a helper, c
 
 - `mcp-host-plan.md` §2.4
 - `mcp-host-plan.md` Phase 5
+- `arranger-auth/mcp-host-connections.md` §4, for `safeStorage` on Linux
