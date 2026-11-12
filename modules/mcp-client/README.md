@@ -7,7 +7,7 @@ One connection to one MCP server over Streamable HTTP, for an MCP host. It wraps
 - resolves every call with an outcome instead of throwing;
 - snapshots the server's surface, with a hash that ignores its version and cache hints.
 
-Not published yet: the package is `private` until the hardening entries for this module in `.dev/tech-debt.md` are fixed (MCP Host Plan, Phase 5).
+Not published: the package is `private`, and it is moving to the CRE repository as `@overture-stack/mcp-client` (MCP Host Plan, Phase 5), which publishes it once its hardening entries in `.dev/tech-debt.md` are fixed.
 
 - Design: [MCP Host Plan](../../.dev/docs/mcp-host/mcp-host-plan.md) §2.1
 - Architecture: [`mcp-client` Architecture](docs/architecture.md)
