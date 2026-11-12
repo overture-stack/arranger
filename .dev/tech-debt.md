@@ -96,7 +96,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 ### Output validation must bound its running time for a server's schema
 
 **File:** `modules/mcp-client/src/outputValidation.ts`
-**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
+**Severity:** blocks publishing `mcp-client` (MCP host plan §4.1), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
 **Kind:** hardening
 **Issue:** A tool's `outputSchema` comes from the server, and validating `structuredContent` against it must finish within a bounded time whatever the schema says. The size and depth limits bound compiling, not validating.
 **Fix:** Run validation under a time limit, for example in a worker, or configure Ajv's regular expressions with a linear-time engine. Report a validation that does not finish as `output_invalid`. Test that it ends within the limit.
@@ -105,7 +105,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 ### Responses from a server must have a size limit
 
 **File:** `modules/mcp-client/src/client.ts` (the transport)
-**Severity:** blocks publishing `mcp-client` (MCP host plan, Phase 5), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
+**Severity:** blocks publishing `mcp-client` (MCP host plan §4.1), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
 **Kind:** hardening
 **Issue:** A response body must be bounded before the SDK parses it, for list results and call results alike.
 **Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.
@@ -125,7 +125,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **File:** `modules/mcp-client/package.json` and `modules/mcp-host-core/package.json` (`"private": true`); the npm publish stage in `vars/pipelineOvertureArranger.groovy` (`jenkins-pipeline-library`)
 **Severity:** low
 **Kind:** release pipeline
-**Issue:** The publish stage runs `npm publish -w` for every `modules/*` package whose version differs from npm (`.dev/docs/release-process.md` § 3). npm 11.19 skips a private workspace with a warning and continues (`lib/commands/publish.js`), but the agent's npm version is unchecked. An npm that throws instead would fail the stage at `mcp-client`, and the packages after it would not publish. `mcp-host-core` has the same exposure, and stays private for good in this repository (it moves to the CRE repository in Phase 5).
+**Issue:** The publish stage runs `npm publish -w` for every `modules/*` package whose version differs from npm (`.dev/docs/release-process.md` § 3). npm 11.19 skips a private workspace with a warning and continues (`lib/commands/publish.js`), but the agent's npm version is unchecked. An npm that throws instead would fail the stage at `mcp-client`, and the packages after it would not publish. `mcp-host-core` has the same exposure. Both stay private until they move to the CRE repository in Phase 5, which removes the exposure.
 **Fix:** Check `npm --version` in the agent's image. If it does not skip private workspaces, add a `private` check to the loop, as `scripts/verify-pack.mjs` already does.
 **Standalone:** yes
 
@@ -140,7 +140,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Kind:** API surface
 **Issue:** The index exports helpers a consumer rarely needs, such as `TOOL_MESSAGES`, `reduceToolName`, `carriedLabel` and `MAX_ERROR_BODY_CHARS`, and every public vocabulary in `constants.ts`, from `EVENT_TYPES` to `LEFT_OUT_REASONS`. If the MCP host plan's question 3 settles on `apps/mcp-eval` with a published, pinned host-core, every export becomes API whose change needs a new major version.
 **Fix:** Before the first publish, keep what `chat`, `eval` and the CRE main process actually import, and move the rest out of the index.
-**Standalone:** no; decide with the plan's question 3, before Phase 5
+**Standalone:** no; decide with the plan's question 3, before host-core is first published
 
 ### Servers are ordered by when they connected, not by their configuration
 
@@ -385,38 +385,35 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
    **Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
    **Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
 
-### `mcp-server` types its handlers with Express 4 while the MCP SDK serves them on its own Express 5
-
-**File:** `apps/mcp-server/src/http/app.ts`
-**Severity:** low (one Express major in the request path as of 2026-09-01; the type/runtime skew remains, with no compile-time signal)
-**Kind:** dependency management
-**Issue:** `http/app.ts:80` builds the serving app with `createMcpExpressApp` from `@modelcontextprotocol/sdk/server/express`, so the object handling every request is the SDK's own Express 5 (`node_modules/@modelcontextprotocol/sdk/node_modules/express` at 5.2.1). `http/app.ts:7` types that object and its handlers with `Express`, `Request`, and `Response` from Express 4. The mismatch does not surface as a type error because the root `overrides` block pins `@types/express` to `4.17.25` tree-wide, so the SDK's own `server/express.d.ts` resolves against Express 4 declarations too.
-
-Partially resolved 2026-09-01: `express` and `cors` are no longer declared by `apps/mcp-server`, so it no longer pulls a second Express 4 copy of its own. `@types/express` stays, since `http/app.ts` needs `Request` and `Response` for `req.body` and `res.status().json()`, and the `createMcpExpressApp` return type resolves against it. What remains is the version skew between those types and the Express 5 runtime.
-**Fix:** Align `@types/express` with the Express 5 runtime, or drop the Express typings in favour of whatever `@modelcontextprotocol/express@2` exposes at the SDK v2 migration, where `express` becomes a peer deliberately declared by the consumer.
-**Standalone:** no; the `@types/express` pin is shared with `apps/search-server` and `modules/graphql-router`, so realigning it is gated on those, and the cleanest resolution rides with the MCP SDK v2 migration
-
 ### MCP endpoint has no authentication (URGENT: block demo deployment)
 
-**File:** `apps/mcp-server/src/http/app.ts` (`createHttpApp`); `apps/mcp-server/src/utils/config.ts` (`envSchema`)
-**Severity:** critical (OWASP A01: Broken Access Control; any reachable agent can invoke all tools and read all catalogue data)
+**File:** `apps/mcp-server/src/http/server.ts` (the request handler); `apps/mcp-server/src/utils/config.ts` (`envSchema`)
+**Severity:** critical (OWASP A01: Broken Access Control; any reachable client can invoke all tools and read all catalogue data)
 **Kind:** missing security control
-**Issue:** The MCP endpoint accepts all incoming requests with no authentication check. In a demo or staging environment accessible over a network, any agent or automated client that can reach the port can call `list_catalogues`, `get_catalogue_fields`, and `execute_query` without restriction. There is no API key, bearer token, client certificate, or IP allowlist in place.
-**Fix:** Add a configurable API key check as middleware in `createHttpApp`, applied before the `postHandler` and `sessionHandler` routes. Read the key from a `MCP_API_KEY` env var; if set, reject requests that do not include `Authorization: Bearer <key>` with a `401`. If unset, warn at startup that the endpoint is unauthenticated. For demo environments, always set `MCP_API_KEY`. For production, explore OAuth 2.0 or mTLS as a stronger option. The MCP SDK does not impose an auth mechanism; the middleware layer is the correct place to enforce it.
-**Standalone:** yes; self-contained middleware addition to `app.ts` plus one new env var in `config.ts`
+**Issue:** The Host and Origin guards stop web pages, not other programs: the Origin guard passes any request without an `Origin` header. On a non-loopback bind, anything that reaches the port can call every tool. Until this is fixed, the CRE can only connect safely to an `apps/mcp-server` on the person's own machine (MCP host plan §2.6).
+**Fix:** Verify the signed-in person's own bearer token on every request (MCP host plan §2.4; [connection authentication](docs/arranger-auth/mcp-host-connections.md) §3). Never use a shared key, which would make the server a confused deputy ([MCP platform testing](docs/mcp-platform-testing.md) §5.4.1). A static key is acceptable at most as a stopgap for a demonstration on open data.
+
+- After the guards and before `readCappedJsonBody`, call the SDK's `verifyBearerToken` with `expectedResource` set to this server, and answer a failure with `bearerAuthChallengeResponse` with `resourceMetadataUrl` set. Serve the protected-resource metadata with `oauthMetadataResponse` ([SDK v2 upgrade plan](docs/mcp-sdk-v2-upgrade-plan.md), "Later: when auth lands").
+- The verifier puts the token's `sub` in `AuthInfo.extra`. Set the result on `req.auth`, which reaches the handlers as `authInfo`.
+- Add the issuer and the resource identifier to `envSchema`, required on any non-loopback bind.
+
+Exchanging the token for the search server's (shape (i)) comes next, with the Usher work.
+**Standalone:** no. It needs the MCP server registered with the deployment's Keycloak, and lands with the `bind` entry below.
 
 ### MCP endpoint has no rate limiting (URGENT: block demo deployment)
 
-**File:** `apps/mcp-server/src/http/app.ts` (`createHttpApp`)
-**Severity:** high (OWASP A05: Security Misconfiguration; adversarial agents can flood the endpoint and exhaust memory or downstream Arranger connections)
+**File:** `apps/mcp-server/src/http/server.ts` (the request handler)
+**Severity:** high (OWASP A05: Security Misconfiguration; a client can flood the endpoint and, through it, Arranger)
 **Kind:** missing security control
-**Issue:** There is no per-client or global request rate limit on the MCP endpoint. An adversarial agent can:
+**Issue:** Nothing limits request rate. #1099 removed the session map, but each request still costs a body read and a server instance, and each `get_catalogue_fields` and `execute_query` call reaches Arranger, which has no rate limit either.
+**Fix:** First decide whether the limit lives in the app or at the gateway, as the roadmap's "Request rate limiting" item asks of Arranger. Only a gateway covers several replicas. In the app, `express-rate-limit` has no `node:http` drop-in, so use a small in-memory counter:
 
-- Open a large number of concurrent sessions, filling the `transports` map (memory exhaustion; see existing session-map entry).
-- Issue rapid-fire tool calls within a single session, generating a corresponding flood of HTTP requests to Arranger.
-  Neither the MCP transport layer nor Express applies any backpressure.
-  **Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
-  **Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
+- after the authentication check and before `readCappedJsonBody`;
+- answering `429` with `Retry-After`;
+- keyed on the authenticated subject, or until then on the socket's client IP, unless a trusted gateway sets `X-Forwarded-For`;
+- configured in `envSchema`.
+
+**Standalone:** the decision is. Keying on the person waits on the entry above.
 
 ### `get_catalogue_fields` and `execute_query` must validate `catalogueId` before any request
 
@@ -2342,7 +2339,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 
 ### The repo is AGPL-3.0 but no package declares a `license`, so the five published packages show none on npm
 
-**File:** root `LICENSE` (AGPL-3.0, tracked since 2021); no `license` field in root `package.json`, `modules/{charts,components,graphql-router,mcp-client,sqon,types}/package.json`, or either `apps/*/package.json`. `mcp-client` becomes the sixth when it publishes (MCP host plan, Phase 5).
+**File:** root `LICENSE` (AGPL-3.0, tracked since 2021); no `license` field in root `package.json`, `modules/{charts,components,graphql-router,mcp-client,sqon,types}/package.json`, or either `apps/*/package.json`. `mcp-client` gets one when it moves to the CRE repository (MCP host plan, Phase 5).
 **Severity:** medium (higher for the client-side packages, see below)
 **Kind:** packaging / licensing
 **Issue:** Verified across all eight manifests: not one declares `license`. npm therefore renders all five published packages with no license, and `npm pack --dry-run` confirms no package ships a copy of the licence text either (each tarball is `README.md`, `dist/`, and `package.json`). This is worse than being unlicensed: the project genuinely _is_ AGPL-3.0, a strong copyleft licence with real obligations, and the automated compliance gate that would flag it in a consumer's pipeline never fires because there is nothing to read. Arranger's consumers are exactly the institutional and clinical integrators most likely to run such gates.
@@ -2352,7 +2349,7 @@ Worth deciding rather than assuming: AGPL's network-use clause has materially di
 **Confirmed as an oversight, not a deliberate position (2026-08-17):** surveying the sibling Overture clones, `lectern`, `js-lectern-client`, and `maestro` declare `AGPL-3.0`, while `lyric`, `sqon-builder`, and `website` declare `AGPL-3.0-or-later`. Only `arranger`, `stage`, `dms-ui`, `ego-ui`, and `dms-jbrowse-components` omit it. GitHub itself reports this repo correctly (`license.spdx_id: "AGPL-3.0"`, detected from the `LICENSE` file); it is only the npm packuments that carry nothing. **Sharpest instance:** `@overture-stack/sqon-builder` declares `AGPL-3.0-or-later` and `@overture-stack/sqon`, the package actively replacing it, declares nothing. A consumer who migrates on the project's own advice moves from a cleanly-licensed dependency to an unlicensed one, and their compliance tooling flags the migration as a regression. Fix `modules/sqon` before its next `rc` publish.
 
 Separately, no copyright holder is asserted anywhere: `LICENSE` still carries the unfilled FSF boilerplate (`Copyright (C) <year> <name of author>`), no source file has a licence header, and `README.md` has no License section. `git log --follow` shows GPL v3 added 2018-01-08 and switched to AGPL 2018-02-05, untouched since.
-**Fix:** Add `"license": "AGPL-3.0-or-later"` (matching the newer siblings' SPDX form, which is what the LICENSE's own "or any later version" boilerplate actually grants) to all five publishable packages and `mcp-client` (before its Phase 5 publish), plus the two apps and the root for consistency. Settle the client-side question first for `components`/`charts` specifically, since declaring it will make the position visible to external integrators for the first time and is worth doing deliberately before the first non-`rc` `1.0.0`. Add a copyright line to `LICENSE` and a short License section to `README.md`.
+**Fix:** Add `"license": "AGPL-3.0-or-later"` (matching the newer siblings' SPDX form, which is what the LICENSE's own "or any later version" boilerplate actually grants) to all five publishable packages, plus the two apps and the root for consistency. Settle the client-side question first for `components`/`charts` specifically, since declaring it will make the position visible to external integrators for the first time and is worth doing deliberately before the first non-`rc` `1.0.0`. Add a copyright line to `LICENSE` and a short License section to `README.md`.
 **Standalone:** the three server-side packages are standalone and should not wait; `components`/`charts` need the client-side question answered first.
 
 ### `.turbo/turbo-build.log` included in published tarballs

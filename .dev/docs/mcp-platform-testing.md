@@ -375,7 +375,7 @@ Host-core's OpenAI-compatible provider, pointed at `LLM_BASE_URL`, keeps the har
 
 #### 5.3.3 Runner and results store
 
-- **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them. Both apply `mcp-client`'s exported pure functions (the surface canonicalization and hash) to the raw SDK client's responses, so the suite still bypasses this stack's connection path and depends on nothing that leaves this repository.
+- **L1** stays in `integration-tests/mcp-server` on `node:test`, extending what exists. The static-surface token budget check and `surfaceStability` go here: no model, no reason to move them. Both apply `mcp-client`'s exported pure functions (the surface canonicalization and hash) to the raw SDK client's responses, so the suite still bypasses this stack's connection path. `mcp-client` moves to the CRE repository (host plan Phase 5), so L1 pins a version published from there. A version that changes the canonicalization changes every hash, so raising the pin is a re-baseline ([§7](#7-implementation-plan), Phase 6).
 - **L2 and L3** run as `eval`, through its subcommands `run`, `judge`, `agreement`, `compare` and `bootstrap-expectations` ([MCP host plan](mcp-host/mcp-host-plan.md) §2.3).
     - Invoked explicitly, never from `npm test`. These are budgeted experiments, not tests, and should not sit where they can fail a build by accident.
 
@@ -414,7 +414,7 @@ Both are supported, selected by `MCP_MODE`. The surface hash works identically i
 **Remote.** Connects to a deployed MCP server over Streamable HTTP, which is what testing a real deployment and whatever auth sits in front of it requires. Two things block it:
 
 - **Version attribution.** The server reports only its package version, `0.0.0-dev` on `main`, so a remote result cannot be tied to a commit. That breaks the comparison premise entirely. The fix is for the server to report a build identifier, as a **dedicated resource** and in its `server/discover` version. This belongs with the roadmap's "Arranger version exposure" item. **Until it exists, remote mode can smoke-test a deployment but cannot compare anything.**
-- **Auth.** Once `MCP_API_KEY` lands (an URGENT tech-debt item), the harness has to send it. Build the header plumbing in from the start. **It does not change [§0](#0-environment-assumptions)'s assumption:** an API key authenticates the transport, it does not make a request attributable to a principal. Arranger still receives no identity and still computes one filter for every caller. The tempting shortcut when that changes, giving the MCP server a single service credential, would make it a confused deputy: its authority rather than the caller's would decide what every caller sees.
+- **Auth.** Once the endpoint authenticates callers (an URGENT tech-debt item), the harness sends a test account's bearer token. Build the header plumbing in from the start. **It does not change [§0](#0-environment-assumptions)'s assumption:** Arranger still receives no identity, and computes one filter for every caller, until the MCP server exchanges the person's token for the search server's. The tempting shortcut when that changes, giving the MCP server a single service credential, would make it a confused deputy: its authority rather than the caller's would decide what every caller sees.
 
 #### 5.4.2 Rebuild before local runs
 
@@ -437,7 +437,7 @@ Per the repo convention in `AGENTS.md`, one module in the app that hosts `eval` 
 
 - `MCP_MODE` = `local` | `remote`
 - `MCP_SERVER_URL` (remote mode)
-- `MCP_API_KEY` (remote mode, once implemented)
+- `MCP_BEARER_TOKEN` (remote mode, once the endpoint authenticates callers)
 - `MCP_HOST`, `MCP_PORT`, `MCP_PATH` (local mode, mirroring `apps/mcp-server` config)
 - `MCP_REQUEST_TIMEOUT_MS`
 
