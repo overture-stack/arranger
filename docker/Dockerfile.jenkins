@@ -26,7 +26,8 @@ RUN npm ci \
 	--workspace apps/mcp-server \
 	--workspace modules/graphql-router \
 	--workspace modules/types \
-	--workspace modules/sqon
+	--workspace modules/sqon \
+	--workspace modules/usher-adapter
 
 CMD ["/bin/sh"]
 
@@ -80,6 +81,12 @@ COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
 	$APP_FOLDER/modules/sqon/package.json \
 	./modules/sqon/package.json
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/usher-adapter/dist \
+	./modules/usher-adapter/dist
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/usher-adapter/package.json \
+	./modules/usher-adapter/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/ping-elasticsearch.sh ./scripts/ping-elasticsearch.sh
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/retry-command.sh ./scripts/retry-command.sh
 
