@@ -1,0 +1,180 @@
+// The conversation's items, shaped after the Responses API's. The rest of host-core uses the constructors and readers
+// below, so a change of shape stays here, apart from each provider, which maps items to its own wire format.
+import { ITEM_TYPES, ROLES } from './constants.js';
+import { isRecord } from './utils.js';
+
+/** A person's message, or a prompt's user turn. */
+export type UserMessage = { type: typeof ITEM_TYPES.MESSAGE; role: typeof ROLES.USER; text: string };
+
+/** The model's text, or a prompt's assistant turn. */
+export type AssistantMessage = {
+	type: typeof ITEM_TYPES.MESSAGE;
+	role: typeof ROLES.ASSISTANT;
+	text: string;
+	/** Reasoning the model returned. The provider decides whether to send it back. */
+	reasoning?: string;
+	/** Set when the reply was cut off at the output limit. */
+	truncated?: true;
+	/** Opaque to host-core, such as encrypted reasoning, for the provider that produced them. */
+	providerItems?: unknown[];
+};
+
+/** A tool call the model made, well-formed or not. */
+export type FunctionCall = {
+	type: typeof ITEM_TYPES.FUNCTION_CALL;
+	/** Host-core's id, unique within the conversation. */
+	callId: string;
+	/** The id the model gave the call, as received. */
+	modelCallId?: string;
+	/** The model-facing tool name, as received. */
+	name: string;
+	/** The arguments as received, unparsed. */
+	arguments: string;
+};
+
+/** The tool message for one call: what the model is sent about it. */
+export type FunctionCallOutput = {
+	type: typeof ITEM_TYPES.FUNCTION_CALL_OUTPUT;
+	callId: string;
+	output: string;
+	isError: boolean;
+};
+
+/** One item of a conversation. */
+export type ConversationItem = UserMessage | AssistantMessage | FunctionCall | FunctionCallOutput;
+
+/**
+ * A person's message.
+ *
+ * @param text - What they wrote, or a prompt's user turn.
+ */
+export const userMessage = (text: string): UserMessage => ({ type: ITEM_TYPES.MESSAGE, role: ROLES.USER, text });
+
+/**
+ * The model's text.
+ *
+ * @param text - The visible reply, which may be empty when only reasoning or provider items came back.
+ * @param extras - Reasoning, the cut-off mark, and provider-specific items, each kept only when set.
+ */
+export const assistantMessage = (
+	text: string,
+	extras: Pick<AssistantMessage, 'reasoning' | 'truncated' | 'providerItems'> = {},
+): AssistantMessage => ({
+	type: ITEM_TYPES.MESSAGE,
+	role: ROLES.ASSISTANT,
+	text,
+	...(extras.reasoning !== undefined && { reasoning: extras.reasoning }),
+	...(extras.truncated && { truncated: true }),
+	...(extras.providerItems !== undefined && { providerItems: extras.providerItems }),
+});
+
+/**
+ * A tool call the model made.
+ *
+ * @param call - Host-core's call id, the model's own id when it gave one, and the name and arguments as received.
+ */
+export const functionCall = (call: Omit<FunctionCall, 'type'>): FunctionCall => ({
+	type: ITEM_TYPES.FUNCTION_CALL,
+	callId: call.callId,
+	...(call.modelCallId !== undefined && { modelCallId: call.modelCallId }),
+	name: call.name,
+	arguments: call.arguments,
+});
+
+/**
+ * The tool message for a call.
+ *
+ * @param callId - Host-core's id for the call it answers.
+ * @param output - What the model is sent about the call.
+ * @param isError - Whether the call failed, or did not run.
+ */
+export const functionCallOutput = (callId: string, output: string, isError: boolean): FunctionCallOutput => ({
+	type: ITEM_TYPES.FUNCTION_CALL_OUTPUT,
+	callId,
+	output,
+	isError,
+});
+
+/** Whether an item is a tool call. */
+export const isFunctionCall = (item: ConversationItem): item is FunctionCall => item.type === ITEM_TYPES.FUNCTION_CALL;
+
+/** Whether an item is a tool message. */
+export const isFunctionCallOutput = (item: ConversationItem): item is FunctionCallOutput =>
+	item.type === ITEM_TYPES.FUNCTION_CALL_OUTPUT;
+
+/** Whether an item is a person's or the model's message. */
+export const isMessage = (item: ConversationItem): item is UserMessage | AssistantMessage =>
+	item.type === ITEM_TYPES.MESSAGE;
+
+/**
+ * Checks that a value read back from storage has an item's shape.
+ *
+ * @param value - Anything, such as one entry of a saved state's items.
+ * @returns Whether it has its type's required fields, with the right types.
+ */
+export const isConversationItem = (value: unknown): value is ConversationItem => {
+	if (!isRecord(value)) {
+		return false;
+	}
+	switch (value.type) {
+		case ITEM_TYPES.MESSAGE:
+			return (value.role === ROLES.USER || value.role === ROLES.ASSISTANT) && typeof value.text === 'string';
+		case ITEM_TYPES.FUNCTION_CALL:
+			return (
+				typeof value.callId === 'string' &&
+				typeof value.name === 'string' &&
+				typeof value.arguments === 'string'
+			);
+		case ITEM_TYPES.FUNCTION_CALL_OUTPUT:
+			return (
+				typeof value.callId === 'string' &&
+				typeof value.output === 'string' &&
+				typeof value.isError === 'boolean'
+			);
+		default:
+			return false;
+	}
+};
+
+/**
+ * Finds the calls that have no tool message yet.
+ *
+ * @param items - The conversation.
+ * @returns The unanswered calls, in order.
+ */
+export const unansweredCalls = (items: readonly ConversationItem[]): FunctionCall[] => {
+	const answered = new Set(items.filter(isFunctionCallOutput).map(({ callId }) => callId));
+	return items.filter(isFunctionCall).filter(({ callId }) => !answered.has(callId));
+};
+
+/**
+ * Gives every call that has no tool message one, as an error.
+ *
+ * @param items - The conversation, which is changed.
+ * @param messageFor - The tool message for each unanswered call.
+ */
+export const answerUnanswered = (items: ConversationItem[], messageFor: (callId: string) => string): void => {
+	for (const { callId } of unansweredCalls(items)) {
+		items.push(functionCallOutput(callId, messageFor(callId), true));
+	}
+};
+
+/**
+ * Counts the characters of an item that a provider sends, for the context-window estimate.
+ *
+ * @param item - One item of the conversation.
+ * @param sendsReasoning - Whether the provider sends an assistant turn's reasoning back, so that it counts too.
+ * @returns The characters sent. Provider items are left out, since they are opaque.
+ */
+export const sentCharacters = (item: ConversationItem, sendsReasoning = false): number => {
+	switch (item.type) {
+		case ITEM_TYPES.MESSAGE:
+			return (
+				item.text.length + (sendsReasoning && item.role === ROLES.ASSISTANT ? (item.reasoning?.length ?? 0) : 0)
+			);
+		case ITEM_TYPES.FUNCTION_CALL:
+			return item.name.length + item.arguments.length;
+		case ITEM_TYPES.FUNCTION_CALL_OUTPUT:
+			return item.output.length;
+	}
+};

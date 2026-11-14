@@ -100,7 +100,7 @@ Setup, flags and the client's limits are in `apps/mcp-server/README.md` § Chatt
     - a dummy `OPENAI_API_KEY`;
     - the whole tool workflow, including the `execute_query` confirmation;
     - raising `OLLAMA_CONTEXT_LENGTH` on the Ollama server to stop prompt truncation.
-- **Still unverified:** whether Ollama honours the client's reply cap, sent as `max_completion_tokens`, or ignores it.
+- **Verified 2026-11-09, Ollama 0.34.3:** it ignores `max_completion_tokens`, so the client's reply cap has no effect there.
 
 There is no official per-client matrix of protocol revisions. `modelcontextprotocol.io/clients` redirects to the docs home, and the extensions client matrix does not track revisions.
 

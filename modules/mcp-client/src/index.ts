@@ -1,4 +1,6 @@
 export {
+	assertCredentialTransport,
+	InsecureTransportError,
 	McpClient,
 	type McpClientOptions,
 	PROTOCOL_REVISION,

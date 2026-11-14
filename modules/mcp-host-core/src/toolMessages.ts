@@ -1,0 +1,146 @@
+// Every tool call gets one tool message, with fixed wording so transcripts compare.
+import { type CallOutcome, type CallToolResult } from '@overture-stack/arranger-mcp-client';
+
+import { type DENIED_BY, HOST_OUTCOMES } from './constants.js';
+import { type ObjectValues } from './utils.js';
+/**
+ * The fixed wording of every tool message host-core writes itself, so transcripts compare across runs and models.
+ * A `result` sends the tool's own content instead, and a crossing refusal uses {@link crossingRefusedMessage}.
+ */
+export const TOOL_MESSAGES = {
+	outputInvalid: "The result did not match the tool's declared output",
+	rejected: 'The server rejected the call',
+	inputStateRejected: 'The confirmation was no longer accepted; the call did not run',
+	inputFailed: 'The confirmation could not be answered; the call did not run',
+	roundsExceeded: 'The server kept asking for input; the call was abandoned',
+	cancelled: 'The user cancelled the call',
+	transportError: 'No usable answer came back; whether the call ran is unknown',
+	denied: 'The user declined the call',
+	malformed: 'The call could not be parsed',
+	unknownTool: 'There is no tool with this name',
+	notRun: 'The run stopped before this call',
+	abandoned: 'The confirmation was abandoned; the call did not run',
+} as const;
+
+/**
+ * The tool message for a call host-core refused as a data crossing, naming both sides, so the model can explain it.
+ *
+ * @param server - The server the call was to.
+ * @param heldFrom - The servers whose restricted data the call would have carried out.
+ */
+export const crossingRefusedMessage = (server: string, heldFrom: readonly string[]): string =>
+	`Not run: this conversation holds data from ${heldFrom.length === 1 ? 'server' : 'servers'} ${heldFrom.map((key) => `"${key}"`).join(', ')}, which may not reach server "${server}". Only the user can carry data to another server.`;
+
+/** How a call ended when host-core, not `mcp-client`, decided it. */
+export type HostOutcome =
+	| { outcome: typeof HOST_OUTCOMES.DENIED; by: ObjectValues<typeof DENIED_BY>; message?: string }
+	| { outcome: typeof HOST_OUTCOMES.MALFORMED }
+	| { outcome: typeof HOST_OUTCOMES.UNKNOWN_TOOL }
+	| { outcome: typeof HOST_OUTCOMES.NOT_RUN }
+	| { outcome: typeof HOST_OUTCOMES.ABANDONED }
+	| { outcome: typeof HOST_OUTCOMES.CROSSING_REFUSED; server: string; heldFrom: string[] };
+
+/** Every way a tool call can end. Plain data. */
+export type ToolCallOutcome = CallOutcome<CallToolResult> | HostOutcome;
+
+/** A tool message, before any length cap. */
+export type ToolMessage = { text: string; isError: boolean };
+
+/** One block of a tool result's or a prompt message's content. */
+type ContentBlock = CallToolResult['content'][number];
+
+/**
+ * The text of one content block, as the model is sent it.
+ *
+ * @param block - A tool result's or a prompt message's content.
+ * @returns The text, a fixed placeholder for other content, or `undefined` for an unknown block type.
+ */
+export const renderContent = (block: ContentBlock): string | undefined => {
+	switch (block.type) {
+		case 'text':
+			return block.text;
+		case 'image':
+		case 'audio':
+			return `[${block.type} omitted]`;
+		case 'resource':
+			return `[resource omitted: ${block.resource.uri}]`;
+		case 'resource_link':
+			return `[resource link: ${block.uri}]`;
+		default:
+			return undefined;
+	}
+};
+
+/**
+ * The text of a tool result, as the model is sent it.
+ *
+ * @remarks
+ * Text blocks are joined with newlines, and other blocks become a fixed placeholder. `structuredContent` is sent only
+ * when there is no text block: the specification asks a server that returns it to send the same as text too.
+ *
+ * @param result - The tool's result.
+ * @returns The text, which may be empty.
+ */
+export const renderToolResult = (result: CallToolResult): string => {
+	const content = result.content ?? [];
+	if (!content.some(({ type }) => type === 'text') && result.structuredContent !== undefined) {
+		return JSON.stringify(result.structuredContent);
+	}
+	return content
+		.map(renderContent)
+		.filter((text) => text !== undefined)
+		.join('\n');
+};
+
+/**
+ * The tool message for a call's outcome.
+ *
+ * @param outcome - How the call ended.
+ * @returns The fixed wording, or the result's text; an error unless the tool ran without `isError`.
+ */
+export const toolMessageFor = (outcome: ToolCallOutcome): ToolMessage => {
+	switch (outcome.outcome) {
+		// `mcp-client`'s outcomes.
+		case 'result':
+			return { text: renderToolResult(outcome.result), isError: outcome.result.isError === true };
+		case 'output_invalid':
+			return { text: TOOL_MESSAGES.outputInvalid, isError: true };
+		case 'rejected':
+			return { text: `${TOOL_MESSAGES.rejected}: ${outcome.message}`, isError: true };
+		case 'input_state_rejected':
+			return { text: TOOL_MESSAGES.inputStateRejected, isError: true };
+		case 'input_failed':
+			return { text: TOOL_MESSAGES.inputFailed, isError: true };
+		case 'rounds_exceeded':
+			return { text: TOOL_MESSAGES.roundsExceeded, isError: true };
+		case 'cancelled':
+			return { text: TOOL_MESSAGES.cancelled, isError: true };
+		case 'transport_error':
+			return { text: TOOL_MESSAGES.transportError, isError: true };
+		// Host-core's own.
+		case HOST_OUTCOMES.DENIED:
+			return { text: TOOL_MESSAGES.denied, isError: true };
+		case HOST_OUTCOMES.MALFORMED:
+			return { text: TOOL_MESSAGES.malformed, isError: true };
+		case HOST_OUTCOMES.UNKNOWN_TOOL:
+			return { text: TOOL_MESSAGES.unknownTool, isError: true };
+		case HOST_OUTCOMES.NOT_RUN:
+			return { text: TOOL_MESSAGES.notRun, isError: true };
+		case HOST_OUTCOMES.ABANDONED:
+			return { text: TOOL_MESSAGES.abandoned, isError: true };
+		case HOST_OUTCOMES.CROSSING_REFUSED:
+			return { text: crossingRefusedMessage(outcome.server, outcome.heldFrom), isError: true };
+	}
+};
+
+/**
+ * Cuts a tool message to a length, noting the cut.
+ *
+ * @param text - The tool message.
+ * @param maxChars - The cap; `undefined` for none.
+ * @returns The text, cut with a note when it was longer than `maxChars`.
+ */
+export const capToolMessage = (text: string, maxChars: number | undefined): string =>
+	maxChars === undefined || text.length <= maxChars
+		? text
+		: `${text.slice(0, maxChars)}\n[Result cut to ${maxChars} of ${text.length} characters]`;

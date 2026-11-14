@@ -8,6 +8,7 @@ import { startTestServer, type TestServer, type TestServerOptions } from '#testi
 
 import {
 	assertCredentialTransport,
+	InsecureTransportError,
 	McpClient,
 	type McpClientOptions,
 	PROTOCOL_REVISION,
@@ -491,26 +492,40 @@ suite('authentication', () => {
 				clientInfo: { name: 'mcp-client-test', version: '0.0.0' },
 				auth: { headers: { Authorization: 'Bearer secret' } },
 			}),
-			/Refusing to send credentials over plain HTTP to mcp\.example\.test/,
+			(error: unknown) =>
+				error instanceof InsecureTransportError &&
+				error instanceof TypeError &&
+				error.host === 'mcp.example.test' &&
+				/^Refusing to send credentials over plain HTTP to mcp\.example\.test: use https/.test(error.message),
 		);
 	});
 
 	test('credentials over plain HTTP are allowed to loopback, over HTTPS, or by explicit opt-in', () => {
-		const auth = { headers: { Authorization: 'Bearer secret' } };
 		const allowed: [string, Parameters<typeof assertCredentialTransport>[1]][] = [
-			['http://127.0.0.1:3000/mcp', { auth }],
-			['http://127.8.9.10/mcp', { auth }],
-			['http://localhost/mcp', { auth }],
-			['http://[::1]/mcp', { auth }],
-			['https://mcp.example.test/mcp', { auth }],
-			['http://mcp.example.test/mcp', {}],
-			['http://mcp.example.test/mcp', { auth, allowInsecureHttp: true }],
+			['http://127.0.0.1:3000/mcp', { hasCredential: true }],
+			['http://127.8.9.10/mcp', { hasCredential: true }],
+			['http://localhost/mcp', { hasCredential: true }],
+			['http://[::1]/mcp', { hasCredential: true }],
+			['https://mcp.example.test/mcp', { hasCredential: true }],
+			['http://mcp.example.test/mcp', { hasCredential: false }],
+			['http://mcp.example.test/mcp', { hasCredential: true, allowInsecureHttp: true }],
 		];
 
 		for (const [url, options] of allowed) {
 			assert.doesNotThrow(() => assertCredentialTransport(new URL(url), options), url);
 		}
-		assert.throws(() => assertCredentialTransport(new URL('http://127.example.test/mcp'), { auth }));
+		assert.throws(
+			() => assertCredentialTransport(new URL('http://127.example.test/mcp'), { hasCredential: true }),
+			InsecureTransportError,
+		);
+		assert.throws(
+			() =>
+				assertCredentialTransport(new URL('http://model.example.test/v1'), {
+					hasCredential: true,
+					credentialDescription: 'the API key',
+				}),
+			{ message: /^Refusing to send the API key over plain HTTP to model\.example\.test: / },
+		);
 	});
 });
 
