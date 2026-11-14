@@ -21,8 +21,8 @@ export {
 	RESOURCE_CATEGORY_REGISTRATION,
 	RESOURCE_FIELD,
 } from './catalogue.js';
-export { createFakeBridge } from './createFakeBridge.js';
 export { createRecordingLogger } from './createRecordingLogger.js';
+export { createRegisterRecorder } from './createRegisterRecorder.js';
 export { createStubProbe } from './createStubProbe.js';
 export {
 	ABSENT_CATEGORIES_UNMARKED,
@@ -40,11 +40,9 @@ export type {
 	CatalogueRecord,
 	DenialKind,
 	DenyReason,
-	FakeBridge,
-	FakeBridgeMode,
-	FakeBridgeTable,
 	LoggedLine,
 	ProbeCall,
+	RegisterRecorder,
 	ResultRow,
 	StubProbe,
 } from './types.js';

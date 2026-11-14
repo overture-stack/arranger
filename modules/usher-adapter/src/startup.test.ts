@@ -23,8 +23,8 @@ import {
 	categoryCondition,
 	CONTROLLED_ONLY_ANONYMOUS,
 	CONTROLLED_ONLY_REGISTRATION,
-	createFakeBridge,
 	createRecordingLogger,
+	createRegisterRecorder,
 	createStubProbe,
 	EMPTY_LIST_REGISTRATION,
 	EVENTS,
@@ -58,14 +58,12 @@ const bridgeConfiguration = (
 /** A real bridge, never started, so it needs no controller: its `register` checks registrations as Usher does. */
 const unstartedBridge = (logger: BridgeLogger): BridgeCore => createBridgeCore(bridgeConfiguration(logger));
 
-const fakeTable = { anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: {} };
-
-/** The adapter over a fake bridge, with its catalogues configured as given, and the lines it logs. */
+/** The adapter over a register recorder, with its catalogues configured as given, and the lines it logs. */
 const adapterOver = (catalogues: Readonly<Record<string, KeyRegistration>>) => {
-	const bridge = createFakeBridge(fakeTable);
+	const recorder = createRegisterRecorder();
 	const { lines, logger } = createRecordingLogger();
-	const accessControl = createUsherAccessControl({ bridge: bridge.core, catalogues, logger });
-	return { accessControl, bridge, lines };
+	const accessControl = createUsherAccessControl({ bridge: recorder.bridge, catalogues, logger });
+	return { accessControl, lines, recorder };
 };
 
 /** A catalogue's index: its mapping, and a probe answering by default. */
@@ -193,7 +191,7 @@ suite('the adapter at startup', () => {
 		] as const) {
 			test(`refuses a registration with ${description}, naming the catalogue and the rule, before its mapping or index is read`, async () => {
 				// Given a registration the format refuses, whose mapping is missing every field as well
-				const { accessControl, bridge } = adapterOver({
+				const { accessControl, recorder } = adapterOver({
 					[NAMED_CATALOGUE]: registration as unknown as KeyRegistration,
 				});
 				const { calls, probe } = createStubProbe();
@@ -205,13 +203,13 @@ suite('the adapter at startup', () => {
 				// reasons, the index was asked nothing, and nothing was registered
 				assertNames(refusal, [NAMED_CATALOGUE, rule], ['absent from its index mapping']);
 				assert.deepEqual(calls, []);
-				assert.deepEqual(bridge.registered, []);
+				assert.deepEqual(recorder.registered, []);
 			});
 		}
 
 		test('refuses a condition holding the * marker, naming the catalogue and the category', async () => {
 			// Given a category whose condition holds a value read as a pattern
-			const { accessControl, bridge } = adapterOver({
+			const { accessControl, recorder } = adapterOver({
 				[NAMED_CATALOGUE]: {
 					...RECORDS_REGISTRATION,
 					categories: { global: { 'global.controlled': categoryCondition('*') } },
@@ -224,12 +222,12 @@ suite('the adapter at startup', () => {
 				NAMED_CATALOGUE,
 				'global.controlled',
 			]);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 
 		test("refuses a resource's own condition holding the * marker, naming the catalogue, the resource and the category", async () => {
 			// Given a resource's own category whose condition holds a value read as a pattern
-			const { accessControl, bridge } = adapterOver({
+			const { accessControl, recorder } = adapterOver({
 				[NAMED_CATALOGUE]: {
 					...RESOURCE_CATEGORY_REGISTRATION,
 					categories: {
@@ -245,7 +243,7 @@ suite('the adapter at startup', () => {
 				'REEF_ARCHIVE',
 				REEF_CATEGORY,
 			]);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 	});
 
@@ -260,7 +258,7 @@ suite('the adapter at startup', () => {
 		] as const) {
 			test(`refuses a catalogue whose mapping has ${description}, naming the catalogue and the field, before its index is asked anything`, async () => {
 				// Given the catalogue's index mapping lacks a field its registration names
-				const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
+				const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
 				const fetched = Object.fromEntries(Object.entries(mapping).filter(([, value]) => value !== undefined));
 				const { calls, probe } = createStubProbe();
 
@@ -270,7 +268,7 @@ suite('the adapter at startup', () => {
 				// Then startup fails naming both, the index was asked nothing, and nothing is registered
 				assertNames(refusal, [NAMED_CATALOGUE, field]);
 				assert.deepEqual(calls, []);
-				assert.deepEqual(bridge.registered, []);
+				assert.deepEqual(recorder.registered, []);
 			});
 		}
 
@@ -290,7 +288,7 @@ suite('the adapter at startup', () => {
 		] as const) {
 			test(`refuses to enforce on ${description}`, async () => {
 				// Given a mapped field whose mapping shape the adapter cannot enforce on
-				const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: catalogue });
+				const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: catalogue });
 
 				// When the adapter verifies it, Then startup fails naming the catalogue and the field, since
 				// enforcing anyway would be guesswork
@@ -298,7 +296,7 @@ suite('the adapter at startup', () => {
 					NAMED_CATALOGUE,
 					field,
 				]);
-				assert.deepEqual(bridge.registered, []);
+				assert.deepEqual(recorder.registered, []);
 			});
 		}
 	});
@@ -344,7 +342,7 @@ suite('the adapter at startup', () => {
 
 		test('asks the index nothing about a category declared absent, which holds no condition', async () => {
 			// Given a catalogue defining no category and declaring both absent
-			const { accessControl, bridge, lines } = adapterOver({ records: ABSENT_CATEGORIES_REGISTRATION });
+			const { accessControl, lines, recorder } = adapterOver({ records: ABSENT_CATEGORIES_REGISTRATION });
 			const { calls, probe } = createStubProbe();
 
 			// When the adapter verifies it
@@ -356,22 +354,22 @@ suite('the adapter at startup', () => {
 				['countRecordsAndValues'],
 			);
 			assert.deepEqual(lines, []);
-			assert.deepEqual(bridge.registered, [{ records: ABSENT_CATEGORIES_REGISTRATION }]);
+			assert.deepEqual(recorder.registered, [{ records: ABSENT_CATEGORIES_REGISTRATION }]);
 		});
 
 		test('asks the index nothing about an open catalogue', async () => {
-			const { accessControl, bridge } = adapterOver({ records: OPEN_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ records: OPEN_REGISTRATION });
 			const { calls, probe } = createStubProbe();
 
 			await accessControl.verify({ records: indexOf(INDEX_MAPPING, probe) });
 
 			assert.deepEqual(calls, []);
-			assert.deepEqual(bridge.registered, [{ records: OPEN_REGISTRATION }]);
+			assert.deepEqual(recorder.registered, [{ records: OPEN_REGISTRATION }]);
 		});
 
 		test('refuses a catalogue whose resource field holds several values in some record, naming the catalogue and the field', async () => {
 			// Given an index where the records holding the resource field hold one more value than there are records
-			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
 			const { probe } = createStubProbe({ countRecordsAndValues: async () => ({ records: 3, values: 4 }) });
 
 			// When the adapter verifies it
@@ -380,12 +378,12 @@ suite('the adapter at startup', () => {
 			// Then startup fails naming the catalogue and the field, saying some records hold more than one value
 			// there, and nothing is registered
 			assertNames(refusal, [NAMED_CATALOGUE, RESOURCE_FIELD, 'more than one value']);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 
 		test('refuses a catalogue whose count of records and values in the resource field could not run, saying so', async () => {
 			// Given an engine refusing the check, as one failing a shard does
-			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
 			const { probe } = createStubProbe({
 				countRecordsAndValues: async () => {
 					throw new Error(`a shard failed on ${ENGINE_VALUE}`);
@@ -398,7 +396,7 @@ suite('the adapter at startup', () => {
 			// Then startup fails closed, naming the catalogue and the field and saying the check could not run,
 			// with nothing of the engine's failure
 			assertNames(refusal, [NAMED_CATALOGUE, RESOURCE_FIELD, 'could not run'], [ENGINE_VALUE]);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 
 		/** A probe's rejection as the router's probe makes it: its own message over the client's error, carrying the engine's report. */
@@ -462,7 +460,7 @@ suite('the adapter at startup', () => {
 
 		test("refuses a catalogue whose category condition the engine refuses, naming the catalogue and the category and nothing of the engine's explanation", async () => {
 			// Given an engine refusing the condition's query, explaining with a value
-			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION });
 			const { calls, probe } = createStubProbe({
 				validate: async () => ({ explanation: `failed to parse [${ENGINE_VALUE}]`, valid: false }),
 			});
@@ -477,7 +475,7 @@ suite('the adapter at startup', () => {
 				calls.filter(({ check }) => check === 'countMatching'),
 				[],
 			);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 
 		test("logs the engine's explanation for each condition it refuses, once, at error, naming the catalogue and the category", async () => {
@@ -544,7 +542,7 @@ suite('the adapter at startup', () => {
 		for (const [description, answers] of UNANSWERED_CONDITION_CHECKS) {
 			test(`refuses a catalogue whose category condition could not be ${description}, naming the catalogue and the category`, async () => {
 				// Given an engine failing to answer about the condition
-				const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION });
+				const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION });
 				const { probe } = createStubProbe(answers);
 
 				// When the adapter verifies it
@@ -558,13 +556,13 @@ suite('the adapter at startup', () => {
 					[NAMED_CATALOGUE, 'global.controlled', 'could not'],
 					[ENGINE_VALUE, CONDITION_VALUE],
 				);
-				assert.deepEqual(bridge.registered, []);
+				assert.deepEqual(recorder.registered, []);
 			});
 		}
 
 		test('warns of a category matching no record, naming the catalogue and the category and no value, and still registers it', async () => {
 			// Given an index where the category's condition matches no record
-			const { accessControl, bridge, lines } = adapterOver({ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION });
+			const { accessControl, lines, recorder } = adapterOver({ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION });
 			const { probe } = createStubProbe({ countMatching: async () => 0 });
 
 			// When the adapter verifies it
@@ -579,7 +577,7 @@ suite('the adapter at startup', () => {
 				},
 			]);
 			assert.equal(JSON.stringify(lines).includes(CONDITION_VALUE), false);
-			assert.deepEqual(bridge.registered, [{ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION }]);
+			assert.deepEqual(recorder.registered, [{ [NAMED_CATALOGUE]: SENTINEL_REGISTRATION }]);
 		});
 
 		test("warns of a resource's own category matching no record within that resource, naming the resource", async () => {
@@ -607,7 +605,7 @@ suite('the adapter at startup', () => {
 		test("reports every catalogue's reasons in one refusal, and registers nothing", async () => {
 			// Given two catalogues, one whose resource field holds several values and one whose condition the
 			// engine refuses
-			const { accessControl, bridge } = adapterOver({
+			const { accessControl, recorder } = adapterOver({
 				[NAMED_CATALOGUE]: RECORDS_REGISTRATION,
 				[OTHER_CATALOGUE]: SENTINEL_REGISTRATION,
 			});
@@ -632,12 +630,12 @@ suite('the adapter at startup', () => {
 				[NAMED_CATALOGUE, 'more than one value', OTHER_CATALOGUE, 'global.controlled'],
 				[ENGINE_VALUE],
 			);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 
 		test('registers with the bridge only once every check has answered', async () => {
 			// Given an index whose count of a condition's records has not answered yet
-			const { accessControl, bridge } = adapterOver({ records: RECORDS_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ records: RECORDS_REGISTRATION });
 			const pending = deferred<number>();
 			const { probe } = createStubProbe({ countMatching: () => pending.promise });
 
@@ -646,10 +644,10 @@ suite('the adapter at startup', () => {
 			await new Promise((resolve) => setImmediate(resolve));
 
 			// Then nothing is registered until the count answers, and the catalogue is registered after
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 			pending.resolve(1);
 			await verification;
-			assert.deepEqual(bridge.registered, [{ records: RECORDS_REGISTRATION }]);
+			assert.deepEqual(recorder.registered, [{ records: RECORDS_REGISTRATION }]);
 		});
 	});
 
@@ -657,7 +655,7 @@ suite('the adapter at startup', () => {
 		test('accepts a field inside a plain object, since only a nested mapping splits a record into units', async () => {
 			// Given a resource field under an object mapping that is not nested
 			const registration = { ...RECORDS_REGISTRATION, resourceFieldName: 'donor.study_id' };
-			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: registration });
+			const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: registration });
 
 			// When the adapter verifies it
 			await accessControl.verify({
@@ -668,12 +666,12 @@ suite('the adapter at startup', () => {
 			});
 
 			// Then the catalogue is registered as configured
-			assert.deepEqual(bridge.registered, [{ [NAMED_CATALOGUE]: registration }]);
+			assert.deepEqual(recorder.registered, [{ [NAMED_CATALOGUE]: registration }]);
 		});
 
 		test('refuses an index for a catalogue its configuration does not name, naming it', async () => {
 			// Given an adapter configured for one catalogue
-			const { accessControl, bridge } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ [NAMED_CATALOGUE]: RECORDS_REGISTRATION });
 
 			// When it is handed an index for another as well, Then startup fails naming it, and nothing is registered
 			assertNames(
@@ -682,7 +680,7 @@ suite('the adapter at startup', () => {
 				),
 				[UNCONFIGURED_CATALOGUE],
 			);
-			assert.deepEqual(bridge.registered, []);
+			assert.deepEqual(recorder.registered, []);
 		});
 	});
 
@@ -697,19 +695,19 @@ suite('the adapter at startup', () => {
 		] as const) {
 			test(`registers ${description}`, async () => {
 				// Given a catalogue's configuration
-				const { accessControl, bridge } = adapterOver({ records: registration });
+				const { accessControl, recorder } = adapterOver({ records: registration });
 
 				// When the adapter verifies it
 				await accessControl.verify({ records: indexOf() });
 
 				// Then the bridge receives that registration exactly
-				assert.deepEqual(bridge.registered, [{ records: registration }]);
+				assert.deepEqual(recorder.registered, [{ records: registration }]);
 			});
 		}
 
 		test('registers every catalogue with the bridge in one call, and hands back one callback per catalogue', async () => {
 			// Given two catalogues, the second defining controlled alone
-			const { accessControl, bridge } = adapterOver({
+			const { accessControl, recorder } = adapterOver({
 				controlledOnly: CONTROLLED_ONLY_REGISTRATION,
 				records: RECORDS_REGISTRATION,
 			});
@@ -718,7 +716,7 @@ suite('the adapter at startup', () => {
 			await accessControl.verify({ controlledOnly: indexOf(), records: indexOf() });
 
 			// Then one registration holds both, and each catalogue has a callback of its own
-			assert.deepEqual(bridge.registered, [
+			assert.deepEqual(recorder.registered, [
 				{ controlledOnly: CONTROLLED_ONLY_REGISTRATION, records: RECORDS_REGISTRATION },
 			]);
 			assert.equal(typeof accessControl.filterFor('records'), 'function');
@@ -727,7 +725,7 @@ suite('the adapter at startup', () => {
 
 		test('registers a catalogue that failed to load but never verifies it, so it serves nothing while the others serve', async () => {
 			// Given two catalogues, one of which failed to load, so its index never arrived
-			const { accessControl, bridge } = adapterOver({
+			const { accessControl, recorder } = adapterOver({
 				controlledOnly: CONTROLLED_ONLY_REGISTRATION,
 				records: RECORDS_REGISTRATION,
 			});
@@ -738,7 +736,7 @@ suite('the adapter at startup', () => {
 			await accessControl.verify({ records: indexOf() });
 
 			// Then both are registered, since the bridge takes its registrations once
-			assert.deepEqual(bridge.registered, [
+			assert.deepEqual(recorder.registered, [
 				{ controlledOnly: CONTROLLED_ONLY_REGISTRATION, records: RECORDS_REGISTRATION },
 			]);
 
@@ -760,17 +758,17 @@ suite('the adapter at startup', () => {
 
 		test('refuses a second verification, since the bridge takes its registrations once', async () => {
 			// Given an adapter already verified
-			const { accessControl, bridge } = adapterOver({ records: RECORDS_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ records: RECORDS_REGISTRATION });
 			await accessControl.verify({ records: indexOf() });
 
 			// When it is verified again, Then it refuses, and registers nothing more
 			await assert.rejects(accessControl.verify({ records: indexOf() }));
-			assert.equal(bridge.registered.length, 1);
+			assert.equal(recorder.registered.length, 1);
 		});
 
 		test('refuses a verification started while another is running, registering once', async () => {
 			// Given a verification still waiting on its index
-			const { accessControl, bridge } = adapterOver({ records: RECORDS_REGISTRATION });
+			const { accessControl, recorder } = adapterOver({ records: RECORDS_REGISTRATION });
 			const pending = deferred<number>();
 			const first = accessControl.verify({
 				records: indexOf(INDEX_MAPPING, createStubProbe({ countMatching: () => pending.promise }).probe),
@@ -780,7 +778,7 @@ suite('the adapter at startup', () => {
 			await assert.rejects(accessControl.verify({ records: indexOf() }));
 			pending.resolve(1);
 			await first;
-			assert.equal(bridge.registered.length, 1);
+			assert.equal(recorder.registered.length, 1);
 		});
 	});
 

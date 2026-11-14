@@ -8,8 +8,8 @@ import { attachAccess, type Enforcement, UsherContractError } from '@overture-st
 import {
 	accessOf,
 	ANONYMOUS,
-	createFakeBridge,
 	createRecordingLogger,
+	createRegisterRecorder,
 	createStubProbe,
 	DENIAL_KINDS,
 	DENIED_ERROR_NAME,
@@ -28,10 +28,10 @@ import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback 
 
 /** The verified filter callback for the `records` catalogue. */
 const verifiedCallback = async (): Promise<UsherFilterCallback> => {
-	const bridge = createFakeBridge({ anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: {} });
+	const { bridge } = createRegisterRecorder();
 	const { logger } = createRecordingLogger();
 	const accessControl = createUsherAccessControl({
-		bridge: bridge.core,
+		bridge,
 		catalogues: { records: RECORDS_REGISTRATION },
 		logger,
 	});

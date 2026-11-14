@@ -12,8 +12,8 @@ import {
 	accessOf,
 	ANONYMOUS,
 	CATEGORY_CONDITIONS,
-	createFakeBridge,
 	createRecordingLogger,
+	createRegisterRecorder,
 	createStubProbe,
 	DENY_REASONS,
 	type DenyReason,
@@ -41,10 +41,10 @@ const REQUEST_ID = 'request-7f3a';
 
 /** The verified callback for `records`, and the lines its logger records from then on. */
 const loggingCallback = async (): Promise<{ callback: UsherFilterCallback; lines: readonly LoggedLine[] }> => {
-	const bridge = createFakeBridge({ anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: {} });
+	const { bridge } = createRegisterRecorder();
 	const { lines, logger } = createRecordingLogger();
 	const accessControl = createUsherAccessControl({
-		bridge: bridge.core,
+		bridge,
 		catalogues: { records: RECORDS_REGISTRATION },
 		logger,
 	});
