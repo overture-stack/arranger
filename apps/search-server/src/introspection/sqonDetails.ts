@@ -9,7 +9,7 @@ import type { SqonIntrospectionResponse } from '#introspection/types.js';
 
 const buildSqonDetails = (): SqonIntrospectionResponse => ({
 	$schema: 'https://json-schema.org/draft/2020-12/schema',
-	title: 'Serialized Query Object Notation',
+	title: 'Serializable Query Object Notation',
 	description: 'JSON Schema and operator metadata for building valid SQON filters.',
 	version: getVersionedSqonJsonSchema().version,
 	aliases: SQON_OP_ALIASES,

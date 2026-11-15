@@ -20,7 +20,7 @@ suite('sqon/jsonSchema', () => {
 		const schema = getSqonJsonSchema();
 
 		assert.equal(schema.$schema, 'https://json-schema.org/draft/2020-12/schema');
-		assert.equal(schema.title, 'Serialized Query Object Notation');
+		assert.equal(schema.title, 'Serializable Query Object Notation');
 		assert.equal(schema.$ref, '#/$defs/SQON');
 		assert.ok(schema.$defs);
 		assert.ok(schema.$defs.SQON);
