@@ -35,7 +35,7 @@ Configure `.changeset/config.json`:
 
 `integration-tests-mcp-server` added 2026-08-17: `integration-tests/mcp-server` is `"private": true` exactly like its two listed siblings, and was missing from this worked example.
 
-**Corrected later the same day:** the list also carried `integration-tests-server`, which is not a real package name; `integration-tests/server`'s `package.json` declares `integration-tests-search-server`. Changesets matches on package name, so that entry would have silently ignored nothing and treated the ES-dependent private package as publishable. Worth noting how it survived: the 2026-08-17 pass above audited this list and added a missing entry without verifying the entries already in it. Also check §2.2's `--filter=!integration-tests/server` against the same mismatch before that phase lands.
+**Corrected later the same day:** the list also carried `integration-tests-server`, which is not a real package name; `integration-tests/server`'s `package.json` declares `integration-tests-search-server`. Changesets matches on package name, so that entry would have silently ignored nothing and treated the ES-dependent private package as publishable. Worth noting how it survived: the 2026-08-17 pass above audited this list and added a missing entry without verifying the entries already in it.
 
 New workflow: PR authors run `npx changeset` to declare which packages changed and at what semver level. On `release` branch, replace Jenkins Stage 4 + Stage 6 with:
 

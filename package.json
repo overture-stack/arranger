@@ -49,7 +49,7 @@
 		"mcp-server:generate-secret:print": "npm run generate-secret:print --w apps/mcp-server",
 		"mcp-server:inspect": "npm run inspect --w apps/mcp-server",
 		"mcp-server:setup-env": "npm run setup-env --w apps/mcp-server",
-		"modules:build": "npm run build --w modules",
+		"modules:build": "npx turbo run build --filter=\"./modules/*\"",
 		"modules:tag": "npm version --ws --force-publish --yes",
 		"modules:watch": "npm run watch -w modules",
 		"publish::ci": "npm publish --ws --if-present",
