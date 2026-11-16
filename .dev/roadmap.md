@@ -410,6 +410,14 @@ A saved set is used as a filter by looking up its id list inside one query, and 
 
 [Detail: the chunked set document, the startup check, and what reads the chunks](docs/atlas/roadmap/sets-feature.md#saved-sets-of-any-size-usable-as-filters)
 
+### Set operations
+
+_Priority: low. Builds on the two entries above._
+
+Compare two or three operands over one catalogue, each a SQON (a saved set, the current filters, or a saved filter), and count, view, download or save any region of their Venn diagram, or a union of regions. Every region is itself a SQON, so the search server needs nothing new: the work is a region builder in `modules/sqon` and a Venn component with its tables in `modules/components`. A third version of the GDC portal's set operations, reimplemented rather than ported.
+
+[Detail: SQONs as operands, the actions, the GDC prior art, what it depends on](docs/atlas/roadmap/sets-feature.md#set-operations)
+
 ### Admin UI replacement
 
 _Priority: low. Deprecated app, replacement needed eventually._
