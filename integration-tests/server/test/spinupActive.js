@@ -54,7 +54,7 @@ export default ({ api, catalogs, mode = 'single' }) => {
 
 		assert.equal(statusText, 'OK');
 		assert.equal(typeof data.version, 'string');
-		assert.equal(data.title, 'Serialized Query Object Notation');
+		assert.equal(data.title, 'Serializable Query Object Notation');
 	});
 
 	test('5.should register each GraphQL endpoint', async () => {

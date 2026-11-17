@@ -86,8 +86,8 @@ Consequences worth internalizing:
 - **The publish gate is "does local differ from what's already published under this dist-tag."**
   If you don't bump a package's version and its content changed, the pipeline will silently skip
   republishing it. There is no separate "did the code change" check for npm publish beyond this
-  version-string diff (Turbo-based change detection is planned for the Docker stages, not this
-  one, per roadmap Phase 2.x).
+  version-string diff (the pipeline's change detection decides which images build, not what
+  npm publishes).
 - **Docker tags reuse whatever version is in the app's `package.json` at build time.** If an
   app's code changed but its version didn't, and Docker change-detection is content/path-based
   (it is, on `release`/`release-test`), the image would rebuild and get retagged with the

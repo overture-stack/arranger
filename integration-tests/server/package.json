@@ -4,7 +4,7 @@
 		"@elastic/elasticsearch": "^7.17.14",
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",
 		"@overture-stack/arranger-types": "file:../../modules/types",
-		"axios": "^1.7.9",
+		"axios": "^1.21.1",
 		"dotenv": "^16.0.3",
 		"graphql": "^16.6.0",
 		"graphql-tag": "^2.12.6",

@@ -81,8 +81,8 @@ export const getSqonJsonSchema = (): SqonJsonSchema =>
 		$id: schemaId,
 		$ref: '#/$defs/SQON',
 		$defs: buildSqonJsonSchemaDefs(),
-		description: 'JSON Schema for Serialized Query Object Notation.',
-		title: 'Serialized Query Object Notation',
+		description: 'JSON Schema for Serializable Query Object Notation.',
+		title: 'Serializable Query Object Notation',
 	}) as SqonJsonSchema;
 
 export const getVersionedSqonJsonSchema = (): VersionedSqonJsonSchema => ({

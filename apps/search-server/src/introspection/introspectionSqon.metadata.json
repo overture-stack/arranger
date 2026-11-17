@@ -88,6 +88,6 @@
 			}
 		]
 	},
-	"title": "Serialized Query Object Notation",
+	"title": "Serializable Query Object Notation",
 	"version": "__SQON_SCHEMA_VERSION__"
 }

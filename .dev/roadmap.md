@@ -410,6 +410,14 @@ A saved set is used as a filter by looking up its id list inside one query, and 
 
 [Detail: the chunked set document, the startup check, and what reads the chunks](docs/atlas/roadmap/sets-feature.md#saved-sets-of-any-size-usable-as-filters)
 
+### Set operations
+
+_Priority: low. Builds on the two entries above._
+
+Compare two or three operands over one catalogue, each a SQON (a saved set, the current filters, or a saved filter), and count, view, download or save any region of their Venn diagram, or a union of regions. Every region is itself a SQON, so the search server needs nothing new: the work is a region builder in `modules/sqon` and a Venn component with its tables in `modules/components`. A third version of the GDC portal's set operations, reimplemented rather than ported.
+
+[Detail: SQONs as operands, the actions, the GDC prior art, what it depends on](docs/atlas/roadmap/sets-feature.md#set-operations)
+
 ### Anonymous saved sets expire
 
 _Priority: not set. Under `getRequester` only._
@@ -791,9 +799,7 @@ Pipeline: `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`. Helpe
 
 **Versioning intent:** `0.0.0-dev` in `main` is deliberate; versioning is a `release`-branch concern, not a developer concern. NPM publish only runs on `release`, where version bumps happen. This keeps version management out of the day-to-day development workflow.
 
-**Current state (not yet improved):** builds every module on every run (`npm run modules:build`, individual `npm run test -w` per module), no Turbo change detection, ES 7.17.27 in the pod spec (to change with OpenSearch-first migration).
-
-The goal is a phased improvement: first get Turbo doing change detection in CI (the highest-value, lowest-risk change), then automate versioning, then modernize the package manager.
+**Current state:** Turbo builds the packages changed since the branch's last successful build, and tests them along with their dependents; `integration-tests/server` runs outside Turbo, only when its chain changed. ES 7.17.27 in the pod spec (to change with OpenSearch-first migration).
 
 ---
 
@@ -813,40 +819,6 @@ Depends on 1.2 and on turbo.json gaining `lint`/`typecheck` task definitions.
 
 ## Phase 2: Short-term (1-3 weeks, Jenkins pipeline changes)
 
-Switch the pipeline to use Turbo with `--filter=[HEAD^1]` for change detection.
-
-**Key insight:** `--filter=[HEAD^1]` uses `git diff` to find packages with source file changes relative to the previous commit, then walks the dependency graph downstream. This is purely git-based; no remote cache required.
-
-### 2.1 Replace `npm run modules:build` with `turbo run build`
-
-**File:** `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`
-
-```groovy
-// Stage 1: Before
-sh "npm run modules:build"
-
-// Stage 1: After
-def isRelease = (env.BRANCH_NAME ==~ /release.*/)
-def turboFilter = isRelease ? "" : "--filter=[HEAD^1]"
-sh "TURBO_TELEMETRY_DISABLED=1 npx turbo run build ${turboFilter}"
-```
-
-Release branches drop the filter to always build everything. Feature/main branches only build affected packages.
-
-### 2.2 Replace individual `npm run test -w X` calls with `turbo run test`
-
-```groovy
-// Stage 2: Before (individual -w flags per module)
-sh "npm run test -w modules/sqon"
-sh "npm run test -w modules/types"
-// ... etc
-
-// Stage 2: After
-sh "TURBO_TELEMETRY_DISABLED=1 npx turbo run test ${turboFilter} --filter=!integration-tests/server"
-```
-
-`--filter=!integration-tests/server` keeps the Elasticsearch-dependent tests out of Turbo's managed run. Those continue to run unconditionally in a separate stage.
-
 ### 2.3 Scoped NPM publish (no change needed yet)
 
 The existing version-check in Stage 6 (`local_version != remote_version`) already handles this correctly until Changesets is adopted.
@@ -859,11 +831,9 @@ The existing version-check in Stage 6 (`local_version != remote_version`) alread
 
 1. **Version number strategy:** `0.0.0-dev` is a fixed placeholder and cannot be published repeatedly. A dynamic pre-release version must be generated at publish time; e.g. `0.0.0-next.{commit-sha}`. The `main` branch would never push a real version; the pre-release suffix makes each publish unique.
 
-2. **Change detection prerequisite:** Only packages with actual source changes should be published; publishing all packages on every merge is wasteful and polluting. Turbo's `--filter=[HEAD^1]` (Phase 2.1/2.2) provides this. The NPM `next` publish stage depends on Turbo being wired into the pipeline first.
+2. **Change detection:** Only packages with actual source changes should be published; publishing all packages on every merge is wasteful and polluting. The pipeline's Turbo filter, from the branch's last successful build, already selects these packages.
 
 3. **New publish stage:** A new Jenkins stage, scoped to `main`, that dynamically constructs the pre-release version and publishes with `--tag next`.
-
-_Depends on Phases 2.1 and 2.2 being complete. The Docker change can land independently; the NPM change follows._
 
 **Follow-on, once this ships: Stage-side auto-consumption.** With a continuously-published `next` npm tag, Stage (or any downstream consumer) could auto-bump to it (Renovate, or a scheduled Jenkins job) and redeploy automatically, making `modules/components`/`modules/charts` changes testable live in-cluster shortly after merging to Arranger's `main`, instead of the current manual `npm link` workflow. Route this at a separate canary/preview deployment, not Stage's shared dev deployment that other people rely on for unrelated testing, so an in-progress component change never surprises someone else using dev for something else. Not yet scoped or actioned; parking here until the `next` tag publish itself ships.
 
@@ -999,11 +969,9 @@ components
  └─ integration-tests/import
 ```
 
-When `sqon` changes, `--filter=[HEAD^1]` includes `types`, `graphql-router`, `search-server`, `integration-tests/server`, `integration-tests/mcp-server`, `apps/mcp-server`, and `components` (and therefore `charts` and `integration-tests/import`) via the `^build` chain. In practice that is nearly the whole repo, which is worth knowing before assuming change detection will narrow much on a `sqon` edit.
+When `sqon` changes, the pipeline's change detection includes `types`, `graphql-router`, `search-server`, `integration-tests/server`, `integration-tests/mcp-server`, `apps/mcp-server`, and `components` (and therefore `charts` and `integration-tests/import`) via the `^build` chain. In practice that is nearly the whole repo, which is worth knowing before assuming change detection will narrow much on a `sqon` edit.
 
 What the previous diagram got wrong: (1) `components` was marked "independent of server chain" but declares both `arranger-types` and `sqon`, so it is downstream of both; (2) `apps/mcp-server` was absent entirely despite declaring `sqon`; (3) `integration-tests/mcp-server` was absent despite depending on `graphql-router` and `types`; (4) the `components → charts` edge is not backed by a resolvable declaration at all, only a `peerDependencies` entry, which is the §3.3 blocker noted above.
-
-Two consequences for Phase 2: the `integration-tests/server` node was annotated `cache: false` here but `turbo.json` does not actually set it, and §2.2's `--filter=!integration-tests/server` excludes only one of the two ES-dependent suites (and uses a directory path where the package name is `integration-tests-search-server`).
 
 The port collision named here is resolved: both suites defaulted `SERVER_PORT` to 5678, and `integration-tests/mcp-server` now defaults to 5680, clear of the 5678 and 5679 that `integration-tests/server` uses. Sequential runs were never affected; this removes the race that parallelizing them would have introduced.
 

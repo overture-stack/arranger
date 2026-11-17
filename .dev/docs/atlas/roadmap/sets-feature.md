@@ -52,6 +52,72 @@ The plan:
 
 Measured on 5 million records, on both engines, with one shard: checking a 65,000-id set by lookup took about 100 to 140 ms warm, 10 checks at once cost 1.0 to 1.8 times one, and a 65,537-id set was refused on both engines, by lookup and inline alike.
 
+## Set operations
+
+Compare two or three operands over one catalogue, and act on any region of their Venn diagram, or on a union of regions: count it, view it as the active filter, download it, or save it as a new set.
+
+**SQONs are the currency (decided 2026-11-15).** Each operand is a SQON, so any kind can be compared with any other:
+
+| Operand | Its SQON |
+| --- | --- |
+| A saved set | `in` on the set's `path`, with the value `set_id:<id>` |
+| The current filters | The filters as they stand |
+| A saved filter (a virtual cohort, above) | The SQON it stores |
+
+A region is the `and` of the operands it lies inside and of the negation of each operand it lies outside, and a union of regions is their `or`. With operands A, B and C:
+
+| Region | SQON |
+| --- | --- |
+| In all three | `and[A, B, C]` |
+| In A and B, not C | `and[A, B, not[C]]` |
+| In A only | `and[A, not[B], not[C]]` |
+| The union of the two above | `or[and[A, B, not[C]], and[A, not[B], not[C]]]` |
+
+n operands give 2^n − 1 regions, generated from the operands rather than listed. The Venn diagram draws two or three; four or more would need another display.
+
+Where it lives:
+
+- **`modules/sqon`:** the region builder, a pure function from labelled operands to labelled region SQONs. Its property tests can check that every document matching any operand falls in exactly one region.
+- **`modules/components`:** the Venn diagram and its tables, taking the operands as props, so a host app supplies them until a managed set list exists.
+- **The search server:** nothing new.
+
+| Action | How | Writes |
+| --- | --- | --- |
+| Count | One GraphQL request, with one aliased `hits(filters) { total }` per region, per operand and for the selected union | None |
+| View | The host app's filter state takes the region's SQON | None |
+| Download | The download route, which takes a SQON | None |
+| Save | `saveSet` with the region's SQON | One set |
+
+Counts are documents of the catalogue the operands run on. A saved set whose `path` is not the documents' own identifier counts the documents carrying its values, which can differ from its saved `size`, so the component names the unit beside its counts. It also shows each saved set's stored `size` beside its current count, which shows when a set has gone stale. A region with no documents cannot be selected, and the diagram, its tables and their checkboxes carry accessible labels.
+
+### Prior art: the GDC portal's set operations
+
+Two versions, both Apache-2.0, both limited to sets or cohorts of one entity type:
+
+| | 2017, NCI-GDC/portal-ui (f24e643e3) | Current, NCI-GDC/gdc-frontend-framework | This design |
+| --- | --- | --- | --- |
+| Operands | 2 or 3 saved sets | 2 or 3 saved sets, or cohorts, each cohort first saved as a temporary (`ephemeral`) set | 2 or 3 SQONs of any kind, with no write |
+| Regions | 3 or 7, written out by hand | The same, in a `switch` | Generated from the operands |
+| Difference | `exclude` | `exclude` | `not`; Arranger has had no `exclude` since 2018 |
+| Counts | One request per region and per set | One request per region, the sets' counts in one | One request for all |
+| View | Saves a new set, then filters by it | Saves a `frozen` set and builds a cohort on it | The region's SQON, with no write |
+| Download | Saves a new set, then calls the GDC's `/tar_sets` | Saves an `instant` set, then calls `/tar_sets` | The download route, with the region's SQON |
+| Diagram | d3 through react-faux-dom, with clip paths | ECharts, with fixed coordinates over about 900 lines | Plain SVG: two or three circles need no charting library |
+
+**Not a port.** Neither version's code carries over: both write the regions out by hand and bind them to the GDC's own state, routes and set types. This is a third version, reimplemented from the idea.
+
+**Alternatives considered:**
+
+- **Saving each operand as a set first**, as the GDC's current version does for cohorts. Every comparison then writes to the sets index and leaves sets to clean up, and a comparison of live filters is frozen at the moment it opened. Region SQONs need no writes.
+- **Saved sets as the only operands**, as in both GDC versions. That leaves out the current filters and virtual cohorts.
+
+**Depends on:**
+
+- [Saved sets of any size usable as filters](#saved-sets-of-any-size-usable-as-filters): a region naming a set above `index.max_terms_count` cannot run without it.
+- The saved-set read check (iMicroSeq #319): every set a region names goes through it, as a set used alone does.
+- A managed set list (`listSets`, above) for a set picker. Not blocking, since the host app can supply the operands.
+- One catalogue per comparison. Comparing across catalogues follows [where a set lives once a query spans catalogues](#open-where-a-set-lives-once-a-query-spans-catalogues-or-network-nodes).
+
 ## Anonymous saved sets expire
 
 Under `getRequester`, a set an anonymous request saves is recorded with `attribution` `anonymous` and `userId` null. No reader is listed it; a reader naming it by `setId` is served it, its stored filter included and its records narrowed to that reader's filter. It works as a link, shared by whoever holds the id, and nothing ends it: there is no `deleteSet`, and no listing reaches it.
