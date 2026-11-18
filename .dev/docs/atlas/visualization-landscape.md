@@ -1,6 +1,6 @@
 # Genomics visualization libraries: a research record
 
-Written for whoever specializes in this next. Scope: candidate visualization libraries for rendering Arranger data (OncoPrint-style grids, mutation lollipop plots, survival curves) through the MCP host's eventual notebook renderer (`cre-renderer`). Not in scope here: the cBioPortal MCP-server integration itself, or the host's broader connection-authentication design, both covered in [`arranger-auth/mcp-host-connections.md`](../arranger-auth/mcp-host-connections.md) §4. The compressed plan this research feeds is [`visualization-data-mapping.md`](../visualization-data-mapping.md); this document is the reasoning, the alternatives, and the parts of the investigation that didn't make it into the compressed version.
+Written for whoever specializes in this next. Scope: candidate visualization libraries for rendering Arranger data (OncoPrint-style grids, mutation lollipop plots, survival curves) through the MCP host's eventual notebook renderer (`cre-renderer`). Not in scope here: the cBioPortal MCP-server integration itself, or the host's broader connection-authentication design, both covered in [the CRE repository's `mcp-host/connections.md`](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/docs/mcp-host/connections.md) §4. The compressed plan this research feeds is [`visualization-data-mapping.md`](../visualization-data-mapping.md); this document is the reasoning, the alternatives, and the parts of the investigation that didn't make it into the compressed version.
 
 ## Why this exists at all
 
@@ -22,7 +22,7 @@ cBioPortal publishes several of its own frontend's visualization components as s
 - npm `0.9.13`, described by its own maintainers as "Generic Mutation Mapper". Licence **AGPL-3.0-or-later**.
 - Confirmed backend-agnostic by reading an actual usage example: `LollipopMutationPlot` takes a `store` built from `DefaultMutationMapperStore`, initialized with a callback that returns plain mutation objects, no live cBioPortal connection anywhere in the pattern.
 - Confirmed the complete `Mutation` type, read from the type's source file (`cbioportal-utils/src/model/Mutation.ts`): 14 fields, full list in [`visualization-data-mapping.md`](../visualization-data-mapping.md)'s table. Only `proteinChange` and `proteinPosStart` are required; the rest sharpen the render rather than gate it.
-- Licence note: the actual consumer is the MCP host's notebook renderer (`cre-renderer`), a separate app whose own licence isn't settled, not Arranger itself. The CRE ships as a distributed desktop app, so AGPL's ordinary distribution terms apply to the whole combined work once this is bundled in, not the network-use clause, which [mcp-host-plan.md](../mcp-host/mcp-host-plan.md) §5, question 5, already settles does not apply to a desktop app nobody reaches remotely. Whether this is a fit is for whoever approves the CRE's dependencies to judge, not something this doc can conclude.
+- Licence note: the actual consumer is the MCP host's notebook renderer (`cre-renderer`), a separate app whose own licence isn't settled, not Arranger itself. The CRE ships as a distributed desktop app, so AGPL's ordinary distribution terms apply to the whole combined work once this is bundled in, not the network-use clause, which [mcp-host-plan.md](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/docs/mcp-host/mcp-host-plan.md) §5, question 5, already settles does not apply to a desktop app nobody reaches remotely. Whether this is a fit is for whoever approves the CRE's dependencies to judge, not something this doc can conclude.
 
 ### `cbioportal-frontend-commons`
 
@@ -73,6 +73,6 @@ All nine repos under the `oncojs` GitHub org were surveyed, not just the genomic
 ## Related
 
 - [`visualization-data-mapping.md`](../visualization-data-mapping.md): the compressed plan this feeds.
-- [`mcp-host-plan.md`](../mcp-host/mcp-host-plan.md): the host architecture this slots into, `cre-renderer` specifically.
-- [`arranger-auth/mcp-host-connections.md`](../arranger-auth/mcp-host-connections.md): connection authentication for the host, a separate concern from data shape.
+- [`mcp-host-plan.md`](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/docs/mcp-host/mcp-host-plan.md): the host architecture this slots into, `cre-renderer` specifically.
+- [The CRE repository's `mcp-host/connections.md`](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/docs/mcp-host/connections.md): connection authentication for the host, a separate concern from data shape.
 - `.dev/tech-debt.md`'s AGPL/unlicensed-package entries: the same missing-licence pattern found here in three `oncojs` repos.
