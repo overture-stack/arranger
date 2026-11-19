@@ -538,15 +538,13 @@ _Priority: low. No use case yet. `modules/graphql-router`._
 
 Let one export request carry several files and answer them as one archive. The rules that hold for one file hold for each: every file in the request is validated before any output, so a request with one invalid file is refused whole; each file's filter is composed with the router's access-control filter; and the archive streams with backpressure and stops paging when the client disconnects. Until then, a request holding more than one file is refused with "files must be an array holding exactly one file object: this version exports one file per request." The archive format and library are open; `tar-stream`, still a dependency, is one candidate.
 
-### MCP host: client, host core and terminal chat
+### MCP host
 
-_Priority: not yet set. Plan approved 2026-10-07. Phase 0: run on local Ollama; confirmation on the development team's shared server outstanding. Phase 1 (`modules/mcp-client`): done. Phase 2 (`modules/mcp-host-core`): done (#1108), with the loop, the OpenAI-compatible provider and the data-crossing rule, which host-core enforces, keeping each unflagged server alone in its conversation: way (b) of the plan's question 4, decided 2026-10-29 ([options weighed](docs/mcp-host/data-crossing-options.md)). Phase 3 (`chat`) and Phase 4 (`eval`): deferred in favour of CRE development, in its own repository._
+_Priority: not yet set. Phase 0: run on local Ollama; confirmation on the development team's shared server outstanding. Phase 5's migration is done: `mcp-client`, `mcp-host-core` and the host's design documents moved to the CRE repository on 2026-11-18. Phase 3 (`chat`) and Phase 4 (`eval`): deferred in favour of CRE development._
 
-Two private modules, `modules/mcp-client` and `modules/mcp-host-core`, both moving to the CRE's repository in Phase 5 (decided 2026-11-12), that connect to MCP servers, run a model through a tool-calling loop, and put every server confirmation in front of a person. They serve a terminal chat (`apps/mcp-cli chat`, replacing the SDK's `examples/cli-client` for `apps/mcp-server`), the evaluation harness below, and the CRE, a notebook-style research app, in its own repository.
+What stays here: Phase 0's spikes in `.dev/docs/mcp-host/`, which run `apps/mcp-server` in process and still need their confirmation on the shared server, and the evaluation harness below, which measures `apps/mcp-server`.
 
-**Recommended, pending the team:** no release claims support for controlled data until the plan's open security questions are settled and built; until then, an Overture deployment holding controlled data lets the CRE reach only its open data, anonymously (detail: the plan's opening paragraphs).
-
-[Detail: components, phases, decisions and open questions](docs/mcp-host/mcp-host-plan.md)
+[Detail: the CRE repository's roadmap entry](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/roadmap.md#mcp-host-modules-and-desktop-app)
 
 ### MCP evaluation harness
 
