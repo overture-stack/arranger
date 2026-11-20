@@ -3,11 +3,10 @@ import { suite, test } from 'node:test';
 
 import { includeEverything } from '@overture-stack/arranger-graphql-router';
 import { ANSWERS, RETRY_AFTER_SECONDS } from '@overture-stack/usher-bridge--express';
+import { anonymousAccess, openTierAccess, signedInAccess } from '@overture-stack/usher-bridge--express/testing';
 import { attachAccess, type Enforcement, UsherContractError } from '@overture-stack/usher-types';
 
 import {
-	accessOf,
-	ANONYMOUS,
 	createRecordingLogger,
 	createRegisterRecorder,
 	createStubProbe,
@@ -19,12 +18,12 @@ import {
 	isConfigurationRefusal,
 	RECORDS_REGISTRATION,
 	ROWS,
-	signedIn,
-	SUSPENDED,
 	UNAVAILABLE_ERROR_NAME,
 } from './testing/index.js';
 
 import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback } from './index.js';
+
+const PRESENTED_CREDENTIAL = 'credential-ana';
 
 /** The verified filter callback for the `records` catalogue. */
 const verifiedCallback = async (): Promise<UsherFilterCallback> => {
@@ -42,7 +41,7 @@ const verifiedCallback = async (): Promise<UsherFilterCallback> => {
 /** A request's store holding the access the Bridge's layer attaches, with these results. */
 const localsHolding = (results: Readonly<Record<string, Enforcement>>): Record<string, unknown> => {
 	const locals = {};
-	attachAccess(locals, accessOf(ANONYMOUS, results));
+	attachAccess(locals, anonymousAccess(results).access);
 	return locals;
 };
 
@@ -134,7 +133,10 @@ suite('the callback, as a pure function of the request store', () => {
 	suite('a suspended principal, answered by what the open tier can settle', () => {
 		const suspendedLocals = (): Record<string, unknown> => {
 			const locals = {};
-			attachAccess(locals, accessOf(SUSPENDED, { records: ROWS.anonymousBaselineOn.result }));
+			attachAccess(
+				locals,
+				openTierAccess(PRESENTED_CREDENTIAL, { records: ROWS.anonymousBaselineOn.result }).access,
+			);
 			return locals;
 		};
 
@@ -196,16 +198,17 @@ suite('the callback, as a pure function of the request store', () => {
 		});
 	});
 
-	for (const [description, principal] of [
-		['an anonymous principal', ANONYMOUS],
-		['a signed-in principal', signedIn('subject-ana')],
-		['a suspended principal', SUSPENDED],
+	const everyGrantResults = { records: ROWS.everyGrant.result };
+	for (const [description, outcome] of [
+		['an anonymous principal', anonymousAccess(everyGrantResults)],
+		['a signed-in principal', signedInAccess('subject-ana', everyGrantResults)],
+		['a suspended principal', openTierAccess(PRESENTED_CREDENTIAL, everyGrantResults)],
 	] as const) {
 		test(`refuses network search as a configuration failure for ${description}`, async () => {
 			// Given a request holding a result the callback would otherwise apply
 			const callback = await verifiedCallback();
 			const locals = {};
-			attachAccess(locals, accessOf(principal, { records: ROWS.everyGrant.result }));
+			attachAccess(locals, outcome.access);
 
 			// When it reaches the network search read path, Then it is refused as a misconfiguration, since a
 			// narrowing forwarded to a remote cannot be verified there: never a deny that would read as an empty
@@ -226,17 +229,17 @@ suite('the callback, as a pure function of the request store', () => {
 		for (const [description, value, shape] of [
 			[
 				'of another version',
-				{ ...accessOf(ANONYMOUS, { records: ROWS.everyGrant.result }), version: 2 },
+				{ ...anonymousAccess({ records: ROWS.everyGrant.result }).access, version: 2 },
 				'hidden',
 			],
 			[
 				'holding an unknown kind of result',
-				accessOf(ANONYMOUS, { records: { kind: 'grant-everything' } as unknown as Enforcement }),
+				anonymousAccess({ records: { kind: 'grant-everything' } as unknown as Enforcement }).access,
 				'hidden',
 			],
 			[
 				'not shaped as attachAccess leaves it',
-				accessOf(ANONYMOUS, { records: ROWS.everyGrant.result }),
+				anonymousAccess({ records: ROWS.everyGrant.result }).access,
 				'enumerable',
 			],
 		] as const) {

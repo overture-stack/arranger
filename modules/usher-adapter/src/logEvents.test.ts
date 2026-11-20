@@ -1,16 +1,15 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
+import { anonymousAccess, openTierAccess, signedInAccess } from '@overture-stack/usher-bridge--express/testing';
 import {
 	attachAccess,
 	canonicalRecordNarrowing,
 	type Enforcement,
-	type UsherPrincipal,
+	type UsherRequestAccess,
 } from '@overture-stack/usher-types';
 
 import {
-	accessOf,
-	ANONYMOUS,
 	CATEGORY_CONDITIONS,
 	createRecordingLogger,
 	createRegisterRecorder,
@@ -24,9 +23,6 @@ import {
 	RECORDS_REGISTRATION,
 	RESOURCE_FIELD,
 	ROWS,
-	signedIn,
-	SUSPENDED,
-	suspendedConfirmed,
 } from './testing/index.js';
 
 import { createUsherAccessControl, type UsherFilterCallback } from './index.js';
@@ -52,26 +48,35 @@ const loggingCallback = async (): Promise<{ callback: UsherFilterCallback; lines
 	return { callback: accessControl.filterFor('records'), lines };
 };
 
-const localsFor = (principal: UsherPrincipal, result: Enforcement): Record<string, unknown> => {
+/** Builds the outcome the Bridge gives one principal, from the results it is served. */
+type AccessFor = (results: Readonly<Record<string, Enforcement>>) => Readonly<{ access: UsherRequestAccess }>;
+
+const PRESENTED_CREDENTIAL = 'credential-ana';
+const signedInAna: AccessFor = (results) => signedInAccess('subject-ana', results);
+const unconfirmedSuspended: AccessFor = (results) => openTierAccess(PRESENTED_CREDENTIAL, results);
+const attributionOnlyAna: AccessFor = (results) =>
+	openTierAccess(PRESENTED_CREDENTIAL, results, { attributionOnlySubject: 'subject-ana' });
+
+const localsFor = (accessFor: AccessFor, result: Enforcement): Record<string, unknown> => {
 	const locals: Record<string, unknown> = { requestId: REQUEST_ID };
-	attachAccess(locals, accessOf(principal, { records: result }));
+	attachAccess(locals, accessFor({ records: result }).access);
 	return locals;
 };
 
 suite('the log events', () => {
-	for (const [description, principal, result, userId, suspended, credential] of [
+	for (const [description, accessFor, result, userId, suspended, credential] of [
 		[
 			'a narrow result, for a signed-in principal',
-			signedIn('subject-ana'),
+			signedInAna,
 			ROWS.heartControlledGrant.result,
 			'subject-ana',
 			false,
 			'confirmed',
 		],
-		['an allow result, for an anonymous principal', ANONYMOUS, ROWS.open.result, null, false, 'none'],
+		['an allow result, for an anonymous principal', anonymousAccess, ROWS.open.result, null, false, 'none'],
 		[
 			'a narrow result, for a suspended principal whose credential is unconfirmed',
-			SUSPENDED,
+			unconfirmedSuspended,
 			ROWS.anonymousBaselineOn.result,
 			null,
 			true,
@@ -79,7 +84,7 @@ suite('the log events', () => {
 		],
 		[
 			'a narrow result, for a suspended principal whose credential was confirmed, naming its subject',
-			suspendedConfirmed('subject-ana'),
+			attributionOnlyAna,
 			ROWS.anonymousBaselineOn.result,
 			'subject-ana',
 			true,
@@ -91,7 +96,7 @@ suite('the log events', () => {
 			const { callback, lines } = await loggingCallback();
 
 			// When the result is applied once
-			callback({ locals: localsFor(principal, result) }, { readPath: 'hits' });
+			callback({ locals: localsFor(accessFor, result) }, { readPath: 'hits' });
 
 			// Then one permitted event names the subject and its credential, whether it is suspended, the arm, the read
 			// path and the request
@@ -120,7 +125,10 @@ suite('the log events', () => {
 
 			// When the deny is applied on the aggregations path, which it refuses
 			assert.throws(() =>
-				callback({ locals: localsFor(ANONYMOUS, { kind: 'deny', reason }) }, { readPath: 'aggregations' }),
+				callback(
+					{ locals: localsFor(anonymousAccess, { kind: 'deny', reason }) },
+					{ readPath: 'aggregations' },
+				),
 			);
 
 			// Then one denied event names the subject, whether it is suspended, the reason and the request
@@ -149,7 +157,7 @@ suite('the log events', () => {
 
 			// When the request reaches a path the open tier cannot settle, and is refused
 			assert.throws(() =>
-				callback({ locals: localsFor(SUSPENDED, ROWS.anonymousBaselineOn.result) }, { readPath }),
+				callback({ locals: localsFor(unconfirmedSuspended, ROWS.anonymousBaselineOn.result) }, { readPath }),
 			);
 
 			// Then one event names the null subject, the suspension, the read path and the request, and
@@ -174,7 +182,7 @@ suite('the log events', () => {
 	test('logs two events carrying the same request identifier when one request applies a result on two read paths', async () => {
 		// Given one request's store
 		const { callback, lines } = await loggingCallback();
-		const locals = localsFor(signedIn('subject-ana'), ROWS.heartControlledGrant.result);
+		const locals = localsFor(signedInAna, ROWS.heartControlledGrant.result);
 
 		// When its result is applied for hits and for aggregations
 		callback({ locals }, { readPath: 'hits' });
@@ -211,7 +219,7 @@ suite('the log events', () => {
 			}),
 		};
 		const context = {
-			locals: localsFor(signedIn('subject-ana'), sentinelResult),
+			locals: localsFor(signedInAna, sentinelResult),
 			request: { headers: new Headers({ authorization: 'Bearer LEAK_SENTINEL_TOKEN' }) },
 		};
 

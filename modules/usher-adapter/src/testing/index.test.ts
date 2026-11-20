@@ -6,7 +6,6 @@ suite("the testing module's surface", () => {
 		assert.deepEqual(Object.keys(await import('./index.js')).toSorted(), [
 			'ABSENT_CATEGORIES_REGISTRATION',
 			'ABSENT_CATEGORIES_UNMARKED',
-			'ANONYMOUS',
 			'CATEGORY_CONDITIONS',
 			'CATEGORY_FIELD',
 			'CONTROLLED_ONLY_ANONYMOUS',
@@ -24,18 +23,14 @@ suite("the testing module's surface", () => {
 			'RESOURCE_CATEGORY_REGISTRATION',
 			'RESOURCE_FIELD',
 			'ROWS',
-			'SUSPENDED',
 			'UNAVAILABLE_ERROR_NAME',
 			'UNAVAILABLE_GRAPHQL_CODE',
-			'accessOf',
 			'categoryCondition',
 			'createRecordingLogger',
 			'createRegisterRecorder',
 			'createStubProbe',
 			'denialAnswerFor',
 			'isConfigurationRefusal',
-			'signedIn',
-			'suspendedConfirmed',
 		]);
 	});
 });

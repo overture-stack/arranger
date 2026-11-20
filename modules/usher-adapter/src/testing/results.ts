@@ -4,8 +4,6 @@ import {
 	type Enforcement,
 	type HeldResource,
 	type RecordNarrowingDescription,
-	type UsherPrincipal,
-	type UsherRequestAccess,
 } from '@overture-stack/usher-types';
 
 import { CATEGORY_CONDITIONS, CONFIGURED_RESOURCES, EVERY_RECORD, RESOURCE_FIELD } from './catalogue.js';
@@ -157,40 +155,3 @@ export const ABSENT_CATEGORIES_UNMARKED: ResultRow = row(
 	narrowing([held('HEART_STUDY', [], true), held('LUNG_COHORT', [], true)], {}),
 	['h1', 'h2', 'l1'],
 );
-
-/** The principal as the Bridge presents an anonymous request: no credential, the open tier only. */
-export const ANONYMOUS: UsherPrincipal = { credential: 'none', openTierOnly: true, suspended: false };
-
-/** A signed-in principal whose credential the Bridge confirmed. */
-export const signedIn = (subject: string): UsherPrincipal => ({
-	credential: 'confirmed',
-	openTierOnly: false,
-	subject,
-	suspended: false,
-});
-
-/** A signed-in principal whose credential the Bridge could not confirm: suspended, the open tier only. */
-export const SUSPENDED: UsherPrincipal = { credential: 'unconfirmed', openTierOnly: true, suspended: true };
-
-/** A suspended principal whose credential the Bridge had confirmed, its subject kept for attribution alone. */
-export const suspendedConfirmed = (subject: string): UsherPrincipal => ({
-	attributionOnlySubject: subject,
-	credential: 'confirmed',
-	openTierOnly: true,
-	suspended: true,
-});
-
-/**
- * One request's access as the Bridge attaches it.
- *
- * @param principal who the request is served as.
- * @param results each catalogue's result, keyed by catalogue.
- */
-export const accessOf = (
-	principal: UsherPrincipal,
-	results: Readonly<Record<string, Enforcement>>,
-): UsherRequestAccess => ({
-	principal,
-	results,
-	version: 1,
-});
