@@ -8,7 +8,7 @@ import { readUsherBridgeEnv } from '#configs/fromEnv/usherBridgeEnv.js';
 import { USHER_REGISTRATION_FILE } from '#configs/fromFiles/fileHandlers.js';
 import type { CataloguesMap, UsherRegistrations, UsherSeam } from '#configs/types/index.js';
 
-/** What the image holds once access enforcement is on: the adapter, the bridge, and the bridge's Express layer. */
+/** What the image holds once access enforcement is on: the adapter, the Bridge, and the Bridge's Express layer. */
 export type ImageUsher = Readonly<{
 	accessControl: UsherAccessControl;
 	bridge: BridgeCore;
@@ -48,7 +48,7 @@ const refuseUnservableCatalogues = ({
 	}
 };
 
-/** The bridge built from the environment, writing its events and the adapter's to standard output as JSON lines. */
+/** The Bridge built from the environment, writing its events and the adapter's to standard output as JSON lines. */
 const usherFromEnvironment = async (): Promise<UsherSeam> => {
 	const bridgeEnv = readUsherBridgeEnv();
 	const [{ createBridgeCore }, { createBridgeLogger }] = await Promise.all([
@@ -63,10 +63,10 @@ const usherFromEnvironment = async (): Promise<UsherSeam> => {
 /**
  * Prepares the Usher adapter for the image, loading the Usher packages only now, so a deployment
  * without access control never loads them. Refuses startup for a catalogue it cannot serve before
- * the bridge is built, registered with or started.
+ * the Bridge is built, registered with or started.
  *
  * @param catalogs every catalogue the image loaded from its configuration.
- * @param seam a host's own bridge and logger, used in place of the environment's.
+ * @param seam a host's own Bridge and logger, used in place of the environment's.
  * @param usherRegistrations each catalogue's `auth.json`, by catalogue id.
  */
 export const prepareUsher = async ({
@@ -85,7 +85,7 @@ export const prepareUsher = async ({
 		import('@overture-stack/arranger-usher-adapter'),
 		import('@overture-stack/usher-bridge--express'),
 	]);
-	// Each registration is read from its file unvalidated; the bridge validates it when registering it.
+	// Each registration is read from its file unvalidated; the Bridge validates it when registering it.
 	const catalogues = Object.fromEntries(
 		Object.keys(catalogs).map((catalogueId) => [catalogueId, usherRegistrations[catalogueId] as KeyRegistration]),
 	);
@@ -120,10 +120,10 @@ export const withUsherFilters = (catalogs: CataloguesMap, accessControl: UsherAc
 	);
 
 /**
- * Stops the bridge and waits until its work in flight has ended. A stop that fails is logged as
+ * Stops the Bridge and waits until its work in flight has ended. A stop that fails is logged as
  * `access_enforcement.bridge_stop_failed` rather than thrown, so whatever led to the stop keeps its own outcome.
  *
- * @param bridge the image's bridge.
+ * @param bridge the image's Bridge.
  */
 export const stopUsherBridge = async (bridge: Pick<BridgeCore, 'stop'>): Promise<void> => {
 	await Promise.resolve()
@@ -134,10 +134,10 @@ export const stopUsherBridge = async (bridge: Pick<BridgeCore, 'stop'>): Promise
 };
 
 /**
- * Verifies every loaded catalogue against its index, which registers every catalogue with the bridge,
- * then starts the bridge, before the image listens. A verification's refusal is logged as
- * `access_enforcement.startup_refused`. A bridge failing to start is stopped, and the start's own error is
- * rejected with once the stop has settled, so none of the bridge's work outlives the refused startup.
+ * Verifies every loaded catalogue against its index, which registers every catalogue with the Bridge,
+ * then starts the Bridge, before the image listens. A verification's refusal is logged as
+ * `access_enforcement.startup_refused`. A Bridge failing to start is stopped, and the start's own error is
+ * rejected with once the stop has settled, so none of the Bridge's work outlives the refused startup.
  *
  * @param indices each loaded catalogue's index mapping and probe, by catalogue id.
  * @param usher what `prepareUsher` returned.

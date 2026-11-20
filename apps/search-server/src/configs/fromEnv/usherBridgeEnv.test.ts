@@ -3,7 +3,7 @@ import { mock, suite, test } from 'node:test';
 
 import { readUsherBridgeEnv } from './usherBridgeEnv.js';
 
-/** Every variable the bridge requires, set, so a test varies only the one it is about. */
+/** Every variable the Bridge requires, set, so a test varies only the one it is about. */
 const REQUIRED_ENV: NodeJS.ProcessEnv = {
 	USHER_AUDIENCE: 'audience-a5',
 	USHER_CONTROLLER_URL: 'http://controller.invalid',

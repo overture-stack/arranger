@@ -14,7 +14,7 @@ export type CatalogueRecord = Readonly<{
 /** A kind of denial, as the GraphQL router names it. */
 export type DenialKind = 'access-too-broad' | 'misconfigured' | 'no-access';
 
-/** Why the bridge denies a catalogue. */
+/** Why the Bridge denies a catalogue. */
 export type DenyReason = Extract<Enforcement, { kind: 'deny' }>['reason'];
 
 /** One line a `BridgeLogger` was given: its level, its fields and its fixed message. */
@@ -23,7 +23,7 @@ export type LoggedLine = Readonly<{ fields: Record<string, unknown>; level: keyo
 /** One question put to a stub probe: which check, and what it was asked about. */
 export type ProbeCall = Readonly<{ argument: unknown; check: keyof IndexProbe }>;
 
-/** A stand-in for the bridge's `register`, with every registration it was handed. */
+/** A stand-in for the Bridge's `register`, with every registration it was handed. */
 export type RegisterRecorder = Readonly<{
 	bridge: Pick<BridgeCore, 'register'>;
 

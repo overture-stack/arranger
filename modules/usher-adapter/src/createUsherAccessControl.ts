@@ -68,12 +68,12 @@ const requestFieldsOf = ({
 });
 
 /**
- * Translates the bridge's enforcement results into each catalogue's GraphQL router filter, deciding
+ * Translates the Bridge's enforcement results into each catalogue's GraphQL router filter, deciding
  * nothing itself. A `narrow` result's filter is returned unchanged, `allow` returns the router's
  * allow-all value, and `deny`, or no result for the catalogue, is thrown as the router's denial of the
  * catalogue, of the kind its reason maps to.
  *
- * @param options the bridge, each catalogue's registration, and the logger events are written to.
+ * @param options the Bridge, each catalogue's registration, and the logger events are written to.
  */
 export const createUsherAccessControl = ({
 	bridge,

@@ -37,7 +37,7 @@ A set records the values of one field, its `path`, from the documents returned b
 | Several catalogues on one server | The catalogue whose documents produced the values, where the query ran and its access filter applied. A selection across catalogues is one set per catalogue, linked by a shared identifier, so no index has to own the whole | The reference names its home catalogue, and the catalogue using it still applies its own access filter |
 | Several network nodes | The originating node, which holds the user's identity and records what the set was drawn from | Expanded into its values before the query is forwarded, since a remote node cannot resolve a set it does not hold. The cost is query size, bounded by the engine's terms limit, and a large set can reach it |
 
-**Two constraints hold whichever way it lands.** Who may use a set follows what it was drawn from: a set must record the resources it came from, and a reader must hold every one of them, which is Usher's provenance ceiling on derived artifacts, wherever the set is stored. And values, not references, cross a trust boundary, the same rule Usher's bridge follows when it writes a set into an access filter as one value list.
+**Two constraints hold whichever way it lands.** Who may use a set follows what it was drawn from: a set must record the resources it came from, and a reader must hold every one of them, which is Usher's provenance ceiling on derived artifacts, wherever the set is stored. And values, not references, cross a trust boundary, the same rule Usher's Bridge follows when it writes a set into an access filter as one value list.
 
 ## Saved sets of any size usable as filters
 

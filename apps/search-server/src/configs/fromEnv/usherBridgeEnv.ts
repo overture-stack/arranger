@@ -1,11 +1,11 @@
 import { startupRefusal } from './enableAccessControl.js';
 
-/** The Usher bridge's configuration as the environment sets it, its logger aside. */
+/** The Usher Bridge's configuration as the environment sets it, its logger aside. */
 export type UsherBridgeEnv = Readonly<{
 	audience: string;
 	controllerUrl: string;
 	eventSource: string;
-	/** The most clauses a filter the bridge renders may hold, the bridge's own default when unset. */
+	/** The most clauses a filter the Bridge renders may hold, the Bridge's own default when unset. */
 	filterClauseLimit?: number;
 	issuer: string;
 	key: string;
@@ -54,10 +54,10 @@ const filterClauseLimitFrom = (rawValue: string | undefined): ClauseLimitReading
 };
 
 /**
- * Reads the Usher bridge's configuration from the environment, which the image does only while
+ * Reads the Usher Bridge's configuration from the environment, which the image does only while
  * ENABLE_ACCESS_ENFORCEMENT is true. USHER_PAYLOAD_VERSIONS and ACCESS_CONTROL_FILTER_CLAUSE_LIMIT are optional;
  * every other variable is required. The clause limit is raised only with the search engine's own
- * `max_clause_count` and never above it, so a filter too large is denied by the bridge before the engine fails it.
+ * `max_clause_count` and never above it, so a filter too large is denied by the Bridge before the engine fails it.
  * A refusal names each variable missing or malformed and never a value, since USHER_KEY is a secret.
  *
  * @param env the environment to read, the process's own by default.

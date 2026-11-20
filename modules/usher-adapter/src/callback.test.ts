@@ -39,7 +39,7 @@ const verifiedCallback = async (): Promise<UsherFilterCallback> => {
 	return accessControl.filterFor('records');
 };
 
-/** A request's store holding the access the bridge's layer attaches, with these results. */
+/** A request's store holding the access the Bridge's layer attaches, with these results. */
 const localsHolding = (results: Readonly<Record<string, Enforcement>>): Record<string, unknown> => {
 	const locals = {};
 	attachAccess(locals, accessOf(ANONYMOUS, results));
@@ -140,7 +140,7 @@ suite('the callback, as a pure function of the request store', () => {
 
 		for (const readPath of ['hits', 'aggregations'] as const) {
 			test(`serves the open tier's filter on the ${readPath} path`, async () => {
-				// Given a suspended principal, whose results the bridge narrowed to the open tier
+				// Given a suspended principal, whose results the Bridge narrowed to the open tier
 				const callback = await verifiedCallback();
 
 				// When a search reaches the callback, Then it is served that filter
@@ -164,7 +164,7 @@ suite('the callback, as a pure function of the request store', () => {
 				const callback = await verifiedCallback();
 
 				// When the request reaches this path, Then the refusal is the temporary one, carrying the
-				// bridge's own unavailable text and Retry-After for the GraphQL router to answer with, never
+				// Bridge's own unavailable text and Retry-After for the GraphQL router to answer with, never
 				// the configuration failure
 				assert.throws(
 					() => callback({ locals: suspendedLocals() }, { readPath }),
@@ -216,7 +216,7 @@ suite('the callback, as a pure function of the request store', () => {
 
 	suite('a store the bridge did not leave', () => {
 		test('throws when the store holds no request access, because the middleware never ran', async () => {
-			// Given a store the bridge's layer never reached
+			// Given a store the Bridge's layer never reached
 			const callback = await verifiedCallback();
 
 			// When the callback runs, Then it throws through readAccess

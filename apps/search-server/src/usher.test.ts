@@ -9,7 +9,7 @@ import { type ImageUsher, stopUsherBridge, verifyAndStartUsher, withUsherFilters
 /** What a fake's calls did, in the order they happened. */
 type Step = 'rejected' | 'started' | 'stopped' | 'verified';
 
-/** A bridge whose start and stop are given, recording each step it reaches into `steps`. */
+/** A Bridge whose start and stop are given, recording each step it reaches into `steps`. */
 const bridgeWith = ({
 	start = async () => undefined,
 	steps,
@@ -78,7 +78,7 @@ suite('verifying and starting Usher before the image listens', () => {
 		// When Usher is verified and started
 		await verifyAndStartUsher({ indices: INDICES, usher });
 
-		// Then the adapter was handed each catalogue's index, and the bridge started after it verified them
+		// Then the adapter was handed each catalogue's index, and the Bridge started after it verified them
 		assert.deepEqual(handed, [INDICES]);
 		assert.deepEqual(steps, ['verified', 'started']);
 	});
@@ -92,7 +92,7 @@ suite('verifying and starting Usher before the image listens', () => {
 			throw refusal;
 		});
 
-		// When Usher is verified and started, Then it rejects with that refusal, logged, and the bridge never started
+		// When Usher is verified and started, Then it rejects with that refusal, logged, and the Bridge never started
 		await assert.rejects(verifyAndStartUsher({ indices: INDICES, usher }), (error: unknown) => error === refusal);
 		assert.deepEqual(
 			errors.mock.calls.map(({ arguments: [event] }) => event),
@@ -102,7 +102,7 @@ suite('verifying and starting Usher before the image listens', () => {
 	});
 
 	test("stops a bridge that fails to start, and rejects with the start's own error only once the stop has settled", async () => {
-		// Given a bridge whose start fails, and whose stop settles a turn later
+		// Given a Bridge whose start fails, and whose stop settles a turn later
 		const steps: Step[] = [];
 		const startFailure = new Error('the bridge could not start');
 		const usher = usherOver(
@@ -125,7 +125,7 @@ suite('verifying and starting Usher before the image listens', () => {
 	});
 
 	test("rejects with the start's own error when the stop also fails, logging the stop's failure", async (context) => {
-		// Given a bridge whose start and stop both fail
+		// Given a Bridge whose start and stop both fail
 		const errors = context.mock.method(console, 'error', () => undefined);
 		const startFailure = new Error('the bridge could not start');
 		const usher = usherOver(
@@ -156,7 +156,7 @@ suite('verifying and starting Usher before the image listens', () => {
 
 suite('stopping the bridge', () => {
 	test('settles only once the bridge has stopped', async () => {
-		// Given a bridge whose stop settles a turn later
+		// Given a Bridge whose stop settles a turn later
 		const steps: Step[] = [];
 		const bridge = bridgeWith({ steps, stop: nextTurn });
 
@@ -166,7 +166,7 @@ suite('stopping the bridge', () => {
 	});
 
 	test('resolves when the bridge fails to stop, logging the failure', async (context) => {
-		// Given a bridge whose stop fails
+		// Given a Bridge whose stop fails
 		const errors = context.mock.method(console, 'error', () => undefined);
 		const bridge = bridgeWith({
 			steps: [],

@@ -10,7 +10,7 @@ import { createBridgeLogger } from './index.js';
  * level, the fixed message, and the event's own fields unchanged.
  */
 
-/** A bridge event as the bridge hands its logger: a CloudEvents envelope, and its type as the message. */
+/** A Bridge event as the Bridge hands its logger: a CloudEvents envelope, and its type as the message. */
 const bridgeEvent = (type: string) => ({
 	data: { actorId: null, actorType: 'system', reason: 'eventSourceEmpty' },
 	id: '9b2f4c1e-0d3a-4e6b-8f5a-2c7d1e9a0b34',
@@ -22,7 +22,7 @@ const bridgeEvent = (type: string) => ({
 });
 
 /**
- * A bridge event as the bridge's event log builds it: its fields inside `data` beside the actor, logged at
+ * A Bridge event as the Bridge's event log builds it: its fields inside `data` beside the actor, logged at
  * the level its severity maps to, with its type as the message.
  */
 const envelopeOf = <Name extends keyof BridgeEventData>(
@@ -39,7 +39,7 @@ const envelopeOf = <Name extends keyof BridgeEventData>(
 	type: `bio.overture.${name}`,
 });
 
-/** The level the bridge logs each severity at. */
+/** The level the Bridge logs each severity at. */
 const LEVEL_OF_SEVERITY: Readonly<Record<'critical' | 'error' | 'warning', keyof BridgeLogger>> = {
 	critical: 'error',
 	error: 'error',
@@ -54,7 +54,7 @@ suite('the logger shim', () => {
 			const logger = createBridgeLogger({ write: (line: string) => written.push(line) });
 			const event = bridgeEvent('bio.overture.bridge.startRefusal');
 
-			// When the bridge logs an event at this level
+			// When the Bridge logs an event at this level
 			logger[level](event, event.type);
 
 			// Then one line holds the level, the message and the event's fields exactly
@@ -86,7 +86,7 @@ suite('the logger shim', () => {
 			const logger = createBridgeLogger({ write: (line: string) => written.push(line) });
 			const level = LEVEL_OF_SEVERITY[event.severity];
 
-			// When the bridge logs the event at the level its severity maps to
+			// When the Bridge logs the event at the level its severity maps to
 			logger[level](event, event.type);
 
 			// Then one line holds the event whole, its data and resource included, at that level

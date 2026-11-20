@@ -75,12 +75,12 @@ export type ExternalNetworkConfig = Partial<{
 	NetworkConfig<ArrangerBaseContext>;
 
 /**
- * The Usher bridge a host hands the image, with the logger it writes to, in place of one built from the
+ * The Usher Bridge a host hands the image, with the logger it writes to, in place of one built from the
  * environment. Read only while ENABLE_ACCESS_ENFORCEMENT is true.
  */
 export type UsherSeam = Readonly<{ bridge: BridgeCore; logger: BridgeLogger }>;
 
-/** Each catalogue's registration with Usher's bridge, as its `auth.json` holds it, by catalogue id. */
+/** Each catalogue's registration with Usher's Bridge, as its `auth.json` holds it, by catalogue id. */
 export type UsherRegistrations = Record<string, unknown>;
 
 export type ExternalConfigs = Partial<

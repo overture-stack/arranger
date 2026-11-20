@@ -55,7 +55,7 @@ const bridgeConfiguration = (
 	...overrides,
 });
 
-/** A real bridge, never started, so it needs no controller: its `register` checks registrations as Usher does. */
+/** A real Bridge, never started, so it needs no Controller: its `register` checks registrations as Usher does. */
 const unstartedBridge = (logger: BridgeLogger): BridgeCore => createBridgeCore(bridgeConfiguration(logger));
 
 /** The adapter over a register recorder, with its catalogues configured as given, and the lines it logs. */
@@ -700,7 +700,7 @@ suite('the adapter at startup', () => {
 				// When the adapter verifies it
 				await accessControl.verify({ records: indexOf() });
 
-				// Then the bridge receives that registration exactly
+				// Then the Bridge receives that registration exactly
 				assert.deepEqual(recorder.registered, [{ records: registration }]);
 			});
 		}
@@ -735,7 +735,7 @@ suite('the adapter at startup', () => {
 			// When the adapter verifies the one that loaded
 			await accessControl.verify({ records: indexOf() });
 
-			// Then both are registered, since the bridge takes its registrations once
+			// Then both are registered, since the Bridge takes its registrations once
 			assert.deepEqual(recorder.registered, [
 				{ controlledOnly: CONTROLLED_ONLY_REGISTRATION, records: RECORDS_REGISTRATION },
 			]);
@@ -792,7 +792,7 @@ suite('the adapter at startup', () => {
 			['open by configuration', OPEN_REGISTRATION],
 		] as const) {
 			test(`builds a registration the real bridge accepts: a catalogue ${description}`, async () => {
-				// Given the real bridge, which checks registrations as Usher does and needs no controller unstarted
+				// Given the real Bridge, which checks registrations as Usher does and needs no Controller unstarted
 				const { logger } = createRecordingLogger();
 				const bridge = unstartedBridge(logger);
 				const accessControl = createUsherAccessControl({
@@ -802,7 +802,7 @@ suite('the adapter at startup', () => {
 				});
 
 				try {
-					// When the adapter verifies the catalogue, Then the bridge's register accepts it
+					// When the adapter verifies the catalogue, Then the Bridge's register accepts it
 					await accessControl.verify({ records: indexOf() });
 				} finally {
 					await bridge.stop();
@@ -811,13 +811,13 @@ suite('the adapter at startup', () => {
 		}
 
 		test("fails startup with the bridge's own refusal for a bridge configuration start refuses, logging it through the shim", async () => {
-			// Given a bridge whose event source is empty, logging through the adapter's shim
+			// Given a Bridge whose event source is empty, logging through the adapter's shim
 			const written: string[] = [];
 			const logger = createBridgeLogger({ write: (line: string) => written.push(line) });
 			const bridge = createBridgeCore(bridgeConfiguration(logger, { eventSource: '' }));
 			bridge.register({ records: RECORDS_REGISTRATION });
 
-			// When the bridge starts, Then it refuses with its own error, and the shim wrote the refusal
+			// When the Bridge starts, Then it refuses with its own error, and the shim wrote the refusal
 			await assert.rejects(() => bridge.start(), UsherContractError);
 			await bridge.stop();
 			const events = written.map((line) => JSON.parse(line) as Record<string, unknown>);

@@ -12,10 +12,10 @@ import { CATEGORY_CONDITIONS, CONFIGURED_RESOURCES, EVERY_RECORD, RESOURCE_FIELD
 import type { DenialKind, DenyReason, ResultRow } from './types.js';
 
 /**
- * The fixtures are enforcement results, not payloads, since the bridge hands over results alone. Each row
- * is what the bridge would hand over for one case of Usher's case table and this catalogue's category
+ * The fixtures are enforcement results, not payloads, since the Bridge hands over results alone. Each row
+ * is what the Bridge would hand over for one case of Usher's case table and this catalogue's category
  * conditions. The narrow filters are rendered in the canonical form `@overture-stack/usher-types`
- * defines, so a row and the bridge's rendering of its case are compared by the records each returns,
+ * defines, so a row and the Bridge's rendering of its case are compared by the records each returns,
  * never by structure.
  */
 
@@ -48,7 +48,7 @@ const row = (description: string, caseName: string, result: Enforcement, visible
 const NO_GRANTS: Enforcement = { kind: 'deny', reason: 'no-grants' };
 
 /**
- * Every reason the bridge denies a catalogue with, each described, so a reason the bridge adds fails to
+ * Every reason the Bridge denies a catalogue with, each described, so a reason the Bridge adds fails to
  * compile here until a suite covers it.
  */
 export const DENY_REASONS: Readonly<Record<DenyReason, string>> = {
@@ -158,10 +158,10 @@ export const ABSENT_CATEGORIES_UNMARKED: ResultRow = row(
 	['h1', 'h2', 'l1'],
 );
 
-/** The principal as the bridge presents an anonymous request: no credential, the open tier only. */
+/** The principal as the Bridge presents an anonymous request: no credential, the open tier only. */
 export const ANONYMOUS: UsherPrincipal = { credential: 'none', openTierOnly: true, suspended: false };
 
-/** A signed-in principal whose credential the bridge confirmed. */
+/** A signed-in principal whose credential the Bridge confirmed. */
 export const signedIn = (subject: string): UsherPrincipal => ({
 	credential: 'confirmed',
 	openTierOnly: false,
@@ -169,10 +169,10 @@ export const signedIn = (subject: string): UsherPrincipal => ({
 	suspended: false,
 });
 
-/** A signed-in principal whose credential the bridge could not confirm: suspended, the open tier only. */
+/** A signed-in principal whose credential the Bridge could not confirm: suspended, the open tier only. */
 export const SUSPENDED: UsherPrincipal = { credential: 'unconfirmed', openTierOnly: true, suspended: true };
 
-/** A suspended principal whose credential the bridge had confirmed, its subject kept for attribution alone. */
+/** A suspended principal whose credential the Bridge had confirmed, its subject kept for attribution alone. */
 export const suspendedConfirmed = (subject: string): UsherPrincipal => ({
 	attributionOnlySubject: subject,
 	credential: 'confirmed',
@@ -181,7 +181,7 @@ export const suspendedConfirmed = (subject: string): UsherPrincipal => ({
 });
 
 /**
- * One request's access as the bridge attaches it.
+ * One request's access as the Bridge attaches it.
  *
  * @param principal who the request is served as.
  * @param results each catalogue's result, keyed by catalogue.

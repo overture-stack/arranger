@@ -1,6 +1,6 @@
 # @overture-stack/arranger-usher-adapter
 
-Applies Usher's access decisions to Arranger's GraphQL routers. The adapter translates: Usher's bridge decides what each request may reach, and the adapter turns each catalogue's enforcement result into that catalogue's server-side filter, deciding nothing itself.
+Applies Usher's access decisions to Arranger's GraphQL routers. The adapter translates: Usher's Bridge decides what each request may reach, and the adapter turns each catalogue's enforcement result into that catalogue's server-side filter, deciding nothing itself.
 
 Requires Node.js 24 or later, as the Usher packages do.
 
@@ -8,10 +8,10 @@ Requires Node.js 24 or later, as the Usher packages do.
 
 The search server image wires it when `ENABLE_ACCESS_ENFORCEMENT=true`. A host building its own GraphQL routers wires it the same way:
 
-1. Create it once, with the bridge, each catalogue's registration and a logger: `createUsherAccessControl({ bridge, catalogues, logger })`.
+1. Create it once, with the Bridge, each catalogue's registration and a logger: `createUsherAccessControl({ bridge, catalogues, logger })`.
 2. Pass each catalogue's router `filterFor(catalogueId)` as its `getServerSideFilter`, and collect what each router hands its `onIndexMapping` hook: the index mapping and the index probe, kept together as that catalogue's `CatalogueIndex`, `{ mapping, probe }`.
-3. Await `verify(indices)` once every router has loaded or failed, before the host listens. It checks each loaded catalogue as [What startup checks](#what-startup-checks) describes, then registers every configured catalogue with the bridge in one call. A catalogue that failed to load is registered and never verified, so it serves nothing.
-4. Mount the bridge's Express layer ahead of the routers, then start the bridge. On shutdown, await the bridge's `stop()`.
+3. Await `verify(indices)` once every router has loaded or failed, before the host listens. It checks each loaded catalogue as [What startup checks](#what-startup-checks) describes, then registers every configured catalogue with the Bridge in one call. A catalogue that failed to load is registered and never verified, so it serves nothing.
+4. Mount the Bridge's Express layer ahead of the routers, then start the Bridge. On shutdown, await the Bridge's `stop()`.
 
 ## What startup checks
 
@@ -45,19 +45,19 @@ The search engine role Arranger uses needs, on each catalogue's index:
 
 Without search or query validation, the check fails and startup is refused; without the mapping, the catalogue fails to load and serves nothing. Either way it is never served unchecked.
 
-The bridge's `filterClauseLimit`, which the search server sets from `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT`, is raised only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the bridge's reason, `filter-limit`, before the engine would fail the query. The bridge can deny a filter the engine would have run.
+The Bridge's `filterClauseLimit`, which the search server sets from `ACCESS_CONTROL_FILTER_CLAUSE_LIMIT`, is raised only together with the engine's `indices.query.bool.max_clause_count`, and never above it. The Bridge weighs a filter so the engine's limit binds no earlier than its own, so a filter too large is denied with the Bridge's reason, `filter-limit`, before the engine would fail the query. The Bridge can deny a filter the engine would have run.
 
-`createBridgeLogger({ write })` builds the one logger handed to both the bridge and the adapter, writing each event as one JSON line.
+`createBridgeLogger({ write })` builds the one logger handed to both the Bridge and the adapter, writing each event as one JSON line.
 
 ## What a request gets
 
-| The bridge's result for the catalogue  | What the router is given                                                         |
+| The Bridge's result for the catalogue  | What the router is given                                                         |
 | -------------------------------------- | -------------------------------------------------------------------------------- |
 | `narrow`                               | The result's filter, unchanged                                                   |
 | `allow`                                | The router's allow-all value                                                     |
 | `deny`, or no result for the catalogue | A thrown `AccessControlDeniedError` naming the catalogue, so nothing is searched |
 
-A suspended principal, signed in but unconfirmed by the bridge, is served the open tier on searches and facets. Any other read is refused for now with `AccessControlUnavailableError`, carrying `UNAVAILABLE_ANSWER`, the bridge's own 503 text and wait: the GraphQL router logs the text and answers its own fixed text, `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, with the wait as `Retry-After`. Network search is refused as a configuration failure for every principal, since access control does not serve it yet.
+A suspended principal, signed in but unconfirmed by the Bridge, is served the open tier on searches and facets. Any other read is refused for now with `AccessControlUnavailableError`, carrying `UNAVAILABLE_ANSWER`, the Bridge's own 503 text and wait: the GraphQL router logs the text and answers its own fixed text, `ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE`, with the wait as `Retry-After`. Network search is refused as a configuration failure for every principal, since access control does not serve it yet.
 
 A deny is answered on every read path, hits, facets, saved sets and export, with the router's fixed text for its kind, naming the catalogue and nothing finer. Whose move it is decides the kind:
 

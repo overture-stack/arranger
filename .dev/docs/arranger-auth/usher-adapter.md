@@ -1,6 +1,6 @@
 # Usher Adapter: `@overture-stack/arranger-usher-adapter`
 
-Arranger-specific design notes for the Usher PEP adapter. The general Usher adapter contract (bridge
+Arranger-specific design notes for the Usher PEP adapter. The general Usher adapter contract (Bridge
 responsibilities, revocation channel, logging requirements, API contract) lives in the Usher
 repo at `.dev/design/adapter-integration.md`.
 
@@ -8,12 +8,12 @@ repo at `.dev/design/adapter-integration.md`.
 
 ## What the Usher adapter does
 
-The bridge resolves a grants token into an `Enforcement` decision; the Usher adapter acts on that decision
+The Bridge resolves a grants token into an `Enforcement` decision; the Usher adapter acts on that decision
 by returning a SQON filter to Arranger's enforcement seam. It does **not** guarantee that filter
 reaches every read path; that guarantee is Arranger's side of the split, and today it does not hold.
 See [Audit consequences](#audit-consequences) below before designing against this.
 
-General Usher adapter responsibilities (bridge handoff, token caching, revocation channel, fail-secure
+General Usher adapter responsibilities (Bridge handoff, token caching, revocation channel, fail-secure
 mode) are in `adapter-integration.md` in the Usher repo.
 
 **Status:** this file was written before the Phase 0 audit and has
@@ -86,8 +86,8 @@ instead of catching it, which is why the outcome needs a third state.
 **Partly superseded.** The surviving half: an earlier draft said an empty grant set was the Usher adapter's
 most common no-access input, and it is not.
 
-- **Grants not loaded is not a legitimate input.** The bridge fail-secures with a 503 rather than
-  handing the Usher adapter an empty payload. An Usher adapter invoked without a resolved decision is a bridge bug.
+- **Grants not loaded is not a legitimate input.** The Bridge fail-secures with a 503 rather than
+  handing the Usher adapter an empty payload. An Usher adapter invoked without a resolved decision is a Bridge bug.
   Unaffected by the correction below.
 
 Two bullets from the earlier version are **withdrawn**, because both were downstream of
@@ -134,7 +134,7 @@ malformed filter *shapes* all throw and fail closed. The falsy path is the only 
 Per the correction above, a missing payload should already have short-circuited upstream with a
 503, so the callback should never see one. **The callback must still be total anyway.** The whole
 finding of the audit is that this seam converts bugs into silent full disclosure rather than into
-errors, and "that would be a bridge bug" describes exactly the input class that has to fail closed.
+errors, and "that would be a Bridge bug" describes exactly the input class that has to fail closed.
 Two independent guards, because the cost of the outer one failing is not an exception.
 
 **4. Exclusion-shaped filters are the wrong shape for a fail-closed design.** The audit found that
@@ -175,7 +175,7 @@ one place consulted out of sequence by a reader.
 | Data service              | Arranger itself: `dcat:DataService`, the API queried by a principal. Usher is a service and is not a data service, which is the boundary drawn for free by the term. |
 | `categories` include-list | The set of data categories the user is approved to see                         |
 | Server-side filter        | A SQON expression returned by `getServerSideFilter(context)`, intended to be ANDed into every query before it hits OpenSearch. "Every" is aspirational: see [Audit consequences](#audit-consequences). |
-| Grants token              | JWE payload decrypted by the bridge. The bridge resolves it and hands the Usher adapter an `Enforcement` decision rather than the payload itself; see [Grants payload structure](#grants-payload-structure). |
+| Grants token              | JWE payload decrypted by the Bridge. The Bridge resolves it and hands the Usher adapter an `Enforcement` decision rather than the payload itself; see [Grants payload structure](#grants-payload-structure). |
 
 **Where the Catalogue, Dataset and Data service meanings come from.** Terms defined by [W3C DCAT](https://www.w3.org/TR/vocab-dcat-3/)
 take DCAT's meaning here. Testing words against each other inside one corpus is how a group settles on
@@ -207,7 +207,7 @@ catalogue ID. Every consequence of that premise is wrong rather than imprecise, 
 algorithm below, which is why both sections are replaced rather than corrected in place. Written in
 accordance with Usher's grants model; the corrections marked below are this repository's.
 
-The bridge does not hand the Usher adapter a payload to interpret. It returns a resolved decision, and the
+The Bridge does not hand the Usher adapter a payload to interpret. It returns a resolved decision, and the
 Usher adapter acts on it:
 
 ```ts
@@ -217,7 +217,7 @@ type Enforcement =
   | { kind: 'allow' }
 ```
 
-**`Enforcement` is the bridge's return type, not the callback's.** The Usher adapter receives three arms,
+**`Enforcement` is the Bridge's return type, not the callback's.** The Usher adapter receives three arms,
 returns a `SqonNode` for `narrow` and `allow`, which is what `GetServerSideFilterFn` expects, and throws the
 GraphQL router's `AccessControlDeniedError` for `deny`, so the catalogue's index is never searched for it.
 
@@ -453,7 +453,7 @@ search, with its kind's fixed text naming the catalogue, so it answers faster an
 narrowing that matches nothing. That separates nothing the asker could not already see: every catalogue is
 listed to everyone, through discovery and introspection, and whether the server's access control serves
 this person on this catalogue is their own status, not anyone else's data. The coupling is pinned by a
-test that every principal is given the same listing, without the bridge being asked who is asking; were
+test that every principal is given the same listing, without the Bridge being asked who is asking; were
 catalogues ever listed per principal, a denial of a catalogue hidden from the asker would have to answer
 as a catalogue that does not exist does.
 
@@ -811,7 +811,7 @@ Under the old contract the upstream step could deny before composition, which re
 arrangement. It only worked while a request mapped to exactly one resource.
 
 The old arrangement never rested on the layering alone. Point 3 above already required the callback
-to be total regardless, because "that would be a bridge bug" describes exactly the input class that
+to be total regardless, because "that would be a Bridge bug" describes exactly the input class that
 has to fail closed. So the 404 was a primary guard with the empty-case encoding as a backstop, and
 **a backstop only fires once the primary has already failed, which means nobody finds out it is
 broken until the day it is needed.** Under the new arrangement the callback's deny is the primary path,
@@ -1176,7 +1176,7 @@ inclusion-versus-exclusion question above has a cheap answer: if open records al
 explicit marker, the inclusion shape costs much less than assumed.
 
 **7. How quickly must a permission change take effect?** Sets the revocation and cache-TTL
-requirement, which is otherwise the hardest part of the bridge to specify and the easiest to
+requirement, which is otherwise the hardest part of the Bridge to specify and the easiest to
 over-build.
 
 ## Answers received, 2026-08-18
@@ -1252,7 +1252,7 @@ All of this is read from their document rather than from their code.
 **Revocation lag equals token lifetime, which answers question 7.** Their validity check is
 `context.user.status === 'APPROVED'`, and that status is baked into the token at issue time. A user
 suspended or revoked after issuance stays approved until the token expires. This is a hard input to
-the bridge's revocation and cache design rather than a defect: the EGO token TTL *is* the worst-case
+the Bridge's revocation and cache design rather than a defect: the EGO token TTL *is* the worst-case
 window during which a revoked user retains access, so the Usher adapter's cache TTL cannot meaningfully be
 longer than it and gains little by being much shorter.
 
@@ -1442,7 +1442,7 @@ Arranger README documents for this is `if (!userId) return null`, and `null` mea
 the documented way to handle an anonymous request grants the full dataset. Federation compounds it:
 `allRequestsPassthroughHeaders` defaults to `[]`, so with nothing configured a remote node sees
 every federated request as anonymous and applies that same pattern. The question is no longer only
-how to integrate the anonymous bridge flow without breaking public access; it is what the
+how to integrate the anonymous Bridge flow without breaking public access; it is what the
 public-catalogue filter should *be*, given that "no restriction" and "not authenticated" currently
 have the same encoding and must stop having it.
 

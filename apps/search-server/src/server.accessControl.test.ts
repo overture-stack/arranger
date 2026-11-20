@@ -10,7 +10,7 @@ import type { SearchClient } from '@overture-stack/arranger-graphql-router';
 import type { BridgeCore, BridgeLogger, BridgeMode, KeyRegistration } from '@overture-stack/usher-bridge--express';
 
 /**
- * The image's startup with access enforcement on, through its seam taking the bridge and its logger, so a
+ * The image's startup with access enforcement on, through its seam taking the Bridge and its logger, so a
  * test hands it a recording fake while the environment-reading code builds the real one. In a file of
  * its own because the configuration module reads ENABLE_ACCESS_ENFORCEMENT once, when first imported, and
  * the test runner gives each file its own process.
@@ -73,7 +73,7 @@ const engineUp = ({ extraResourceValues = 0 }: Readonly<{ extraResourceValues?: 
 const ENGINE_UP = engineUp();
 
 /**
- * A bridge in `mode`, recording what it was registered with, how often it resolved and whether it was
+ * A Bridge in `mode`, recording what it was registered with, how often it resolved and whether it was
  * started and stopped. No call outlives its own promise, so its stop settles at once.
  */
 const recordingBridge = (mode: BridgeMode = 'normal') => {
@@ -198,7 +198,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 
 		try {
 			// Then it listens, having registered both catalogues in one call, each exactly as its file holds
-			// it, and having started the bridge once
+			// it, and having started the Bridge once
 			assert.equal(server.listening, true);
 			assert.deepEqual(bridge.state.registered, [
 				{ [NAMED_CATALOGUE]: RECORD_REGISTRATION, [OPEN_CATALOGUE]: { kind: 'open' } },
@@ -218,7 +218,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		const bridge = recordingBridge();
 
 		// When the image starts, Then it refuses, naming the catalogue and its missing file, before the
-		// bridge is registered with or started
+		// Bridge is registered with or started
 		await assert.rejects(
 			() => startImage(configs, bridge.core),
 			(error: unknown) =>
@@ -244,7 +244,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 			(error: unknown) => describeRefusal(error),
 		);
 
-		// Then it refuses rather than skip the catalogue, naming the file, before the bridge is registered
+		// Then it refuses rather than skip the catalogue, naming the file, before the Bridge is registered
 		// with or started
 		assert.notEqual(outcome, 'listening');
 		assert.match(outcome, /"base\.json"/u);
@@ -283,7 +283,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 			const bridge = recordingBridge();
 
 			// When the image starts, Then it refuses, naming the catalogue and network search, which access
-			// control does not serve yet, before the bridge is registered with or started
+			// control does not serve yet, before the Bridge is registered with or started
 			await assert.rejects(
 				() => startImage(configs, bridge.core),
 				(error: unknown) =>
@@ -302,7 +302,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		const bridge = recordingBridge();
 
 		// When the image starts, Then it refuses, naming the catalogue and the field and saying some records hold
-		// more than one value there, and the bridge was neither registered with nor started
+		// more than one value there, and the Bridge was neither registered with nor started
 		await assert.rejects(
 			() => startImage(configs, bridge.core, { engine: engineUp({ extraResourceValues: 1 }) }),
 			(error: unknown) =>
@@ -321,13 +321,13 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		const bridge = recordingBridge();
 		const server = await startImage(configs, bridge.core, { engine: ENGINE_UP });
 
-		// When the server closes, Then the bridge was stopped once
+		// When the server closes, Then the Bridge was stopped once
 		await new Promise((resolve) => server.close(resolve));
 		assert.equal(bridge.state.stopped, 1);
 	});
 
 	test('answers its liveness route while the bridge answers unavailable', async () => {
-		// Given a registered catalogue, and a bridge still waiting for its first check, so it answers unavailable
+		// Given a registered catalogue, and a Bridge still waiting for its first check, so it answers unavailable
 		const configs = await writeCatalogues(path.join(workspace, 'liveness'), {
 			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 		});
@@ -345,8 +345,8 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 				method: 'POST',
 			});
 
-			// Then liveness answers 200 without reaching the bridge, while the catalogue's route meets the
-			// bridge's own 503, so the layer is mounted, and mounted after the health routes
+			// Then liveness answers 200 without reaching the Bridge, while the catalogue's route meets the
+			// Bridge's own 503, so the layer is mounted, and mounted after the health routes
 			assert.equal(alive.status, 200);
 			assert.equal(resolvedForLiveness, 0);
 			assert.equal(searched.status, 503);
@@ -360,7 +360,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	// listings ever made per principal, a denial of a catalogue hidden from the asker would have to answer as a
 	// catalogue that does not exist does, so this fails first.
 	test('lists every catalogue to every principal alike, without asking the bridge who asks', async () => {
-		// Given two registered catalogues that loaded, and a bridge that confirms no one
+		// Given two registered catalogues that loaded, and a Bridge that confirms no one
 		const configs = await writeCatalogues(path.join(workspace, 'listing'), {
 			[NAMED_CATALOGUE]: { 'base.json': baseFor(NAMED_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
 			[OPEN_CATALOGUE]: { 'base.json': baseFor(OPEN_CATALOGUE), 'auth.json': { auth: RECORD_REGISTRATION } },
@@ -382,7 +382,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 			const anonymous = await read({});
 			const signedIn = await read({ authorization: 'Bearer credential-the-bridge-cannot-confirm' });
 
-			// Then each answers the same whoever asks, the listing names both catalogues, and the bridge was
+			// Then each answers the same whoever asks, the listing names both catalogues, and the Bridge was
 			// never asked who was asking
 			assert.deepEqual(signedIn, anonymous);
 			assert.deepEqual(
@@ -401,7 +401,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		}
 	});
 
-	/** Starts the image over one registered catalogue, its bridge in `mode`, and reads both health routes. */
+	/** Starts the image over one registered catalogue, its Bridge in `mode`, and reads both health routes. */
 	const healthOf = async (mode: BridgeMode, engine: SearchClient) => {
 		const configs = await writeCatalogues(
 			path.join(workspace, `health-${mode}-${engine === ENGINE_UP ? 'loaded' : 'failed'}`),
@@ -431,14 +431,14 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 	};
 
 	test('reports not ready while the bridge is cold, even with every catalogue loaded, and stays alive', async () => {
-		// Given a bridge before its first check confirms, which answers 503 to every request, beside catalogues
+		// Given a Bridge before its first check confirms, which answers 503 to every request, beside catalogues
 		// that all loaded, When the health routes are asked, Then readiness keeps traffic away and liveness answers
 		assert.deepEqual(await healthOf('cold', ENGINE_UP), { alive: 200, ready: 503 });
 	});
 
 	for (const mode of ['normal', 'uncertain'] as const) {
 		test(`follows the catalogues' status for readiness with the bridge ${mode}, and stays alive`, async () => {
-			// Given the bridge serving, the open tier included through a silence, When the health routes are
+			// Given the Bridge serving, the open tier included through a silence, When the health routes are
 			// asked with every catalogue loaded and with every catalogue failed, Then readiness follows the
 			// catalogues, as without access control, and liveness answers either way
 			const [loaded, failed] = await Promise.all([healthOf(mode, ENGINE_UP), healthOf(mode, ENGINE_DOWN)]);

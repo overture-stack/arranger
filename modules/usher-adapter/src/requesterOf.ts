@@ -7,12 +7,12 @@ const isRecord = (value: unknown): value is Record<PropertyKey, unknown> => type
 
 /**
  * Who made a request, for the GraphQL router's `getRequester`, read from the `credential` of the principal
- * the bridge attached: a confirmed credential not suspended is a principal with its subject; one suspended
+ * the Bridge attached: a confirmed credential not suspended is a principal with its subject; one suspended
  * is suspended, carrying the subject kept for attribution alone; an unconfirmed credential is suspended;
  * and no credential is an anonymous request. A suspended answer carries the wait a refused read gives.
  *
- * @param context the request context, whose `locals` hold the access the bridge's layer attached.
- * @throws {UsherContractError} when the request holds no access from the bridge.
+ * @param context the request context, whose `locals` hold the access the Bridge's layer attached.
+ * @throws {UsherContractError} when the request holds no access from the Bridge.
  */
 export const requesterOf = (context: unknown): RequesterAnswer => {
 	const locals = isRecord(context) && isRecord(context.locals) ? context.locals : {};

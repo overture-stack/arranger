@@ -7,7 +7,7 @@ import { accessOf, ANONYMOUS, ROWS, signedIn, SUSPENDED, suspendedConfirmed } fr
 
 import { requesterOf, UNAVAILABLE_ANSWER } from './index.js';
 
-/** A request context as the GraphQL router builds it, its store holding the access the bridge attached. */
+/** A request context as the GraphQL router builds it, its store holding the access the Bridge attached. */
 const contextFor = (principal: UsherPrincipal) => {
 	const locals = {};
 	attachAccess(locals, accessOf(principal, { records: ROWS.open.result }));

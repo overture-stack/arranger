@@ -3,7 +3,7 @@
 In Usher's build order, step 1 is this adapter: its tests are written from Usher's side and
 reviewed from Arranger's, and the adapter is implemented from Arranger's side against them. This
 file is the plan for those tests. It is roadmap item 10 tested the way item 12 asks, against the
-real bridge and a mocked controller.
+real Bridge and a mocked Controller.
 
 Two rules from the build order apply throughout. **The consumer's tests decide the interface's
 shape, and the case table decides its answers.** The cases are the numbered ones in Usher's
@@ -19,10 +19,10 @@ shape, and the case table decides its answers.** The cases are the numbered ones
 | What each enforcement result does to records, counts, facets and exports | here                                                                                                        |
 | The startup checks on a catalogue's mapping                              | here, against the mapping and against what the index holds                                                  |
 | The log events' presence and shape                                       | here                                                                                                        |
-| How the bridge renders a payload into a result                           | step 2, the bridge's own tests                                                                              |
-| The bridge's own answers, 400, 401 and 503, with their text and headers  | step 2, the bridge's own tests; here only that no query reaches the engine                                  |
-| The `Usher-Suspended` header and its exposure to a browser               | step 2, the bridge's own tests; here only that it reaches a client through Arranger's stack                 |
-| An artifact key and its provenance ceiling                               | step 2, the bridge's own tests; the adapter registers record and open keys until saved sets, roadmap item 8 |
+| How the Bridge renders a payload into a result                           | step 2, the Bridge's own tests                                                                              |
+| The Bridge's own answers, 400, 401 and 503, with their text and headers  | step 2, the Bridge's own tests; here only that no query reaches the engine                                  |
+| The `Usher-Suspended` header and its exposure to a browser               | step 2, the Bridge's own tests; here only that it reaches a client through Arranger's stack                 |
+| An artifact key and its provenance ceiling                               | step 2, the Bridge's own tests; the adapter registers record and open keys until saved sets, roadmap item 8 |
 | Telling a denial apart from an empty result                              | roadmap item 5, which widens the seam                                                                       |
 | Saved sets                                                               | roadmap item 8                                                                                              |
 | Federation                                                               | after the federation posture decision                                                                       |
@@ -36,11 +36,11 @@ The case table's principal, Ana, has accepted a grant on HEART_STUDY's `controll
 to a group she belongs to (case 5). The baseline is on, so she also holds `unmarked` everywhere it
 is open. She queries the synthetic catalogue described under the fixtures below.
 
-1. At startup, with access enforcement on, the search-server image constructs the bridge and passes it
+1. At startup, with access enforcement on, the search-server image constructs the Bridge and passes it
    to the adapter's factory, `createUsherAccessControl({ bridge, catalogues, logger })`. `catalogues`
    maps each catalogue's id to its registration, read from the `auth` key of the `auth.json` beside
    that catalogue's `base.json` and passed through untouched; `logger` is the `BridgeLogger` also
-   handed to the bridge.
+   handed to the Bridge.
 2. The factory's `filterFor(catalogueId)` returns one `getServerSideFilter` callback per catalogue,
    throwing for an id with no registration, and registers nothing yet. The image passes each to its
    own catalogue's GraphQL router, so a callback serves one catalogue and never learns which one
@@ -48,18 +48,18 @@ is open. She queries the synthetic catalogue described under the fixtures below.
 3. Each GraphQL router fetches its index mapping as it does today, and hands it to the host through
    its `onIndexMapping` hook before the router resolves.
 4. The factory's `verify(indices)` checks each catalogue whose index it is handed, against its mapping
-   and what its index holds, before the image starts listening, and then registers every configured catalogue with the bridge in one
-   `register` call, keyed by catalogue, since the bridge takes its registrations once and before it
+   and what its index holds, before the image starts listening, and then registers every configured catalogue with the Bridge in one
+   `register` call, keyed by catalogue, since the Bridge takes its registrations once and before it
    starts. A second `verify` throws. A catalogue failing to load is registered and never verified,
    so it serves nothing and one bad index never becomes a total outage. The image mounts
-   the bridge's middleware after its health routes and CORS and before body parsing, awaits the
-   bridge's start, which checks its configuration and imports its key, and then listens. The bridge
+   the Bridge's middleware after its health routes and CORS and before body parsing, awaits the
+   Bridge's start, which checks its configuration and imports its key, and then listens. The Bridge
    answers 503 until its revocation channel confirms a first check; only then does it install the
    anonymous payload, running the category-gap check for the open tier before any request is served.
    A callback whose catalogue has not been verified throws, so a host that skips the check fails
    closed, and loudly. What a catalogue failing the check does is in the startup suite below.
 5. A request arrives. The image records a request identifier in `res.locals.requestId`, generated
-   server-side and never taken from a client header. The bridge's middleware, mounted ahead of the
+   server-side and never taken from a client header. The Bridge's middleware, mounted ahead of the
    GraphQL routers, resolves Ana's token and attaches the request's access to Express's per-request
    store under `usher`: her subject, and one enforcement result per catalogue.
 6. The GraphQL router carries that store, the request's own `res.locals` object, to the callback on
@@ -69,7 +69,7 @@ is open. She queries the synthetic catalogue described under the fixtures below.
    it applied it.
 8. Arranger's guard checks the filter as received, and composes it with the client's filter. Every
    clause of a compiled access filter carries boost 0, so access restricts results and never changes
-   their order, and the bridge's validator refuses a wildcard, the one operator that scores.
+   their order, and the Bridge's validator refuses a wildcard, the one operator that scores.
 9. Ana sees HEART_STUDY's `controlled` and `unmarked` records, and the `unmarked` records of the
    other two studies. Nothing else, on any endpoint.
 
@@ -80,7 +80,7 @@ nothing of Usher's, so a deployment without access control sees no difference:
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2    | the image takes one filter callback for every catalogue                                                                                                                                                                                                       | with access enforcement on, each catalogue's GraphQL router gets `filterFor(id)` for its own id                                                                                                                                                                                                                                                                                                                                                                            |
 | 3    | the GraphQL router keeps the mapping it fetched to itself                                                                                                                                                                                                     | `arrangerRouter` takes an optional `onIndexMapping`, called after the fetch and before the router resolves, with a copy of the fetched mapping and an `IndexProbe` of the catalogue's index; a throw from it fails that catalogue's construction                                                                                                                                                                                                                               |
-| 5    | no request carries an identifier                                                                                                                                                                                                                              | the image records `res.locals.requestId`, from `crypto.randomUUID()`, before the bridge's layer                                                                                                                                                                                                                                                                                                                                                                        |
+| 5    | no request carries an identifier                                                                                                                                                                                                                              | the image records `res.locals.requestId`, from `crypto.randomUUID()`, before the Bridge's layer                                                                                                                                                                                                                                                                                                                                                                        |
 | 6    | the callback's context copies `res.locals`, dropping its non-enumerable members, and the callback cannot tell which read path calls it                                                                                                                        | every read path's context carries the request's own `res.locals` as `locals`, set after every spread so neither an application's locals nor an external context can replace it, and the callback receives `{ readPath }` as a second argument                                                                                                                                                                                                                          |
 | 7    | a callback refuses a request only as a configuration failure: its throw answers an export 500 and GraphQL with the configuration-problem text, and is logged as `access_enforcement.evaluation_failed`                                                            | a second refusal, `AccessControlUnavailableError`, carrying a text and a `Retry-After` value. The export route answers it 503 with both, before any row is read; GraphQL, `saveSet` included, answers an error with `extensions.code` `ACCESS_ENFORCEMENT_UNAVAILABLE` and that text, its data null and its HTTP status as for any execution error. The router documents the code with its other errors, and never logs this refusal as `access_enforcement.evaluation_failed` |
 | 8    | a facet that does not filter itself removes its own field's clauses from the merged filter, the access filter's included, so a bare clause on that field inside an `or` loses its alternative and the facet counts fewer documents than the principal may see | the facet removes them from the client's filter alone, and the access filter applies whole; the CHANGELOG records it under Fixed                                                                                                                                                                                                                                                                                                                                       |
@@ -103,21 +103,21 @@ suite checks the default, and the suites through the GraphQL router check that a
 its marker.
 
 The adapter decides nothing in this trace: it reads a result and applies it. That is the property
-the tests hold it to, because the bridge builds every predicate.
+the tests hold it to, because the Bridge builds every predicate.
 
 ---
 
 ## What the tests import
 
 **The enforcement result and the request's access come from `@overture-stack/usher-types`, and the
-registration's shape and the bridge's interface, `KeyRegistration` and `BridgeCore`, from
-`@overture-stack/usher-bridge--express`.** The adapter imports the bridge package's types with
+registration's shape and the Bridge's interface, `KeyRegistration` and `BridgeCore`, from
+`@overture-stack/usher-bridge--express`.** The adapter imports the Bridge package's types with
 `import type` alone, so they are erased at build and an application that never mounts Usher never
-loads it; its tests load it, for the real bridge and its Express layer. The adapter's manifest
+loads it; its tests load it, for the real Bridge and its Express layer. The adapter's manifest
 names `usher-types` as a dependency and `usher-bridge--express` as a development dependency, each at
 an exact published version, and the search server depends on `usher-bridge--express`. `usher-types` depends on `@overture-stack/sqon` `^1.0.0-rc.6`,
 so Arranger's root `package.json` carries an `overrides` entry pointing it at Arranger's own
-workspace module. Express is at 4.22.3, the bridge's floor, and the repository requires Node 24, as
+workspace module. Express is at 4.22.3, the Bridge's floor, and the repository requires Node 24, as
 both packages do. The adapter's package, `@overture-stack/arranger-usher-adapter` in
 `modules/usher-adapter`, requires Node 24 too. It needs no migration-guide section, since no 3.0.x
 deployment upgrades into a new package. Components and charts declare no Node version.
@@ -133,31 +133,31 @@ missing, invalid, of an unknown version, or not shaped as `attachAccess` leaves 
 the failure cases below exercise. Each catalogue's result is read with `resultFor`, which reads own
 members only, and a missing one is a deny. Which per-request store carries it changes only the
 host's wiring, never a test of the adapter. See Usher's `adapter-integration.md` for the value and
-why each bridge uses its framework's own store.
+why each Bridge uses its framework's own store.
 
 ---
 
-## The bridge and its mocked controller
+## The Bridge and its mocked Controller
 
-The suites through the GraphQL router run the real bridge from the published packages, with its
+The suites through the GraphQL router run the real Bridge from the published packages, with its
 real Express layer, `createUsherMiddleware`, mounted ahead of the routers. The layer attaches
-through `attachAccess` and answers 400, 401 and 503 with the bridge's own text, so none of those can
-drift. Usher's controller is the one stand-in, reached through the bridge's `fetch` option, and it
+through `attachAccess` and answers 400, 401 and 503 with the Bridge's own text, so none of those can
+drift. Usher's Controller is the one stand-in, reached through the Bridge's `fetch` option, and it
 follows the build order's rules for mocks.
 
 - **It holds a fixed, hand-written set of results and refuses anything outside it.** A principal
-  outside that set is recorded, and the harness fails the test on it, rather than the controller
-  failing the exchange: the bridge turns a failed exchange into the open tier or its 503, which would
+  outside that set is recorded, and the harness fails the test on it, rather than the Controller
+  failing the exchange: the Bridge turns a failed exchange into the open tier or its 503, which would
   pass for another row. A mock that answers whatever it is asked lets the adapter define the contract
   by its own appetite.
-- **It brings the bridge into each of five modes**, each the bridge's own behaviour: normal, from the
-  fixed table; uncertain, its revocation channel unconfirmed, so the bridge attaches the open tier
+- **It brings the Bridge into each of five modes**, each the Bridge's own behaviour: normal, from the
+  fixed table; uncertain, its revocation channel unconfirmed, so the Bridge attaches the open tier
   with an anonymous principal marked open-tier only and every signed-in one marked suspended; one
   principal's exchange failed in normal mode, which marks that principal alike; refused, refusing the
-  credential; and cold, never having answered, so the bridge answers unavailable.
-- **The adapter's own suites need no controller.** The real bridge's `register` keeps no readable
+  credential; and cold, never having answered, so the Bridge answers unavailable.
+- **The adapter's own suites need no Controller.** The real Bridge's `register` keeps no readable
   record, so they hand the adapter a recorder of its `register` calls, and check every registration
-  it builds against a real bridge never started.
+  it builds against a real Bridge never started.
 
 **A recording search client** wraps the engine client's `search`, so the `deny` rows can assert the
 query the GraphQL router emits as well as the records it returns.
@@ -166,10 +166,10 @@ query the GraphQL router emits as well as the records it returns.
 
 ## The fixtures are enforcement results, not payloads
 
-The adapter never receives a payload, so its fixtures are what the bridge would hand it. Each row
-traces to a case, and the same rows become the bridge's expectations in step 2: given that case's
-entry in `principals.json` and this catalogue's mapping, the bridge must render exactly this result.
-The adapter's fixtures and the bridge's expected outputs are then one table, read from both ends.
+The adapter never receives a payload, so its fixtures are what the Bridge would hand it. Each row
+traces to a case, and the same rows become the Bridge's expectations in step 2: given that case's
+entry in `principals.json` and this catalogue's mapping, the Bridge must render exactly this result.
+The adapter's fixtures and the Bridge's expected outputs are then one table, read from both ends.
 
 **The synthetic catalogue** follows the case table's configuration: HEART_STUDY carries
 `controlled`, LUNG_COHORT carries no concrete category, and REEF_ARCHIVE carries `controlled` and
@@ -190,7 +190,7 @@ defines, from the rendering rules in Usher's `decisions.md`: for each category h
 and `view`, one `and` of an `in` over every resource holding it and that category's test, composed
 with `or`, plus one `unmarked` clause, a `not` around an `in` listing every concrete value the
 catalogue maps, over every resource whose unmarked records are held. A grant without `record` and
-`view` contributes nothing. These rows are compared with the real bridge by the records each
+`view` contributes nothing. These rows are compared with the real Bridge by the records each
 returns, not by structure.
 
 | Row                                                                            | Case   | Result                     | Visible                                                                                |
@@ -201,22 +201,22 @@ returns, not by structure.
 | `controlled` alone on REEF_ARCHIVE                                             | 9      | `narrow`                   | r1, h2, l1, r3                                                                         |
 | HEART_STUDY's `unmarked` by grant, unheld                                      | 19     | `narrow`                   | l1, r3                                                                                 |
 | every grant                                                                    | parity | `narrow`                   | every record but x1                                                                    |
-| grants only in another catalogue, this one having registered its resource list | bridge | `deny`, `no-grants`        | nothing                                                                                |
-| every grant on a category unmapped here                                        | bridge | `deny`, `no-grants`        | nothing                                                                                |
-| a narrowing whose predicates fall away                                         | bridge | `deny`, `no-grants`        | nothing                                                                                |
-| anonymous, baseline on, in a catalogue mapping `controlled` alone              | bridge | `narrow`                   | h2, l1; REEF_ARCHIVE withheld whole, r3 included, since it offers `community-governed` |
+| grants only in another catalogue, this one having registered its resource list | Bridge | `deny`, `no-grants`        | nothing                                                                                |
+| every grant on a category unmapped here                                        | Bridge | `deny`, `no-grants`        | nothing                                                                                |
+| a narrowing whose predicates fall away                                         | Bridge | `deny`, `no-grants`        | nothing                                                                                |
+| anonymous, baseline on, in a catalogue mapping `controlled` alone              | Bridge | `narrow`                   | h2, l1; REEF_ARCHIVE withheld whole, r3 included, since it offers `community-governed` |
 | a catalogue registering an empty resource list                                 | config | `deny`, `unknown-resource` | nothing                                                                                |
 | a catalogue open by configuration                                              | none   | `allow`                    | every record, x1 included                                                              |
 
 The catalogue mapping `controlled` alone is the synthetic one registered again under a second key,
 as the two-catalogue row already requires.
 
-**The three "bridge" deny rows are the ones rendered as an empty filter by a careless bridge**, so the
-adapter must receive them as denies and the bridge step must produce them as denies. They are the
+**The three "Bridge" deny rows are the ones rendered as an empty filter by a careless Bridge**, so the
+adapter must receive them as denies and the Bridge step must produce them as denies. They are the
 cases with grants that still reach nothing, which is why they are listed apart from case 1.
 
 The adapter suite takes the rows that differ in what the adapter must do. Every other case belongs
-to the bridge, whose output the adapter passes through unchanged.
+to the Bridge, whose output the adapter passes through unchanged.
 
 ---
 
@@ -235,25 +235,25 @@ Test names state the requirement, per the repository's testing convention.
 | a catalogue declaring categories absent                                                                                                                                                           | each declared absence reaches the registration, and the index is asked nothing about it                                                                                                                              |
 | a catalogue's configured resources                                                                                                                                                                                                       | the list reaches the registration, so grants held only in other catalogues deny here                                                                                                                                 |
 | a catalogue configured as open                                                                                                                                                                                                           | registered as `{ kind: 'open' }`, with no field names                                                                                                                                                                |
-| a registration refused by Usher's format: a condition reading the resource field, a category both declared absent and defined, or a condition or resource holding `*`, `set_id:` or `__missing__` | startup fails before the bridge starts, the refusal naming the catalogue                                                                                                                                             |
-| every registration built by the adapter                                                                                                                                                                                                  | accepted by a real bridge's `register`, unstarted, which needs no controller, so a shape refused by the real bridge fails here and not only in the run with the real bridge                                          |
-| a bridge configuration refused by `start`, such as an empty event source                                                                                                                                                                 | startup fails with the bridge's refusal, and `bridge.startRefusal` reaches the logger shim                                                                                                                           |
-| a resource offering a category neither mapped nor declared absent                                                                                                                                                                        | the bridge withholds it from this catalogue and logs `category.unmapped`; the bridge's suite tests that, and this one only that the declarations reach it                                                            |
-| a valid mapping for every catalogue                                                                                                                                                                                                      | one callback per catalogue, and the bridge has every catalogue registered                                                                                                                                            |
+| a registration refused by Usher's format: a condition reading the resource field, a category both declared absent and defined, or a condition or resource holding `*`, `set_id:` or `__missing__` | startup fails before the Bridge starts, the refusal naming the catalogue                                                                                                                                             |
+| every registration built by the adapter                                                                                                                                                                                                  | accepted by a real Bridge's `register`, unstarted, which needs no Controller, so a shape refused by the real Bridge fails here and not only in the run with the real Bridge                                          |
+| a Bridge configuration refused by `start`, such as an empty event source                                                                                                                                                                 | startup fails with the Bridge's refusal, and `bridge.startRefusal` reaches the logger shim                                                                                                                           |
+| a resource offering a category neither mapped nor declared absent                                                                                                                                                                        | the Bridge withholds it from this catalogue and logs `category.unmapped`; the Bridge's suite tests that, and this one only that the declarations reach it                                                            |
+| a valid mapping for every catalogue                                                                                                                                                                                                      | one callback per catalogue, and the Bridge has every catalogue registered                                                                                                                                            |
 | a callback invoked before its catalogue is verified                                                                                                                                                                                      | it throws, with the configuration-problem message                                                                                                                                                                    |
 | a catalogue that fails to load, beside catalogues that load                                                                                                                                                                              | it is registered and never verified, so its callback throws if anything reaches it; its load failure is logged, the server's health reports count it as down, never healthy, and the other catalogues serve normally |
-| `verify` called a second time                                                                                                                                                                                                            | it throws, since the bridge takes its registrations once                                                                                                                                                             |
+| `verify` called a second time                                                                                                                                                                                                            | it throws, since the Bridge takes its registrations once                                                                                                                                                             |
 | with access enforcement on, a catalogue with no `auth.json` beside its `base.json`                                                                                                                                                          | the image refuses startup, naming the catalogue                                                                                                                                                                      |
 | with access enforcement on, a catalogue configuring network search                                                                                                                                                                           | the image refuses startup, naming the catalogue and saying access control does not serve network search yet, until the federation posture is decided                                                                 |
-| the bridge cold, before its first check confirms                                                                                                                                                                                         | the image reports not ready, whatever the catalogues report, so no traffic reaches a pod answering 503 to everything; the liveness route answers                                                                     |
-| the bridge normal                                                                                                                                                                                                                        | readiness follows the catalogues' status, as without access control                                                                                                                                                  |
-| the bridge uncertain                                                                                                                                                                                                                     | readiness still follows the catalogues' status, since the open tier keeps serving through a silence; the liveness route answers in every mode                                                                        |
+| the Bridge cold, before its first check confirms                                                                                                                                                                                         | the image reports not ready, whatever the catalogues report, so no traffic reaches a pod answering 503 to everything; the liveness route answers                                                                     |
+| the Bridge normal                                                                                                                                                                                                                        | readiness follows the catalogues' status, as without access control                                                                                                                                                  |
+| the Bridge uncertain                                                                                                                                                                                                                     | readiness still follows the catalogues' status, since the open tier keeps serving through a silence; the liveness route answers in every mode                                                                        |
 
 **A category left out of the mapping withholds the resources offering it rather than stopping
 startup**, so one catalogue's gap never takes down the others, and the `category.unmapped` event,
 critical, keeps it from passing as data quietly missing. That is Usher's decision, with declared
 absence as the last resort. What each resource offers arrives in the payload, so the check runs in
-the bridge, per catalogue, rather than in the adapter at startup.
+the Bridge, per catalogue, rather than in the adapter at startup.
 
 **A record matching no category condition is case 23**, served as `unmarked`. Startup asks the
 index about every condition: a category matching no record is logged as
@@ -278,7 +278,7 @@ every endpoint refuses, and the engine is sent nothing.
 ### Through the GraphQL router, on every endpoint
 
 The integration suite selects one engine per run, so these suites run twice, once on Elasticsearch
-7.17 and once on OpenSearch, each against the real bridge and its mocked controller. Each row of the fixture table is a principal, and each principal is checked on hits, pages,
+7.17 and once on OpenSearch, each against the real Bridge and its mocked Controller. Each row of the fixture table is a principal, and each principal is checked on hits, pages,
 counts, facets and exports.
 
 | Suite                                                                 | What it asserts                                                                                                                                                                                                                                                          |
@@ -311,16 +311,16 @@ result proves a filter denied rather than that a query failed or matched nothing
 | a signed-in principal marked suspended, its subject null                  | searches, facets and counts serve the open tier alone, marked open-tier only, so it sees exactly what an anonymous one does                                                                                                                |
 | a suspended principal's export                                            | 503 with the GraphQL router's unavailable text and `Retry-After`, before any row is read, since a file holding only open records would read as complete                                                                                            |
 | a suspended principal saving a set                                        | a GraphQL error coded `ACCESS_ENFORCEMENT_UNAVAILABLE` with the GraphQL router's unavailable text and null data, the GraphQL form of the 503 given to a write by Usher's table, since a set holding only open records would later read as complete |
-| an anonymous principal's export, the bridge uncertain                     | served as normal, since nothing is reduced for it                                                                                                                                                                                          |
-| each row above with the bridge normal and one principal's exchange failed | the same answers, since the adapter reads the marks, never the mode                                                                                                                                                                        |
-| the adapter's copy of the bridge's 503 text and `Retry-After`             | equal to the bridge's own values, so the two answers never drift                                                                                                                                                                           |
-| the bridge cold, never having reached the controller                      | the request is answered 503, and no query reaches the engine                                                                                                                                                                                       |
-| the host mounts the GraphQL routers ahead of the bridge's middleware      | GraphQL errors carry `ACCESS_CONTROL_FAILURE_MESSAGE`, an export answers 500 with the same text, and `access_enforcement.evaluation_failed` is logged                                                                                          |
+| an anonymous principal's export, the Bridge uncertain                     | served as normal, since nothing is reduced for it                                                                                                                                                                                          |
+| each row above with the Bridge normal and one principal's exchange failed | the same answers, since the adapter reads the marks, never the mode                                                                                                                                                                        |
+| the adapter's copy of the Bridge's 503 text and `Retry-After`             | equal to the Bridge's own values, so the two answers never drift                                                                                                                                                                           |
+| the Bridge cold, never having reached the Controller                      | the request is answered 503, and no query reaches the engine                                                                                                                                                                                       |
+| the host mounts the GraphQL routers ahead of the Bridge's middleware      | GraphQL errors carry `ACCESS_CONTROL_FAILURE_MESSAGE`, an export answers 500 with the same text, and `access_enforcement.evaluation_failed` is logged                                                                                          |
 | a configured catalogue absent from a request's results                    | that catalogue denies, and the others answer normally                                                                                                                                                                                      |
-| the controller refusing the credential                                    | 401 from the bridge's layer, and no query reaches the engine; the status and its text are the bridge's suite's                                                                                                                                     |
+| the Controller refusing the credential                                    | 401 from the Bridge's layer, and no query reaches the engine; the status and its text are the Bridge's suite's                                                                                                                                     |
 | a narrow result on every read path                                        | the query composed without writing to the filter, which arrives deeply frozen; a write while composing fails the request closed, never into an unfiltered query                                                                            |
 | a request reaching the network search read path, whoever the principal    | the configuration failure: `ACCESS_CONTROL_FAILURE_MESSAGE`, logged as `access_enforcement.evaluation_failed`                                                                                                                                  |
-| a suspended principal's search, facets and counts                         | the response carries `Usher-Suspended: true` from the bridge's layer, readable by a browser through `Access-Control-Expose-Headers` beside the router's own exposed headers; an anonymous or a confirmed principal's response carries none |
+| a suspended principal's search, facets and counts                         | the response carries `Usher-Suspended: true` from the Bridge's layer, readable by a browser through `Access-Control-Expose-Headers` beside the router's own exposed headers; an anonymous or a confirmed principal's response carries none |
 
 ### The log events
 
@@ -336,17 +336,17 @@ one GraphQL request asking for hits and aggregations applies a result more than 
 | a suspended principal refused on an export or a write | one `access_enforcement.unavailable` event, naming the subject, null, that it is suspended, the read path and the request identifier, and no `access_enforcement.evaluation_failed`                        |
 | one request applying a result on two read paths       | two events carrying the same request identifier                                                                                                                                                    |
 | any event                                             | no token, no payload, no bearer token and no record identifier anywhere in it                                                                                                                      |
-| a bridge event through the adapter's logger shim      | written in the repository's envelope at the bridge's level, `error` for a critical event, with the event's fields unchanged                                                                        |
+| a Bridge event through the adapter's logger shim      | written in the repository's envelope at the Bridge's level, `error` for a critical event, with the event's fields unchanged                                                                        |
 
 A request with no access in the store is the failure case above, logged as
 `access_enforcement.evaluation_failed`. **Three refusals stay apart in the log**: `access_enforcement.denied`
-is a decision, `access_enforcement.unavailable` a decision deferred because the bridge could not confirm
+is a decision, `access_enforcement.unavailable` a decision deferred because the Bridge could not confirm
 a signed-in principal, and `access_enforcement.evaluation_failed` a fault in the configuration.
 
 The field set is the one settled in Usher's adapter contract: `catalogue`, `credential`, `readPath`,
 `requestId`, `suspended` and `userId`, with `enforcement` on a permitted event and `reason` on a denied one,
 `no-grants`, `unknown-resource` or `no-result`. Each event is one JSON line, in the repository's envelope, through
-the adapter's logger shim. `userId` is the bridge's `subjectToLog` of the
+the adapter's logger shim. `userId` is the Bridge's `subjectToLog` of the
 principal, its subject where a credential was confirmed, suspended or not, and null otherwise, and `credential`
 beside it, `none`, `unconfirmed` or `confirmed`, says which, so no state is read from a null.
 
@@ -368,7 +368,7 @@ inversion measures something other than what it claims.
 | context            | drop the context on the aggregation path, and the carrying row must fail                          |
 | log events         | log the payload, and the content test must fail                                                   |
 | a failed catalogue | mark it verified anyway, and the failed-catalogue row must fail                                   |
-| readiness          | report an uncertain bridge as not ready, and the uncertain row must fail                          |
+| readiness          | report an uncertain Bridge as not ready, and the uncertain row must fail                          |
 
 ---
 

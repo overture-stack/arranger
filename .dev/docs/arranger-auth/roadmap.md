@@ -117,11 +117,11 @@ After Phase 1 the seam is safe for *any* consumer, Usher or otherwise. That is d
 
 10. **The Usher adapter as a translator only.** No enforcement responsibility; ships as a `getServerSideFilter` callback factory rather than middleware, with per-catalogue Usher adapter instances built at startup. See [`usher-adapter.md`](usher-adapter.md) for the adapter-specific detail.
 
-    **Two corrections to the earlier wording.** It said "GrantsPayload to SQON", but the bridge now resolves the token and hands the Usher adapter an `Enforcement` decision rather than a payload to interpret. And it flagged inclusion-versus-exclusion as an open design question; that is now narrowed rather than open, since the record clause is a positive `in` and only step 7's provenance ceiling is exclusion-shaped, by necessity. The live hazard there is that an unconfigured resource value fails closed on records and open on artifacts.
+    **Two corrections to the earlier wording.** It said "GrantsPayload to SQON", but the Bridge now resolves the token and hands the Usher adapter an `Enforcement` decision rather than a payload to interpret. And it flagged inclusion-versus-exclusion as an open design question; that is now narrowed rather than open, since the record clause is a positive `in` and only step 7's provenance ceiling is exclusion-shaped, by necessity. The live hazard there is that an unconfigured resource value fails closed on records and open on artifacts.
 
     Note that "instances built at startup" is true of the Usher adapter instance and **not** of the filter it returns, which is per request because the intersection depends on the caller's grants.
 11. **Platform admin bypass**, skipping injection entirely rather than injecting an empty filter, both pipelines plus export, with a logged event per bypass.
-12. **Mock-first implementation.** Build against a mock grants token before Usher's controller exists, which lets enforcement be validated independently of Usher's own delivery schedule.
+12. **Mock-first implementation.** Build against a mock grants token before Usher's Controller exists, which lets enforcement be validated independently of Usher's own delivery schedule.
 
 ## Phase 3: client-side
 

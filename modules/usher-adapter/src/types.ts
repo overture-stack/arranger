@@ -18,11 +18,11 @@ export type UsherAccessControl = Readonly<{
 	 */
 	filterFor: (catalogueId: string) => UsherFilterCallback;
 
-	/** Who made a request, for the GraphQL router's `getRequester`, read from the principal the bridge attached. */
+	/** Who made a request, for the GraphQL router's `getRequester`, read from the principal the Bridge attached. */
 	requesterOf: (context: unknown) => RequesterAnswer;
 
 	/**
-	 * Checks each loaded catalogue, then registers every configured catalogue with the bridge in one
+	 * Checks each loaded catalogue, then registers every configured catalogue with the Bridge in one
 	 * call. Each catalogue is held, in order, to Usher's registration format, then to its index mapping,
 	 * then to what its index holds, each step running only once the one before it passed: no record may
 	 * hold several values in the resource field, and every category condition must be one the engine
@@ -34,12 +34,12 @@ export type UsherAccessControl = Readonly<{
 	 * @returns a promise rejecting with an `Error` that names every reason found across every catalogue,
 	 *   each naming its catalogue and never a value, when any check refuses, when an index names a
 	 *   catalogue with no registration, or when verification has already started; nothing is registered
-	 *   then. It also rejects with the bridge's own refusal of a registration, positioned under its catalogue.
+	 *   then. It also rejects with the Bridge's own refusal of a registration, positioned under its catalogue.
 	 */
 	verify: (indices: Readonly<Record<string, CatalogueIndex>>) => Promise<void>;
 }>;
 
-/** The bridge, each catalogue's registration by key, passed to the bridge untouched, and the logger. */
+/** The Bridge, each catalogue's registration by key, passed to the Bridge untouched, and the logger. */
 export type UsherAccessControlOptions = Readonly<{
 	bridge: Pick<BridgeCore, 'register'>;
 	catalogues: Readonly<Record<string, KeyRegistration>>;

@@ -133,7 +133,7 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 		app.get(health.readyPath, (_req, res) => {
 			const status = computeAggregateServerStatus(catalogueStatuses);
 			const engineReachable = engineProbe.isReachable();
-			// A bridge before its first check answers 503 to every request, so the pod takes no traffic until
+			// A Bridge before its first check answers 503 to every request, so the pod takes no traffic until
 			// then; in every other mode, uncertain included, the open tier keeps serving.
 			const bridgeServing = usher?.bridge.mode() !== 'cold';
 			const ready = engineReachable && bridgeServing && status !== serverAggregateStatuses.UNHEALTHY;
@@ -142,7 +142,7 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 		});
 
 		// The health routes and the catalogues' status, which carry no records, answer ahead of the
-		// bridge's layer; every catalogue route sits behind it, and request bodies are parsed only past it.
+		// Bridge's layer; every catalogue route sits behind it, and request bodies are parsed only past it.
 		app.use(createIntrospectionRoutes({ catalogs, catalogueRouters, catalogueStatuses }));
 		app.use(recordRequestId);
 		if (usher) {

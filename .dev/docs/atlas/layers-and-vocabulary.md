@@ -11,13 +11,13 @@ Listed from the bottom up. A layer may depend on the layers listed before it, ne
 | SQON | `modules/sqon` | The query language: shape, construction, validation, reduction | Any other Arranger package |
 | Arranger logic | Inside `modules/graphql-router` (`buildQuery`, `buildAggregations`, mapping to the search engine) | Turning one SQON into a search engine query | Filtering, the Usher adapter, the GraphQL layer |
 | Filtering | `modules/graphql-router/src/filtering/` (planned) | Composing the filter requested by a search with the deployment's constraint, and refusing a constraint that is absent or has no clauses | The Usher adapter, the GraphQL layer |
-| Usher adapter | `modules/usher-adapter` (planned), published as `@overture-stack/arranger-usher-adapter` | Turning Usher grants into a constraint. Depends on the bridge, `@overture-stack/usher-bridge--express`, from the Usher repository | The router package, filtering |
+| Usher adapter | `modules/usher-adapter` (planned), published as `@overture-stack/arranger-usher-adapter` | Turning Usher grants into a constraint. Depends on the Bridge, `@overture-stack/usher-bridge--express`, from the Usher repository | The router package, filtering |
 | GraphQL layer | `modules/graphql-router`: schema, resolvers, Express routes | Per-request wiring: calling the deployment's callback and handing both filters to filtering | The Usher adapter |
-| Server | `apps/search-server` | Reading the environment, mounting the bridge, wiring the adapter into `getServerSideFilter` | Nothing. It is where the other layers are wired together |
+| Server | `apps/search-server` | Reading the environment, mounting the Bridge, wiring the adapter into `getServerSideFilter` | Nothing. It is where the other layers are wired together |
 
 Filtering and the Usher adapter sit side by side, between Arranger logic and the GraphQL layer. Neither imports the other. The server passes the adapter's function to the router as `getServerSideFilter`, and the router passes what that returns to filtering.
 
-**The server mounts the bridge above both of its catalogue branches.** `apps/search-server/src/arrangerRoutes.ts` mounts a single catalogue's router with no path prefix, and each of several catalogues under `/<catalogueId>`, in two separate branches. A bridge mounted inside one branch never runs for a deployment of the other shape, so it goes on the router before the branch.
+**The server mounts the Bridge above both of its catalogue branches.** `apps/search-server/src/arrangerRoutes.ts` mounts a single catalogue's router with no path prefix, and each of several catalogues under `/<catalogueId>`, in two separate branches. A Bridge mounted inside one branch never runs for a deployment of the other shape, so it goes on the router before the branch.
 
 **Arranger logic and the GraphQL layer share one package and cannot be separated yet.** The boundary between them already holds in behaviour. Every call to `compileFilter` comes from a resolver or from the download route, and nothing in `buildQuery` or `buildAggregations` calls it, so Arranger logic only ever receives a filter that is already composed.
 
@@ -26,7 +26,7 @@ Filtering and the Usher adapter sit side by side, between Arranger logic and the
 ## Arranger runs without Usher, and the dependency direction guarantees it
 
 - **Only `apps/search-server` depends on `usher-adapter`.** `modules/graphql-router`, `modules/types` and `modules/sqon` never list it in their `package.json`, which a grep can check.
-- **A deployment with no Usher changes nothing below the server.** The server mounts no bridge, the router given no `getServerSideFilter` applies `includeEverything`, which returns a filter that keeps every document, and every other layer runs exactly as it does with Usher.
+- **A deployment with no Usher changes nothing below the server.** The server mounts no Bridge, the router given no `getServerSideFilter` applies `includeEverything`, which returns a filter that keeps every document, and every other layer runs exactly as it does with Usher.
 
 **Name a module or directory for what always runs, not for who might call it.** The directory now called `accessControl/` fails that test. Every file in it is required by an Arranger with no access control at all: the default constraint, the `disableFilters` guard, the middleware registry holding that guard, and the test fixtures. "Access control" is reserved for what depends on Usher, which is `usher-adapter` alone.
 
@@ -97,6 +97,6 @@ None of these has been made yet.
 
 - **The `filtering/` consolidation and `matchEverything` do not depend on the package manager**, and can land at any time.
 - **Create `modules/usher-adapter` after the pnpm migration** ([roadmap §3.3](../../roadmap.md#33-migrate-from-npm-to-pnpm)). Otherwise its manifest is written once with `file:` dependencies and rewritten with `workspace:` ones.
-- **`usher-bridge--express` has to be published before `usher-adapter` can build in CI.** Every other workspace dependency in this repository is a sibling inside it. The bridge lives in the Usher repository, and the Jenkins build cannot resolve a path outside its own checkout.
+- **`usher-bridge--express` has to be published before `usher-adapter` can build in CI.** Every other workspace dependency in this repository is a sibling inside it. The Bridge lives in the Usher repository, and the Jenkins build cannot resolve a path outside its own checkout.
 
 Related: [Arranger auth](../arranger-auth/index.md) for the enforcement seam's design, and [pnpm migration: scoping findings](pnpm-migration.md).

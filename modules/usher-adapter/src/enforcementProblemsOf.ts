@@ -9,7 +9,7 @@ import { conditionProblemsOf } from './conditionProblemsOf.js';
  * catalogue, and the category and field at fault, all of them configuration rather than data.
  *
  * @param catalogueId the catalogue's key.
- * @param registration what the catalogue registers with the bridge, already held to Usher's registration format.
+ * @param registration what the catalogue registers with the Bridge, already held to Usher's registration format.
  * @param mapping the catalogue's index mapping, its properties at the root.
  */
 export const enforcementProblemsOf = (

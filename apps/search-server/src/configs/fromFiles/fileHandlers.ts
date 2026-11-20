@@ -33,7 +33,7 @@ const readFileAsync = (dirname: string, filename: string, encoding: FileEncoding
 	});
 
 /**
- * The file holding a catalogue's registration with Usher's bridge, under its `auth` key. Read on its own
+ * The file holding a catalogue's registration with Usher's Bridge, under its `auth` key. Read on its own
  * and never merged into the catalogue's configuration, since the GraphQL router has no use for it.
  */
 export const USHER_REGISTRATION_FILE = 'auth.json';
