@@ -1,4 +1,4 @@
-import type { BridgeLogger } from '@overture-stack/usher-express-bridge';
+import type { BridgeLogger } from '@overture-stack/usher-bridge--express';
 
 import type { LoggedLine } from './types.js';
 

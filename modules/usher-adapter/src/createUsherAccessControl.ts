@@ -5,7 +5,7 @@ import {
 	includeEverything,
 } from '@overture-stack/arranger-graphql-router';
 import type { SqonNode } from '@overture-stack/sqon';
-import type { KeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { KeyRegistration } from '@overture-stack/usher-bridge--express';
 import {
 	type Enforcement,
 	readAccess,

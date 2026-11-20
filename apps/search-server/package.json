@@ -26,7 +26,7 @@
 		"@overture-stack/arranger-types": "file:../../modules/types",
 		"@overture-stack/arranger-usher-adapter": "file:../../modules/usher-adapter",
 		"@overture-stack/sqon": "file:../../modules/sqon",
-		"@overture-stack/usher-express-bridge": "0.0.0-alpha.1",
+		"@overture-stack/usher-bridge--express": "0.0.0-alpha.1",
 		"cors": "^2.8.5",
 		"dotenv": "^16.0.3",
 		"express": "^4.22.3",

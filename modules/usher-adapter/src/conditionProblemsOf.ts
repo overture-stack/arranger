@@ -5,7 +5,7 @@ import {
 	SQON_OP_ALIASES,
 	type SqonFieldOp,
 } from '@overture-stack/sqon';
-import type { RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { RecordKeyRegistration } from '@overture-stack/usher-bridge--express';
 
 type FoundField = Readonly<{ format: unknown; kind: 'found'; type: unknown }>;
 

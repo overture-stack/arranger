@@ -11,7 +11,7 @@ Listed from the bottom up. A layer may depend on the layers listed before it, ne
 | SQON | `modules/sqon` | The query language: shape, construction, validation, reduction | Any other Arranger package |
 | Arranger logic | Inside `modules/graphql-router` (`buildQuery`, `buildAggregations`, mapping to the search engine) | Turning one SQON into a search engine query | Filtering, the Usher adapter, the GraphQL layer |
 | Filtering | `modules/graphql-router/src/filtering/` (planned) | Composing the filter requested by a search with the deployment's constraint, and refusing a constraint that is absent or has no clauses | The Usher adapter, the GraphQL layer |
-| Usher adapter | `modules/usher-adapter` (planned), published as `@overture-stack/arranger-usher-adapter` | Turning Usher grants into a constraint. Depends on the bridge, `@overture-stack/usher-express-bridge`, from the Usher repository | The router package, filtering |
+| Usher adapter | `modules/usher-adapter` (planned), published as `@overture-stack/arranger-usher-adapter` | Turning Usher grants into a constraint. Depends on the bridge, `@overture-stack/usher-bridge--express`, from the Usher repository | The router package, filtering |
 | GraphQL layer | `modules/graphql-router`: schema, resolvers, Express routes | Per-request wiring: calling the deployment's callback and handing both filters to filtering | The Usher adapter |
 | Server | `apps/search-server` | Reading the environment, mounting the bridge, wiring the adapter into `getServerSideFilter` | Nothing. It is where the other layers are wired together |
 
@@ -97,6 +97,6 @@ None of these has been made yet.
 
 - **The `filtering/` consolidation and `matchEverything` do not depend on the package manager**, and can land at any time.
 - **Create `modules/usher-adapter` after the pnpm migration** ([roadmap §3.3](../../roadmap.md#33-migrate-from-npm-to-pnpm)). Otherwise its manifest is written once with `file:` dependencies and rewritten with `workspace:` ones.
-- **`usher-express-bridge` has to be published before `usher-adapter` can build in CI.** Every other workspace dependency in this repository is a sibling inside it. The bridge lives in the Usher repository, and the Jenkins build cannot resolve a path outside its own checkout.
+- **`usher-bridge--express` has to be published before `usher-adapter` can build in CI.** Every other workspace dependency in this repository is a sibling inside it. The bridge lives in the Usher repository, and the Jenkins build cannot resolve a path outside its own checkout.
 
 Related: [Arranger auth](../arranger-auth/index.md) for the enforcement seam's design, and [pnpm migration: scoping findings](pnpm-migration.md).

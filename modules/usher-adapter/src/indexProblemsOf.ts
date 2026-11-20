@@ -1,6 +1,6 @@
 import type { ConditionValidation, IndexProbe } from '@overture-stack/arranger-graphql-router';
 import type { SqonNode } from '@overture-stack/sqon';
-import type { BridgeLogger, RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { BridgeLogger, RecordKeyRegistration } from '@overture-stack/usher-bridge--express';
 
 import { ACCESS_CONTROL_EVENTS } from './accessControlEvents.js';
 

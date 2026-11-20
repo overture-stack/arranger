@@ -1,6 +1,6 @@
 import type { IndexProbe, RequesterAnswer } from '@overture-stack/arranger-graphql-router';
 import type { SqonNode } from '@overture-stack/sqon';
-import type { BridgeCore, BridgeLogger, KeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { BridgeCore, BridgeLogger, KeyRegistration } from '@overture-stack/usher-bridge--express';
 
 /** One catalogue's index: its mapping, and the probe that asks the engine what the mapping cannot answer. */
 export type CatalogueIndex = Readonly<{ mapping: Readonly<Record<string, unknown>>; probe: IndexProbe }>;

@@ -1,5 +1,5 @@
 import type { IndexProbe } from '@overture-stack/arranger-graphql-router';
-import type { BridgeCore, BridgeLogger, KeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { BridgeCore, BridgeLogger, KeyRegistration } from '@overture-stack/usher-bridge--express';
 import type { Enforcement } from '@overture-stack/usher-types';
 
 /** One record of the synthetic catalogue, named by `name` so a suite can say which it expects. */

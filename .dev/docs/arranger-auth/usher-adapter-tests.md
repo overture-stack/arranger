@@ -111,11 +111,11 @@ the tests hold it to, because the bridge builds every predicate.
 
 **The enforcement result and the request's access come from `@overture-stack/usher-types`, and the
 registration's shape and the bridge's interface, `KeyRegistration` and `BridgeCore`, from
-`@overture-stack/usher-express-bridge`.** The adapter imports the bridge package's types with
+`@overture-stack/usher-bridge--express`.** The adapter imports the bridge package's types with
 `import type` alone, so they are erased at build and an application that never mounts Usher never
 loads it; its tests load it, for the real bridge and its Express layer. The adapter's manifest
-names `usher-types` as a dependency and `usher-express-bridge` as a development dependency, each at
-an exact published version, and the search server depends on `usher-express-bridge`. `usher-types` depends on `@overture-stack/sqon` `^1.0.0-rc.6`,
+names `usher-types` as a dependency and `usher-bridge--express` as a development dependency, each at
+an exact published version, and the search server depends on `usher-bridge--express`. `usher-types` depends on `@overture-stack/sqon` `^1.0.0-rc.6`,
 so Arranger's root `package.json` carries an `overrides` entry pointing it at Arranger's own
 workspace module. Express is at 4.22.3, the bridge's floor, and the repository requires Node 24, as
 both packages do. The adapter's package, `@overture-stack/arranger-usher-adapter` in

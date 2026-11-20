@@ -221,7 +221,7 @@ fix: split into `COPY package.json package-lock.json ./` (plus each workspace's 
 ### The search server image must carry the Usher adapter and Usher's packages
 
 standalone: no; lands with the publication of Usher's packages and the merge of the Usher adapter
-context: with `ENABLE_ACCESS_ENFORCEMENT=true`, `apps/search-server/src/usher.ts` loads `@overture-stack/arranger-usher-adapter` and `@overture-stack/usher-express-bridge` at startup. `Dockerfile.jenkins`'s `scaffolding` stage installs the search server, the MCP server, graphql-router, types and sqon, and the `search-server` stage copies only their `dist` folders, so the image can serve only without access control.
+context: with `ENABLE_ACCESS_ENFORCEMENT=true`, `apps/search-server/src/usher.ts` loads `@overture-stack/arranger-usher-adapter` and `@overture-stack/usher-bridge--express` at startup. `Dockerfile.jenkins`'s `scaffolding` stage installs the search server, the MCP server, graphql-router, types and sqon, and the `search-server` stage copies only their `dist` folders, so the image can serve only without access control.
 fix: add `--workspace modules/usher-adapter` to the scaffolding `npm ci`, copy `modules/usher-adapter/dist` into the `search-server` stage, confirm Usher's packages arrive through `node_modules` once they are declared dependencies, and start the image with `ENABLE_ACCESS_ENFORCEMENT=true` in CI.
 
 ### `.gitignore` ignores the root lockfile, which is actually tracked and actively maintained

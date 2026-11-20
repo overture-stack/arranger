@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import { includeEverything } from '@overture-stack/arranger-graphql-router';
-import { ANSWERS, RETRY_AFTER_SECONDS } from '@overture-stack/usher-express-bridge';
+import { ANSWERS, RETRY_AFTER_SECONDS } from '@overture-stack/usher-bridge--express';
 import { attachAccess, type Enforcement, UsherContractError } from '@overture-stack/usher-types';
 
 import {

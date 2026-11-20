@@ -19,7 +19,7 @@ import type { SearchClient } from '@overture-stack/arranger-graphql-router';
 delete process.env.ENABLE_ACCESS_ENFORCEMENT;
 
 /** Where a module the hook reports lives: in one of the two Usher packages, or in the Usher adapter. */
-const USHER_MODULE = /\/(?:node_modules\/@overture-stack\/usher-(?:express-bridge|types)|modules\/usher-adapter)\//u;
+const USHER_MODULE = /\/(?:node_modules\/@overture-stack\/usher-(?:bridge--express|types)|modules\/usher-adapter)\//u;
 
 /** The start of a specifier the hook answers itself, once it has reported every resolution before it. */
 const SENTINEL_PREFIX = 'usher-resolutions-reported-';

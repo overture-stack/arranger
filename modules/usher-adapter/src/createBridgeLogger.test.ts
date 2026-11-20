@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
-import type { BridgeEventData, BridgeLogger } from '@overture-stack/usher-express-bridge';
+import type { BridgeEventData, BridgeLogger } from '@overture-stack/usher-bridge--express';
 
 import { createBridgeLogger } from './index.js';
 

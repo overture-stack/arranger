@@ -11,7 +11,7 @@ import {
 	createBridgeCore,
 	type KeyRegistration,
 	type RecordKeyRegistration,
-} from '@overture-stack/usher-express-bridge';
+} from '@overture-stack/usher-bridge--express';
 import { attachAccess, REGISTRATION_RULES, UsherContractError } from '@overture-stack/usher-types';
 
 import {

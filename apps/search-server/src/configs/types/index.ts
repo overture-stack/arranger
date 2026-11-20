@@ -14,7 +14,7 @@ import {
 	type RuntimeFeatureFlagConfigs,
 	type SearchEngineType,
 } from '@overture-stack/arranger-types/configs';
-import type { BridgeCore, BridgeLogger } from '@overture-stack/usher-express-bridge';
+import type { BridgeCore, BridgeLogger } from '@overture-stack/usher-bridge--express';
 
 import {
 	type serverNetworkConfigExtendedProperties,

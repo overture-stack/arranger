@@ -7,7 +7,7 @@ import path from 'node:path';
 import { after, before, suite, test } from 'node:test';
 
 import type { SearchClient } from '@overture-stack/arranger-graphql-router';
-import type { BridgeCore, BridgeLogger, BridgeMode, KeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { BridgeCore, BridgeLogger, BridgeMode, KeyRegistration } from '@overture-stack/usher-bridge--express';
 
 /**
  * The image's startup with access enforcement on, through its seam taking the bridge and its logger, so a

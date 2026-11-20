@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import type { SqonCombinationOp, SqonNode } from '@overture-stack/sqon';
-import type { RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { RecordKeyRegistration } from '@overture-stack/usher-bridge--express';
 
 import { conditionProblemsOf } from './conditionProblemsOf.js';
 

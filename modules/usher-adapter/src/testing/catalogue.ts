@@ -1,5 +1,5 @@
 import type { SqonNode } from '@overture-stack/sqon';
-import type { OpenKeyRegistration, RecordKeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { OpenKeyRegistration, RecordKeyRegistration } from '@overture-stack/usher-bridge--express';
 
 import type { CatalogueRecord } from './types.js';
 

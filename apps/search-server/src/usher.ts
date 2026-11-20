@@ -1,6 +1,6 @@
 import { configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
 import type { CatalogueIndex, UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
-import type { BridgeCore, KeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { BridgeCore, KeyRegistration } from '@overture-stack/usher-bridge--express';
 import type { RequestHandler } from 'express';
 
 import { startupRefusal } from '#configs/fromEnv/enableAccessControl.js';
@@ -52,7 +52,7 @@ const refuseUnservableCatalogues = ({
 const usherFromEnvironment = async (): Promise<UsherSeam> => {
 	const bridgeEnv = readUsherBridgeEnv();
 	const [{ createBridgeCore }, { createBridgeLogger }] = await Promise.all([
-		import('@overture-stack/usher-express-bridge'),
+		import('@overture-stack/usher-bridge--express'),
 		import('@overture-stack/arranger-usher-adapter'),
 	]);
 	const logger = createBridgeLogger({ write: (line) => process.stdout.write(`${line}\n`) });
@@ -83,7 +83,7 @@ export const prepareUsher = async ({
 	const { bridge, logger } = seam ?? (await usherFromEnvironment());
 	const [{ createUsherAccessControl }, { createUsherMiddleware }] = await Promise.all([
 		import('@overture-stack/arranger-usher-adapter'),
-		import('@overture-stack/usher-express-bridge'),
+		import('@overture-stack/usher-bridge--express'),
 	]);
 	// Each registration is read from its file unvalidated; the bridge validates it when registering it.
 	const catalogues = Object.fromEntries(

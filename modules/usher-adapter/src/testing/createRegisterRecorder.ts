@@ -1,4 +1,4 @@
-import type { KeyRegistration } from '@overture-stack/usher-express-bridge';
+import type { KeyRegistration } from '@overture-stack/usher-bridge--express';
 
 import type { RegisterRecorder } from './types.js';
 

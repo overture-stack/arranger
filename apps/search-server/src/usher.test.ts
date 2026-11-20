@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import type { CatalogueIndex, UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
-import type { BridgeCore } from '@overture-stack/usher-express-bridge';
+import type { BridgeCore } from '@overture-stack/usher-bridge--express';
 
 import { type ImageUsher, stopUsherBridge, verifyAndStartUsher, withUsherFilters } from './usher.js';
 
