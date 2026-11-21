@@ -208,7 +208,7 @@ export const usableSetFieldsOf = ({
 		)
 		.map(([fieldName]) => fieldName);
 
-/** Every value a filter gives as `fieldName` or within `fieldNames`, at any depth: iterative, as its depth is unchecked yet. */
+/** Every value a filter gives as `fieldName` or within `fieldNames`, at any depth, walked iteratively. */
 const fieldNamesIn = (filter: unknown): unknown[] => {
 	const fieldNames: unknown[] = [];
 	const pending: unknown[] = [filter];
