@@ -60,8 +60,6 @@ modules/types         : shared TS types and constants (@overture-stack/arranger-
 modules/graphql-router: GraphQL/Apollo server, Elasticsearch integration
 modules/components    : React UI components
 modules/charts        : React chart components (@overture-stack/arranger-charts)
-modules/mcp-client    : one connection to one MCP server, for an MCP host (@overture-stack/arranger-mcp-client)
-modules/mcp-host-core : an MCP host's agent runtime: model provider, tool loop, approvals, events (@overture-stack/mcp-host-core, private)
 modules/sqon          : SQON query builder (@overture-stack/sqon)
 apps/search-server    : main server application
 apps/mcp-server       : Model Context Protocol server

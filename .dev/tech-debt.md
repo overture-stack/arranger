@@ -77,7 +77,7 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Severity:** low (the tests pass, and the shipped source typechecks)
 **Kind:** test infrastructure gap
 **Issue:** `npx tsc --noEmit -p modules/sqon` reports 38 errors, all in tests. Most are SQON literals whose `op` widens to `string` where `SqonNode` needs `'and' | 'or' | 'not'`, or JSON Schema values read as `unknown`. Nothing reports them: `tsx --test` strips types unchecked, and the tsup build never reaches a test file.
-**Fix:** Type the literals (`as const`, or the package's builders), narrow the schema reads, and add a `typecheck` script like `modules/mcp-client`'s.
+**Fix:** Type the literals (`as const`, or the package's builders), narrow the schema reads, and add a `typecheck` script (`tsc --noEmit`).
 **Standalone:** yes
 
 ### A malformed client filter must be refused as the client's mistake on every read path
@@ -87,86 +87,6 @@ context: `modules/sqon/README.md` carries a "No stable release yet" section (mar
 **Kind:** error reporting
 **Issue:** A client filter must be refused when it is compiled, with the rule it broke, so that its sender is told the problem is theirs. Two shapes are not refused there: a clause whose `content` is a string, and a range whose bound is text on a numeric field. Both reach the search engine, which refuses them, so the sender is answered as if the server had failed. Every read path compiles through `buildQuery`, so all of them share this.
 **Fix:** `normalizeFilters` already refuses a node with no operator; refuse non-object content the same way. A bound's type needs the field's type, so that check belongs where the field types are known, in the compiler or in a SQON schema given the mapping.
-**Standalone:** yes
-
----
-
-## modules/mcp-client
-
-### Output validation must bound its running time for a server's schema
-
-**File:** `modules/mcp-client/src/outputValidation.ts`
-**Severity:** blocks publishing `mcp-client` (MCP host plan §4.1), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
-**Kind:** hardening
-**Issue:** A tool's `outputSchema` comes from the server, and validating `structuredContent` against it must finish within a bounded time whatever the schema says. The size and depth limits bound compiling, not validating.
-**Fix:** Run validation under a time limit, for example in a worker, or configure Ajv's regular expressions with a linear-time engine. Report a validation that does not finish as `output_invalid`. Test that it ends within the limit.
-**Standalone:** yes
-
-### Responses from a server must have a size limit
-
-**File:** `modules/mcp-client/src/client.ts` (the transport)
-**Severity:** blocks publishing `mcp-client` (MCP host plan §4.1), and must be fixed before the CRE desktop app ships, since users can add their own servers (plan §2.4)
-**Kind:** hardening
-**Issue:** A response body must be bounded before the SDK parses it, for list results and call results alike.
-**Fix:** Give the transport a `fetch` (its `fetch` option) that stops reading past a configured byte limit, and report that as `transport_error`. Test with an oversized `tools/list` and an oversized tool result.
-**Standalone:** yes
-
-### `wireMs` overstates server time, which the evaluation harness would read it as
-
-**File:** `modules/mcp-client/src/outcomes.ts` (`CallTiming`), `modules/mcp-client/src/confirmationLoop.ts`
-**Severity:** low until the evaluation harness is built (MCP host plan, Phase 4)
-**Kind:** measurement
-**Issue:** `wireMs` is all of a call's time outside the resolver, including the 250 ms pause before each round without questions and the time `onRound` takes. Read as the harness's `serverLatency` (`.dev/docs/mcp-platform-testing.md`), it overstates the server's time on any call with confirmation rounds.
-**Fix:** Time each request leg separately and report their sum beside `wireMs`, or report the pauses and `onRound` time as their own fields so the harness can subtract them.
-**Standalone:** no; decide with the harness's metric definitions when Phase 4 resumes
-
-### Keeping `mcp-client` and `mcp-host-core` off npm relies on the Jenkins agent's npm skipping private workspaces
-
-**File:** `modules/mcp-client/package.json` and `modules/mcp-host-core/package.json` (`"private": true`); the npm publish stage in `vars/pipelineOvertureArranger.groovy` (`jenkins-pipeline-library`)
-**Severity:** low
-**Kind:** release pipeline
-**Issue:** The publish stage runs `npm publish -w` for every `modules/*` package whose version differs from npm (`.dev/docs/release-process.md` § 3). npm 11.19 skips a private workspace with a warning and continues (`lib/commands/publish.js`), but the agent's npm version is unchecked. An npm that throws instead would fail the stage at `mcp-client`, and the packages after it would not publish. `mcp-host-core` has the same exposure. Both stay private until they move to the CRE repository in Phase 5, which removes the exposure.
-**Fix:** Check `npm --version` in the agent's image. If it does not skip private workspaces, add a `private` check to the loop, as `scripts/verify-pack.mjs` already does.
-**Standalone:** yes
-
----
-
-## modules/mcp-host-core
-
-### Trim the exported surface before `mcp-host-core` is published
-
-**File:** `modules/mcp-host-core/src/index.ts`
-**Severity:** low until the module is published
-**Kind:** API surface
-**Issue:** The index exports helpers a consumer rarely needs, such as `TOOL_MESSAGES`, `reduceToolName`, `carriedLabel` and `MAX_ERROR_BODY_CHARS`, and every public vocabulary in `constants.ts`, from `EVENT_TYPES` to `LEFT_OUT_REASONS`. If the MCP host plan's question 3 settles on `apps/mcp-eval` with a published, pinned host-core, every export becomes API whose change needs a new major version.
-**Fix:** Before the first publish, keep what `chat`, `eval` and the CRE main process actually import, and move the rest out of the index.
-**Standalone:** no; decide with the plan's question 3, before host-core is first published
-
-### Servers are ordered by when they connected, not by their configuration
-
-**File:** `modules/mcp-host-core/src/connections.ts` (`connect`, `all`), `src/host.ts` (`create`)
-**Severity:** low
-**Kind:** determinism
-**Issue:** `create` connects every server in parallel, and each joins the connection map when its own connect resolves, so the registry, the model surface, `run_started` and `content_carried` list servers in the order they finished connecting. `buildRegistry`'s doc promises configuration order. Two hosts with the same configuration can offer the model its tools in different orders, which works against comparing transcripts across runs. It affects only conversations with more than one server, which now requires every server to be flagged `containsOnlyOpenData`. Reproduced with two in-process test servers, one behind a proxy that delays each request by 300 ms: whichever server was delayed came last in the tool list, `run_started` and `content_carried`, whatever its place in the configuration.
-**Fix:** Keep the configuration's order, such as by reserving each key's slot in `options.servers` order before connecting, or by ordering `Connections.all()` by it.
-**Standalone:** yes
-
-### Re-reading a changed surface between turns never reconnects
-
-**File:** `modules/mcp-host-core/src/connections.ts` (`refreshStale`, `refreshAll`)
-**Severity:** low
-**Kind:** behaviour
-**Issue:** `refreshAll`, at the start of each run, reconnects once when a surface read throws `ReconnectRequiredError`. `refreshStale`, between turns, records the same error in `tools_changed` and keeps the server's previous tools until the next run re-reads it. Nothing records whether the difference is intended.
-**Fix:** Decide whether a between-turn read should reconnect too; if so, give `refreshStale` the same single attempt, and otherwise say why in its doc.
-**Standalone:** yes
-
-### A policy's `deny` reaches the model as the user declining
-
-**File:** `modules/mcp-host-core/src/toolMessages.ts` (`toolMessageFor`, `TOOL_MESSAGES.denied`)
-**Severity:** low
-**Kind:** model-facing wording
-**Issue:** Every `denied` outcome gets "The user declined the call", whether `by` is `person`, `timeout`, `policy` or `policy_error`, so a call the policy denied without asking anyone tells the model a person refused it.
-**Fix:** Give `denied` a fixed wording for each `by`, such as "The call was not permitted" for a policy, so the model is told what happened and transcripts still compare.
 **Standalone:** yes
 
 ---
@@ -183,10 +103,10 @@ context: npm's flat hoisting causes esbuild binary version conflicts across work
 standalone: no
 context: tsup@6.7.0 is ~2 years old. Upgrading to 8.5.1 is blocked by the npm hoisting problem above: tsup@8.5.1 brings esbuild@^0.27.0, which conflicts with tsx's esbuild@~0.28.0 and bundle-require's peer dep resolution under npm. Revisit after pnpm migration.
 
-### `apps/search-server`, `apps/mcp-server`, `integration-tests/server` and `modules/mcp-host-core` don't rebuild `file:`-referenced workspace packages before testing
+### `apps/search-server`, `apps/mcp-server` and `integration-tests/server` don't rebuild `file:`-referenced workspace packages before testing
 
 standalone: yes
-context: `apps/search-server` depends on `modules/graphql-router` via `"file:../../modules/graphql-router"`, resolved through that package's `dist/` (its `package.json`'s `main`), never live source. `apps/mcp-server` has the same exposure through `"@overture-stack/sqon": "file:../../modules/sqon"` (added to this entry 2026-08-10): its own source runs from `src/` under `tsx`, but every `SqonBuilder`, `addFilterClause`, `SqonSchema`, and `getSqonFieldOperatorDetails` call resolves to `modules/sqon/dist`, and `build_sqon` depends on all four for the operator set it advertises, the fold, validation, and root normalization. A stale `dist/` there means its unit tests pass against SQON semantics no longer present in the module, with no warning; the same holds for `integration-tests/mcp-server`, which imports the app from source. `modules/mcp-host-core` depends on `"@overture-stack/arranger-mcp-client": "file:../mcp-client"`, so its tests run against `modules/mcp-client/dist` (added to this entry 2026-10-22). Running `search-server`'s or `integration-tests/server`'s tests without first running `npm run build -w modules/graphql-router` silently tests against whatever `dist/` was last built, no warning that it's stale. Concretely hit during the multicatalogue partial-availability work (2026-07-24): the `{ cause: err }` fix in `fetchMapping.ts`/`router.ts` passed every unit test (which import from source via internal path aliases, never crossing the package boundary) but silently produced `unknown_error` instead of `index_not_found` when exercised through a real integration test, because `dist/` was 8 days stale at that point. Only caught because a real end-to-end integration test against live Elasticsearch was written and run (see `integration-tests/server/test/partialAvailability.test.ts`); a unit test alone could not have caught this, by construction.
+context: `apps/search-server` depends on `modules/graphql-router` via `"file:../../modules/graphql-router"`, resolved through that package's `dist/` (its `package.json`'s `main`), never live source. `apps/mcp-server` has the same exposure through `"@overture-stack/sqon": "file:../../modules/sqon"` (added to this entry 2026-08-10): its own source runs from `src/` under `tsx`, but every `SqonBuilder`, `addFilterClause`, `SqonSchema`, and `getSqonFieldOperatorDetails` call resolves to `modules/sqon/dist`, and `build_sqon` depends on all four for the operator set it advertises, the fold, validation, and root normalization. A stale `dist/` there means its unit tests pass against SQON semantics no longer present in the module, with no warning; the same holds for `integration-tests/mcp-server`, which imports the app from source. Running `search-server`'s or `integration-tests/server`'s tests without first running `npm run build -w modules/graphql-router` silently tests against whatever `dist/` was last built, no warning that it's stale. Concretely hit during the multicatalogue partial-availability work (2026-07-24): the `{ cause: err }` fix in `fetchMapping.ts`/`router.ts` passed every unit test (which import from source via internal path aliases, never crossing the package boundary) but silently produced `unknown_error` instead of `index_not_found` when exercised through a real integration test, because `dist/` was 8 days stale at that point. Only caught because a real end-to-end integration test against live Elasticsearch was written and run (see `integration-tests/server/test/partialAvailability.test.ts`); a unit test alone could not have caught this, by construction.
 fix: add a `pretest` step to `apps/search-server`, `apps/mcp-server`, `integration-tests/server` and `integration-tests/mcp-server` that rebuilds their local `file:` dependencies first, or wire `turbo:test`'s dependency graph to do this automatically (Turbo already tracks the monorepo's build graph); at minimum, document prominently in `AGENTS.md`'s "Running tests" section that changes to `modules/*` require an explicit rebuild before testing any consumer app, the current guidance to "always run from the monorepo root" doesn't by itself guarantee a fresh build.
 
 ### No OpenSearch service in `docker-compose.yml`
@@ -343,10 +263,10 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
 
 ### No `typecheck` script runs automatically
 
-**File:** root `package.json` (`test:dev`); `modules/mcp-client/package.json` and `modules/mcp-host-core/package.json` (`typecheck`)
+**File:** root `package.json` (`test:dev`)
 **Severity:** low
 **Kind:** CI gap
-**Issue:** `modules/mcp-client` and `modules/mcp-host-core` have the only `typecheck` scripts in the repository, and neither `test:dev` nor the Jenkins pipeline runs them. `tsx --test` strips types without checking them, so a type error in a test, or in source the build does not reach, merges unnoticed. The entries proposing `typecheck` scripts for `modules/sqon` and `integration-tests/mcp-server` would add scripts with the same gap.
+**Issue:** No workspace has a `typecheck` script, and neither `test:dev` nor the Jenkins pipeline type-checks anything. `tsx --test` strips types without checking them, so a type error in a test, or in source the build does not reach, merges unnoticed. The entries proposing `typecheck` scripts for `modules/sqon` and `integration-tests/mcp-server` would add scripts that nothing runs.
 **Fix:** Add a root `typecheck` script that runs `npm run typecheck --workspaces --if-present`, and run it in the pipeline beside the tests.
 **Standalone:** yes
 
@@ -397,7 +317,7 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
 **Severity:** critical (OWASP A01: Broken Access Control; any reachable client can invoke all tools and read all catalogue data)
 **Kind:** missing security control
 **Issue:** The Host and Origin guards stop web pages, not other programs: the Origin guard passes any request without an `Origin` header. On a non-loopback bind, anything that reaches the port can call every tool. Until this is fixed, the CRE can only connect safely to an `apps/mcp-server` on the person's own machine (MCP host plan §2.6).
-**Fix:** Verify the signed-in person's own bearer token on every request (MCP host plan §2.4; [connection authentication](docs/arranger-auth/mcp-host-connections.md) §3). Never use a shared key, which would make the server a confused deputy ([MCP platform testing](docs/mcp-platform-testing.md) §5.4.1). A static key is acceptable at most as a stopgap for a demonstration on open data.
+**Fix:** Verify the signed-in person's own bearer token on every request (MCP host plan §2.4; [connection authentication](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/docs/mcp-host/connections.md) §3). Never use a shared key, which would make the server a confused deputy ([MCP platform testing](docs/mcp-platform-testing.md) §5.4.1). A static key is acceptable at most as a stopgap for a demonstration on open data.
 
 - After the guards and before `readCappedJsonBody`, call the SDK's `verifyBearerToken` with `expectedResource` set to this server, and answer a failure with `bearerAuthChallengeResponse` with `resourceMetadataUrl` set. Serve the protected-resource metadata with `oauthMetadataResponse` ([SDK v2 upgrade plan](docs/mcp-sdk-v2-upgrade-plan.md), "Later: when auth lands").
 - The verifier puts the token's `sub` in `AuthInfo.extra`. Set the result on `req.auth`, which reaches the handlers as `authInfo`.
@@ -553,7 +473,7 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **File:** `apps/mcp-server/src/mcp/requestState.ts` (`createConfirmationCodec`, its `bind`)
 **Severity:** low (no effect until the endpoint authenticates callers; the query digest still binds a confirmation to one query)
 **Kind:** design gap
-**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. The CRE desktop app is one OAuth public client, shared by every installed copy ([MCP host plan](docs/mcp-host/mcp-host-plan.md) §2.4). Every user of it has the same `clientId`, so a confirmation issued to one user would verify for another.
+**Issue:** `bind` combines the method with `ctx.http?.authInfo?.clientId`. Once auth lands, `clientId` identifies the OAuth client that obtained the token, not the user it was issued for. The CRE desktop app is one OAuth public client, shared by every installed copy ([MCP host plan](https://github.com/oicr-softeng/conversational-research-environment/blob/main/.dev/docs/mcp-host/mcp-host-plan.md) §2.4). Every user of it has the same `clientId`, so a confirmation issued to one user would verify for another.
 **Fix:** Bind to the user as well. The SDK's `AuthInfo` has no user field, so the token verifier puts the token's `sub` claim in `authInfo.extra` for `bind` to read. Encode the parts rather than joining with `\0`, as the comment above `bind` requires. Test that a state minted for one subject fails for another under the same client.
 **Standalone:** no; the subject exists only once the endpoint authenticates callers, so do this with that work (the "MCP endpoint has no authentication" entry above)
 
@@ -2332,7 +2252,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 
 ### The repo is AGPL-3.0 but no package declares a `license`, so the five published packages show none on npm
 
-**File:** root `LICENSE` (AGPL-3.0, tracked since 2021); no `license` field in root `package.json`, `modules/{charts,components,graphql-router,mcp-client,sqon,types}/package.json`, or either `apps/*/package.json`. `mcp-client` gets one when it moves to the CRE repository (MCP host plan, Phase 5).
+**File:** root `LICENSE` (AGPL-3.0, tracked since 2021); no `license` field in root `package.json`, `modules/{charts,components,graphql-router,sqon,types}/package.json`, or either `apps/*/package.json`.
 **Severity:** medium (higher for the client-side packages, see below)
 **Kind:** packaging / licensing
 **Issue:** Verified across all eight manifests: not one declares `license`. npm therefore renders all five published packages with no license, and `npm pack --dry-run` confirms no package ships a copy of the licence text either (each tarball is `README.md`, `dist/`, and `package.json`). This is worse than being unlicensed: the project genuinely _is_ AGPL-3.0, a strong copyleft licence with real obligations, and the automated compliance gate that would flag it in a consumer's pipeline never fires because there is nothing to read. Arranger's consumers are exactly the institutional and clinical integrators most likely to run such gates.
