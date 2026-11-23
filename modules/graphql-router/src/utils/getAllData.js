@@ -15,6 +15,7 @@ import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
 import { CLAUSE_LIMIT_RULE, findClauseLimitRefusal } from '#searchClient/clauseLimit.js';
+import { setFilterResolverFor } from '#sets/resolveSetFilters.js';
 import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
 import { exportStateOf } from '#utils/context.js';
 
@@ -208,6 +209,7 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  * @param {{ fieldName: string, order: 'asc' | 'desc' }[]} [args.sort] the export's order, ahead of the
  *   `_id` tiebreaker: entries each naming a non-empty `fieldName` and an `order` of `asc` or `desc` in
  *   any case, where leaving it out or passing an empty array keeps the default order.
+ * @param {Function} [args.getRequester] the host's answer to who made a request, given with saved sets that have owners.
  * @param {unknown} [args.sqon] the caller's filter.
  * @returns {Promise<import('node:stream').Readable>}
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
@@ -215,7 +217,15 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  * @throws {InvalidExportRequestError} when `chunkSize` is not a positive integer, `sort` is not an array
  *   of such entries, or the filter cannot be compiled.
  */
-export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, maxRows = null, sort = [], sqon }) => {
+export default async ({
+	chunkSize,
+	ctx: givenContext = {},
+	getRequester,
+	getServerSideFilter,
+	maxRows = null,
+	sort = [],
+	sqon,
+}) => {
 	const ctx = exportStateOf(givenContext);
 	const serverSideFilter = resolveServerSideFilter({ context: ctx, getServerSideFilter });
 	const { configs, esClient } = ctx;
@@ -252,19 +262,30 @@ export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, 
 	// Export is a read path like any other, so the access-control filter has to be composed here
 	// too. Without this the caller's SQON reaches Elasticsearch alone and the export returns every
 	// document the query matches, whatever the deployment's filter says.
+	// A context the router built carries the catalogue's own sets index; one built elsewhere gets the
+	// index a catalogue with no sets configuration uses.
+	const setsIndex = configs.setsIndex ?? fallbackConfigs.sets.index;
+	const resolveSets = setFilterResolverFor({
+		context: ctx,
+		enableSets: configs.enableSets ?? false,
+		esClient,
+		getRequester,
+		setsIndex,
+	});
+	const compiledFilter = compileFilter({
+		clientSideFilter: sqon,
+		disableClientFilters: configs.config?.[configOptionalProperties.DISABLE_FILTERS] ?? false,
+		serverSideFilter,
+	});
+	const resolvedSets = await resolveSets(compiledFilter);
 	const query = compileQuery({
 		enableSets: configs.enableSets ?? false,
-		filters: compileFilter({
-			clientSideFilter: sqon,
-			disableClientFilters: configs.config?.[configOptionalProperties.DISABLE_FILTERS] ?? false,
-			serverSideFilter,
-		}),
+		filters: compiledFilter,
+		resolvedSets,
 		legacyDateFieldNames: configs.legacyDateFieldNames,
 		nestedFieldNames: configs.nested_fieldNames,
 		nestingPrefix,
-		// A context the router built carries the catalogue's own sets index; one built elsewhere gets the
-		// index a catalogue with no sets configuration uses.
-		setsIndex: configs.setsIndex ?? fallbackConfigs.sets.index,
+		setsIndex,
 	});
 
 	const esSort = exportSort

@@ -7,6 +7,7 @@ import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 // import { ENV_CONFIG } from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, applyNestingPrefixToFieldNames, unwrapHits } from '#middleware/utils/nestingPrefix.js';
+import { setFilterResolverFor } from '#sets/resolveSetFilters.js';
 
 import compileFilter from './utils/compileFilter.js';
 import { catalogueSearch } from './utils/esSearch.js';
@@ -283,11 +284,13 @@ export const applyResultsWindow = (first, maxResultsWindow) =>
  * @param {object} args
  * @param {Function} args.getServerSideFilter the filter callback each read applies.
  * @param {object} args.Parallel the worker pool hits are mapped in.
+ * @param {Function} [args.getRequester] the host's answer to who made a request; with it, a saved set is resolved
+ *   under the sets connection's rule before the filter compiles.
  * @param {string[]} [args.requiredSourceFields] stored fields every hit carries, whichever the client selected,
  *   for a resolver of its node's fields that reads them.
  * @param {object} args.type the type's definition.
  */
-export default ({ getServerSideFilter, Parallel, requiredSourceFields = [], type }) =>
+export default ({ getRequester, getServerSideFilter, Parallel, requiredSourceFields = [], type }) =>
 	/**
 	 * @param {unknown} obj
 	 * @param {{ filters?: any, first?: number, offset?: number, score?: any, searchAfter?: any, sort?: any, trackTotalHits?: boolean }} args
@@ -309,17 +312,27 @@ export default ({ getServerSideFilter, Parallel, requiredSourceFields = [], type
 		const { extendedFields } = type;
 		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'hits' });
 
+		const resolveSets = setFilterResolverFor({
+			context,
+			enableSets: type.enableSets,
+			esClient,
+			getRequester,
+			setsIndex: type.setsIndex,
+		});
+		const compiledFilter = compileFilter({
+			clientSideFilter: filters || { op: 'and', content: [] },
+			disableClientFilters: context.disableClientFilters,
+			serverSideFilter,
+		});
+		const resolvedSets = await resolveSets(compiledFilter);
 		const query = buildQuery({
 			caller: 'resolveHits',
 			enableSets: type.enableSets,
 			legacyDateFieldNames: type.legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
-			filters: compileFilter({
-				clientSideFilter: filters || { op: 'and', content: [] },
-				disableClientFilters: context.disableClientFilters,
-				serverSideFilter,
-			}),
+			filters: compiledFilter,
+			resolvedSets,
 			setsIndex: type.setsIndex,
 		});
 

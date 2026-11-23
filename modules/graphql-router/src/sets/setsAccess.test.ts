@@ -7,6 +7,7 @@ import { setsMapping } from '#schema/index.js';
 import {
 	attributionOf,
 	mayReadStoredFilterOf,
+	mayUseSetById,
 	narrowsSetRecords,
 	ownerFilterFor,
 	refuseUnusableSetFields,
@@ -323,10 +324,16 @@ suite('ownerFilterFor', () => {
 	};
 	const unattributedSets = { content: { fieldName: 'attribution', value: ['unattributed'] }, op: 'in' };
 	const unmarkedSets = { content: { fieldName: 'attribution', value: ['__missing__'] }, op: 'in' };
+	const anonymousSets = { content: { fieldName: 'attribution', value: ['anonymous'] }, op: 'in' };
 
-	test("keeps a principal's own sets, unattributed and unmarked sets, and the sets the client names by id, never an anonymous set unnamed", () => {
+	test("keeps a principal's own sets, unattributed and unmarked sets, and an anonymous set the client names by id", () => {
 		assert.deepEqual(ownerFilterFor({ clientFilter: setIdIn([SET_X]), requester: PRINCIPAL }), {
-			content: [ownSets, unattributedSets, unmarkedSets, setIdIn([SET_X])],
+			content: [
+				ownSets,
+				unattributedSets,
+				unmarkedSets,
+				{ content: [anonymousSets, setIdIn([SET_X])], op: 'and' },
+			],
 			op: 'or',
 		});
 	});
@@ -342,11 +349,44 @@ suite('ownerFilterFor', () => {
 		['an anonymous request', { kind: 'anonymous' }],
 		['a suspended principal', { kind: 'suspended', retryAfterSeconds: 5 }],
 	] as const) {
-		test(`keeps unattributed and unmarked sets and the sets the client names by id for ${description}`, () => {
+		test(`keeps unattributed and unmarked sets and an anonymous set the client names by id for ${description}`, () => {
 			assert.deepEqual(ownerFilterFor({ clientFilter: setIdIn([SET_Y]), requester }), {
-				content: [unattributedSets, unmarkedSets, setIdIn([SET_Y])],
+				content: [unattributedSets, unmarkedSets, { content: [anonymousSets, setIdIn([SET_Y])], op: 'and' }],
 				op: 'or',
 			});
 		});
 	}
+});
+
+suite('mayUseSetById', () => {
+	const PRINCIPAL = { id: 'subject-r1', kind: 'principal' } as const;
+	const OTHER = { id: 'subject-r2', kind: 'principal' } as const;
+	const ownedBy = (userId: string) => ({ attribution: 'principal', setId: SET_X, userId });
+
+	test('usable by its principal, and not by another principal, the document answering as a missing id does', () => {
+		assert.equal(mayUseSetById({ document: ownedBy('subject-r1'), requester: PRINCIPAL, setId: SET_X }), true);
+		assert.equal(mayUseSetById({ document: ownedBy('subject-r1'), requester: OTHER, setId: SET_X }), false);
+	});
+
+	test('usable by an anonymous reader only where the set is anonymous', () => {
+		assert.equal(
+			mayUseSetById({ document: { attribution: 'anonymous', setId: SET_X }, requester: OTHER, setId: SET_X }),
+			true,
+		);
+		assert.equal(mayUseSetById({ document: ownedBy('subject-r1'), requester: OTHER, setId: SET_X }), false);
+	});
+
+	test('usable by any reader when the set is unattributed or carries no attribution', () => {
+		for (const document of [{ attribution: 'unattributed', setId: SET_X }, { setId: SET_X }]) {
+			assert.equal(mayUseSetById({ document, requester: OTHER, setId: SET_X }), true);
+			assert.equal(mayUseSetById({ document, requester: { kind: 'anonymous' }, setId: SET_X }), true);
+		}
+	});
+
+	test('usable only under the id it is stored as, so a document naming another id is not usable', () => {
+		assert.equal(
+			mayUseSetById({ document: { attribution: 'anonymous', setId: SET_Y }, requester: OTHER, setId: SET_X }),
+			false,
+		);
+	});
 });

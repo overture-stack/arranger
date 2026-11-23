@@ -54,6 +54,11 @@ export type SearchClientIndicesValidateQueryParams = {
 export type SearchClientBulkParams = { body: Record<string, any>[] };
 export type SearchClientCreateParams = { id: string; index: string; body: Record<string, any> };
 export type SearchClientDeleteParams = { index: string; id: string };
+/** One document by its id, read from its index: `found` is false, and `_source` absent, for an id the index does not hold. */
+export type SearchClientGetParams = { index: string; id: string };
+export type SearchClientGetResponse = {
+	body: { _id?: string; _source?: Record<string, any>; found?: boolean };
+};
 export type SearchClientDeleteByQueryParams = { index: string; body: Record<string, any> };
 /** A document to index: its body, the id it is stored under where given, and when the write becomes searchable. */
 export type SearchClientIndexParams = {
@@ -246,6 +251,7 @@ export type SearchClient = {
 		options?: SearchClientOptions,
 	) => Promise<SearchClientDeleteByQueryResponse>;
 	delete: (input: SearchClientDeleteParams, options?: SearchClientOptions) => Promise<SearchClientDeleteResponse>;
+	get: (input: SearchClientGetParams, options?: SearchClientOptions) => Promise<SearchClientGetResponse>;
 	index: (input: SearchClientIndexParams, options?: SearchClientOptions) => Promise<SearchClientIndexResponse>;
 	search: (input: SearchClientSearchParams, options?: SearchClientOptions) => Promise<SearchClientSearchResponse>;
 	update: (input: SearchClientUpdateParams, options?: SearchClientOptions) => Promise<SearchClientUpdateResponse>;

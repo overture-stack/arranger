@@ -41,6 +41,7 @@ const createTermAggregation = ({
 	isNested,
 	legacyDateFieldNames,
 	setsIndex,
+	resolvedSets,
 	termFilters,
 }) => {
 	const maxAggregations = get(graphqlField, ['buckets', '__arguments', 0, 'max', 'value'], MAX_AGGREGATION_SIZE);
@@ -76,6 +77,7 @@ const createTermAggregation = ({
 				legacyDateFieldNames,
 				nestedFieldNames: [],
 				setsIndex,
+				resolvedSets,
 			}),
 		);
 
@@ -153,6 +155,7 @@ export default ({
 	isNested = false,
 	legacyDateFieldNames = [],
 	setsIndex,
+	resolvedSets,
 	termFilters = [],
 }) => {
 	const resolvedEsFieldName = esFieldName ?? fieldName;
@@ -171,6 +174,7 @@ export default ({
 					isNested,
 					legacyDateFieldNames,
 					setsIndex,
+					resolvedSets,
 					termFilters,
 				}),
 			);

@@ -7,6 +7,7 @@ import {
 import type ParallelPool from 'paralleljs';
 
 import type { SchemaTypesDefinition } from '#schema/types.js';
+import type { GetRequesterFn } from '#sets/setsAccess.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
 import getAggregationsResolver, { aggregationsToGraphql, type AggregationsResolver } from './resolveAggregations.js';
@@ -24,12 +25,15 @@ import resolveHits from './resolveHits.js';
 const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	createStateResolvers = true,
 	enableAdmin,
+	getRequester,
 	getServerSideFilter,
 	Parallel,
 	type,
 }: {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
+	/** Who made a request, given with saved sets that have owners: see `GetRequesterFn`. */
+	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	Parallel: typeof ParallelPool;
 	type: SchemaTypesDefinition;
@@ -64,7 +68,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	/**
 	 * Create aggregations resolver
 	 */
-	const aggregationsResolver = getAggregationsResolver({ type, getServerSideFilter });
+	const aggregationsResolver = getAggregationsResolver({ getRequester, type, getServerSideFilter });
 
 	const aggregations: AggregationsResolver<Context> = async (obj, args, context, info) => {
 		const aggregations = await aggregationsResolver(obj, args, context, info);
@@ -74,7 +78,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	/**
 	 * Create hits resolver
 	 */
-	const hits = resolveHits({ type, Parallel, getServerSideFilter });
+	const hits = resolveHits({ getRequester, type, Parallel, getServerSideFilter });
 
 	const connectionResolver = {
 		[type.name]: {

@@ -18,6 +18,7 @@ const injectNestedFiltersToAggs = ({
 	nestedSqonFilters,
 	nestingPrefix,
 	setsIndex,
+	resolvedSets,
 }) =>
 	Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
 		const skipToNextLevel = () => {
@@ -31,6 +32,7 @@ const injectNestedFiltersToAggs = ({
 					nestedSqonFilters,
 					nestingPrefix,
 					setsIndex,
+					resolvedSets,
 				}),
 			};
 			return acc;
@@ -60,6 +62,7 @@ const injectNestedFiltersToAggs = ({
 											legacyDateFieldNames,
 											nestedFieldNames: [],
 											setsIndex,
+											resolvedSets,
 										}),
 									),
 							},
@@ -72,6 +75,7 @@ const injectNestedFiltersToAggs = ({
 							nestedSqonFilters,
 							nestingPrefix,
 							setsIndex,
+							resolvedSets,
 						}),
 					},
 				},

@@ -144,6 +144,12 @@ const storedSet = async (setId: string): Promise<Record<string, unknown>> => {
 
 const sorted = (values: readonly string[] | null): string[] | null => (values === null ? null : [...values].sort());
 
+/** The sets a target is listed when it names `setId`: for another principal's set, none, as for a set that does not exist. */
+const namedBy = async (target: Target, setId: string): Promise<SetNode[]> =>
+	(await listSets(target, { filters: setNamed(setId) })).nodes;
+
+const MISSING_SET_ID = 'a3a1c0de-0000-4000-8000-0000000000ff';
+
 suite('saved sets', { concurrency: false }, () => {
 	const routers: Record<string, Served> = {};
 	const startupLines: string[] = [];
@@ -230,18 +236,17 @@ suite('saved sets', { concurrency: false }, () => {
 		);
 	});
 
-	test("gives a reader holding another's set id its ids and size narrowed to the records they may see, with no stored filter and no creator", async () => {
+	test("answers another reader's set named by its id exactly as a missing id, for a reader granted resource A alone", async () => {
 		// Given a set of every resource's category x records, saved by one reader
 		const { setId } = await saveSetAs(as(routers.everyResource, R1), CATEGORY_X);
 
-		// When a reader granted resource A alone fetches it by its id
-		const fetched = await fetchSet(as(routers.resourceA, R2), setId);
+		// When a reader granted resource A alone names that set by its id, and a set that does not exist
+		const named = await namedBy(as(routers.resourceA, R2), setId);
+		const missing = await namedBy(as(routers.resourceA, R2), MISSING_SET_ID);
 
-		// Then they are given resource A's record alone, counted as one, and neither its filter nor its creator
-		assert.deepEqual(
-			{ ...fetched, ids: sorted(fetched.ids) },
-			{ attribution: 'principal', ids: ['p1'], setId, size: 1, sqon: null, userId: null },
-		);
+		// Then the other reader is given nothing, as for the missing id
+		assert.deepEqual(named, []);
+		assert.deepEqual(named, missing);
 	});
 
 	test("gives the creator their own set's stored filter and no creator, its ids checked against their own access", async () => {
@@ -328,20 +333,19 @@ suite('saved sets', { concurrency: false }, () => {
 		);
 	});
 
-	test("lists an anonymous request only sets with no owner, and still fetches a reader's set by id narrowed, with no filter or creator", async () => {
+	test("lists an anonymous request only sets with no owner, and answers a reader's set named by id as a missing id", async () => {
 		// Given a set saved by a reader
 		const { setId } = await saveSetAs(as(routers.everyResource, R1), CATEGORY_X);
 
-		// When an anonymous request lists sets, and fetches that set by its id
+		// When an anonymous request lists sets, and names that set by its id
 		const listed = await listSets(as(routers.everyResource), { first: 20 });
-		const fetched = await fetchSet(as(routers.resourceA), setId);
+		const named = await namedBy(as(routers.resourceA), setId);
+		const missing = await namedBy(as(routers.resourceA), MISSING_SET_ID);
 
-		// Then it is listed only sets with no owner, and the fetched set is narrowed as for any reader
+		// Then it is listed only sets with no owner, and the named set is answered as the missing id is
 		assert.ok(listed.nodes.every(isUnowned), JSON.stringify(listed.nodes));
-		assert.deepEqual(
-			{ ...fetched, ids: sorted(fetched.ids) },
-			{ attribution: 'principal', ids: ['p1'], setId, size: 1, sqon: null, userId: null },
-		);
+		assert.deepEqual(named, []);
+		assert.deepEqual(named, missing);
 	});
 
 	test('reads a set saved before marks were recorded as unattributed: listed to every reader, with its filter, narrowed', async () => {
@@ -423,13 +427,15 @@ suite('saved sets', { concurrency: false }, () => {
 			// When a suspended requester lists sets, and fetches each set by its id
 			const listed = await listSets(suspendedAt(routers.everyResource), { first: 20 });
 			const anonymousFetched = await fetchSet(suspendedAt(routers.everyResource), anonymousSet.setId);
-			const readerFetched = await fetchSet(suspendedAt(routers.everyResource), setId);
+			const readerNamed = await namedBy(suspendedAt(routers.everyResource), setId);
+			const readerMissing = await namedBy(suspendedAt(routers.everyResource), MISSING_SET_ID);
 
-			// Then it is listed only sets with no owner, is given the anonymous set's filter, and the reader's set with
-			// no filter or creator
+			// Then it is listed only sets with no owner, is given the anonymous set's filter, and the reader's set
+			// answers as a missing id does
 			assert.ok(listed.nodes.every(isUnowned), JSON.stringify(listed.nodes));
 			assert.notEqual(anonymousFetched.sqon, null);
-			assert.deepEqual({ sqon: readerFetched.sqon, userId: readerFetched.userId }, { sqon: null, userId: null });
+			assert.deepEqual(readerNamed, []);
+			assert.deepEqual(readerNamed, readerMissing);
 		});
 	});
 
@@ -484,18 +490,22 @@ suite('saved sets', { concurrency: false }, () => {
 	});
 
 	suite('getRequester with no filter callback', () => {
-		test("records the requester as a set's creator, keeps it from another reader's listing, and serves its records whole", async () => {
+		test("records the requester as a set's creator, keeps it from another reader's listing and from a set named by id, and serves its owner its records whole", async () => {
 			// Given a set saved by one reader
 			const saved = await saveSetAs(as(routers.ownedOnly, R1), CATEGORY_X, 'someone-else');
 
-			// When another reader lists sets, and fetches it by its id
+			// When another reader lists sets, names it by its id, and the owner fetches it by its id
 			const listed = await listSets(as(routers.ownedOnly, R2), { first: 20 });
-			const fetched = await fetchSet(as(routers.ownedOnly, R2), saved.setId);
+			const named = await namedBy(as(routers.ownedOnly, R2), saved.setId);
+			const missing = await namedBy(as(routers.ownedOnly, R2), MISSING_SET_ID);
+			const fetched = await fetchSet(as(routers.ownedOnly, R1), saved.setId);
 
-			// Then it is stored as the first reader's, the other is not listed it, and they are given its records whole
-			// with no filter or creator
+			// Then it is stored as the first reader's, the other is not listed it nor given it by id, as for a missing
+			// id, and the owner is given its records whole with its filter and no creator
 			assert.equal((await storedSet(saved.setId)).userId, R1);
 			assert.ok(!listed.nodes.some(({ setId }) => setId === saved.setId));
+			assert.deepEqual(named, []);
+			assert.deepEqual(named, missing);
 			assert.deepEqual(
 				{ ...fetched, ids: sorted(fetched.ids) },
 				{
@@ -503,7 +513,7 @@ suite('saved sets', { concurrency: false }, () => {
 					ids: ['p1', 'p3', 'p6'],
 					setId: saved.setId,
 					size: 3,
-					sqon: null,
+					sqon: CATEGORY_X,
 					userId: null,
 				},
 			);

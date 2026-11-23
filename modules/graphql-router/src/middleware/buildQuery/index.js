@@ -252,10 +252,11 @@ function getGroupFilter({
 	legacyDateFieldNames,
 	nestedFieldNames,
 	setsIndex,
+	resolvedSets,
 }) {
 	const applyBooleanWrapper = wrappers[op];
 	const esFilters = content.map((filter) =>
-		opSwitch({ enableSets, filter, legacyDateFieldNames, nestedFieldNames, setsIndex }),
+		opSwitch({ enableSets, filter, legacyDateFieldNames, nestedFieldNames, setsIndex, resolvedSets }),
 	);
 	// A pivot holds the conditions on its path to one nested item, whichever child comes first.
 	if (esFilters.some((esFilter) => isNested(esFilter) && esFilter.nested.path === pivot)) {
@@ -270,7 +271,28 @@ function getGroupFilter({
 	}
 }
 
-function getSetFilter({ enableSets, nestedFieldNames, filter, filter: { content, op }, setsIndex }) {
+/**
+ * The terms a resolved saved set compiles to: the ids it was checked to hold, verbatim, or none where it was missing
+ * or not usable. A set the request never resolved is refused rather than looked up, so no check can be skipped.
+ *
+ * @param {object} args
+ * @param {string} args.fieldName the field the set's ids are matched on.
+ * @param {ReadonlyMap<string, readonly string[] | null>} args.resolvedSets the request's resolved sets.
+ * @param {string} args.setId the set the clause names.
+ * @returns {object}
+ * @throws {Error} when the set was not resolved for this request.
+ */
+const resolvedSetTerms = ({ fieldName, resolvedSets, setId }) => {
+	if (!resolvedSets.has(setId)) {
+		throw new Error(
+			'A saved set named by a filter was not resolved before its filter compiled, so it was not checked.',
+		);
+	}
+
+	return termsOn(fieldName, resolvedSets.get(setId) ?? []);
+};
+
+function getSetFilter({ enableSets, nestedFieldNames, filter, filter: { content, op }, setsIndex, resolvedSets }) {
 	if (!enableSets) {
 		throw new SetsDisabledError();
 	}
@@ -279,20 +301,27 @@ function getSetFilter({ enableSets, nestedFieldNames, filter, filter: { content,
 		throw new Error("A saved-set filter needs the catalogue's sets index to look the set up in.");
 	}
 
+	const setId = _.flatMap([content.value])[0].replace('set_id:', '');
 	const esFilter = wrapFilter({
 		isNot: op === NOT_IN_OP,
 		filter,
 		nestedFieldNames,
-		esFilter: {
-			terms: {
-				boost: 0,
-				[content.fieldName]: {
-					id: _.flatMap([content.value])[0].replace('set_id:', ''),
-					index: setsIndex,
-					path: 'ids',
-				},
-			},
-		},
+		esFilter:
+			// Under `getRequester` the set was resolved before compilation, so its ids are compiled as the terms they are,
+			// read as values and never as a pattern, a missing marker or a set reference. Without it, the engine looks
+			// the set up.
+			resolvedSets === undefined
+				? {
+						terms: {
+							boost: 0,
+							[content.fieldName]: {
+								id: setId,
+								index: setsIndex,
+								path: 'ids',
+							},
+						},
+					}
+				: resolvedSetTerms({ fieldName: content.fieldName, resolvedSets, setId }),
 	});
 
 	return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
@@ -331,7 +360,14 @@ const getBetweenFilter = ({ filter, legacyDateFieldNames, nestedFieldNames }) =>
  * @returns {object}
  * @throws {SetsDisabledError} when a `set_id:` value is compiled while saved sets are not enabled.
  */
-export const opSwitch = ({ enableSets, filter, legacyDateFieldNames = [], nestedFieldNames, setsIndex }) => {
+export const opSwitch = ({
+	enableSets,
+	filter,
+	legacyDateFieldNames = [],
+	nestedFieldNames,
+	setsIndex,
+	resolvedSets,
+}) => {
 	const {
 		op,
 		pivot,
@@ -345,12 +381,12 @@ export const opSwitch = ({ enableSets, filter, legacyDateFieldNames = [], nested
 	}
 
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
-		return getGroupFilter({ enableSets, filter, legacyDateFieldNames, nestedFieldNames, setsIndex });
+		return getGroupFilter({ enableSets, filter, legacyDateFieldNames, nestedFieldNames, setsIndex, resolvedSets });
 	} else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
 		if (`${value[0]}`.includes(REGEX)) {
 			return getRegexFilter({ nestedFieldNames, filter });
 		} else if (`${value[0]}`.includes(SET_ID)) {
-			return getSetFilter({ enableSets, nestedFieldNames, filter, setsIndex });
+			return getSetFilter({ enableSets, nestedFieldNames, filter, setsIndex, resolvedSets });
 		} else if (`${value[0]}`.includes(MISSING)) {
 			return getMissingFilter({ nestedFieldNames, filter });
 		} else {
@@ -373,6 +409,7 @@ export const opSwitch = ({ enableSets, filter, legacyDateFieldNames = [], nested
 			legacyDateFieldNames,
 			nestedFieldNames,
 			setsIndex,
+			resolvedSets,
 		});
 	} else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
 		return getRangeFilter({ filter, legacyDateFieldNames, nestedFieldNames });
@@ -402,6 +439,8 @@ export const opSwitch = ({ enableSets, filter, legacyDateFieldNames = [], nested
  * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`, so their clauses are wrapped.
  * @param {string} [args.nestingPrefix] Prefix applied to field names before compilation.
  * @param {string} [args.setsIndex] The catalogue's own sets index, where a `set_id:` value is looked up.
+ * @param {ReadonlyMap<string, readonly string[] | null>} [args.resolvedSets] The saved sets a request resolved under
+ *   `getRequester`, which a `set_id:` value is compiled from in place of an engine lookup.
  * @param {object} [args.filters] The SQON to compile. Absent or empty compiles to `{}`, which
  *   matches every document, so callers on an access-control path must guarantee a filter separately.
  *   `compileFilter` is what enforces that, and it throws rather than returning a nullish filter.
@@ -415,6 +454,7 @@ export default function ({
 	nestedFieldNames = [],
 	nestingPrefix,
 	setsIndex,
+	resolvedSets,
 }) {
 	if (Object.keys(rawFilters || {}).length === 0) return {};
 
@@ -425,5 +465,6 @@ export default function ({
 			applyNestingPrefixToFieldNames(legacyDateFieldNames, nestingPrefix) ?? legacyDateFieldNames,
 		nestedFieldNames: applyNestingPrefixToFieldNames(nestedFieldNames, nestingPrefix) ?? nestedFieldNames,
 		setsIndex,
+		resolvedSets,
 	});
 }

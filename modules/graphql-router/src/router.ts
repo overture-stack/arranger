@@ -20,10 +20,10 @@ import refuseDisabledDownloads from '#download/disableDownloads.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes, { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#graphqlRoutes.js';
 import { createIndexProbe, type IndexProbe } from '#indexProbe.js';
-import { getIndexMapping } from '#searchClient/index.js';
 import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
 import getNestedFields from '#mapping/getNestedFields.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
+import { getIndexMapping } from '#searchClient/index.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import { type GetRequesterFn, narrowsSetRecords } from '#sets/setsAccess.js';
 import type { ArrangerBaseContext } from '#types.js';
@@ -223,7 +223,9 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		router.use('/', graphQLRoutes);
 		router.use(
 			`/download`,
-			configs[configFeatureFlagProperties.DISABLE_DOWNLOADS] ? refuseDisabledDownloads() : downloadRoutes(),
+			configs[configFeatureFlagProperties.DISABLE_DOWNLOADS]
+				? refuseDisabledDownloads()
+				: downloadRoutes({ getRequester }),
 		);
 		router.get('/favicon.ico', (req, res) => res.status(204));
 

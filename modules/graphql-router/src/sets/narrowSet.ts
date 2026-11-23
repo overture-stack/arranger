@@ -6,6 +6,7 @@ import compileFilter from '#mapping/utils/compileFilter.js';
 import { catalogueSearch } from '#mapping/utils/esSearch.js';
 import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix } from '#middleware/utils/nestingPrefix.js';
+import type { ResolvedSets } from '#sets/resolveSetFilters.js';
 import type { SearchClient, SearchClientSearchBody } from '#searchClient/types.js';
 
 /**
@@ -62,6 +63,7 @@ export const narrowSetForReader = async ({
 	legacyDateFieldNames,
 	nestedFieldNames,
 	nestingPrefix,
+	resolvedSets,
 	serverSideFilter,
 	set,
 	setsIndex,
@@ -74,6 +76,8 @@ export const narrowSetForReader = async ({
 	legacyDateFieldNames: string[];
 	nestedFieldNames: string[];
 	nestingPrefix: string | undefined;
+	/** The saved sets the server-side filter names, resolved under `getRequester`; see `setFilterResolverFor`. */
+	resolvedSets?: ResolvedSets;
 	serverSideFilter: SqonNode;
 	set: StoredSet;
 	setsIndex: string | undefined;
@@ -95,6 +99,7 @@ export const narrowSetForReader = async ({
 		legacyDateFieldNames,
 		nestedFieldNames,
 		nestingPrefix,
+		resolvedSets,
 		setsIndex,
 	});
 

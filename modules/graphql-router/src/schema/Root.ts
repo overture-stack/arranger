@@ -126,6 +126,7 @@ const createTypeConnectionResolvers = <Context extends ArrangerBaseContext>({
 		return createConnectionResolvers<Context>({
 			createStateResolvers: 'createState' in type ? type.createState : true,
 			enableAdmin,
+			getRequester,
 			getServerSideFilter,
 			Parallel,
 			type,

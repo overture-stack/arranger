@@ -6,6 +6,8 @@ import getFields from 'graphql-fields';
 import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/index.js';
 import type { SchemaTypesDefinition } from '#schema/types.js';
+import { mergeResolvedSets, setFilterResolverFor } from '#sets/resolveSetFilters.js';
+import type { GetRequesterFn } from '#sets/setsAccess.js';
 import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
 import compileFilter, { applicableClientFilter } from './utils/compileFilter.js';
@@ -68,10 +70,13 @@ export const aggregationsToGraphql = (aggregations: AllAggregationsMap): AllAggr
 };
 
 const getAggregationsResolver = <Context extends ArrangerBaseContext>({
+	getRequester,
 	type,
 	getServerSideFilter,
 	withheldFieldNames = [],
 }: {
+	/** Who made a request, given with saved sets that have owners: see `GetRequesterFn`. */
+	getRequester?: GetRequesterFn<Context>;
 	type: SchemaTypesDefinition;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	/** Fields never aggregated, whatever the client selects, so each resolves to null. */
@@ -91,6 +96,17 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'aggregations' });
 
+		// The saved sets both halves name are resolved once, and every compiled part reads that one map, so the
+		// aggregations rebuilt from the client filter check the same sets as the search, each fetched once per request.
+		const resolveSets = setFilterResolverFor({
+			context,
+			enableSets: type.enableSets,
+			esClient,
+			getRequester,
+			setsIndex: type.setsIndex,
+		});
+		const resolvedSets = mergeResolvedSets(await resolveSets(filters), await resolveSets(serverSideFilter));
+
 		const query = buildQuery({
 			caller: 'resolveAggregations',
 			enableSets: type.enableSets,
@@ -102,6 +118,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 				disableClientFilters: context.disableClientFilters,
 				serverSideFilter,
 			}),
+			resolvedSets,
 			setsIndex: type.setsIndex,
 		});
 
@@ -121,6 +138,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 				clientSideFilter: filters,
 				disableClientFilters: context.disableClientFilters,
 			}),
+			resolvedSets,
 			setsIndex: type.setsIndex,
 		});
 
@@ -131,6 +149,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			nestedFieldNames,
 			nestingPrefix,
 			filters: serverSideFilter,
+			resolvedSets,
 			setsIndex: type.setsIndex,
 		});
 

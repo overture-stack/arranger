@@ -295,11 +295,15 @@ export const setIdsNamedBy = (clientFilter: unknown): string[] =>
 
 const clauseIn = (fieldName: string, value: string[]) => ({ content: { fieldName, value }, op: 'in' });
 
+/** The value an `in` names to match a set attribution the document does not hold. */
+const MISSING_ATTRIBUTION = '__missing__';
+
 /**
  * The filter the sets connection applies for a router with `getRequester`, keyed off each set's `attribution`: a
- * principal's own sets, the sets every reader is listed, unmarked sets as the sets they are read as, and the sets
- * the client names by id, which is how an anonymous set is reached. A suspended principal reads as an anonymous request. Composed with the client's filter,
- * it can only narrow what the client asked for.
+ * principal's own sets, the sets every reader is listed, unmarked sets as the sets they are read as, and an
+ * anonymous set the client names by id, which is how an anonymous set is reached. Another principal's set is
+ * never reached by id, so it answers as a missing id does. A suspended principal reads as an anonymous request.
+ * Composed with the client's filter, it can only narrow what the client asked for.
  *
  * @param details the client's filter on the sets connection, and who made the request.
  */
@@ -319,10 +323,66 @@ export const ownerFilterFor = ({
 				: []),
 			clauseIn('attribution', [...LISTED_TO_EVERY_READER]),
 			...(LISTED_TO_EVERY_READER.includes(UNMARKED_SETS_READ_AS)
-				? [clauseIn('attribution', ['__missing__'])]
+				? [clauseIn('attribution', [MISSING_ATTRIBUTION])]
 				: []),
-			...(namedSetIds.length > 0 ? [clauseIn('setId', namedSetIds)] : []),
+			...(namedSetIds.length > 0
+				? [{ content: [clauseIn('attribution', ['anonymous']), clauseIn('setId', namedSetIds)], op: 'and' }]
+				: []),
 		],
 		op: 'or',
 	} as SqonNode;
 };
+
+/** A saved set's stored document, as the sets index holds it. */
+type SetNode = Readonly<Record<string, unknown>>;
+
+/**
+ * Whether a stored set document matches a SQON the predicate built: `and`, `or`, and `in` on a field, where `in`
+ * on `__missing__` matches a document that lacks the field.
+ *
+ * @param details the SQON node, and the stored document.
+ */
+const matchesOwnerFilter = (filter: unknown, document: SetNode): boolean => {
+	if (!isRecord(filter)) {
+		return false;
+	}
+
+	if (filter.op === 'and' && Array.isArray(filter.content)) {
+		return filter.content.every((child) => matchesOwnerFilter(child, document));
+	}
+
+	if (filter.op === 'or' && Array.isArray(filter.content)) {
+		return filter.content.some((child) => matchesOwnerFilter(child, document));
+	}
+
+	if (filter.op === 'in' && isRecord(filter.content) && typeof filter.content.fieldName === 'string') {
+		const { fieldName, value } = filter.content;
+
+		if (!Array.isArray(value)) {
+			return false;
+		}
+
+		const stored = document[fieldName];
+
+		return stored === undefined || stored === null ? value.includes(MISSING_ATTRIBUTION) : value.includes(stored);
+	}
+
+	return false;
+};
+
+/**
+ * Whether a reader may use a saved set by its id, as a filter or as the sets connection lists it: the connection's
+ * own predicate, `ownerFilterFor`, for a listing that names the id, applied to the set's stored document. A missing
+ * set has no document, so it is not usable; the filter path and the connection both decide through this one check.
+ *
+ * @param details the set's stored document, the id the reader names, and who is reading.
+ */
+export const mayUseSetById = ({
+	document,
+	requester,
+	setId,
+}: {
+	document: SetNode;
+	requester: Requester;
+	setId: string;
+}): boolean => matchesOwnerFilter(ownerFilterFor({ clientFilter: clauseIn('setId', [setId]), requester }), document);

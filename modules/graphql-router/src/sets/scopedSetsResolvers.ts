@@ -12,6 +12,7 @@ import type { SchemaTypesDefinition } from '#schema/types.js';
 import type { ArrangerBaseContext } from '#types.js';
 
 import { narrowSetForReader } from './narrowSet.js';
+import { type SetFilterResolver, setFilterResolverFor } from './resolveSetFilters.js';
 import {
 	type GetRequesterFn,
 	mayReadStoredFilterOf,
@@ -96,6 +97,30 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 	// One narrowing per set per request, however many of its fields are selected.
 	const narrowings = new WeakMap<SetNode, Promise<{ ids: string[]; size: number } | null>>();
 
+	// One request's resolver per catalogue, so every set narrowed in a request shares each saved set's fetch.
+	const resolversByRequest = new WeakMap<object, Map<string, SetFilterResolver>>();
+	const resolverFor = (context: Context, catalogueType: SchemaTypesDefinition): SetFilterResolver => {
+		const byCatalogue = resolversByRequest.get(context) ?? new Map<string, SetFilterResolver>();
+		resolversByRequest.set(context, byCatalogue);
+
+		const known = byCatalogue.get(catalogueType.name);
+
+		if (known) {
+			return known;
+		}
+
+		const resolver = setFilterResolverFor({
+			context,
+			enableSets: catalogueType.enableSets,
+			esClient: context.esClient,
+			getRequester,
+			setsIndex: catalogueType.setsIndex,
+		});
+		byCatalogue.set(catalogueType.name, resolver);
+
+		return resolver;
+	};
+
 	const narrowingOf = (node: SetNode, context: Context): Promise<{ ids: string[]; size: number } | null> => {
 		const known = narrowings.get(node);
 
@@ -106,22 +131,33 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 		const catalogueType = catalogueTypes.find((type) => type.name === node.type);
 		const narrowing =
 			catalogueType && Array.isArray(node.ids) && isString(node.path)
-				? narrowSetForReader({
-						catalogue: catalogueType.label ?? catalogueType.name,
-						enableSets: catalogueType.enableSets,
-						esClient: context.esClient,
-						index: catalogueType.index,
-						legacyDateFieldNames: catalogueType.legacyDateFieldNames ?? [],
-						nestedFieldNames: catalogueType.nested_fieldNames ?? [],
-						nestingPrefix: catalogueType.config?.[configOptionalProperties.NESTING_PREFIX],
-						serverSideFilter: evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' }),
-						set: {
-							ids: node.ids.filter(isString),
-							path: node.path,
-							size: typeof node.size === 'number' ? node.size : node.ids.length,
-						},
-						setsIndex: catalogueType.setsIndex,
-					})
+				? (async (ids: unknown[], path: string) => {
+						const serverSideFilter = evaluateFilterCallback({
+							context,
+							getServerSideFilter,
+							readPath: 'sets',
+						});
+						// The saved sets the server-side filter names are resolved as every other read resolves them.
+						const resolvedSets = await resolverFor(context, catalogueType)(serverSideFilter);
+
+						return narrowSetForReader({
+							catalogue: catalogueType.label ?? catalogueType.name,
+							enableSets: catalogueType.enableSets,
+							esClient: context.esClient,
+							index: catalogueType.index,
+							legacyDateFieldNames: catalogueType.legacyDateFieldNames ?? [],
+							nestedFieldNames: catalogueType.nested_fieldNames ?? [],
+							nestingPrefix: catalogueType.config?.[configOptionalProperties.NESTING_PREFIX],
+							resolvedSets,
+							serverSideFilter,
+							set: {
+								ids: ids.filter(isString),
+								path,
+								size: typeof node.size === 'number' ? node.size : ids.length,
+							},
+							setsIndex: catalogueType.setsIndex,
+						});
+					})(node.ids, node.path)
 				: Promise.resolve(null);
 
 		narrowings.set(node, narrowing);

@@ -122,7 +122,7 @@ const requireValidParams = (params) => {
  * @throws {InvalidExportRequestError} when `params` breaks a rule or its filter cannot be compiled.
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
  */
-export const dataStream = async ({ ctx: givenContext, getServerSideFilter, params }) => {
+export const dataStream = async ({ ctx: givenContext, getRequester, getServerSideFilter, params }) => {
 	const ctx = exportStateOf(givenContext);
 	const {
 		chunkSize: defaultChunkSize,
@@ -135,6 +135,7 @@ export const dataStream = async ({ ctx: givenContext, getServerSideFilter, param
 	const source = await getAllData({
 		chunkSize: chunkSize ?? defaultChunkSize,
 		ctx,
+		getRequester,
 		getServerSideFilter,
 		maxRows,
 		sort,
@@ -390,8 +391,9 @@ const pipeFromFirstChunk = ({ output, res, setHeaders }) =>
  *
  * @param {object} [args]
  * @param {boolean} [args.enableAdmin] also serves `GET /fields`, the fields flattened from the mapping.
+ * @param {Function} [args.getRequester] the host's answer to who made a request, given with saved sets that have owners.
  */
-const download = ({ enableAdmin = false } = {}) => {
+const download = ({ enableAdmin = false, getRequester } = {}) => {
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));
@@ -400,6 +402,7 @@ const download = ({ enableAdmin = false } = {}) => {
 		try {
 			const { attachmentName, contentType, exportTotals, output } = await dataStream({
 				ctx: res.locals,
+				getRequester,
 				params: paramsFrom(req.body),
 			});
 

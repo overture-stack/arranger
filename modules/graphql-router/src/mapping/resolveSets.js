@@ -6,6 +6,7 @@ import { AccessControlError, AccessControlUnavailableError } from '#accessContro
 import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
+import { setFilterResolverFor } from '#sets/resolveSetFilters.js';
 import { requesterOf, savedAttributionFor } from '#sets/setsAccess.js';
 import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 import { recordsAttribution } from '#sets/setsIndexMapping.js';
@@ -121,17 +122,21 @@ export const saveSet =
 		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
 		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' });
 
+		const resolveSets = setFilterResolverFor({ context, enableSets, esClient, getRequester, setsIndex });
+		const compiledFilter = compileFilter({
+			clientSideFilter: sqon,
+			disableClientFilters: context.disableClientFilters,
+			serverSideFilter,
+		});
+		const resolvedSets = await resolveSets(compiledFilter);
 		const query = buildQuery({
 			caller: 'resolveSets',
 			enableSets,
 			legacyDateFieldNames: catalogueType.legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
-			filters: compileFilter({
-				clientSideFilter: sqon,
-				disableClientFilters: context.disableClientFilters,
-				serverSideFilter,
-			}),
+			filters: compiledFilter,
+			resolvedSets,
 			setsIndex,
 		});
 

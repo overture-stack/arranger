@@ -75,6 +75,10 @@ export function wrapOpenSearchClient(openSearchClient: Client): SearchClient {
 			const output = await openSearchClient.delete(input, options);
 			return output;
 		},
+		get: async (input, options) => {
+			const output = await openSearchClient.get(input, options);
+			return output;
+		},
 		deleteByQuery: async (input, options) => {
 			const output = await openSearchClient.deleteByQuery(input, options);
 			return output;

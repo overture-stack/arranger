@@ -158,6 +158,7 @@ const buildAggregations = ({
 	rawPathsByGraphqlFlatName = {},
 	serverSideQuery,
 	setsIndex,
+	resolvedSets,
 	sqon,
 }) => {
 	const legacyDateFieldNames =
@@ -189,7 +190,14 @@ const buildAggregations = ({
 			? nestedFieldNames.filter((path) => path.startsWith(`${innermostPath}.`))
 			: [];
 		const termFilters = contentsFiltered.map((filter) =>
-			opSwitch({ enableSets, filter, legacyDateFieldNames, nestedFieldNames: pathsBelowFacet, setsIndex }),
+			opSwitch({
+				enableSets,
+				filter,
+				legacyDateFieldNames,
+				nestedFieldNames: pathsBelowFacet,
+				setsIndex,
+				resolvedSets,
+			}),
 		);
 
 		const fieldAggregation = createFieldAggregation({
@@ -201,6 +209,7 @@ const buildAggregations = ({
 			isNested: nestedPaths.length,
 			legacyDateFieldNames,
 			setsIndex,
+			resolvedSets,
 			termFilters,
 		});
 
@@ -237,6 +246,7 @@ const buildAggregations = ({
 		nestedSqonFilters,
 		nestingPrefix,
 		setsIndex,
+		resolvedSets,
 	});
 
 	return filteredAggregations;

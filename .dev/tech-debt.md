@@ -1473,6 +1473,16 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Fix:** A short comment at each of the two ordering-sensitive lines stating what breaks if it moves. A test asserting `GET /introspection` returns the introspection body rather than a GraphQL response would catch the actual regression and is worth more than the comment.
 **Standalone:** yes
 
+### Aggregations refuse no malformed filter shape before building their nested filters
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js` (`(normalizedSqon?.content || []).filter(...)`, reached from `mapping/resolveAggregations.ts` with the client's `sqon`)
+**Severity:** low
+**Kind:** input validation
+**Requirement:** every shape a client may send as a filter is either accepted on every read path or refused as the client's own mistake, with a message naming the rule, on every read path alike. Aggregations answer a filter whose top-level `content` is a single clause object, rather than an array, as a problem on the server.
+**Fix:** normalize or refuse the filter's shape once, before aggregations build their nested filters, as hits already do, and answer a refused shape with `BAD_USER_INPUT`.
+**Test:** a top-level filter whose `content` is one clause object answers the same on hits and aggregations: accepted on both, or refused on both with the same code.
+**Standalone:** yes
+
 ### A saved set must resolve only for its owner, and only within the catalogue it came from
 
 **File:** `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`); `modules/graphql-router/src/schema/index.ts` (`setsMapping`)
@@ -1480,7 +1490,7 @@ In the aggregate `graphql-router` run (`skipped 0`, `todo 0`) there is no signal
 **Kind:** access-control prerequisite
 **Issue:** Every read path looks a set up in its catalogue's own sets index. A set's identifiers are drawn from one catalogue and mean nothing against another, so a set belongs to the catalogue that produced it, but `setsMapping` records the documentType, which is not unique across catalogues, and no catalogue identifier, so a sets index shared by several catalogues cannot say which catalogue a set came from.
 **Fix:** Deployments with access control use per-catalogue sets indices, rather than a catalogue identifier in `setsMapping` and a reindex.
-**Requirement:** every path that reads or expands a set resolves it only for its owner, and the owner comes from the request's trusted context, the same context received by `getServerSideFilter`, never from a client-supplied argument. With no identity in the context, behaviour is unchanged. Scheduled as [auth roadmap Phase 1 item 8](docs/arranger-auth/roadmap.md).
+**Requirement:** a set resolves only within the catalogue it came from, wherever access enforcement is on. Resolving it only for its owner on every path is met under `getRequester`; this entry's remaining part is the per-catalogue sets index, scheduled as [auth roadmap Phase 1 item 8](docs/arranger-auth/roadmap.md).
 **Standalone:** no; part of Phase 1 item 8.
 **Relates to:** the Usher integration, which defines a catalogue as the scope within which a field name resolves, explicitly not a governance boundary; see that project's glossary entry for Catalogue.
 

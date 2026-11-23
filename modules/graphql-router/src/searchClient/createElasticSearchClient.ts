@@ -120,6 +120,10 @@ export function wrapElasticSearchClient(elasticSearchClient: Client): SearchClie
 			const output = await elasticSearchClient.delete<SearchClientWriteResponseBody>(input, options);
 			return output;
 		},
+		get: async (input, options) => {
+			const output = await elasticSearchClient.get<Record<string, any>>(input, options);
+			return output;
+		},
 		deleteByQuery: async (input, options) => {
 			const output = await elasticSearchClient.deleteByQuery(input, options);
 			return output;
