@@ -293,6 +293,89 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		});
 	}
 
+	test('refuses startup for a catalogue enabling saved sets, naming it, logged as access_enforcement.startup_refused, before the bridge is registered with or started', async (context) => {
+		// Given a registered catalogue enabling saved sets in its base.json
+		const errors = context.mock.method(console, 'error', () => undefined);
+		const configs = await writeCatalogues(path.join(workspace, 'sets-one'), {
+			[NAMED_CATALOGUE]: {
+				'auth.json': { auth: RECORD_REGISTRATION },
+				'base.json': { ...baseFor(NAMED_CATALOGUE), enableSets: true },
+			},
+		});
+		const bridge = recordingBridge();
+
+		// When the image starts, Then it refuses with the rule for one catalogue, naming it and the way out
+		await assert.rejects(
+			() => startImage(configs, bridge.core),
+			(error: unknown) =>
+				describeRefusal(error) ===
+				`ENABLE_ACCESS_ENFORCEMENT is true, and saved sets are enabled for catalogue "${NAMED_CATALOGUE}". Access enforcement and saved sets cannot run together yet. To start with access enforcement, set enableSets to false in the catalogue's configuration, or, where it sets no enableSets, set ENABLE_SETS to false.`,
+		);
+		assert.ok(errors.mock.calls.some(({ arguments: [event] }) => event === 'access_enforcement.startup_refused'));
+		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
+	});
+
+	test('names every catalogue enabling saved sets, in the plural form, before the bridge is registered with or started', async (context) => {
+		// Given two registered catalogues enabling saved sets, and one that does not
+		context.mock.method(console, 'error', () => undefined);
+		const configs = await writeCatalogues(path.join(workspace, 'sets-several'), {
+			[NAMED_CATALOGUE]: {
+				'auth.json': { auth: RECORD_REGISTRATION },
+				'base.json': { ...baseFor(NAMED_CATALOGUE), enableSets: true },
+			},
+			[OPEN_CATALOGUE]: {
+				'auth.json': { auth: { kind: 'open' } },
+				'base.json': { ...baseFor(OPEN_CATALOGUE), enableSets: true },
+			},
+			[UNREGISTERED_CATALOGUE]: {
+				'base.json': { ...baseFor(UNREGISTERED_CATALOGUE), enableSets: false },
+			},
+		});
+		const bridge = recordingBridge();
+
+		// When the image starts, Then it refuses with the rule for several catalogues, naming both that enable
+		// saved sets, and not the one that does not
+		await assert.rejects(
+			() => startImage(configs, bridge.core),
+			(error: unknown) => {
+				const message = describeRefusal(error);
+				return (
+					message.startsWith(
+						'ENABLE_ACCESS_ENFORCEMENT is true, and saved sets are enabled for catalogues "',
+					) &&
+					message.includes(NAMED_CATALOGUE) &&
+					message.includes(OPEN_CATALOGUE) &&
+					message.includes("set enableSets to false in each catalogue's configuration") &&
+					!message.includes(UNREGISTERED_CATALOGUE)
+				);
+			},
+		);
+		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
+	});
+
+	test('does not refuse startup for catalogues with saved sets off, absent or false, and starts', async () => {
+		// Given a registered catalogue with saved sets false, and one with saved sets absent
+		const configs = await writeCatalogues(path.join(workspace, 'sets-off'), {
+			[NAMED_CATALOGUE]: {
+				'auth.json': { auth: RECORD_REGISTRATION },
+				'base.json': { ...baseFor(NAMED_CATALOGUE), enableSets: false },
+			},
+			[OPEN_CATALOGUE]: { 'auth.json': { auth: { kind: 'open' } }, 'base.json': baseFor(OPEN_CATALOGUE) },
+		});
+		const bridge = recordingBridge();
+
+		// When the image starts, Then it listens, having registered both and started the Bridge once
+		const server = await startImage(configs, bridge.core);
+
+		try {
+			assert.equal(server.listening, true);
+			assert.equal(bridge.state.registered.length, 1);
+			assert.equal(bridge.state.started, 1);
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
+	});
+
 	test('refuses startup for a catalogue whose resource field holds several values in some record, naming it, before the bridge is registered with or started', async (context) => {
 		// Given a registered catalogue whose index holds a record with more than one value in the resource field
 		context.mock.method(console, 'error', () => undefined);

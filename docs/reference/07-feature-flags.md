@@ -89,6 +89,7 @@ With `true`, the server refuses to start when the code starting it also passes a
 
 - **every catalogue has an `auth.json` beside its `base.json`**, holding under its one key, `auth`, that catalogue's registration with the Bridge: its resource field, and each category it defines as the SQON condition a record meets to carry it, or `{ "kind": "open" }` for a catalogue open by configuration. An `auth` key in any other file of the catalogue's folder, or an `auth.json` holding anything beside it, refuses startup whatever `ENABLE_ACCESS_ENFORCEMENT` says, so each catalogue's rules come from one file. A template is in the [search server's `configTemplates`](https://github.com/overture-stack/arranger/tree/main/apps/search-server/configTemplates). Each registration is checked when the server starts, as [Checking each catalogue at startup](#checking-each-catalogue-at-startup) describes;
 - **no catalogue configures network search**, which access control does not serve yet;
+- **no catalogue enables saved sets**, which access enforcement does not serve yet: a catalogue's own `enableSets` decides, and `ENABLE_SETS` where it sets none;
 - **the Bridge's configuration is set**:
 
 | Variable | Holds |

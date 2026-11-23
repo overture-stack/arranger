@@ -1,4 +1,8 @@
-import { configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
+import {
+	configFeatureFlagProperties,
+	configRootProperties,
+	downloadProperties,
+} from '@overture-stack/arranger-types/configs/constants';
 import type { CatalogueIndex, UsherAccessControl } from '@overture-stack/arranger-usher-adapter';
 import type { BridgeCore, KeyRegistration } from '@overture-stack/usher-bridge--express';
 import type { RequestHandler } from 'express';
@@ -18,9 +22,18 @@ export type ImageUsher = Readonly<{
 const quotedList = (values: readonly string[]): string => values.map((value) => `"${value}"`).join(', ');
 
 /**
+ * The refusal for saved sets enabled beside access enforcement, in its singular or plural form by how many
+ * catalogues enable them. A catalogue's own enableSets overrides ENABLE_SETS, which is why the operator is told both.
+ */
+const setsRefusal = (withSets: readonly string[]): string =>
+	withSets.length === 1
+		? `ENABLE_ACCESS_ENFORCEMENT is true, and saved sets are enabled for catalogue ${quotedList(withSets)}. Access enforcement and saved sets cannot run together yet. To start with access enforcement, set enableSets to false in the catalogue's configuration, or, where it sets no enableSets, set ENABLE_SETS to false.`
+		: `ENABLE_ACCESS_ENFORCEMENT is true, and saved sets are enabled for catalogues ${quotedList(withSets)}. Access enforcement and saved sets cannot run together yet. To start with access enforcement, set enableSets to false in each catalogue's configuration, or, where one sets no enableSets, set ENABLE_SETS to false.`;
+
+/**
  * Refuses startup for every catalogue the Usher adapter cannot serve: one configuring network search,
- * which access control does not serve until the federation posture is decided, and one with no
- * registration beside its configuration.
+ * which access control does not serve until the federation posture is decided, one enabling saved sets,
+ * which access control does not serve yet either, and one with no registration beside its configuration.
  */
 const refuseUnservableCatalogues = ({
 	catalogs,
@@ -37,6 +50,14 @@ const refuseUnservableCatalogues = ({
 		throw startupRefusal(
 			`ENABLE_ACCESS_ENFORCEMENT is true, and access control does not serve network search yet, which catalogue ${quotedList(configuringNetwork)} configures. Remove its network configuration to start with access control.`,
 		);
+	}
+
+	const withSets = Object.entries(catalogs)
+		.filter(([, configs]) => configs[configFeatureFlagProperties.ENABLE_SETS] === true)
+		.map(([catalogueId]) => catalogueId);
+
+	if (withSets.length > 0) {
+		throw startupRefusal(setsRefusal(withSets));
 	}
 
 	const unregistered = Object.keys(catalogs).filter((catalogueId) => !Object.hasOwn(usherRegistrations, catalogueId));

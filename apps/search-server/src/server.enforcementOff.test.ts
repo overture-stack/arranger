@@ -149,6 +149,35 @@ suite('search-server image: access enforcement off', { concurrency: false }, () 
 		}
 	});
 
+	test('starts, unrefused, a catalogue enabling saved sets, since the refusal for saved sets is only for access enforcement', async () => {
+		// Given a catalogue enabling saved sets, with no access enforcement configured
+		const sets = path.join(workspace, 'sets');
+		await mkdir(path.join(sets, CATALOGUE), { recursive: true });
+		await writeFile(
+			path.join(sets, CATALOGUE, 'base.json'),
+			JSON.stringify({
+				catalogId: CATALOGUE,
+				documentType: 'record',
+				enableSets: true,
+				esIndex: `testing-${CATALOGUE}`,
+			}),
+		);
+
+		// When the image starts, Then it listens, and the process resolved no module of either Usher package
+		const server: Server = await arrangerServer({
+			catalogueConfigsPath: sets,
+			esClient: ENGINE_UP,
+			serverPort: 0,
+		});
+
+		try {
+			assert.equal(server.listening, true);
+			assert.deepEqual(await usherModulesResolvedSoFar('sets-enabled'), []);
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
+	});
+
 	test('reports the Usher adapter, and the Usher package it loads, once they are resolved', async () => {
 		// Given the hook the previous row relies on to report every Usher module resolved
 
