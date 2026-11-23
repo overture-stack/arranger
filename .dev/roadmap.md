@@ -685,6 +685,34 @@ The masking logic belongs in the core query layer, not the UI; the server must n
 
 _Needs design before implementation. Treat as a blocking design question for any Arranger deployment handling sensitive or regulated data._
 
+
+### One pluralization library: `inflection` in the components
+
+_Priority: low. Waits on a fix contributed to `inflection`._
+
+The components pluralize a catalogue's document type for the table's count line with `pluralize` (`Table/CountDisplay`), while the search server and Lyric use `inflection`. Moving the components to `inflection` changes what users see for a few words. Compared over 48 document-type words, the two agree on 43:
+
+| Input | `pluralize`, count 1 / many | `inflection` 3.0.2, count 1 / many |
+| --- | --- | --- |
+| specimen, biospecimen | speciman / specimen (both wrong) | specimen / specimens |
+| virus | virus / viri | virus / viruses |
+| analyses, sample_analyses | analysis / analyses | analyasis (wrong) / analyses |
+| DONOR | DONOR / DONORS | DONOR / DONORs (wrong) |
+
+**Plan:** contribute a fix upstream to `inflection` for singularizing words ending in `-yses` (`analyses` to `analysis`) and for keeping an all-capitals word in capitals, then move the components onto the fixed release, with a test pinning each word above. A small wrapper around `inflection` with an exceptions table is the fallback if the fix is not accepted.
+
+### A view's default filter without a rewriting fetcher (HCMI)
+
+_Priority: decision parked. Must be settled before the release with the Usher integration, which HCMI otherwise cannot adopt without losing its saved-set lookups._
+
+HCMI's portal adds `expanded in ['true']` to every request's filter through its own `customFetcher`, including its saved-set lookups. The saved-sets connection refuses a filter or sort naming a field outside the fields every reader is given, so those lookups fail once HCMI runs that release. Deployments without access enforcement must keep working as they do today, so one of these is needed first:
+
+- **a.** A base filter on the components' `DataProvider`: a view's default, never access control, so a portal sets `expanded` there and stops rewriting requests.
+- **b.** HCMI keeps its fetcher, narrowed so it leaves the saved-set lookup alone.
+- **c.** The saved-sets connection ignores filters on fields outside its mapping instead of refusing them, loosening the strictness it has now.
+
+HCMI's migration path, including this item and the steps HCMI can take on its current release candidate, is documented on HCMI's side.
+
 ---
 
 ## Deployment
