@@ -1157,15 +1157,6 @@ Related and smaller, in the same expression: `topHits?.__arguments?.[1]?.size ||
 **Fix:** Unit tests covering: basic field mapping; `jsonPath` extraction; `extendedDisplayValues` label substitution; columns with `show: false` excluded; empty hit set returns empty array.
 **Standalone:** yes; pure transformation function
 
-### `ENABLE_SETS` flag does not fully gate the Sets query path
-
-**File:** `modules/graphql-router/src/middleware/buildQuery/index.js` (`getSetFilter`, the `set_id:` terms lookup)
-**Severity:** medium (OWASP A01: Broken Access Control; the risk is bounded by `setId` being an unguessable UUID, but there is no ownership check at all)
-**Kind:** design gap / feature flag does not cover its own attack surface
-**Issue:** `ENABLE_SETS` (default `false`) only gates `initializeSets`, which creates the sets ES index on startup (`config/utils/index.ts:15-17`). The `set_id:` terms lookup runs on every read path regardless of the flag. If a sets index exists in the cluster (the flag was enabled at some point, or the index is shared across deployments), any query containing `set_id:<uuid>` resolves to that set's full document ID list with no ownership check: the sets ES mapping stores `userId` per set, but nothing anywhere reads or enforces it.
-**Fix:** Short-term mitigation: gate the `set_id:` lookup on `enableSets` explicitly, so a disabled flag is a real kill switch rather than only skipping index creation. Real fix: implement the ABAC ownership check already scoped in [roadmap: Sets full feature implementation](roadmap.md#sets-full-feature-implementation) before treating any `set_id:` query as safe in a multi-tenant deployment.
-**Standalone:** yes for the flag-gating mitigation; no for the ABAC ownership check, which is the roadmap item's own scope
-
 ### `SupportedClientTypes`/`clientType` naming conflates "which search engine" with "which client library"
 
 **File:** `modules/graphql-router/src/searchClient/types.ts` (`SupportedClientTypes`, `SearchConfig.clientType`, `SearchConfigWithClient.clientType`), exported publicly from `modules/graphql-router/src/index.ts`; compare `modules/types/src/configs/index.ts:161` (`SearchEngineType = 'elasticsearch' | 'opensearch'`) and `configOptionalProperties.SEARCH_ENGINE: 'searchEngine'`

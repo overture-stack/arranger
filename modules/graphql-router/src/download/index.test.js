@@ -18,6 +18,8 @@ import {
 import { wrapOpenSearchClient } from '#searchClient/index.js';
 import noopFn from '#utils/noops.js';
 
+import { SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
+
 import { dataStream, InvalidExportRequestError } from './index.js';
 
 /*
@@ -830,6 +832,27 @@ suite('download', () => {
 			// Then the export succeeds with nothing in it
 			assert.equal(response.status, 200);
 			assert.equal(response.text, '');
+		});
+
+		test('refuses an export filtered by a saved set with the disabled-feature text, before any engine request', async () => {
+			// Given a router whose catalogue has saved sets disabled, as no enableSets flag is configured
+			const requestsBefore = arranger.engine.requests.length;
+
+			// When the export is filtered by a saved set
+			const response = await postDownload(
+				arranger.server,
+				paramsWithFile({
+					sqon: {
+						content: [{ content: { fieldName: 'donor_id', value: ['set_id:abc'] }, op: 'in' }],
+						op: 'and',
+					},
+				}),
+			);
+
+			// Then it is answered as a bad request with the fixed message, and no engine request is made
+			assertPlainTextError(response, 400);
+			assert.equal(response.text, SETS_DISABLED_MESSAGE);
+			assert.equal(arranger.engine.requests.length, requestsBefore, 'no engine request should be made');
 		});
 
 		test('answers JSON lines, header object first, when the file asks for json', async () => {

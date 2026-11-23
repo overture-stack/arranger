@@ -129,6 +129,7 @@ function wrapWithFilters({
 const buildAggregations = ({
 	aggregationsFilterThemselves,
 	disableClientFilters = false,
+	enableSets,
 	graphqlFields,
 	legacyDateFieldNames: rawLegacyDateFieldNames = [],
 	nestedFieldNames: rawNestedFieldNames,
@@ -168,11 +169,12 @@ const buildAggregations = ({
 			? nestedFieldNames.filter((path) => path.startsWith(`${innermostPath}.`))
 			: [];
 		const termFilters = contentsFiltered.map((filter) =>
-			opSwitch({ filter, legacyDateFieldNames, nestedFieldNames: pathsBelowFacet, setsIndex }),
+			opSwitch({ enableSets, filter, legacyDateFieldNames, nestedFieldNames: pathsBelowFacet, setsIndex }),
 		);
 
 		const fieldAggregation = createFieldAggregation({
 			disableClientFilters,
+			enableSets,
 			esFieldName,
 			fieldName,
 			graphqlField,
@@ -210,6 +212,7 @@ const buildAggregations = ({
 	const filteredAggregations = injectNestedFiltersToAggs({
 		aggregationsFilterThemselves,
 		aggs,
+		enableSets,
 		legacyDateFieldNames,
 		nestedSqonFilters,
 		nestingPrefix,

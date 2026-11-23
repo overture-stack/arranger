@@ -1190,6 +1190,7 @@ suite('buildQuery with a saved set', () => {
 		// Given the same saved-set reference under not-in and under some-not-in
 		const query = (op) =>
 			buildQuery({
+				enableSets: true,
 				filters: { content: { fieldName: 'kind', value: ['set_id:abc'] }, op },
 				nestedFieldNames: [],
 				setsIndex: 'catalogue-sets',

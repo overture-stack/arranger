@@ -13,6 +13,8 @@ import { GraphQLJSON } from 'graphql-type-json';
 import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 
+import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
+
 import getAllData, { InvalidExportRequestError } from './getAllData.js';
 
 const DOCUMENT_TYPE = 'donor';
@@ -138,6 +140,7 @@ const buildSchema = (total) => buildCountSchema(() => total);
 const buildConfigs = ({
 	allowCustomMaxRows = false,
 	configuredChunkSize,
+	enableSets,
 	maxRows = 100,
 	nestedFieldNames = [],
 	nestingPrefix,
@@ -148,6 +151,7 @@ const buildConfigs = ({
 	index: DOCUMENT_TYPE,
 	name: DOCUMENT_TYPE,
 	nested_fieldNames: nestedFieldNames,
+	...(enableSets !== undefined && { enableSets }),
 	...(setsIndex !== undefined && { setsIndex }),
 	config: {
 		[configRootProperties.DOWNLOADS]: {
@@ -825,11 +829,53 @@ suite('getAllData', () => {
 			// Given a context whose catalogue keeps its sets in its own index
 			// When an export filters by a saved set
 			// Then the lookup names that index
-			assert.equal(await lookupIndexOf(buildConfigs({ setsIndex: 'catalogue-sets' })), 'catalogue-sets');
+			assert.equal(
+				await lookupIndexOf(buildConfigs({ enableSets: true, setsIndex: 'catalogue-sets' })),
+				'catalogue-sets',
+			);
 		});
 
 		test('looks the set up in the default sets index when a context built without the router names none', async () => {
-			assert.equal(await lookupIndexOf(buildConfigs()), 'arranger-sets');
+			assert.equal(await lookupIndexOf(buildConfigs({ enableSets: true })), 'arranger-sets');
+		});
+
+		/** Starts an export of `setFilter` over a context with `configs`, and settles it as a rejection or a stream. */
+		const exportOf = async (configs) => {
+			const engine = createPagingEngine({ documents: numberedDocuments(1) });
+			const settled = await getAllData({
+				ctx: contextFor(engine, { configs, documentCount: 1 }),
+				...exportEverything,
+				sqon: setFilter,
+			}).then(
+				() => ({ refused: false }),
+				(error) => ({ error, refused: true }),
+			);
+
+			return { requests: engine.requests, settled };
+		};
+
+		test('refuses the export before any search when saved sets are not enabled', async () => {
+			// Given a context whose catalogue has saved sets disabled
+			// When an export filters by a saved set
+			const { requests, settled } = await exportOf(
+				buildConfigs({ enableSets: false, setsIndex: 'catalogue-sets' }),
+			);
+
+			// Then it is refused with the disabled-feature refusal, and no search reaches the engine
+			assert.ok(settled.refused, 'expected the export to be refused');
+			assert.ok(isSetsDisabledError(settled.error), String(settled.error));
+			assert.deepEqual(requests, []);
+		});
+
+		test('treats saved sets as disabled when the context carries no enableSets flag', async () => {
+			// Given a context built outside the router, which names no enableSets flag
+			// When an export filters by a saved set
+			const { requests, settled } = await exportOf(buildConfigs({ setsIndex: 'catalogue-sets' }));
+
+			// Then it is refused as if saved sets were disabled, and no search reaches the engine
+			assert.ok(settled.refused, 'expected the export to be refused');
+			assert.ok(isSetsDisabledError(settled.error), String(settled.error));
+			assert.deepEqual(requests, []);
 		});
 	});
 

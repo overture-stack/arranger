@@ -7,13 +7,14 @@ import Parallel from 'paralleljs';
 
 import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#searchClient/fetchMapping.js';
+import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 import type { ArrangerBaseContext } from '#types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';
 import ConfigsTypeDefs from './configQuery.js';
 import { typeDefs as SetTypeDefs } from './Sets.js';
 import { typeDefs as SortTypeDefs } from './Sort.js';
-import type { SchemaTypesTuple } from './types.js';
+import type { SchemaTypesDefinition, SchemaTypesTuple } from './types.js';
 
 // TODO: Narrow the rootTypes and scalarTypes type definitions
 type TypeDefsArgs = {
@@ -88,6 +89,7 @@ const resolveEmptyObject = () => ({});
 type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 	debug: boolean;
 	enableAdmin?: boolean;
+	enableSets?: boolean;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes: any[];
 	scalarTypes: any[];
@@ -95,9 +97,51 @@ type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 	types: SchemaTypesTuple[];
 };
 
+/**
+ * The connection resolvers for one document type. While saved sets are not enabled, the `sets` type's hits and
+ * aggregations are refused before any search, so no read of saved sets reaches the engine.
+ */
+const createTypeConnectionResolvers = <Context extends ArrangerBaseContext>({
+	enableAdmin,
+	enableSets,
+	getServerSideFilter,
+	type,
+}: {
+	enableAdmin: boolean;
+	enableSets: boolean;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	type: SchemaTypesDefinition;
+}): IResolvers<any, Context> => {
+	const connectionResolvers = createConnectionResolvers<Context>({
+		createStateResolvers: 'createState' in type ? type.createState : true,
+		enableAdmin,
+		getServerSideFilter,
+		Parallel,
+		type,
+	});
+
+	if (type.name !== 'sets' || enableSets) {
+		return connectionResolvers;
+	}
+
+	const refuseSavedSetsRead = (): never => {
+		throw new SetsDisabledError();
+	};
+	const setsResolvers = connectionResolvers[type.name] as object | undefined;
+
+	return {
+		[type.name]: {
+			...setsResolvers,
+			aggregations: refuseSavedSetsRead,
+			hits: refuseSavedSetsRead,
+		},
+	};
+};
+
 export const resolvers = <Context extends ArrangerBaseContext>({
 	debug,
 	enableAdmin = false,
+	enableSets = false,
 	getServerSideFilter,
 	rootTypes,
 	scalarTypes,
@@ -160,11 +204,10 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 		...types.reduce(
 			(acc, [key, type]) => ({
 				...acc,
-				...createConnectionResolvers<Context>({
-					createStateResolvers: 'createState' in type ? type.createState : true,
+				...createTypeConnectionResolvers<Context>({
 					enableAdmin,
+					enableSets,
 					getServerSideFilter,
-					Parallel,
 					type,
 				}),
 			}),
@@ -186,7 +229,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 			{},
 		),
 		Mutation: {
-			saveSet: saveSet({ getServerSideFilter, setsIndex, types }),
+			saveSet: saveSet({ enableSets, getServerSideFilter, setsIndex, types }),
 		},
 	};
 };

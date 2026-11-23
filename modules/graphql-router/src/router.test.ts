@@ -27,7 +27,8 @@ type SearchParameters = {
 type RequestContext = Record<string | symbol, unknown>;
 
 const ACCESS_CONTROL_RECORD = Symbol.for('@overture-stack/arranger-graphql-router/accessControl');
-const CATALOGUE_CONFIGS = { documentType: 'donor', esIndex: 'donor_index' };
+// Saved sets are enabled because most tests here read or save them, and what each read path lets through is under test.
+const CATALOGUE_CONFIGS = { documentType: 'donor', enableSets: true, esIndex: 'donor_index' };
 const MAPPING = { donor_id: { type: 'keyword' }, study: { type: 'keyword' } };
 
 const DOCUMENTS: StoredDocument[] = ['A', 'B', 'A', 'B', 'A'].map((study, index) => ({

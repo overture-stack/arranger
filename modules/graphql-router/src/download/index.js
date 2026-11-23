@@ -7,6 +7,7 @@ import {
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 } from '#accessControl/AccessControlError.js';
+import { isSetsDisabledError, SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
 import { arrangerLocalsOf, requestStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
@@ -173,6 +174,10 @@ const paramsFrom = (body) => {
 const failureResponseFor = (error) => {
 	if (error instanceof InvalidExportRequestError) {
 		return { event: 'download.invalid_request', log: console.warn, status: 400, text: error.message };
+	}
+
+	if (isSetsDisabledError(error)) {
+		return { event: 'download.invalid_request', log: console.warn, status: 400, text: SETS_DISABLED_MESSAGE };
 	}
 
 	if (isAccessControlQueryTooLargeError(error)) {

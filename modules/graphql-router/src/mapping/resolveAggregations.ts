@@ -90,6 +90,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const query = buildQuery({
 			caller: 'resolveAggregations',
+			enableSets: type.enableSets,
 			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
@@ -110,6 +111,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		 */
 		const serverSideQuery = buildQuery({
 			caller: 'resolveAggregations',
+			enableSets: type.enableSets,
 			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
@@ -125,6 +127,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		const graphqlFields = getFields(graphqlResolveInfo, {}, { processArguments: true });
 		const aggs = buildAggregations({
 			disableClientFilters: context.disableClientFilters,
+			enableSets: type.enableSets,
 			query,
 			serverSideQuery,
 			setsIndex: type.setsIndex,

@@ -3,6 +3,7 @@ import { suite, test } from 'node:test';
 
 import buildAggregations from '#middleware/buildAggregations/index.js';
 import buildQuery from '#middleware/buildQuery/index.js';
+import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
 
 const SETS_INDEX = 'catalogue-sets';
 const NESTED_FIELD_NAMES = ['donors'];
@@ -22,6 +23,7 @@ const lookupsIn = (node) =>
 const aggregationsFor = (aggregationsFilterThemselves) =>
 	buildAggregations({
 		aggregationsFilterThemselves,
+		enableSets: true,
 		graphqlFields: {
 			donors__gender: {
 				buckets: {
@@ -31,7 +33,12 @@ const aggregationsFor = (aggregationsFilterThemselves) =>
 			},
 		},
 		nestedFieldNames: NESTED_FIELD_NAMES,
-		query: buildQuery({ filters: SET_FILTER, nestedFieldNames: NESTED_FIELD_NAMES, setsIndex: SETS_INDEX }),
+		query: buildQuery({
+			enableSets: true,
+			filters: SET_FILTER,
+			nestedFieldNames: NESTED_FIELD_NAMES,
+			setsIndex: SETS_INDEX,
+		}),
 		setsIndex: SETS_INDEX,
 		sqon: SET_FILTER,
 	});
@@ -51,4 +58,33 @@ suite("a nested facet looks a saved set up in the catalogue's own sets index", (
 			);
 		});
 	}
+});
+
+suite('a nested facet refuses a saved-set filter when saved sets are not enabled', () => {
+	test('refuses the saved-set clause in its term filters before compiling any aggregation', () => {
+		// Given a facet on a nested field, a saved-set clause on another field at that level, and saved sets disabled
+		// When its aggregation compiles
+		// Then it is refused with the disabled-feature refusal
+		assert.throws(
+			() =>
+				buildAggregations({
+					aggregationsFilterThemselves: true,
+					enableSets: false,
+					graphqlFields: {
+						donors__gender: {
+							buckets: {
+								filter_by_term: { __arguments: [{ filter: { kind: 'Variable', value: SET_FILTER } }] },
+								key: {},
+							},
+						},
+					},
+					nestedFieldNames: NESTED_FIELD_NAMES,
+					query: {},
+					serverSideQuery: {},
+					setsIndex: SETS_INDEX,
+					sqon: SET_FILTER,
+				}),
+			(error) => isSetsDisabledError(error),
+		);
+	});
 });
