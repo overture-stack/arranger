@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { suite, test } from 'node:test';
 
 import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
+import { graphql } from 'graphql';
 
 import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
 import { restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import * as packageRoot from '#index.js';
+import { isSetsDisabledError, SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
 import { catalogueErrorCodes, classifyCatalogueFailureReason } from '#searchClient/index.js';
 
 import arrangerRoutes, { createSchemasFromConfigs, FALLBACK_LABEL, isFallbackLabel } from './graphqlRoutes.js';
@@ -244,5 +246,74 @@ suite('schema builders require a non-async getServerSideFilter at build', () => 
 		// Then both build
 		assert.ok(Array.isArray(routes));
 		assert.ok(schemas.schema);
+	});
+});
+
+suite('the sets connection', () => {
+	const recordingClient = () => {
+		const searchCalls: { index?: string }[] = [];
+		const esClient = {
+			search: async (params: { index?: string }) => {
+				searchCalls.push(params);
+				return { body: { aggregations: {}, hits: { hits: [], total: { value: 0 } } } };
+			},
+		} as never;
+
+		return { esClient, searchCalls };
+	};
+
+	const buildSetsSchema = (esClient: never, enableSets?: boolean) =>
+		createSchemasFromConfigs({
+			...BUILDABLE_ARGUMENTS,
+			enableSets,
+			esClient,
+			getServerSideFilter: getDefaultServerSideFilter,
+			setsIndex: 'test-sets',
+		});
+
+	test('refuses a read of the sets hits with the disabled-feature refusal, before any search, when saved sets are not enabled', async () => {
+		// Given a schema built with saved sets disabled, and a recording search client
+		const { esClient, searchCalls } = recordingClient();
+		const { schema } = await buildSetsSchema(esClient, false);
+
+		// When the sets hits are read
+		const result = await graphql({ schema, source: '{ sets { hits { total } } }', contextValue: { esClient } });
+
+		// Then the read is refused, and no search reaches the engine
+		const [error] = result.errors ?? [];
+		assert.ok(isSetsDisabledError(error?.originalError), String(error));
+		assert.equal(error?.message, SETS_DISABLED_MESSAGE);
+		assert.deepEqual(searchCalls, []);
+	});
+
+	test('refuses a read of the sets aggregations, before any search, when saved sets are not enabled', async () => {
+		// Given a schema built with saved sets disabled, and a recording search client
+		const { esClient, searchCalls } = recordingClient();
+		const { schema } = await buildSetsSchema(esClient);
+
+		// When the sets aggregations are read, with the enableSets flag absent
+		const result = await graphql({
+			schema,
+			source: '{ sets { aggregations { __typename } } }',
+			contextValue: { esClient },
+		});
+
+		// Then the read is refused, and no search reaches the engine
+		const [error] = result.errors ?? [];
+		assert.ok(isSetsDisabledError(error?.originalError), String(error));
+		assert.deepEqual(searchCalls, []);
+	});
+
+	test('searches the sets index for the sets hits when saved sets are enabled', async () => {
+		// Given a schema built with saved sets enabled, and a recording search client
+		const { esClient, searchCalls } = recordingClient();
+		const { schema } = await buildSetsSchema(esClient, true);
+
+		// When the sets hits are read
+		const result = await graphql({ schema, source: '{ sets { hits { total } } }', contextValue: { esClient } });
+
+		// Then the read succeeds, searching the sets index
+		assert.equal(result.errors, undefined);
+		assert.equal(searchCalls[0]?.index, 'test-sets');
 	});
 });

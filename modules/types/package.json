@@ -53,13 +53,14 @@
 		"#*": "./src/*"
 	},
 	"scripts": {
-		"build": "wireit",
+		"build": "tsup --tsconfig tsconfig.release.json",
+		"build:with-dependencies": "wireit",
 		"clear:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
 		"test": "tsx --test",
 		"test:watch": "npm test -- --watch",
-		"watch": "WIREIT_WATCH=true npm run build"
+		"watch": "WIREIT_WATCH=true npm run build:with-dependencies"
 	},
 	"dependencies": {
 		"@overture-stack/sqon": "file:../sqon"
@@ -79,10 +80,10 @@
 	},
 	"type": "module",
 	"wireit": {
-		"build": {
+		"build:with-dependencies": {
 			"command": "tsup --tsconfig tsconfig.release.json",
 			"dependencies": [
-				"../sqon:build"
+				"../sqon:build:with-dependencies"
 			],
 			"files": [
 				"src/**/*.ts",

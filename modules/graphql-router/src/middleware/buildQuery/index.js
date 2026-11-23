@@ -38,6 +38,7 @@ import {
 	wrapShould,
 } from '#middleware/utils/esFilter.js';
 import { applyNestingPrefixToFieldNames, applyNestingPrefixToSqon } from '#middleware/utils/nestingPrefix.js';
+import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 
 import { InvalidFilterError } from './InvalidFilterError.js';
 import normalizeFilters from './normalizeFilters.js';
@@ -245,9 +246,17 @@ const wrappers = {
 	[OR_OP]: wrapShould,
 	[NOT_OP]: wrapMustNot,
 };
-function getGroupFilter({ filter: { content, op, pivot }, legacyDateFieldNames, nestedFieldNames, setsIndex }) {
+function getGroupFilter({
+	enableSets,
+	filter: { content, op, pivot },
+	legacyDateFieldNames,
+	nestedFieldNames,
+	setsIndex,
+}) {
 	const applyBooleanWrapper = wrappers[op];
-	const esFilters = content.map((filter) => opSwitch({ filter, legacyDateFieldNames, nestedFieldNames, setsIndex }));
+	const esFilters = content.map((filter) =>
+		opSwitch({ enableSets, filter, legacyDateFieldNames, nestedFieldNames, setsIndex }),
+	);
 	// A pivot holds the conditions on its path to one nested item, whichever child comes first.
 	if (esFilters.some((esFilter) => isNested(esFilter) && esFilter.nested.path === pivot)) {
 		const flattned = esFilters.reduce(
@@ -261,7 +270,11 @@ function getGroupFilter({ filter: { content, op, pivot }, legacyDateFieldNames, 
 	}
 }
 
-function getSetFilter({ nestedFieldNames, filter, filter: { content, op }, setsIndex }) {
+function getSetFilter({ enableSets, nestedFieldNames, filter, filter: { content, op }, setsIndex }) {
+	if (!enableSets) {
+		throw new SetsDisabledError();
+	}
+
 	if (!setsIndex) {
 		throw new Error("A saved-set filter needs the catalogue's sets index to look the set up in.");
 	}
@@ -313,10 +326,12 @@ const getBetweenFilter = ({ filter, legacyDateFieldNames, nestedFieldNames }) =>
  * @param {string[]} [args.legacyDateFieldNames] date fields whose mapping format holds `ES_DATE_FORMAT`,
  *   named as the engine holds them, where a date alone is rewritten to cover its whole day.
  * @param {string[]} args.nestedFieldNames paths mapped as `nested`, named as the engine holds them.
+ * @param {boolean} [args.enableSets] whether saved sets are enabled; absent means they are not, so a `set_id:` value is refused.
  * @param {string} [args.setsIndex] the catalogue's own sets index, where a `set_id:` value is looked up.
  * @returns {object}
+ * @throws {SetsDisabledError} when a `set_id:` value is compiled while saved sets are not enabled.
  */
-export const opSwitch = ({ filter, legacyDateFieldNames = [], nestedFieldNames, setsIndex }) => {
+export const opSwitch = ({ enableSets, filter, legacyDateFieldNames = [], nestedFieldNames, setsIndex }) => {
 	const {
 		op,
 		pivot,
@@ -330,12 +345,12 @@ export const opSwitch = ({ filter, legacyDateFieldNames = [], nestedFieldNames, 
 	}
 
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
-		return getGroupFilter({ filter, legacyDateFieldNames, nestedFieldNames, setsIndex });
+		return getGroupFilter({ enableSets, filter, legacyDateFieldNames, nestedFieldNames, setsIndex });
 	} else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
 		if (`${value[0]}`.includes(REGEX)) {
 			return getRegexFilter({ nestedFieldNames, filter });
 		} else if (`${value[0]}`.includes(SET_ID)) {
-			return getSetFilter({ nestedFieldNames, filter, setsIndex });
+			return getSetFilter({ enableSets, nestedFieldNames, filter, setsIndex });
 		} else if (`${value[0]}`.includes(MISSING)) {
 			return getMissingFilter({ nestedFieldNames, filter });
 		} else {
@@ -354,6 +369,7 @@ export const opSwitch = ({ filter, legacyDateFieldNames = [], nestedFieldNames, 
 					},
 				})),
 			},
+			enableSets,
 			legacyDateFieldNames,
 			nestedFieldNames,
 			setsIndex,
@@ -382,6 +398,7 @@ export const opSwitch = ({ filter, legacyDateFieldNames = [], nestedFieldNames, 
  * @param {string[]} [args.legacyDateFieldNames] Date fields whose mapping format holds `ES_DATE_FORMAT`,
  *   where a date alone is rewritten to cover its whole day. A date alone on any other field reaches the
  *   engine as written, which reads it as its whole day by itself.
+ * @param {boolean} [args.enableSets] Whether saved sets are enabled. Absent means they are not, so a `set_id:` value is refused before any lookup.
  * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`, so their clauses are wrapped.
  * @param {string} [args.nestingPrefix] Prefix applied to field names before compilation.
  * @param {string} [args.setsIndex] The catalogue's own sets index, where a `set_id:` value is looked up.
@@ -392,6 +409,7 @@ export const opSwitch = ({ filter, legacyDateFieldNames = [], nestedFieldNames, 
  */
 export default function ({
 	caller = 'unknown',
+	enableSets,
 	filters: rawFilters,
 	legacyDateFieldNames = [],
 	nestedFieldNames = [],
@@ -401,6 +419,7 @@ export default function ({
 	if (Object.keys(rawFilters || {}).length === 0) return {};
 
 	return opSwitch({
+		enableSets,
 		filter: normalizeFilters(applyNestingPrefixToSqon(rawFilters, nestingPrefix)),
 		legacyDateFieldNames:
 			applyNestingPrefixToFieldNames(legacyDateFieldNames, nestingPrefix) ?? legacyDateFieldNames,

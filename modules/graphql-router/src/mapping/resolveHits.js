@@ -311,6 +311,7 @@ export default ({ getServerSideFilter, Parallel, requiredSourceFields = [], type
 
 		const query = buildQuery({
 			caller: 'resolveHits',
+			enableSets: type.enableSets,
 			legacyDateFieldNames: type.legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,

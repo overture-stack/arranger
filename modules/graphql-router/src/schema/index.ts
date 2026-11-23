@@ -59,6 +59,7 @@ export const createSetsType = (setsIndex: string): SchemaTypesTuple => {
 export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	debug = false,
 	enableAdmin = false,
+	enableSets = false,
 	getRequester,
 	getServerSideFilter,
 	rootTypes = [],
@@ -68,6 +69,7 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 }: {
 	debug?: boolean;
 	enableAdmin?: boolean;
+	enableSets?: boolean;
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes?: any[];
@@ -80,6 +82,7 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	const resolvers = generateResolvers<Context>({
 		debug,
 		enableAdmin,
+		enableSets,
 		getRequester,
 		getServerSideFilter,
 		rootTypes,

@@ -8,6 +8,87 @@ import getConfigFromFiles, { AUTH_PLACEMENT_REFUSAL } from './fromFiles/fileHand
 import { type LegacyNetworkEnv, resolveLegacyNetwork } from './legacyNetwork.js';
 import type { AllServerConfigs, CataloguesMap, UsherRegistrations } from './types/index.js';
 
+/** An entry's kind as its symbolic links resolve, so a linked file or folder is classified by its target. */
+type ResolvedEntry = { isDirectory: boolean; isFile: boolean; name: string };
+
+/** The warning for an entry of the configs folder that was skipped because it could not be read. */
+export type UnreadableEntryReport = {
+	details: { code?: string; entry: string; reason: 'unreadable' };
+	message: string;
+};
+
+/** Says what a single error code means for the entry, in plain terms, or what the error message says when it has no code. */
+const unreadableReason = ({ code, message }: { code?: string; message: string }): string => {
+	if (code === 'ENOENT') {
+		return 'it no longer exists, or is a link to something that does not exist';
+	}
+
+	if (code === 'EACCES' || code === 'EPERM') {
+		return 'the server has no permission to reach it';
+	}
+
+	if (code) {
+		return `it could not be reached (${code})`;
+	}
+
+	return `it could not be reached: ${message.replace(/\.$/, '')}`;
+};
+
+/**
+ * Reports an entry of the configs folder that could not be read, from the error it failed with. The code is
+ * carried in the details only when the error has one.
+ */
+export const describeUnreadableEntry = (
+	name: string,
+	error: { code?: string; message: string },
+): UnreadableEntryReport => ({
+	details: { ...(error.code ? { code: error.code } : {}), entry: name, reason: 'unreadable' },
+	message: `Skipped "${name}" in the configs folder: ${unreadableReason(error)}.`,
+});
+
+/**
+ * Resolves one entry of the configs folder by following its symbolic links. Returns undefined, with a warning,
+ * for an entry that cannot be read or is a dot-prefixed folder, which can never be a catalogue.
+ */
+const resolveEntry = async (folderPath: string, name: string): Promise<ResolvedEntry | undefined> => {
+	const stats = await fs.promises.stat(path.join(folderPath, name)).then(
+		(found) => found,
+		(error: NodeJS.ErrnoException) => {
+			const { details, message } = describeUnreadableEntry(name, error);
+			console.warn('configs.entry_skipped', message, details);
+			return undefined;
+		},
+	);
+
+	if (!stats) {
+		return undefined;
+	}
+
+	if (stats.isDirectory() && name.startsWith('.')) {
+		console.warn(
+			'configs.entry_skipped',
+			`Skipped "${name}" in the configs folder: a catalogue folder's name cannot start with a dot.`,
+			{ entry: name, reason: 'dot_prefixed_folder' },
+		);
+		return undefined;
+	}
+
+	return { isDirectory: stats.isDirectory(), isFile: stats.isFile(), name };
+};
+
+/**
+ * Lists the entries of a folder, resolving symbolic links. Entries prefixed with two dots are the Kubernetes
+ * volume's own bookkeeping on every ConfigMap mount, so they are dropped silently.
+ */
+const readResolvedEntries = async (folderPath: string): Promise<ResolvedEntry[]> => {
+	const entries = await fs.promises.readdir(folderPath, { withFileTypes: true });
+	const resolved = await Promise.all(
+		entries.filter((entry) => !entry.name.startsWith('..')).map((entry) => resolveEntry(folderPath, entry.name)),
+	);
+
+	return resolved.filter((entry): entry is ResolvedEntry => entry !== undefined);
+};
+
 const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath,
 	configsFromEnv: { catalogs, enableDebug },
@@ -20,9 +101,9 @@ const buildCataloguesFromFolder = async ({
 	const usedIds = new Set<string>();
 	const usherRegistrations: UsherRegistrations = {};
 	const resolvedBase = path.resolve(currentDirectory, catalogueConfigsPath);
-	const entries = await fs.promises.readdir(resolvedBase, { withFileTypes: true });
-	const hasJsonFiles = (entries: fs.Dirent[]) => entries.some((e) => e.isFile() && e.name.endsWith('.json'));
-	const getSubdirectories = (entries: fs.Dirent[]) => entries.filter((e) => e.isDirectory());
+	const entries = await readResolvedEntries(resolvedBase);
+	const hasJsonFiles = (entries: ResolvedEntry[]) => entries.some((e) => e.isFile && e.name.endsWith('.json'));
+	const getSubdirectories = (entries: ResolvedEntry[]) => entries.filter((e) => e.isDirectory);
 
 	if (hasJsonFiles(entries)) {
 		const [configsPath, aggregatedConfigs, usherRegistration] = await getConfigFromFiles({

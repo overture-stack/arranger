@@ -11,6 +11,7 @@ import {
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
 } from '#accessControl/AccessControlError.js';
+import { isSetsDisabledError, SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
 import { arrangerLocalsOf, exportStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
@@ -243,6 +244,10 @@ const failureResponseFor = (error) => {
 			status: 503,
 			text: ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
 		};
+	}
+
+	if (isSetsDisabledError(error)) {
+		return { event: 'download.invalid_request', log: console.warn, status: 400, text: SETS_DISABLED_MESSAGE };
 	}
 
 	if (isAccessControlQueryTooLargeError(error)) {

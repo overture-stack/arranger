@@ -34,6 +34,7 @@ const createNumericAggregation = ({ type, esFieldName, fieldName, graphqlField }
 
 const createTermAggregation = ({
 	disableClientFilters,
+	enableSets,
 	esFieldName,
 	fieldName,
 	graphqlField,
@@ -70,6 +71,7 @@ const createTermAggregation = ({
 
 		const aggsFilters = terms?.content?.map((sqonFilter) =>
 			opSwitch({
+				enableSets,
 				filter: normalizeFilters(sqonFilter),
 				legacyDateFieldNames,
 				nestedFieldNames: [],
@@ -144,6 +146,7 @@ const computeCardinalityAggregation = ({ esFieldName, fieldName, graphqlField })
  */
 export default ({
 	disableClientFilters = false,
+	enableSets,
 	esFieldName,
 	fieldName,
 	graphqlField = {},
@@ -161,6 +164,7 @@ export default ({
 				acc,
 				createTermAggregation({
 					disableClientFilters,
+					enableSets,
 					esFieldName: resolvedEsFieldName,
 					fieldName,
 					graphqlField,

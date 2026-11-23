@@ -67,6 +67,19 @@ Start component development (watches `types` and `components`):
 npm run dev:components
 ```
 
+### Two build entry points: turbo and wireit
+
+Two tools build the packages, each for its own job, and they must not overlap:
+
+| Tool | Job | Script it runs |
+| --- | --- | --- |
+| Turborepo | Builds and tests across packages, in dependency order, rebuilding only what changed: CI, `npm run modules:build`, `npx turbo run build` | Each package's `build` |
+| wireit | Watches a package and its local dependencies while you edit, as `npm run watch` and `npm run dev:components` do, for example with the components linked into a local portal | `build:with-dependencies`, in `sqon`, `types` and `components` |
+
+**A package's `build` script builds that package alone and never another.** A `build` that builds another package runs a rebuild turbo did not schedule, so it can empty a `dist/` that tests turbo started are reading, and those tests then fail at random. Cross-package dependencies belong in the wireit script `build:with-dependencies` only.
+
+To build one package with its local dependencies outside watch mode, run `npm run build:with-dependencies` in it, which the root `npm run components:build` and `npm run types:build` also do, or `npx turbo run build --filter=<package>...` from the root.
+
 ---
 
 ## Tests

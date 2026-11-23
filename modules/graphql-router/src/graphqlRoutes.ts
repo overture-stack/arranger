@@ -35,7 +35,6 @@ import {
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import fallbackConfigs, { initializeSets } from '#config/index.js';
-import type { GetRequesterFn } from '#sets/setsAccess.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
@@ -47,6 +46,8 @@ import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
 import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
+import type { GetRequesterFn } from '#sets/setsAccess.js';
+import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
@@ -63,11 +64,14 @@ const schemaBuildError = (message: string, cause: unknown): Error =>
 const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 	configs,
 	enableDebug,
+	enableSets,
 	label,
 	mappingFromIndex,
 	setsIndex,
 }: {
 	enableDebug: boolean;
+	/** Whether saved sets are enabled; a read path refuses a saved set while this is false. */
+	enableSets: boolean;
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
 	mappingFromIndex: any;
@@ -158,6 +162,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 						[configRootProperties.TABLE]: extendedTableConfigs,
 					},
 					customFields: '',
+					enableSets,
 					extendedFields,
 					index: configs?.[configRootProperties.ES_INDEX],
 					label,
@@ -196,6 +201,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 const createSchema = <Context extends ArrangerBaseContext>({
 	enableDebug = false,
 	enableAdmin = false,
+	enableSets = false,
 	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -204,6 +210,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 }: {
 	enableDebug?: boolean;
 	enableAdmin?: boolean;
+	enableSets?: boolean;
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
@@ -213,6 +220,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	const { resolvers, typesWithSets } = createCatalogueResolvers({
 		debug: enableDebug,
 		enableAdmin,
+		enableSets,
 		getRequester,
 		getServerSideFilter,
 		setsIndex,
@@ -243,6 +251,9 @@ const INTERNAL_SERVER_ERROR_CODE = 'INTERNAL_SERVER_ERROR';
 
 /** The code the router's own rule errors are answered with, which Apollo gives a request's own mistakes too. */
 const BAD_USER_INPUT_CODE = 'BAD_USER_INPUT';
+
+/** The code a request using saved sets is answered with while the server has them disabled. */
+const SETS_DISABLED_CODE = 'SETS_DISABLED';
 
 /** The codes Apollo gives a request's own mistakes, found before any resolver runs. */
 const REQUEST_MISTAKE_CODES: ReadonlySet<string> = new Set([
@@ -318,7 +329,11 @@ const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavai
 		retryAfterSeconds: unavailable.retryAfterSeconds,
 	});
 
-	return answerWith({ code: ACCESS_ENFORCEMENT_UNAVAILABLE_CODE, error, message: ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE });
+	return answerWith({
+		code: ACCESS_ENFORCEMENT_UNAVAILABLE_CODE,
+		error,
+		message: ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
+	});
 };
 
 // The callback's denial of the catalogue: forbidden where the person may raise it, a problem on the server where
@@ -401,6 +416,10 @@ const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError =
 
 	if (isInvalidFilterError(originalError)) {
 		return answerRequestMistake({ cause: originalError.cause, code: BAD_USER_INPUT_CODE, error });
+	}
+
+	if (isSetsDisabledError(originalError)) {
+		return answerRequestMistake({ code: SETS_DISABLED_CODE, error });
 	}
 
 	if (isRequestMistake(error)) {
@@ -551,6 +570,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	configs,
 	enableDebug = false,
 	enableAdmin = false,
+	enableSets = false,
 	esClient,
 	getRequester,
 	getServerSideFilter,
@@ -562,6 +582,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	configs: ConfigsObject<Context>;
 	enableDebug?: boolean;
 	enableAdmin?: boolean;
+	/** Whether saved sets are enabled. Absent means they are not, so a saved set is refused on every read path. */
+	enableSets?: boolean;
 	esClient: SearchClient;
 	/** Who made a request, for saved sets under a filter callback: see `GetRequesterFn`. */
 	getRequester?: GetRequesterFn<Context>;
@@ -582,6 +604,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings<Context>({
 			configs,
 			enableDebug,
+			enableSets,
 			label,
 			mappingFromIndex,
 			setsIndex,
@@ -590,6 +613,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		const { schema, resolvers } = await createSchema({
 			enableDebug,
 			enableAdmin,
+			enableSets,
 			getRequester,
 			getServerSideFilter,
 			graphqlOptions,
@@ -718,12 +742,14 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || fallbackConfigs.sets.index;
+	const enableSets = configs[configFeatureFlagProperties.ENABLE_SETS] ?? false;
 
 	try {
 		const { fieldsFromMapping, schema, typesWithMappings } = await createSchemasFromConfigs({
 			configs,
 			enableDebug,
 			enableAdmin,
+			enableSets,
 			esClient,
 			getRequester,
 			getServerSideFilter,
@@ -749,7 +775,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 
 		try {
 			await initializeSets({
-				enableSets: configs[configFeatureFlagProperties.ENABLE_SETS] ?? false,
+				enableSets,
 				enableDebug,
 				esClient,
 				label,

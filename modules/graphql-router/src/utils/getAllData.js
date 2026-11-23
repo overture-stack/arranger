@@ -15,6 +15,7 @@ import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapSource } from '#middleware/utils/nestingPrefix.js';
 import { CLAUSE_LIMIT_RULE, findClauseLimitRefusal } from '#searchClient/clauseLimit.js';
+import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
 import { exportStateOf } from '#utils/context.js';
 
 /**
@@ -71,6 +72,11 @@ const compileQuery = (queryArguments) => {
 	try {
 		return buildQuery({ caller: 'getAllData', ...queryArguments });
 	} catch (cause) {
+		// A refusal for saved sets being disabled is the server's answer, not a fault in the filter's rules.
+		if (isSetsDisabledError(cause)) {
+			throw cause;
+		}
+
 		// A deployment's own filter compiles on every read path, so one that fails only here is the caller's.
 		// A broken SQON rule is named, since its message never carries the filter's values; anything
 		// else stays unnamed, since its message may describe the compiler's internals.
@@ -205,6 +211,7 @@ async function* exportChunks({ chunkSize, nestingPrefix, rowLimit, searchPage })
  * @param {unknown} [args.sqon] the caller's filter.
  * @returns {Promise<import('node:stream').Readable>}
  * @throws {AccessControlError} when no filter can be resolved or a callback cannot be evaluated.
+ * @throws {SetsDisabledError} when the filter looks up a saved set while saved sets are not enabled.
  * @throws {InvalidExportRequestError} when `chunkSize` is not a positive integer, `sort` is not an array
  *   of such entries, or the filter cannot be compiled.
  */
@@ -246,6 +253,7 @@ export default async ({ chunkSize, ctx: givenContext = {}, getServerSideFilter, 
 	// too. Without this the caller's SQON reaches Elasticsearch alone and the export returns every
 	// document the query matches, whatever the deployment's filter says.
 	const query = compileQuery({
+		enableSets: configs.enableSets ?? false,
 		filters: compileFilter({
 			clientSideFilter: sqon,
 			disableClientFilters: configs.config?.[configOptionalProperties.DISABLE_FILTERS] ?? false,

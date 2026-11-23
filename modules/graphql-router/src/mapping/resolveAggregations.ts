@@ -93,6 +93,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const query = buildQuery({
 			caller: 'resolveAggregations',
+			enableSets: type.enableSets,
 			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
@@ -112,6 +113,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		 */
 		const clientSideQuery = buildQuery({
 			caller: 'resolveAggregations',
+			enableSets: type.enableSets,
 			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
@@ -124,6 +126,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 
 		const serverSideQuery = buildQuery({
 			caller: 'resolveAggregations',
+			enableSets: type.enableSets,
 			legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,
@@ -144,6 +147,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 		const aggs = buildAggregations({
 			clientSideQuery,
 			disableClientFilters: context.disableClientFilters,
+			enableSets: type.enableSets,
 			serverSideQuery,
 			setsIndex: type.setsIndex,
 			sqon: filters,

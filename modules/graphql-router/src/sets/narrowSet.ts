@@ -56,6 +56,7 @@ const exactAnswerOf = (body: SearchClientSearchBody, catalogue: string): ExactAn
 export const narrowSetForReader = async ({
 	catalogue,
 	chunkSize = SET_CHECK_CHUNK_SIZE,
+	enableSets,
 	esClient,
 	index,
 	legacyDateFieldNames,
@@ -67,6 +68,7 @@ export const narrowSetForReader = async ({
 }: {
 	catalogue: string;
 	chunkSize?: number;
+	enableSets?: boolean;
 	esClient: SearchClient;
 	index: string;
 	legacyDateFieldNames: string[];
@@ -88,6 +90,7 @@ export const narrowSetForReader = async ({
 
 	const serverQuery = buildQuery({
 		caller: 'narrowSet',
+		enableSets,
 		filters: compileFilter({ clientSideFilter: undefined, serverSideFilter }),
 		legacyDateFieldNames,
 		nestedFieldNames,

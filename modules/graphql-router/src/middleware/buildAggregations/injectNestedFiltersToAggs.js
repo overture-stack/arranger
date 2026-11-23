@@ -13,6 +13,7 @@ import { applyNestingPrefix } from '#middleware/utils/nestingPrefix.js';
 const injectNestedFiltersToAggs = ({
 	aggregationsFilterThemselves,
 	aggs,
+	enableSets,
 	legacyDateFieldNames,
 	nestedSqonFilters,
 	nestingPrefix,
@@ -25,6 +26,7 @@ const injectNestedFiltersToAggs = ({
 				aggs: injectNestedFiltersToAggs({
 					aggregationsFilterThemselves,
 					aggs: aggContent.aggs,
+					enableSets,
 					legacyDateFieldNames,
 					nestedSqonFilters,
 					nestingPrefix,
@@ -53,6 +55,7 @@ const injectNestedFiltersToAggs = ({
 									)
 									.map((sqonFilter) =>
 										opSwitch({
+											enableSets,
 											filter: normalizeFilters(sqonFilter),
 											legacyDateFieldNames,
 											nestedFieldNames: [],
@@ -64,6 +67,7 @@ const injectNestedFiltersToAggs = ({
 						aggs: injectNestedFiltersToAggs({
 							aggregationsFilterThemselves,
 							aggs: aggContent.aggs,
+							enableSets,
 							legacyDateFieldNames,
 							nestedSqonFilters,
 							nestingPrefix,

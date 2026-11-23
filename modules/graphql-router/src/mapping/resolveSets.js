@@ -7,6 +7,7 @@ import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
 import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 import { requesterOf, savedAttributionFor } from '#sets/setsAccess.js';
+import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 import { recordsAttribution } from '#sets/setsIndexMapping.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
@@ -23,6 +24,10 @@ const retrieveSetIds = async ({
 	BULK_SIZE = 1000,
 	trackTotalHits = true,
 }) => {
+	// Documents sharing every sort value have no fixed order between requests, so a sort not ending in `_id`
+	// could skip or repeat them across pages.
+	const engineSort = sort.at(-1)?.fieldName === '_id' ? sort : [...sort, { fieldName: '_id', order: 'asc' }];
+
 	const search = async ({ searchAfter } = {}) => {
 		const body = {
 			...(!isEmpty(query) && { query }),
@@ -35,7 +40,7 @@ const retrieveSetIds = async ({
 			index,
 			// `_id` is an ES meta field, never part of the document's own data, so it must never be
 			// prefixed even when the catalogue's real fields live under a nestingPrefix envelope.
-			sort: sort.map(
+			sort: engineSort.map(
 				({ fieldName, order }) =>
 					`${fieldName === '_id' ? fieldName : applyNestingPrefix(fieldName, nestingPrefix)}:${order || 'asc'}`,
 			),
@@ -44,28 +49,25 @@ const retrieveSetIds = async ({
 			body,
 		});
 
-		const hits = unwrapHits(response?.body?.hits, nestingPrefix);
-		const ids = hits?.hits.map((x) => get(x, `_source.${path.split('__').join('.')}`, x._id || '')) || [];
-
-		const nextSearchAfter = sort
-			.map(({ fieldName }) => hits?.hits.map((x) => x._source[fieldName] || x[fieldName]))
-			.reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
+		const hits = unwrapHits(response?.body?.hits, nestingPrefix)?.hits ?? [];
+		const ids = hits.map((x) => get(x, `_source.${path.split('__').join('.')}`, x._id || ''));
 
 		return {
 			ids,
-			searchAfter: nextSearchAfter,
-			total: hits?.total.value,
+			isLastPage: hits.length < BULK_SIZE,
+			searchAfter: hits.at(-1)?.sort,
 		};
 	};
-	const handleResult = async ({ searchAfter, total, ids = [] }) => {
-		if (ids.length === total) return uniq(ids);
-		const { ids: newIds, ...response } = await search({ searchAfter });
-		return handleResult({
-			...response,
-			ids: [...ids, ...newIds],
-		});
+	const collect = async ({ searchAfter, ids = [] }) => {
+		const page = await search({ searchAfter });
+		const collected = [...ids, ...page.ids];
+		if (page.isLastPage) {
+			return uniq(collected);
+		}
+
+		return collect({ searchAfter: page.searchAfter, ids: collected });
 	};
-	return handleResult(await search());
+	return collect({});
 };
 
 /**
@@ -77,17 +79,23 @@ const retrieveSetIds = async ({
  * mark is read as unattributed, and nothing is written into a field the index does not map.
  *
  * @param {object} args
+ * @param {boolean} [args.enableSets] whether saved sets are enabled; a save is refused before anything is read when they are not.
  * @param {Function} [args.getRequester] the host's answer to who made a request.
  * @param {Function} args.getServerSideFilter the filter callback the saved records are selected under.
  * @param {string} args.setsIndex the catalogue's own sets index.
  * @param {Array} args.types the catalogue's types.
+ * @throws {SetsDisabledError} while saved sets are not enabled, before any engine call.
  * @throws {AccessControlUnavailableError} for a suspended principal, before anything is read or stored.
  * @throws {AccessControlError} where sets have owners and the sets index cannot record the mark, before any record
  *   is read or anything stored.
  */
 export const saveSet =
-	({ getRequester, getServerSideFilter, setsIndex, types }) =>
+	({ enableSets, getRequester, getServerSideFilter, setsIndex, types }) =>
 	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
+		if (!enableSets) {
+			throw new SetsDisabledError();
+		}
+
 		const requester = getRequester ? requesterOf({ context, getRequester }) : undefined;
 
 		if (requester?.kind === 'suspended') {
@@ -115,6 +123,7 @@ export const saveSet =
 
 		const query = buildQuery({
 			caller: 'resolveSets',
+			enableSets,
 			legacyDateFieldNames: catalogueType.legacyDateFieldNames,
 			nestedFieldNames,
 			nestingPrefix,

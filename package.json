@@ -34,7 +34,7 @@
 	},
 	"scripts": {
 		"clear:nodeModules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
-		"components:build": "npm run build --w modules/components",
+		"components:build": "npm run build:with-dependencies --w modules/components",
 		"components:watch": "npm run watch --w modules/components",
 		"charts:build": "npm run build --w modules/charts",
 		"dev:components": "npm run components:watch",
@@ -64,7 +64,7 @@
 		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch -w modules/components -w integration-tests/import\"",
 		"turbo:build": "npx turbo run build",
 		"turbo:test": "npx turbo run test",
-		"types:build": "npm run build -w modules/types",
+		"types:build": "npm run build:with-dependencies -w modules/types",
 		"types:watch": "npm run watch -w modules/types"
 	},
 	"overrides": {

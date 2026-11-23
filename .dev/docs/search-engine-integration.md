@@ -92,7 +92,7 @@ The two clients have compatible APIs for the operations used by Arranger (search
 
 **Entry point:** `modules/graphql-router/src/graphqlRoutes.ts::arrangerRoutes`
 
-**Note on startup script vs. application permissions:** Before `arrangerRoutes` runs, the container entrypoint (`scripts/ping-elasticsearch.sh`) probes `GET /_cluster/health` to display cluster status. This probe uses the application user's credentials and requires `cluster:monitor/health`. That permission is a startup-script concern only - no application code path calls `/_cluster/health`. See `docs/setup.md § Startup health display` and the roadmap entry "Decouple startup health check from application credential" for the planned fix.
+**Note on startup script vs. application permissions:** Before the Node.js process starts, the image's entrypoint (`scripts/ping-elasticsearch.sh`) waits for `GET /_cluster/health` to answer with a 2xx status, using the application user's credentials. Without `cluster:monitor/health`, it gives up after five attempts and the server never starts. The image therefore needs `cluster:monitor/health` on that user, although no application code path calls `/_cluster/health`; running the server without the entrypoint does not need it. See the roadmap entry "Decouple startup health check from application credential" for the planned fix.
 
 The following happens once per catalogue, in this order, when an `arrangerRoutes` instance starts:
 
@@ -136,19 +136,17 @@ Converts the mapping into a GraphQL schema. No network calls.
 
 ```
 HEAD /<setsIndex>
-PUT  /<setsIndex>  (with mappings body, only when index does not exist)
+PUT  /<setsIndex>           (with mappings body, only when the index does not exist)
+GET  /<setsIndex>/_mapping  (only when the index already exists)
 ```
 
 > **Required permissions (sets index level):**
 >
-> - `indices:admin/exists` - existence check on startup
-> - `indices:admin/create` + `indices:admin/mapping/put` - index creation on first run
->
-> Grant `manage` (`indices:admin/*`) to cover all three. `create_index` does not include `indices:admin/exists`.
+> - `indices:admin/get`: the existence check. `HEAD /<index>` authorizes as `indices:admin/get`, and a role holding only `indices:admin/exists` is refused.
+> - `indices:admin/create`: creating the index on first run. The mappings travel in the create request, so creation needs no `indices:admin/mapping/put`. The `create_index` built-in action group covers it.
+> - `indices:admin/mappings/get`: checking that an existing index stores each saved set's filter as data. Without it, startup continues and logs `sets.index_mapping_unchecked`.
 
-`initializeSets` checks whether the sets index exists and creates it if not. See [OpenSearch create index API](https://docs.opensearch.org/latest/api-reference/index-apis/create-index/).
-
-> **Known race condition:** In multicatalog mode, multiple `arrangerRoutes` instances run concurrently. Each calls `initializeSets` independently. When the index does not yet exist, all instances pass the existence check simultaneously and the first `create` wins; the others throw `resource_already_exists_exception`, which is caught by `arrangerRoutes`' catch-all and permanently disables the catalogue's GraphQL endpoint. Tracked on the roadmap (fix: treat `resource_already_exists_exception` as success).
+`initializeSets` checks whether the sets index exists and creates it if not. When several catalogues share one sets index and start together, the instances that lose the race to create it treat `resource_already_exists_exception` as success. See [OpenSearch create index API](https://docs.opensearch.org/latest/api-reference/index-apis/create-index/).
 
 ---
 
@@ -219,9 +217,23 @@ The `saveSet` GraphQL mutation:
     PUT /<setsIndex>/_doc/<uuid>
     ```
 
-    > **Required permission:** `indices:data/write/index` on the sets index. Covered by the `write` built-in action group.
+    > **Required permissions:** `indices:data/write/index` and `indices:data/write/bulk[s]` on the sets index. The search engine carries out a single-document write as a one-item bulk request at the shard, so a role holding only `indices:data/write/index` is refused. No cluster-level `indices:data/write/bulk` is needed. The `write` built-in action group covers both.
 
 References: [OpenSearch search API](https://docs.opensearch.org/latest/api-reference/search/) | [OpenSearch index document API](https://docs.opensearch.org/latest/api-reference/document-apis/index-document/) | [Elasticsearch index API](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-index_.html)
+
+---
+
+## Sets: listing saved sets
+
+**File:** `modules/graphql-router/src/schema/index.ts::createSetsType`
+
+The `sets` connection reads the sets index:
+
+```
+POST /<setsIndex>/_search
+```
+
+> **Required permission:** `indices:data/read/search` on the sets index. Covered by the `read` built-in action group (`indices:data/read*`).
 
 ---
 
@@ -229,28 +241,31 @@ References: [OpenSearch search API](https://docs.opensearch.org/latest/api-refer
 
 All transport actions Arranger can initiate, grouped by phase:
 
-| Phase                       | API call                                    | Transport action                                    | Minimum grant                                                                                   |
-| --------------------------- | ------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Entrypoint script†          | `GET /_cluster/health`                      | `cluster:monitor/health`                            | cluster-level explicit (startup script only - not application code)                             |
-| Startup: detection          | `GET /`                                     | `cluster:monitor/main`                              | cluster-level explicit, or set `SEARCH_ENGINE`                                                  |
-| Startup: detection fallback | `GET /_nodes/_local`                        | `cluster:monitor/nodes/info`                        | cluster-level explicit (not needed if `GET /` works)                                            |
-| Startup: alias resolution   | `GET /_cat/aliases`                         | `indices:admin/aliases/get`                         | index-level on `*` (explicit; `cluster_composite_ops_ro` does not cover direct alias API calls) |
-| Startup: mapping fetch      | `GET /<index>/_mapping`                     | `indices:admin/mappings/get`                        | explicit on data index                                                                          |
-| Startup: sets check         | `HEAD /<setsIndex>`                         | `indices:admin/exists`                              | `manage` on sets index                                                                          |
-| Startup: sets creation      | `PUT /<setsIndex>`                          | `indices:admin/create`, `indices:admin/mapping/put` | `manage` on sets index                                                                          |
-| Per query: search           | `POST /<index>/_search`                     | `indices:data/read/search`                          | `read` on data index                                                                            |
-| Per query: set lookup       | `GET /<setsIndex>/_doc/<id>`, by the engine | `indices:data/read/get`                             | `read` on sets index                                                                            |
-| Downloads                   | `POST /<index>/_search`                     | `indices:data/read/search`                          | `read` on data index                                                                            |
-| saveSet: collect IDs        | `POST /<dataIndex>/_search`                 | `indices:data/read/search`                          | `read` on data index                                                                            |
-| saveSet: write set          | `PUT /<setsIndex>/_doc/<id>`                | `indices:data/write/index`                          | `write` on sets index                                                                           |
+| Phase                       | API call                                    | Transport action                                         | Minimum grant                                                                                                |
+| --------------------------- | ------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Entrypoint script†          | `GET /_cluster/health`                      | `cluster:monitor/health`                                 | cluster-level explicit; the image does not start without it (startup script, not application code)           |
+| Startup: detection          | `GET /`                                     | `cluster:monitor/main`                                   | cluster-level explicit, or set `SEARCH_ENGINE`                                                               |
+| Startup: detection fallback | `GET /_nodes/_local`                        | `cluster:monitor/nodes/info`                             | cluster-level explicit (not needed if `GET /` works)                                                         |
+| Startup: alias resolution   | `GET /_cat/aliases`                         | `indices:admin/aliases/get`                              | index-level on `*` (explicit; `cluster_composite_ops_ro` does not cover direct alias API calls)              |
+| Startup: mapping fetch      | `GET /<index>/_mapping`                     | `indices:admin/mappings/get`                             | explicit on data index                                                                                       |
+| Startup: sets check         | `HEAD /<setsIndex>`                         | `indices:admin/get`                                      | explicit on sets index (`indices:admin/exists` alone is refused)                                             |
+| Startup: sets creation      | `PUT /<setsIndex>`                          | `indices:admin/create`                                   | `create_index` on sets index (only when the index does not exist)                                            |
+| Startup: sets mapping check | `GET /<setsIndex>/_mapping`                 | `indices:admin/mappings/get`                             | explicit on sets index (only when the index exists; without it, startup logs `sets.index_mapping_unchecked`) |
+| Per query: search           | `POST /<index>/_search`                     | `indices:data/read/search`                               | `read` on data index                                                                                         |
+| Per query: set lookup       | `GET /<setsIndex>/_doc/<id>`, by the engine | `indices:data/read/get`                                  | `read` on sets index                                                                                         |
+| Downloads                   | `POST /<index>/_search`                     | `indices:data/read/search`                               | `read` on data index                                                                                         |
+| Sets: listing               | `POST /<setsIndex>/_search`                 | `indices:data/read/search`                               | `read` on sets index                                                                                         |
+| saveSet: collect IDs        | `POST /<dataIndex>/_search`                 | `indices:data/read/search`                               | `read` on data index                                                                                         |
+| saveSet: write set          | `PUT /<setsIndex>/_doc/<id>`                | `indices:data/write/index`, `indices:data/write/bulk[s]` | `write` on sets index (no cluster-level `indices:data/write/bulk`)                                           |
 
-† `cluster:monitor/health` is called by `scripts/ping-elasticsearch.sh` before the Node.js process starts. The application itself never calls `/_cluster/health`. This permission can be omitted if the startup display is not needed; startup still succeeds. See roadmap: "Decouple startup health check from application credential".
+† `cluster:monitor/health` is called by `scripts/ping-elasticsearch.sh` before the Node.js process starts, which waits for a 2xx answer and aborts after five attempts, so the image does not start without it. The application itself never calls `/_cluster/health`, so running the server without the image's entrypoint does not need it. See roadmap: "Decouple startup health check from application credential".
 
 **Notes:**
 
 - `read` = `indices:data/read*` + `indices:admin/mappings/fields/get*` + `indices:admin/resolve/index`. Source: [OpenSearch default action groups](https://docs.opensearch.org/latest/security/access-control/default-action-groups/).
 - `cluster_composite_ops_ro` = `mget` + `msearch` + `mtv` + `aliases/exists*` + `aliases/get*` + `scroll` + `resolve/index`. Source: same link. Although the group contains `indices:admin/aliases/get*`, granting it does not cover `GET /_cat/aliases`: that API is evaluated by the index-level privilege evaluator. The cluster-type grant applies only during cluster-coordination operations such as internal alias routing in mget/msearch.
-- `manage` = `indices:monitor/*` + `indices:admin/*`. Covers all admin operations including `exists` and `create`.
+- `create_index` = `indices:admin/create` + `indices:admin/mapping/put`.
+- The sets-index actions in this table were confirmed against OpenSearch 2.17.1 with its security plugin, replaying each call under a role granting exact actions.
 - Permission names are identical for OpenSearch and Elasticsearch; both security plugins share the same transport action naming (OpenSearch forked the security plugin from the Elasticsearch codebase).
 
 ---

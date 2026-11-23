@@ -26,6 +26,7 @@ import {
 	WHOLE_QUERY_PAST_THE_LIMIT,
 } from '#searchClient/clauseLimit.fixture.js';
 import type { SearchClient } from '#searchClient/index.js';
+import { SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
 
 const schema = new GraphQLSchema({
 	query: new GraphQLObjectType({
@@ -251,6 +252,14 @@ const accessControlSchema = new GraphQLSchema({
 				},
 				type: GraphQLString,
 			},
+			savedSetsDisabled: {
+				resolve: () =>
+					buildQuery({
+						filters: { content: { fieldName: 'study', value: ['set_id:abc'] }, op: 'in' },
+						nestedFieldNames: [],
+					}),
+				type: GraphQLString,
+			},
 			unavailable: {
 				resolve: () => {
 					throw new AccessControlUnavailableError(UNAVAILABLE_DETAIL, { retryAfterSeconds: 7 });
@@ -302,8 +311,10 @@ const buildRouterApp = async ({
 		withConsoleCaptured(() =>
 			arrangerRouter({
 				configs: {
+					// Saved sets are enabled because the read paths below include the saved-set mutation, whose access control is under test.
 					documentType: 'donor',
 					enableDebug: true,
+					enableSets: true,
 					esIndex: 'donor_index',
 					network: { localNode: { displayName: 'local node' }, remoteNodes },
 				},
@@ -1021,6 +1032,32 @@ suite("a request's own mistake keeps its message", () => {
 		const [error] = graphQLErrorsOf(response).errors;
 		assert.match(error?.message ?? '', /^Variable "\$first" got invalid value "many"; Int cannot represent/);
 		assert.deepEqual(error?.extensions, { code: 'BAD_USER_INPUT' });
+	});
+
+	test('answers a saved-set filter refused for saved sets being disabled with SETS_DISABLED and the fixed message', async () => {
+		// Given an endpoint whose field uses a saved set on a server where saved sets are not enabled
+		const app = await buildDebugApp();
+
+		// When that field is queried
+		const { result: response } = await postQuery(app, '{ savedSetsDisabled }');
+
+		// Then the client is told the fixed message, under its own code, as its own mistake
+		assert.deepEqual(
+			graphQLErrorsOf(response).errors.map(({ extensions, message, path }) => [extensions?.code, message, path]),
+			[['SETS_DISABLED', SETS_DISABLED_MESSAGE, ['savedSetsDisabled']]],
+		);
+	});
+
+	test('logs a saved-set refusal for disabled saved sets at info, as graphql.invalid_request', async () => {
+		const app = await buildDebugApp();
+		const { calls } = await withConsoleCalls(() =>
+			withLoopbackServer(app, (request) => request.post('/graphql').send({ query: '{ savedSetsDisabled }' })),
+		);
+
+		assert.deepEqual(
+			calls.filter(({ args }) => args[0] === 'graphql.invalid_request').map(({ method }) => method),
+			['info'],
+		);
 	});
 
 	test("logs a request's own mistake at info, as graphql.invalid_request", async () => {

@@ -108,6 +108,7 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 			catalogueType && Array.isArray(node.ids) && isString(node.path)
 				? narrowSetForReader({
 						catalogue: catalogueType.label ?? catalogueType.name,
+						enableSets: catalogueType.enableSets,
 						esClient: context.esClient,
 						index: catalogueType.index,
 						legacyDateFieldNames: catalogueType.legacyDateFieldNames ?? [],

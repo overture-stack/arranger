@@ -135,6 +135,7 @@ function wrapWithFilters({
  * @param {boolean} args.aggregationsFilterThemselves Whether a facet's own field filters it.
  * @param {object} [args.clientSideQuery] The caller's filter, compiled alone.
  * @param {boolean} [args.disableClientFilters] Whether the deployment ignores callers' filters.
+ * @param {boolean} [args.enableSets] Whether saved sets are enabled; a saved-set filter is refused when they are not.
  * @param {object} args.graphqlFields The requested aggregations, as `graphql-fields` reads them.
  * @param {string[]} [args.legacyDateFieldNames] Date fields whose format holds the legacy pattern.
  * @param {string[]} [args.nestedFieldNames] Paths mapped as `nested`.
@@ -149,6 +150,7 @@ const buildAggregations = ({
 	aggregationsFilterThemselves,
 	clientSideQuery,
 	disableClientFilters = false,
+	enableSets,
 	graphqlFields,
 	legacyDateFieldNames: rawLegacyDateFieldNames = [],
 	nestedFieldNames: rawNestedFieldNames,
@@ -187,11 +189,12 @@ const buildAggregations = ({
 			? nestedFieldNames.filter((path) => path.startsWith(`${innermostPath}.`))
 			: [];
 		const termFilters = contentsFiltered.map((filter) =>
-			opSwitch({ filter, legacyDateFieldNames, nestedFieldNames: pathsBelowFacet, setsIndex }),
+			opSwitch({ enableSets, filter, legacyDateFieldNames, nestedFieldNames: pathsBelowFacet, setsIndex }),
 		);
 
 		const fieldAggregation = createFieldAggregation({
 			disableClientFilters,
+			enableSets,
 			esFieldName,
 			fieldName,
 			graphqlField,
@@ -229,6 +232,7 @@ const buildAggregations = ({
 	const filteredAggregations = injectNestedFiltersToAggs({
 		aggregationsFilterThemselves,
 		aggs,
+		enableSets,
 		legacyDateFieldNames,
 		nestedSqonFilters,
 		nestingPrefix,
