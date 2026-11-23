@@ -116,6 +116,7 @@ The Arranger repository ships everything needed for local development: a `docker
           - `ES_HOST`: The URL of your Elasticsearch or OpenSearch instance. Use `localhost` when the server runs on your host and the cluster runs in Docker; the container hostname `elasticsearch` only resolves from inside the Compose network.
           - `ES_USER` and `ES_PASS`: The credentials for accessing the cluster, matching the values passed by the Makefile to Docker Compose
           - `SEARCH_ENGINE`: Either `elasticsearch` or `opensearch`. Leave it unset to auto-detect from the cluster.
+          - `NODE_TLS_REJECT_UNAUTHORIZED` and `NODE_EXTRA_CA_CERTS`: Node.js's own settings for checking the cluster's TLS certificate, which the Docker image's startup wait follows too. Set `NODE_TLS_REJECT_UNAUTHORIZED=0` only for a local cluster with a self-signed certificate, since it turns off certificate checks for every connection the server makes. For a cluster whose certificate comes from a private certificate authority, set `NODE_EXTRA_CA_CERTS` to that authority's certificate file instead, which the startup wait then trusts in place of curl's own bundle.
 
           **Catalogue configuration**
           - `CONFIGS_PATH`: Directory holding the per-catalogue JSON config files, resolved relative to the server's workspace directory. The repository's example catalogue lives at `docker/server`, hence `../../docker/server`. Its `base.json` sets `index` to `file_centric_1.0` and `documentType` to `file`, matching the data `make seed-es` loads.
