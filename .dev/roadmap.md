@@ -198,6 +198,8 @@ Split the currently-conflated config model into server, transport, and core laye
 
 _Priority: medium. Usability and reliability improvement, doable without waiting for config separation._
 
+**Started:** a catalogue's configuration files are validated with Zod (`apps/search-server/src/configs/catalogueFileSchema.ts`): every boolean feature flag must be `true` or `false`, and each scalar key of `base.json` must have its type, or startup is refused under `configs.startup_refused`, naming the catalogue and the key, and the file where only one file sets it. Still to cover: the nested sections (`extended`, `facets`, `table`, `charts`, `matchbox`, `network`, `auth`), unknown keys, and the server's environment.
+
 Config loading in both the server (`apps/search-server`) and within Arranger's internal handling currently has no runtime validation. Invalid or missing values fail silently or produce confusing runtime errors far from the source of the problem. The fix is schema validation at the config boundary: reject bad configs early with a clear, actionable message identifying exactly what is wrong and where.
 
 Scope:

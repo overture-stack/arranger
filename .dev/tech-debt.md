@@ -538,15 +538,6 @@ Compounding, separately tracked: even when `enableAdmin` is truthy, `router.ts` 
 **Fix:** Decide the intended channel. If server-level as documented, destructure `enableAdmin` in `server.ts` and thread it to the catalogue configs; if per-catalogue, move the env read under `catalogs.fromEnv` in `localEnvs.ts` and correct `07-feature-flags.md:44` to exclude it from the server-level group. Either way, add the flag-toggles-behaviour test proposed elsewhere in this file, and extend it beyond `configArrangerFeatureFlagProperties`, since `enableAdmin` sits outside that group. Note the `FIXME` already on `constants.ts:20` saying this flag must be removed and the facets-versus-numeric-aggs coupling untangled, which may make removal the correct answer rather than repair.
 **Standalone:** yes.
 
-### Feature flags set in a catalogue's JSON files skip boolean parsing
-
-**File:** `apps/search-server/src/configs/fromFiles/fileHandlers.ts` (file values merged over `catalogs.fromEnv`)
-**Severity:** medium
-**Kind:** configuration correctness
-**Issue:** Every boolean flag must be read by one rule wherever it is set. A flag from the environment goes through `stringToBool`, which accepts `true`, `false`, `1` and `0` and ignores anything else with a warning. The same flag set in a catalogue's JSON (`disableFilters`, `disableDownloads`, `enableSets` and the rest) must follow that rule too, but is merged over the environment's value unparsed.
-**Fix:** Parse every boolean flag read from catalogue files with the same rule as the environment, in `getConfigFromFiles` or its normalization step: keep the default and warn for any unrecognized value. Test each kind of value per flag: `true`, `false`, `1`, `0`, the string `"false"`, and an unrecognized string.
-**Standalone:** yes
-
 ### No unit tests for `fromEnv/` env var aggregation
 
 **Files:** `apps/search-server/src/configs/fromEnv/` (3 files)

@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, afterEach, mock, suite, test } from 'node:test';
 
+import { CATALOGUE_FILE_REFUSAL } from './catalogueFileSchema.js';
+
 import loadAllConfigs, { describeUnreadableEntry } from './index.js';
 
 const tempDirs: string[] = [];
@@ -377,5 +379,134 @@ suite('loadAllConfigs', () => {
 				currentDirectory: '',
 			}),
 		);
+	});
+});
+
+suite("validating a catalogue's configuration files at load", () => {
+	const refusalNameOf = async (promise: Promise<unknown>) => {
+		try {
+			await promise;
+		} catch (error) {
+			return error as Error;
+		}
+		return assert.fail('expected startup to be refused');
+	};
+
+	test('refuses startup, naming the catalogue, file and key, when base.json sets enableSets to "true"', async () => {
+		const root = makeDir();
+		fs.mkdirSync(path.join(root, 'alpha'));
+		writeJson(path.join(root, 'alpha'), 'base.json', JSON.stringify({ documentType: 'file', enableSets: 'true' }));
+
+		const error = await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+
+		assert.equal(error.name, CATALOGUE_FILE_REFUSAL);
+		assert.equal(error.message, 'Catalogue "alpha": base.json sets enableSets, which must be true or false.');
+	});
+
+	['"false"', '1', 'null'].forEach((wrongValue) => {
+		test(`refuses startup when base.json sets enableSets to ${wrongValue}`, async () => {
+			const root = makeDir();
+			fs.mkdirSync(path.join(root, 'alpha'));
+			writeJson(path.join(root, 'alpha'), 'base.json', `{ "documentType": "file", "enableSets": ${wrongValue} }`);
+
+			const error = await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+
+			assert.equal(error.name, CATALOGUE_FILE_REFUSAL);
+			assert.ok(error.message.includes('enableSets'));
+		});
+	});
+
+	test('refuses startup rather than skipping the catalogue, even when a healthy sibling would register', async () => {
+		const root = makeDir();
+		fs.mkdirSync(path.join(root, 'healthy'));
+		fs.mkdirSync(path.join(root, 'unsafe'));
+		writeJson(path.join(root, 'healthy'), 'base.json', JSON.stringify({ documentType: 'file' }));
+		writeJson(path.join(root, 'unsafe'), 'base.json', JSON.stringify({ disableFilters: 'true' }));
+
+		const error = await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+
+		assert.equal(error.name, CATALOGUE_FILE_REFUSAL);
+		assert.ok(error.message.includes('"unsafe"'));
+	});
+
+	test('refuses startup when a single catalogue configuration folder sets a flag to a string', async () => {
+		const root = makeDir();
+		writeJson(root, 'base.json', JSON.stringify({ documentType: 'file', disableDownloads: 'false' }));
+
+		const error = await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+
+		assert.equal(error.name, CATALOGUE_FILE_REFUSAL);
+		assert.ok(error.message.includes('disableDownloads'));
+	});
+
+	test('refuses startup when esIndex is set to a number', async () => {
+		const root = makeDir();
+		fs.mkdirSync(path.join(root, 'alpha'));
+		writeJson(path.join(root, 'alpha'), 'base.json', JSON.stringify({ documentType: 'file', esIndex: 4242424 }));
+
+		const error = await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+
+		assert.equal(error.name, CATALOGUE_FILE_REFUSAL);
+		assert.ok(error.message.includes('esIndex'));
+		assert.ok(!error.message.includes('4242424'));
+	});
+
+	test('logs a configuration refusal under configs.startup_refused, not access enforcement', async () => {
+		const root = makeDir();
+		fs.mkdirSync(path.join(root, 'alpha'));
+		writeJson(path.join(root, 'alpha'), 'base.json', JSON.stringify({ documentType: 'file', enableSets: 'true' }));
+		const consoleError = mock.method(console, 'error', () => undefined);
+
+		await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+		consoleError.mock.restore();
+
+		const events = consoleError.mock.calls.map((call) => call.arguments[0]);
+		assert.ok(events.includes('configs.startup_refused'));
+		assert.ok(!events.includes('access_enforcement.startup_refused'));
+	});
+
+	test('never echoes the offending value in the refusal', async () => {
+		const root = makeDir();
+		fs.mkdirSync(path.join(root, 'alpha'));
+		writeJson(
+			path.join(root, 'alpha'),
+			'base.json',
+			JSON.stringify({ documentType: 'file', enableSets: 'canary-7f3a' }),
+		);
+
+		const error = await refusalNameOf(loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' }));
+
+		assert.ok(!error.message.includes('canary-7f3a'));
+	});
+
+	test('loads correct flags and scalars, unknown keys and nested sections as before', async () => {
+		const root = makeDir();
+		fs.mkdirSync(path.join(root, 'alpha'));
+		writeJson(
+			path.join(root, 'alpha'),
+			'base.json',
+			JSON.stringify({
+				catalogId: 'alpha',
+				disableFilters: false,
+				documentType: 'file',
+				enableSets: true,
+				esIndex: 'alpha-index',
+				futureKey: { anything: [1, 'two'] },
+				table: 'not validated here',
+			}),
+		);
+
+		const result = await loadAllConfigs({ catalogueConfigsPath: root, currentDirectory: '' });
+
+		assert.deepEqual(result.catalogs?.alpha, {
+			...result.catalogs?.alpha,
+			catalogId: 'alpha',
+			disableFilters: false,
+			documentType: 'file',
+			enableSets: true,
+			esIndex: 'alpha-index',
+			futureKey: { anything: [1, 'two'] },
+			table: 'not validated here',
+		});
 	});
 });

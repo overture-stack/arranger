@@ -3,6 +3,7 @@ import path from 'path';
 
 import { merge } from 'lodash-es';
 
+import { fileSettingKey, parseCatalogueFiles } from '../catalogueFileSchema.js';
 import { startupRefusal } from '../fromEnv/enableAccessControl.js';
 
 import { renameLegacyIndexKey } from './legacyKeys.js';
@@ -135,32 +136,39 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 		return [configsPath, { ...baseConfig }, usherRegistration];
 	}
 
-	const configsFromFiles = files.reduce<Record<string, unknown>>((configsAcc, [fileName, fileData]) => {
-		const { carriesAuth, normalizedJSON } = (() => {
-			try {
-				const fileDataJSON = JSON.parse(fileData);
+	const parsedFiles = files.map(([fileName, fileData]) => {
+		try {
+			return { contents: JSON.parse(fileData) as unknown, fileName };
+		} catch (err) {
+			enableDebug && console.debug(`\n  DEBUG: ${err}`);
+			throw new Error(`Could not parse configuration file "${fileName}.json" in "${configsPath}"`);
+		}
+	});
 
-				return { carriesAuth: carriesAuthKey(fileDataJSON), normalizedJSON: normalize(fileDataJSON) };
-			} catch (err) {
-				enableDebug && console.debug(`\n  DEBUG: ${err}`);
-				throw new Error(`Could not parse configuration file "${fileName}.json" in "${configsPath}"`);
-			}
-		})();
-
-		if (carriesAuth) {
+	parsedFiles.forEach(({ contents, fileName }) => {
+		if (carriesAuthKey(contents)) {
 			throw authPlacementRefusal(
 				`The ${AUTH_KEY} key belongs in ${USHER_REGISTRATION_FILE} alone, and configuration file "${fileName}.json" in "${configsPath}" carries one.`,
 			);
 		}
+	});
 
-		return merge({}, configsAcc, normalizedJSON);
-	}, {});
+	const configsFromFiles = parsedFiles.reduce<Record<string, unknown>>(
+		(configsAcc, { contents }) => merge({}, configsAcc, normalize(contents)),
+		{},
+	);
 
-	const { configs, notice } = renameLegacyIndexKey({ configsFromFiles, configsPath });
+	const { configs: renamedConfigs, notice } = renameLegacyIndexKey({ configsFromFiles, configsPath });
 
 	if (notice) {
 		process.emitWarning(notice.message, { code: notice.code, type: 'DeprecationWarning' });
 	}
+
+	const configs = parseCatalogueFiles({
+		catalogueFolder: path.basename(configsPath),
+		configs: renamedConfigs,
+		sourceFileOf: (key) => fileSettingKey(parsedFiles, key),
+	});
 
 	// Into a fresh object, so the environment's configuration, shared by every catalogue, is never written to.
 	return [configsPath, merge({}, baseConfig, configs), usherRegistration];

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
+import { CATALOGUE_FILE_REFUSAL } from './catalogueFileSchema.js';
 import { resolveCatalogueId } from './catalogueId.js';
 import { resolveConfigsLocation } from './configsLocation.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
@@ -89,6 +90,9 @@ const readResolvedEntries = async (folderPath: string): Promise<ResolvedEntry[]>
 	return resolved.filter((entry): entry is ResolvedEntry => entry !== undefined);
 };
 
+/** The errors that refuse startup rather than skip the catalogue they come from. */
+const startupRefusalNames: readonly string[] = [AUTH_PLACEMENT_REFUSAL, CATALOGUE_FILE_REFUSAL];
+
 const buildCataloguesFromFolder = async ({
 	catalogueConfigsPath,
 	configsFromEnv: { catalogs, enableDebug },
@@ -162,8 +166,9 @@ const buildCataloguesFromFolder = async ({
 			}
 			console.log(`    Registered catalogue "${catalogueId}"`);
 		} catch (err) {
-			// A refusal of where a registration is written stops startup, rather than skipping the catalogue.
-			if ((err as Error).name === AUTH_PLACEMENT_REFUSAL) {
+			// A refusal of where a registration is written, or of a configuration value's type, stops startup,
+			// rather than skipping the catalogue.
+			if (startupRefusalNames.includes((err as Error).name)) {
 				throw err;
 			}
 
