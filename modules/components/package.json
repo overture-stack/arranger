@@ -24,13 +24,14 @@
 	"scripts": {
 		"build:babel": "babel src --copy-files --extensions .tsx,.ts,.js,.jsx --out-dir dist",
 		"build:declarations": "tsc --emitDeclarationOnly --project tsconfig.release.json",
-		"build": "wireit",
+		"build": "npm run build:babel && npm run build:declarations",
+		"build:with-dependencies": "wireit",
 		"clear:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
 		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config=jest.config.ts",
 		"test:watch": "npm test -- --watch",
-		"watch": "WIREIT_WATCH=true npm run build"
+		"watch": "WIREIT_WATCH=true npm run build:with-dependencies"
 	},
 	"dependencies": {
 		"@emotion/is-prop-valid": "^1.4.0",
@@ -124,11 +125,11 @@
 		"minimist": "^1.2.6"
 	},
 	"wireit": {
-		"build": {
+		"build:with-dependencies": {
 			"command": "npm run build:babel && npm run build:declarations",
 			"dependencies": [
-				"../types:build",
-				"../sqon:build"
+				"../types:build:with-dependencies",
+				"../sqon:build:with-dependencies"
 			],
 			"files": [
 				"src/**/*",

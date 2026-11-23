@@ -248,6 +248,7 @@ The charts module was introduced in this release cycle as a new package.
 
 ### Infrastructure
 
+- **A package's `build` script builds that package alone, and watch mode uses its own script**: in `sqon`, `types` and `components`, turbo orders builds across packages through `build`, while `npm run watch` runs wireit through `build:with-dependencies`, which also rebuilds the changed local dependencies and generates `sqon`'s version file first. The root `components:build` and `types:build` keep building their dependencies. `DEVELOPMENT.md` explains the split.
 - **Turborepo**: Build and test pipeline uses Turborepo for change detection: only affected packages and their dependents rebuild on each commit.
 - **Published type declarations keep their documentation**: `@overture-stack/arranger-graphql-router`, `@overture-stack/arranger-types` and `@overture-stack/arranger-components` now build with `removeComments: false`, so their TSDoc reaches an editor's hover text, and an editor marks `getDefaultServerSideFilter` deprecated.
 - **`npm run release:check`**: New script (`scripts/verify-pack.mjs`) verifies that no publishable package contains `file:` dependency references before release.
