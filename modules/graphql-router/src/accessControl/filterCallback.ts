@@ -37,16 +37,20 @@ export const describeUnusableFilterCallback = (value: unknown): string | undefin
  * what was received instead.
  *
  * @param getServerSideFilter the value to check.
+ * @param name the option the value is passed as, named in the refusal.
  * @param optional whether leaving it out is acceptable, as it is for a router given no access control.
  * @param receiver the function the value was given to, for the message.
  * @throws {TypeError} when the value is neither a non-async function nor, if `optional`, undefined.
  */
 export const assertFilterCallback = ({
 	getServerSideFilter,
+	name = 'getServerSideFilter',
 	optional = false,
 	receiver,
 }: {
 	getServerSideFilter: unknown;
+	/** The option the callback is passed as, named in the refusal. */
+	name?: string;
 	optional?: boolean;
 	receiver: string;
 }): void => {
@@ -55,7 +59,7 @@ export const assertFilterCallback = ({
 
 	if (problem) {
 		throw new TypeError(
-			`${receiver}: getServerSideFilter must be ${optional ? 'left out or ' : ''}a non-async function, but ${problem}.`,
+			`${receiver}: ${name} must be ${optional ? 'left out or ' : ''}a non-async function, but ${problem}.`,
 		);
 	}
 };

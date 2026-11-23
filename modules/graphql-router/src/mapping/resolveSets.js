@@ -2,14 +2,21 @@ import { configOptionalProperties } from '@overture-stack/arranger-types/configs
 import { get, isEmpty, uniq } from 'lodash-es';
 import { v4 as uuid } from 'uuid';
 
-import { AccessControlError, AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
+import {
+	AccessControlDeniedError,
+	AccessControlError,
+	AccessControlUnavailableError,
+} from '#accessControl/AccessControlError.js';
 import { evaluateFilterCallback } from '#accessControl/filterCallback.js';
+import includeEverything, { isIncludeEverythingFilter } from '#accessControl/includeEverything.js';
 import { buildQuery } from '#middleware/index.js';
 import { applyNestingPrefix, unwrapHits } from '#middleware/utils/nestingPrefix.js';
 import { setFilterResolverFor } from '#sets/resolveSetFilters.js';
 import { requesterOf, savedAttributionFor } from '#sets/setsAccess.js';
 import { SetsDisabledError } from '#sets/SetsDisabledError.js';
+import { exactAnswerOf, SET_CHECK_CHUNK_SIZE } from '#sets/narrowSet.js';
 import { recordsAttribution } from '#sets/setsIndexMapping.js';
+import { chunksOf, setValuesTermsOf } from '#sets/setValues.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
 import compileFilter from './utils/compileFilter.js';
@@ -28,6 +35,7 @@ const retrieveSetIds = async ({
 	// Documents sharing every sort value have no fixed order between requests, so a sort not ending in `_id`
 	// could skip or repeat them across pages.
 	const engineSort = sort.at(-1)?.fieldName === '_id' ? sort : [...sort, { fieldName: '_id', order: 'asc' }];
+	const sourcePath = `_source.${path.split('__').join('.')}`;
 
 	const search = async ({ searchAfter } = {}) => {
 		const body = {
@@ -51,24 +59,120 @@ const retrieveSetIds = async ({
 		});
 
 		const hits = unwrapHits(response?.body?.hits, nestingPrefix)?.hits ?? [];
-		const ids = hits.map((x) => get(x, `_source.${path.split('__').join('.')}`, x._id || ''));
+		// A hit lacking the path saves its `_id` as its value, and is reported apart so a check can match it by `_id`.
+		const pathlessHits = hits.filter((hit) => get(hit, sourcePath) === undefined);
 
 		return {
-			ids,
+			ids: hits.map((hit) => get(hit, sourcePath, hit._id || '')),
 			isLastPage: hits.length < BULK_SIZE,
+			pathValues: hits.map((hit) => get(hit, sourcePath)).filter((value) => value !== undefined),
+			pathlessIds: pathlessHits.map((hit) => hit._id).filter(Boolean),
 			searchAfter: hits.at(-1)?.sort,
 		};
 	};
-	const collect = async ({ searchAfter, ids = [] }) => {
+	const collect = async ({ pathlessIds = [], pathValues = [], searchAfter, ids = [] }) => {
 		const page = await search({ searchAfter });
 		const collected = [...ids, ...page.ids];
+		const collectedPathValues = [...pathValues, ...page.pathValues];
+		const collectedPathlessIds = [...pathlessIds, ...page.pathlessIds];
 		if (page.isLastPage) {
-			return uniq(collected);
+			return {
+				ids: uniq(collected),
+				pathlessIds: uniq(collectedPathlessIds),
+				pathValues: uniq(collectedPathValues),
+			};
 		}
 
-		return collect({ searchAfter: page.searchAfter, ids: collected });
+		return collect({
+			pathlessIds: collectedPathlessIds,
+			pathValues: collectedPathValues,
+			searchAfter: page.searchAfter,
+			ids: collected,
+		});
 	};
 	return collect({});
+};
+
+/**
+ * The searches that check a set's records against the artifact-create filter, one per chunk of at most `chunkSize`
+ * values: the records whose saved path holds a chunk's values, and those whose `_id` is a chunk of the path-less ids.
+ * Each search counts under the view filter with the create filter negated, and is answered exactly or refused.
+ * Chunks run one after another and stop at the first chunk holding a record outside the filter.
+ *
+ * @param {object} args
+ * @returns {Promise<boolean>} whether any record of the selection falls outside the create filter.
+ * @throws {Error} when a search is not answered exactly, or the create filter cannot be compiled against the set
+ *   (for example it names a saved set that was not resolved), so the save is refused rather than checked short.
+ */
+const anyRecordOutsideCreateFilter = async ({
+	catalogue,
+	chunkSize,
+	createFilter,
+	enableSets,
+	esClient,
+	index,
+	legacyDateFieldNames,
+	nestedFieldNames,
+	nestingPrefix,
+	path,
+	pathlessIds,
+	pathValues,
+	resolvedSets,
+	serverSideFilter,
+	setsIndex,
+}) => {
+	const fieldName = path.split('__').join('.');
+
+	if (nestedFieldNames.some((nested) => fieldName === nested || fieldName.startsWith(`${nested}.`))) {
+		throw new AccessControlError(
+			`The saved path "${path}" lies inside a nested field, which the artifact-create check cannot count per record.`,
+		);
+	}
+
+	const viewAndNotCreate = compileFilter({
+		clientSideFilter: undefined,
+		disableClientFilters: false,
+		serverSideFilter: { content: [serverSideFilter, { content: [createFilter], op: 'not' }], op: 'and' },
+	});
+	const serverQuery = buildQuery({
+		caller: 'resolveSets',
+		enableSets,
+		legacyDateFieldNames,
+		nestedFieldNames,
+		nestingPrefix,
+		filters: viewAndNotCreate,
+		resolvedSets,
+		setsIndex,
+	});
+	const search = catalogueSearch({ catalogue, esClient, readPath: 'sets', serverSideFilter });
+
+	const holdsOutside = async (valuesClause) => {
+		const response = await search({
+			allow_partial_search_results: false,
+			body: { query: { bool: { filter: [valuesClause, serverQuery] } }, track_total_hits: true },
+			index,
+			size: 0,
+		});
+
+		return exactAnswerOf(response.body, catalogue).total > 0;
+	};
+
+	const anyChunkHolds = async (chunks, valuesClauseOf) => {
+		if (chunks.length === 0) {
+			return false;
+		}
+		const [first, ...rest] = chunks;
+
+		return (await holdsOutside(valuesClauseOf(first))) || anyChunkHolds(rest, valuesClauseOf);
+	};
+
+	const pathValueChunks = chunksOf(pathValues, chunkSize);
+	const pathlessChunks = chunksOf(pathlessIds, chunkSize);
+
+	return (
+		(await anyChunkHolds(pathValueChunks, (values) => setValuesTermsOf({ fieldName, nestingPrefix, values }))) ||
+		anyChunkHolds(pathlessChunks, (values) => setValuesTermsOf({ fieldName: '_id', nestingPrefix, values }))
+	);
 };
 
 /**
@@ -83,15 +187,29 @@ const retrieveSetIds = async ({
  * @param {boolean} [args.enableSets] whether saved sets are enabled; a save is refused before anything is read when they are not.
  * @param {Function} [args.getRequester] the host's answer to who made a request.
  * @param {Function} args.getServerSideFilter the filter callback the saved records are selected under.
+ * @param {number} [args.artifactCreateChunkSize] the most saved values one artifact-create check search names; a test may
+ *   lower it. Defaults to `SET_CHECK_CHUNK_SIZE`.
+ * @param {Function} [args.getArtifactCreateFilter] the records the requester may create an artifact from. Absent, no
+ *   creation check runs; given, the set is refused when any of its records falls outside it.
  * @param {string} args.setsIndex the catalogue's own sets index.
  * @param {Array} args.types the catalogue's types.
  * @throws {SetsDisabledError} while saved sets are not enabled, before any engine call.
  * @throws {AccessControlUnavailableError} for a suspended principal, before anything is read or stored.
  * @throws {AccessControlError} where sets have owners and the sets index cannot record the mark, before any record
  *   is read or anything stored.
+ * @throws {AccessControlDeniedError} of kind `no-artifact-create` when a record the set would hold falls outside the
+ *   artifact-create filter, before anything is stored; the set is saved whole or not at all.
  */
 export const saveSet =
-	({ enableSets, getRequester, getServerSideFilter, setsIndex, types }) =>
+	({
+		artifactCreateChunkSize = SET_CHECK_CHUNK_SIZE,
+		enableSets,
+		getArtifactCreateFilter,
+		getRequester,
+		getServerSideFilter,
+		setsIndex,
+		types,
+	}) =>
 	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
 		if (!enableSets) {
 			throw new SetsDisabledError();
@@ -121,6 +239,9 @@ export const saveSet =
 		const { nested_fieldNames: nestedFieldNames, index, config } = catalogueType;
 		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
 		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' });
+		const artifactCreateFilter = getArtifactCreateFilter
+			? evaluateFilterCallback({ context, getServerSideFilter: getArtifactCreateFilter, readPath: 'sets' })
+			: includeEverything(context);
 
 		const resolveSets = setFilterResolverFor({ context, enableSets, esClient, getRequester, setsIndex });
 		const compiledFilter = compileFilter({
@@ -140,7 +261,7 @@ export const saveSet =
 			setsIndex,
 		});
 
-		const ids = await retrieveSetIds({
+		const { ids, pathlessIds, pathValues } = await retrieveSetIds({
 			index,
 			query,
 			path,
@@ -161,6 +282,34 @@ export const saveSet =
 							},
 						],
 		});
+
+		if (!isIncludeEverythingFilter(artifactCreateFilter) && ids.length > 0) {
+			const catalogue = catalogueType.label ?? catalogueType.name;
+			const holdsOutside = await anyRecordOutsideCreateFilter({
+				catalogue,
+				chunkSize: artifactCreateChunkSize,
+				createFilter: artifactCreateFilter,
+				enableSets,
+				esClient,
+				index,
+				legacyDateFieldNames: catalogueType.legacyDateFieldNames ?? [],
+				nestedFieldNames,
+				nestingPrefix,
+				path,
+				pathlessIds,
+				pathValues,
+				resolvedSets,
+				serverSideFilter,
+				setsIndex,
+			}).catch((error) => {
+				console.error('sets.artifact_create_check_failed', { catalogue, message: error.message, path });
+				throw error;
+			});
+
+			if (holdsOutside) {
+				throw new AccessControlDeniedError({ catalogue, kind: 'no-artifact-create' });
+			}
+		}
 
 		const body = {
 			setId: uuid(),

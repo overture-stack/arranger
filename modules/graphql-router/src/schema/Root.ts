@@ -92,6 +92,7 @@ type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 	debug: boolean;
 	enableAdmin?: boolean;
 	enableSets?: boolean;
+	getArtifactCreateFilter?: GetServerSideFilterFn<Context>;
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes: any[];
@@ -166,6 +167,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 	debug,
 	enableAdmin = false,
 	enableSets = false,
+	getArtifactCreateFilter,
 	getRequester,
 	getServerSideFilter,
 	rootTypes,
@@ -261,7 +263,14 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 			{},
 		),
 		Mutation: {
-			saveSet: saveSet({ enableSets, getRequester, getServerSideFilter, setsIndex, types }),
+			saveSet: saveSet({
+				enableSets,
+				getArtifactCreateFilter,
+				getRequester,
+				getServerSideFilter,
+				setsIndex,
+				types,
+			}),
 		},
 	};
 };

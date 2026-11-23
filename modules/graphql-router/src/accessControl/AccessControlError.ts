@@ -74,10 +74,12 @@ export const isAccessControlUnavailableError = (error: unknown): error is Access
 
 /**
  * Why a filter callback denied a request its catalogue: `no-access`, the principal has no access to it;
- * `access-too-broad`, their access is more than the catalogue's filter can express; `misconfigured`, access
- * control is configured wrongly for it. The first is the person's to raise, the other two the operator's to fix.
+ * `no-artifact-create`, the principal may not create an artifact (a saved set) from some of the records the
+ * request selects; `access-too-broad`, their access is more than the catalogue's filter can express;
+ * `misconfigured`, access control is configured wrongly for it. The first two are the person's to raise, the
+ * other two the operator's to fix.
  */
-export type AccessControlDenialKind = 'access-too-broad' | 'misconfigured' | 'no-access';
+export type AccessControlDenialKind = 'access-too-broad' | 'misconfigured' | 'no-access' | 'no-artifact-create';
 
 const denialTextFor = (kind: AccessControlDenialKind, catalogue: string): string => {
 	switch (kind) {
@@ -85,6 +87,8 @@ const denialTextFor = (kind: AccessControlDenialKind, catalogue: string): string
 			return `Your access is more than the filter of catalogue "${catalogue}" can express, so its records were not served.`;
 		case 'no-access':
 			return `You have no access to catalogue "${catalogue}".`;
+		case 'no-artifact-create':
+			return `Some of the records selected in catalogue "${catalogue}" can't be saved as a set: a set needs artifact.create on every record it holds.`;
 		default:
 			return `The server could not apply its access control to catalogue "${catalogue}" because of a problem in its configuration, not in this request.`;
 	}
@@ -93,10 +97,11 @@ const denialTextFor = (kind: AccessControlDenialKind, catalogue: string): string
 /**
  * A filter callback's denial of a request's catalogue, thrown in place of a filter so the catalogue's index is
  * never searched. Its `message` is the router's fixed text for its kind, naming the catalogue, written for the
- * client. The GraphQL endpoint answers `no-access` with `ACCESS_ENFORCEMENT_DENIED_CODE` and the export route with
- * `403`; the other kinds are answered as a problem on the server, `INTERNAL_SERVER_ERROR` and `500`. Each answer
- * is built from the kind and the catalogue alone, so nothing else the thrower says reaches a client, and logged
- * as `access_enforcement.denial_answered`, at info for `no-access` and at error otherwise.
+ * client. The GraphQL endpoint answers `no-access` and `no-artifact-create` with `ACCESS_ENFORCEMENT_DENIED_CODE`,
+ * and the export route answers `no-access` with `403`; the other kinds are answered as a problem on the server,
+ * `INTERNAL_SERVER_ERROR` and `500`. Each answer is built from the kind and the catalogue alone, so nothing else
+ * the thrower says reaches a client, and logged as `access_enforcement.denial_answered`, at info for `no-access`
+ * and `no-artifact-create` and at error otherwise.
  */
 export class AccessControlDeniedError extends Error {
 	override name = 'AccessControlDeniedError';
@@ -117,6 +122,15 @@ export class AccessControlDeniedError extends Error {
 	}
 }
 
+/**
+ * Whether a denial of `kind` is the person's own to raise, answered as forbidden rather than as a problem on the
+ * server. The GraphQL endpoint, the export route and network search answer it so.
+ *
+ * @param kind a denial's kind, as `denialAnswerOf` read it.
+ */
+export const isForbiddenDenialKind = (kind: AccessControlDenialKind): boolean =>
+	kind === 'no-access' || kind === 'no-artifact-create';
+
 /** The GraphQL error code a `no-access` denial is answered with. */
 export const ACCESS_ENFORCEMENT_DENIED_CODE = 'ACCESS_ENFORCEMENT_DENIED';
 
@@ -129,7 +143,7 @@ export const ACCESS_ENFORCEMENT_DENIED_CODE = 'ACCESS_ENFORCEMENT_DENIED';
 export const isAccessControlDeniedError = (error: unknown): error is AccessControlDeniedError =>
 	error instanceof Error && error.name === 'AccessControlDeniedError';
 
-const DENIAL_KINDS: readonly string[] = ['access-too-broad', 'misconfigured', 'no-access'];
+const DENIAL_KINDS: readonly string[] = ['access-too-broad', 'misconfigured', 'no-access', 'no-artifact-create'];
 
 /**
  * What a client is told of `denied` and how its answer is logged: its kind, read as `misconfigured` when it is

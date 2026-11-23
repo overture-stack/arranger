@@ -161,6 +161,8 @@ These correct behaviour that only the 3.1 release candidates had, so a deploymen
 
 - **New `onIndexMapping` option on `arrangerRouter`**: called once before the router resolves with a copy of the fetched index mapping and an `IndexProbe` of the catalogue's index, so a host can check fields against the mapping and ask the index how many records a condition matches, how many records and values a field holds, and whether the engine accepts a condition; a throw fails the router's construction.
 
+- **Saving a set can require `artifact.create` on every record it holds**: the router takes an optional `getArtifactCreateFilter`, a callback of `getServerSideFilter`'s shape returning the records a requester may create an artifact from. Given, `saveSet` checks every record the set will hold when read and refuses the whole set, saving nothing, when any lies outside: GraphQL answers `ACCESS_ENFORCEMENT_DENIED` under the new denial kind `no-artifact-create`, with text naming `artifact.create`. Left out, saving is unchanged. With access enforcement on, the search server passes the Usher adapter's `artifactCreateFilterFor`, so a principal saves a set only from records Usher grants them `artifact.create` on. See [Server-side filters](modules/graphql-router/README.md#server-side-filters).
+
 ### MCP server
 
 - **New `apps/mcp-server`**: A Model Context Protocol server that exposes Arranger catalogues as LLM-queryable resources and tools. Separate Docker image: `ghcr.io/overture-stack/arranger-mcp-server`. Implements the MCP Streamable HTTP transport.

@@ -2,6 +2,8 @@ import type { BridgeCore, KeyRegistration, ResolveOutcome } from '@overture-stac
 import { anonymousAccess, openTierAccess, signedInAccess } from '@overture-stack/usher-bridge--express/testing';
 import type { Enforcement } from '@overture-stack/usher-types';
 
+import { withArtifactCreateAllowed } from './accessResults.js';
+
 type Results = Readonly<Record<string, Enforcement>>;
 
 /** The fake Bridge, with what it recorded. */
@@ -55,7 +57,8 @@ export const createFakeBridge = (table: FakeBridgeTable, mode: FakeBridgeMode = 
 		unexpected: (string | null)[];
 	} = { mode, registered: [], unexpected: [] };
 
-	const openTier = (credential: string | null): ResolveOutcome => openTierAccess(credential, table.anonymous);
+	const openTier = (credential: string | null): ResolveOutcome =>
+		openTierAccess(credential, withArtifactCreateAllowed(table.anonymous));
 
 	const resolve = async (credential: string | null): Promise<ResolveOutcome> => {
 		const principal =
@@ -84,8 +87,8 @@ export const createFakeBridge = (table: FakeBridgeTable, mode: FakeBridgeMode = 
 				break;
 		}
 		return principal === undefined
-			? anonymousAccess(table.anonymous)
-			: signedInAccess(principal.subject, principal.results);
+			? anonymousAccess(withArtifactCreateAllowed(table.anonymous))
+			: signedInAccess(principal.subject, withArtifactCreateAllowed(principal.results));
 	};
 
 	const core: BridgeCore = {

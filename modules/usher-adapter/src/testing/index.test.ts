@@ -31,6 +31,7 @@ suite("the testing module's surface", () => {
 			'createStubProbe',
 			'denialAnswerFor',
 			'isConfigurationRefusal',
+			'withArtifactCreateAllowed',
 		]);
 	});
 });

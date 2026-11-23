@@ -34,6 +34,7 @@ import {
 	RESOURCE_CATEGORY_REGISTRATION,
 	RESOURCE_FIELD,
 	ROWS,
+	withArtifactCreateAllowed,
 } from './testing/index.js';
 
 import { type CatalogueIndex, createBridgeLogger, createUsherAccessControl } from './index.js';
@@ -743,10 +744,12 @@ suite('the adapter at startup', () => {
 			const locals = {};
 			attachAccess(
 				locals,
-				anonymousAccess({
-					controlledOnly: CONTROLLED_ONLY_ANONYMOUS.result,
-					records: ROWS.anonymousBaselineOn.result,
-				}).access,
+				anonymousAccess(
+					withArtifactCreateAllowed({
+						controlledOnly: CONTROLLED_ONLY_ANONYMOUS.result,
+						records: ROWS.anonymousBaselineOn.result,
+					}),
+				).access,
 			);
 			assert.throws(() => failedCallback({ locals }, { readPath: 'hits' }), isConfigurationRefusal);
 			assert.deepEqual(
@@ -833,7 +836,10 @@ suite('the adapter at startup', () => {
 		const { accessControl } = adapterOver({ records: RECORDS_REGISTRATION });
 		const callback = accessControl.filterFor('records');
 		const locals = {};
-		attachAccess(locals, anonymousAccess({ records: ROWS.anonymousBaselineOn.result }).access);
+		attachAccess(
+			locals,
+			anonymousAccess(withArtifactCreateAllowed({ records: ROWS.anonymousBaselineOn.result })).access,
+		);
 
 		// When the request reaches the callback, Then it refuses it as a misconfiguration rather than serve
 		// an unchecked catalogue, and never as a refusal the client could retry

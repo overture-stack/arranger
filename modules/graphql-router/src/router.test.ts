@@ -1342,3 +1342,43 @@ suite("arrangerRouter's onIndexMapping hook", () => {
 		);
 	});
 });
+
+suite('arrangerRouter accepts only undefined or a non-async function as getArtifactCreateFilter', () => {
+	/** The failure a router's construction rejects with, given `getArtifactCreateFilter` as `value`. */
+	const artifactConstructionFailureFor = async (value: unknown): Promise<unknown> => {
+		const { result } = await withConsoleCaptured(() =>
+			arrangerRouter({
+				configs: CATALOGUE_CONFIGS,
+				esClient: createSearchEngine().client,
+				getArtifactCreateFilter: value as never,
+				getServerSideFilter: STUDY_A,
+			}).then(
+				() => undefined,
+				(error: unknown) => error,
+			),
+		);
+
+		return result;
+	};
+
+	test('refuses an async function at construction, naming getArtifactCreateFilter', async () => {
+		// Given an async function returning a valid filter
+		// When a router is constructed with it as getArtifactCreateFilter
+		const failure = await artifactConstructionFailureFor(async (context: unknown) => STUDY_A(context));
+
+		// Then construction rejects, naming the option rather than getServerSideFilter
+		assert.ok(failure instanceof Error, 'expected construction to reject');
+		assert.match(messageChainOf(failure), /getArtifactCreateFilter must be left out or a non-async function/);
+	});
+
+	test('builds when getArtifactCreateFilter is omitted or a plain function', async () => {
+		// Given a router with no artifact-create filter, and one with a plain function
+		// When each is constructed
+		const omitted = await artifactConstructionFailureFor(undefined);
+		const plain = await artifactConstructionFailureFor(STUDY_A);
+
+		// Then neither construction fails
+		assert.equal(omitted, undefined);
+		assert.equal(plain, undefined);
+	});
+});

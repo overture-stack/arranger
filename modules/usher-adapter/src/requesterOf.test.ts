@@ -4,11 +4,11 @@ import { suite, test } from 'node:test';
 import { anonymousAccess, openTierAccess, signedInAccess } from '@overture-stack/usher-bridge--express/testing';
 import { attachAccess, type UsherRequestAccess } from '@overture-stack/usher-types';
 
-import { ROWS } from './testing/index.js';
+import { ROWS, withArtifactCreateAllowed } from './testing/index.js';
 
 import { requesterOf, UNAVAILABLE_ANSWER } from './index.js';
 
-const OPEN_RESULTS = { records: ROWS.open.result };
+const OPEN_RESULTS = withArtifactCreateAllowed({ records: ROWS.open.result });
 const PRESENTED_CREDENTIAL = 'credential-k7';
 
 /** A request context as the GraphQL router builds it, its store holding the access the Bridge attached. */

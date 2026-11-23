@@ -71,6 +71,8 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
  * @param getServerSideFilter the access-control filter callback every read applies, which must be a
  *   non-async function. Left out, the router applies `includeEverything` and records the choice as
  *   defaulted rather than configured; any other value makes construction reject.
+ * @param getArtifactCreateFilter the records a requester may create an artifact (a saved set) from. Left out, saving a
+ *   set is not checked against any filter; given, a set holding a record outside it is refused whole.
  * @param getRequester who made a request, read from the same context and stated explicitly: a principal with its
  *   id, an anonymous request or a suspended principal. Given, saved sets have owners: each set records how it was
  *   saved, the sets connection lists a principal its own sets and the sets with no owner, and a principal's set's
@@ -81,6 +83,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	configs: customConfigs = {},
 	configsSource,
 	esClient: customEsClient = undefined,
+	getArtifactCreateFilter,
 	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -95,6 +98,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	 */
 	configsSource?: string;
 	esClient?: SearchClient;
+	getArtifactCreateFilter?: GetServerSideFilterFn<Context>;
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
@@ -132,6 +136,12 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 	try {
 		assertFilterCallback({ getServerSideFilter, optional: true, receiver: 'arrangerRouter' });
+		assertFilterCallback({
+			getServerSideFilter: getArtifactCreateFilter,
+			name: 'getArtifactCreateFilter',
+			optional: true,
+			receiver: 'arrangerRouter',
+		});
 
 		const accessControlRecord = createAccessControlRecord(getServerSideFilter);
 
@@ -212,6 +222,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			enableAdmin,
 			enableDebug,
 			esClient,
+			getArtifactCreateFilter,
 			getRequester,
 			getServerSideFilter: accessControlRecord.getServerSideFilter, // TODO: Extend for multicatalogue per-catalogue filters
 			graphqlOptions,

@@ -12,6 +12,7 @@ import {
 	resultFor,
 	subjectToLog,
 	type UsherPrincipal,
+	type UsherRequestAccess,
 	validateRegistration,
 } from '@overture-stack/usher-types';
 
@@ -26,6 +27,9 @@ import { UNAVAILABLE_ANSWER } from './unavailableAnswer.js';
 const OPEN_TIER_READ_PATHS: readonly string[] = ['aggregations', 'hits'];
 
 const NETWORK_READ_PATH = 'network';
+
+/** The capability a filter callback enforces, named in each log event so the two are told apart. */
+type AccessCapability = 'artifact.create' | 'record.view';
 
 const isRecord = (value: unknown): value is Record<PropertyKey, unknown> => typeof value === 'object' && value !== null;
 
@@ -47,18 +51,43 @@ const denialKindOf = (reason: Extract<Enforcement, { kind: 'deny' }>['reason']):
 	}
 };
 
+/**
+ * The router's denial kind for an artifact-create deny's reason: the principal may not create an artifact from the
+ * records, grants more than the catalogue's filter can express, and otherwise the operator's configuration or the
+ * system's fault, a reason not listed here included.
+ */
+const artifactCreateDenialKindOf = (
+	reason: Extract<Enforcement, { kind: 'deny' }>['reason'],
+): AccessControlDenialKind => {
+	switch (reason) {
+		case 'filter-limit':
+			return 'access-too-broad';
+		case 'no-grants':
+			return 'no-artifact-create';
+		default:
+			return 'misconfigured';
+	}
+};
+
+/** The artifact-create result for `catalogueId`, read from its own member only, as `resultFor` reads a view result. */
+const artifactCreateResultFor = (access: UsherRequestAccess, catalogueId: string): Enforcement | undefined =>
+	Object.hasOwn(access.artifactCreate, catalogueId) ? access.artifactCreate[catalogueId] : undefined;
+
 /** What each event says about its request: never a token, payload or record. */
 const requestFieldsOf = ({
+	capability,
 	catalogueId,
 	locals,
 	principal,
 	readPath,
 }: {
+	capability: AccessCapability;
 	catalogueId: string;
 	locals: Record<PropertyKey, unknown>;
 	principal: UsherPrincipal;
 	readPath: string | undefined;
 }) => ({
+	capability,
 	catalogue: catalogueId,
 	readPath: readPath ?? null,
 	requestId: typeof locals.requestId === 'string' ? locals.requestId : null,
@@ -100,11 +129,13 @@ export const createUsherAccessControl = ({
 	const apply = ({
 		catalogueId,
 		context,
+		denialKindOf,
 		fields,
 		result,
 	}: {
 		catalogueId: string;
 		context: unknown;
+		denialKindOf: (reason: Extract<Enforcement, { kind: 'deny' }>['reason']) => AccessControlDenialKind;
 		fields: ReturnType<typeof requestFieldsOf>;
 		result: Enforcement | undefined;
 	}): SqonNode => {
@@ -138,10 +169,21 @@ export const createUsherAccessControl = ({
 	const isVerified = (catalogueId: string): boolean =>
 		verification.kind === 'verified' && verification.catalogues.has(catalogueId);
 
-	const filterFor = (catalogueId: string): UsherFilterCallback => {
-		// Refuses a catalogue with no registration when its callback is built, not on its first request.
-		registrationOf(catalogueId);
-
+	/**
+	 * The callback one capability's results make for `catalogueId`, shared by every capability so each reads, refuses
+	 * and logs the same way, told apart only by `capability` and the results `resultOf` reads.
+	 */
+	const callbackFor = ({
+		capability,
+		catalogueId,
+		denialKindOf,
+		resultOf,
+	}: {
+		capability: AccessCapability;
+		catalogueId: string;
+		denialKindOf: (reason: Extract<Enforcement, { kind: 'deny' }>['reason']) => AccessControlDenialKind;
+		resultOf: (access: UsherRequestAccess) => Enforcement | undefined;
+	}): UsherFilterCallback => {
 		return (context, details) => {
 			if (!isVerified(catalogueId)) {
 				throw new Error(
@@ -159,7 +201,13 @@ export const createUsherAccessControl = ({
 
 			const locals = isRecord(context) && isRecord(context.locals) ? context.locals : {};
 			const access = readAccess(locals);
-			const fields = requestFieldsOf({ catalogueId, locals, principal: access.principal, readPath });
+			const fields = requestFieldsOf({
+				capability,
+				catalogueId,
+				locals,
+				principal: access.principal,
+				readPath,
+			});
 
 			// The open tier answers a search, which reads as reduced; a file or a set holding only open
 			// records would later read as complete, so any other read waits for the principal's own grants.
@@ -170,8 +218,32 @@ export const createUsherAccessControl = ({
 				});
 			}
 
-			return apply({ catalogueId, context, fields, result: resultFor(access, catalogueId) });
+			return apply({ catalogueId, context, denialKindOf, fields, result: resultOf(access) });
 		};
+	};
+
+	const filterFor = (catalogueId: string): UsherFilterCallback => {
+		// Refuses a catalogue with no registration when its callback is built, not on its first request.
+		registrationOf(catalogueId);
+
+		return callbackFor({
+			capability: 'record.view',
+			catalogueId,
+			denialKindOf,
+			resultOf: (access) => resultFor(access, catalogueId),
+		});
+	};
+
+	const artifactCreateFilterFor = (catalogueId: string): UsherFilterCallback => {
+		// Refuses a catalogue with no registration when its callback is built, not on its first request.
+		registrationOf(catalogueId);
+
+		return callbackFor({
+			capability: 'artifact.create',
+			catalogueId,
+			denialKindOf: artifactCreateDenialKindOf,
+			resultOf: (access) => artifactCreateResultFor(access, catalogueId),
+		});
 	};
 
 	/**
@@ -230,5 +302,5 @@ export const createUsherAccessControl = ({
 					),
 				);
 
-	return { filterFor, requesterOf, verify };
+	return { artifactCreateFilterFor, filterFor, requesterOf, verify };
 };

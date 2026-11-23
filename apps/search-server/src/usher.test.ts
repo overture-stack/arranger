@@ -39,6 +39,9 @@ const bridgeWith = ({
 /** The image's Usher over `bridge`, its adapter's verification given. */
 const usherOver = (bridge: BridgeCore, verify: UsherAccessControl['verify']): ImageUsher => ({
 	accessControl: {
+		artifactCreateFilterFor: () => () => {
+			throw new Error('No request reaches a filter in these tests.');
+		},
 		filterFor: () => () => {
 			throw new Error('No request reaches a filter in these tests.');
 		},
@@ -188,8 +191,16 @@ suite("each catalogue's access control under Usher", () => {
 	test("gives each catalogue the adapter's filter callback for it, and the adapter's answer to who made a request", () => {
 		// Given an adapter whose callbacks and requester answer are told apart by identity
 		const callbacks = new Map<string, ReturnType<UsherAccessControl['filterFor']>>();
+		const artifactCreateCallbacks = new Map<string, ReturnType<UsherAccessControl['artifactCreateFilterFor']>>();
 		const requesterOf: UsherAccessControl['requesterOf'] = () => ({ id: 'subject-k7', kind: 'principal' });
 		const accessControl: UsherAccessControl = {
+			artifactCreateFilterFor: (catalogueId) => {
+				const callback = (() => {
+					throw new Error(`No request reaches ${catalogueId}'s artifact-create filter in this test.`);
+				}) as ReturnType<UsherAccessControl['artifactCreateFilterFor']>;
+				artifactCreateCallbacks.set(catalogueId, callback);
+				return callback;
+			},
 			filterFor: (catalogueId) => {
 				const callback = (() => {
 					throw new Error(`No request reaches ${catalogueId}'s filter in this test.`);
@@ -214,10 +225,11 @@ suite("each catalogue's access control under Usher", () => {
 				configs.esIndex,
 				configs.getServerSideFilter === callbacks.get(catalogueId),
 				configs.getRequester === requesterOf,
+				configs.getArtifactCreateFilter === artifactCreateCallbacks.get(catalogueId),
 			]),
 			[
-				['catalogue-k7', 'k7', true, true],
-				['catalogue-k8', 'k8', true, true],
+				['catalogue-k7', 'k7', true, true, true],
+				['catalogue-k8', 'k8', true, true, true],
 			],
 		);
 	});
@@ -225,6 +237,10 @@ suite("each catalogue's access control under Usher", () => {
 	test("makes each catalogue's configured row limit a ceiling, keeping its other download settings, whatever its files say", () => {
 		// Given two catalogues, one whose files allow custom row limits and say the limit is no ceiling
 		const accessControl = {
+			artifactCreateFilterFor: () =>
+				(() => ({ content: [], op: 'and' })) as unknown as ReturnType<
+					UsherAccessControl['artifactCreateFilterFor']
+				>,
 			filterFor: () =>
 				(() => ({ content: [], op: 'and' })) as unknown as ReturnType<UsherAccessControl['filterFor']>,
 			requesterOf: () => ({ kind: 'anonymous' }),

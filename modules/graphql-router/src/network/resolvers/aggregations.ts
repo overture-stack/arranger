@@ -10,6 +10,7 @@ import {
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
+	isForbiddenDenialKind,
 } from '#accessControl/AccessControlError.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import { isInvalidFilterError } from '#middleware/buildQuery/InvalidFilterError.js';
@@ -58,7 +59,7 @@ const nodeErrorMessageFor = ({
 }): string => {
 	if (isAccessControlDeniedError(error)) {
 		const { catalogue, kind, text } = denialAnswerOf(error);
-		const log = kind === 'no-access' ? console.info : console.error;
+		const log = isForbiddenDenialKind(kind) ? console.info : console.error;
 
 		log('access_enforcement.denial_answered', { catalogue, kind, node: nodeName });
 		return text;

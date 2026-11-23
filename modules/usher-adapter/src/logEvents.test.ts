@@ -23,6 +23,7 @@ import {
 	RECORDS_REGISTRATION,
 	RESOURCE_FIELD,
 	ROWS,
+	withArtifactCreateAllowed,
 } from './testing/index.js';
 
 import { createUsherAccessControl, type UsherFilterCallback } from './index.js';
@@ -52,10 +53,12 @@ const loggingCallback = async (): Promise<{ callback: UsherFilterCallback; lines
 type AccessFor = (results: Readonly<Record<string, Enforcement>>) => Readonly<{ access: UsherRequestAccess }>;
 
 const PRESENTED_CREDENTIAL = 'credential-ana';
-const signedInAna: AccessFor = (results) => signedInAccess('subject-ana', results);
-const unconfirmedSuspended: AccessFor = (results) => openTierAccess(PRESENTED_CREDENTIAL, results);
+const anonymous: AccessFor = (results) => anonymousAccess(withArtifactCreateAllowed(results));
+const signedInAna: AccessFor = (results) => signedInAccess('subject-ana', withArtifactCreateAllowed(results));
+const unconfirmedSuspended: AccessFor = (results) =>
+	openTierAccess(PRESENTED_CREDENTIAL, withArtifactCreateAllowed(results));
 const attributionOnlyAna: AccessFor = (results) =>
-	openTierAccess(PRESENTED_CREDENTIAL, results, { attributionOnlySubject: 'subject-ana' });
+	openTierAccess(PRESENTED_CREDENTIAL, withArtifactCreateAllowed(results), { attributionOnlySubject: 'subject-ana' });
 
 const localsFor = (accessFor: AccessFor, result: Enforcement): Record<string, unknown> => {
 	const locals: Record<string, unknown> = { requestId: REQUEST_ID };
@@ -73,7 +76,7 @@ suite('the log events', () => {
 			false,
 			'confirmed',
 		],
-		['an allow result, for an anonymous principal', anonymousAccess, ROWS.open.result, null, false, 'none'],
+		['an allow result, for an anonymous principal', anonymous, ROWS.open.result, null, false, 'none'],
 		[
 			'a narrow result, for a suspended principal whose credential is unconfirmed',
 			unconfirmedSuspended,
@@ -103,6 +106,7 @@ suite('the log events', () => {
 			assert.deepEqual(lines, [
 				{
 					fields: {
+						capability: 'record.view',
 						catalogue: 'records',
 						credential,
 						enforcement: result.kind,
@@ -125,16 +129,14 @@ suite('the log events', () => {
 
 			// When the deny is applied on the aggregations path, which it refuses
 			assert.throws(() =>
-				callback(
-					{ locals: localsFor(anonymousAccess, { kind: 'deny', reason }) },
-					{ readPath: 'aggregations' },
-				),
+				callback({ locals: localsFor(anonymous, { kind: 'deny', reason }) }, { readPath: 'aggregations' }),
 			);
 
 			// Then one denied event names the subject, whether it is suspended, the reason and the request
 			assert.deepEqual(lines, [
 				{
 					fields: {
+						capability: 'record.view',
 						catalogue: 'records',
 						credential: 'none',
 						readPath: 'aggregations',
@@ -165,6 +167,7 @@ suite('the log events', () => {
 			assert.deepEqual(lines, [
 				{
 					fields: {
+						capability: 'record.view',
 						catalogue: 'records',
 						credential: 'unconfirmed',
 						readPath,

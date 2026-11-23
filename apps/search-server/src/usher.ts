@@ -119,9 +119,9 @@ export const prepareUsher = async ({
 };
 
 /**
- * Each catalogue's configuration with the adapter's callback for it as its server-side filter, the adapter's
- * answer to who made a request, which saved sets are scoped by, and its configured row limit as a ceiling no
- * request can lift.
+ * Each catalogue's configuration with the adapter's callbacks for it as its server-side filter and its artifact-create
+ * filter, the adapter's answer to who made a request, which saved sets are scoped by, and its configured row limit
+ * as a ceiling no request can lift.
  *
  * @param catalogs every catalogue the image loaded.
  * @param accessControl the adapter.
@@ -134,6 +134,7 @@ export const withUsherFilters = (catalogs: CataloguesMap, accessControl: UsherAc
 				...configs,
 				// A file is the read most easily taken further, so a request cannot lift the configured row limit.
 				downloads: { ...configs.downloads, [downloadProperties.MAX_ROWS_IS_CEILING]: true },
+				getArtifactCreateFilter: accessControl.artifactCreateFilterFor(catalogueId),
 				getRequester: accessControl.requesterOf,
 				getServerSideFilter: accessControl.filterFor(catalogueId),
 			},
@@ -150,7 +151,10 @@ export const stopUsherBridge = async (bridge: Pick<BridgeCore, 'stop'>): Promise
 	await Promise.resolve()
 		.then(() => bridge.stop())
 		.catch((error: unknown) => {
-			console.error('access_enforcement.bridge_stop_failed', error instanceof Error ? error.message : String(error));
+			console.error(
+				'access_enforcement.bridge_stop_failed',
+				error instanceof Error ? error.message : String(error),
+			);
 		});
 };
 

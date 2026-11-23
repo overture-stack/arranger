@@ -10,6 +10,7 @@ import {
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
+	isForbiddenDenialKind,
 } from '#accessControl/AccessControlError.js';
 import { isSetsDisabledError, SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
 import { arrangerLocalsOf, exportStateOf } from '#utils/context.js';
@@ -225,7 +226,7 @@ const failureResponseFor = (error) => {
 	if (isAccessControlDeniedError(error)) {
 		const denial = denialAnswerOf(error);
 
-		return denial.kind === 'no-access'
+		return isForbiddenDenialKind(denial.kind)
 			? { denial, reason: 'access_enforcement_denied', status: 403, text: denial.text }
 			: {
 					denial,
@@ -313,7 +314,7 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 
 	if (reason === 'access_enforcement_denied') {
 		// The event GraphQL logs for the same answer, raising an alert only where the operator has something to fix.
-		const logDenial = denial.kind === 'no-access' ? console.info : console.error;
+		const logDenial = isForbiddenDenialKind(denial.kind) ? console.info : console.error;
 		logDenial('access_enforcement.denial_answered', {
 			catalogue: denial.catalogue,
 			kind: denial.kind,

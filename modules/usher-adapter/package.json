@@ -5,11 +5,11 @@
 	"dependencies": {
 		"@overture-stack/arranger-graphql-router": "file:../graphql-router",
 		"@overture-stack/sqon": "file:../sqon",
-		"@overture-stack/usher-types": "0.0.1-beta.1"
+		"@overture-stack/usher-types": "0.0.1-beta.2"
 	},
 	"description": "Applies Usher's access decisions to Arranger's GraphQL routers as server-side filters",
 	"devDependencies": {
-		"@overture-stack/usher-bridge--express": "0.0.1-beta.1",
+		"@overture-stack/usher-bridge--express": "0.0.1-beta.2",
 		"@types/node": "^24.19.1",
 		"tsx": "^4.22.3"
 	},

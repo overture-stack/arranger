@@ -1,3 +1,4 @@
+export { withArtifactCreateAllowed } from './accessResults.js';
 export {
 	DENIED_ERROR_NAME,
 	denialAnswerFor,

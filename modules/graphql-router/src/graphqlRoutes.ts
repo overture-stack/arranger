@@ -32,6 +32,7 @@ import {
 	isAccessControlError,
 	isAccessControlQueryTooLargeError,
 	isAccessControlUnavailableError,
+	isForbiddenDenialKind,
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
 import fallbackConfigs, { initializeSets } from '#config/index.js';
@@ -202,6 +203,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	enableDebug = false,
 	enableAdmin = false,
 	enableSets = false,
+	getArtifactCreateFilter,
 	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -211,6 +213,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	enableDebug?: boolean;
 	enableAdmin?: boolean;
 	enableSets?: boolean;
+	getArtifactCreateFilter?: GetServerSideFilterFn<Context>;
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
@@ -221,6 +224,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 		debug: enableDebug,
 		enableAdmin,
 		enableSets,
+		getArtifactCreateFilter,
 		getRequester,
 		getServerSideFilter,
 		setsIndex,
@@ -340,7 +344,7 @@ const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavai
 // only the operator can fix it, and the router's text for its kind either way.
 const answerDenied = (error: GraphQLError, denied: AccessControlDeniedError): GraphQLFormattedError => {
 	const { catalogue, kind, text } = denialAnswerOf(denied);
-	const forbidden = kind === 'no-access';
+	const forbidden = isForbiddenDenialKind(kind);
 	const log = forbidden ? console.info : console.error;
 
 	log('access_enforcement.denial_answered', { catalogue, kind, path: error.path });
@@ -572,6 +576,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	enableAdmin = false,
 	enableSets = false,
 	esClient,
+	getArtifactCreateFilter,
 	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -585,6 +590,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	/** Whether saved sets are enabled. Absent means they are not, so a saved set is refused on every read path. */
 	enableSets?: boolean;
 	esClient: SearchClient;
+	getArtifactCreateFilter?: GetServerSideFilterFn<Context>;
 	/** Who made a request, for saved sets under a filter callback: see `GetRequesterFn`. */
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
@@ -614,6 +620,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			enableDebug,
 			enableAdmin,
 			enableSets,
+			getArtifactCreateFilter,
 			getRequester,
 			getServerSideFilter,
 			graphqlOptions,
@@ -713,6 +720,7 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	enableAdmin?: boolean;
 	enableDebug?: boolean;
 	esClient: SearchClient;
+	getArtifactCreateFilter?: GetServerSideFilterFn<Context>;
 	/** Who made a request, for saved sets under a filter callback: see `GetRequesterFn`. */
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
@@ -729,6 +737,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	enableAdmin,
 	enableDebug,
 	esClient,
+	getArtifactCreateFilter,
 	getRequester,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -751,6 +760,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			enableAdmin,
 			enableSets,
 			esClient,
+			getArtifactCreateFilter,
 			getRequester,
 			getServerSideFilter,
 			graphqlOptions,

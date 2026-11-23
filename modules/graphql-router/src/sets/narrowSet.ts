@@ -5,9 +5,9 @@ import { isIncludeEverythingFilter } from '#accessControl/includeEverything.js';
 import compileFilter from '#mapping/utils/compileFilter.js';
 import { catalogueSearch } from '#mapping/utils/esSearch.js';
 import { buildQuery } from '#middleware/index.js';
-import { applyNestingPrefix } from '#middleware/utils/nestingPrefix.js';
 import type { ResolvedSets } from '#sets/resolveSetFilters.js';
 import type { SearchClient, SearchClientSearchBody } from '#searchClient/types.js';
+import { chunksOf, setValuesFieldOf } from '#sets/setValues.js';
 
 /**
  * How many of a set's ids one search names: below the engine's default `index.max_terms_count` of 65,536, and no
@@ -18,11 +18,6 @@ export const SET_CHECK_CHUNK_SIZE = 10_000;
 /** A saved set's contents, as the sets index stores them. */
 export type StoredSet = Readonly<{ ids: readonly string[]; path: string; size: number }>;
 
-const chunksOf = <Value>(values: readonly Value[], size: number): Value[][] =>
-	Array.from({ length: Math.ceil(values.length / size) }, (_, index) =>
-		values.slice(index * size, (index + 1) * size),
-	);
-
 type ExactAnswer = Readonly<{
 	aggregations: SearchClientSearchBody['aggregations'];
 	hits: { _id: string; _source?: unknown }[];
@@ -30,7 +25,7 @@ type ExactAnswer = Readonly<{
 }>;
 
 /** What a search answered, where the engine answered from every shard in time and counted exactly, and a rejection otherwise. */
-const exactAnswerOf = (body: SearchClientSearchBody, catalogue: string): ExactAnswer => {
+export const exactAnswerOf = (body: SearchClientSearchBody, catalogue: string): ExactAnswer => {
 	const total = body.hits?.total;
 	const exactTotal = typeof total === 'number' ? total : total?.relation === 'eq' ? total.value : undefined;
 
@@ -107,7 +102,7 @@ export const narrowSetForReader = async ({
 		return { ids: storedIds, size: set.size };
 	}
 
-	const esFieldName = fieldName === '_id' ? '_id' : (applyNestingPrefix(fieldName, nestingPrefix) ?? fieldName);
+	const esFieldName = setValuesFieldOf({ fieldName, nestingPrefix });
 	const search = catalogueSearch({ catalogue, esClient, readPath: 'sets', serverSideFilter });
 
 	const countsAgree = async (chunk: string[]): Promise<boolean> => {

@@ -19,6 +19,7 @@ import {
 	RECORDS_REGISTRATION,
 	ROWS,
 	UNAVAILABLE_ERROR_NAME,
+	withArtifactCreateAllowed,
 } from './testing/index.js';
 
 import { createUsherAccessControl, UNAVAILABLE_ANSWER, type UsherFilterCallback } from './index.js';
@@ -41,7 +42,7 @@ const verifiedCallback = async (): Promise<UsherFilterCallback> => {
 /** A request's store holding the access the Bridge's layer attaches, with these results. */
 const localsHolding = (results: Readonly<Record<string, Enforcement>>): Record<string, unknown> => {
 	const locals = {};
-	attachAccess(locals, anonymousAccess(results).access);
+	attachAccess(locals, anonymousAccess(withArtifactCreateAllowed(results)).access);
 	return locals;
 };
 
@@ -135,7 +136,10 @@ suite('the callback, as a pure function of the request store', () => {
 			const locals = {};
 			attachAccess(
 				locals,
-				openTierAccess(PRESENTED_CREDENTIAL, { records: ROWS.anonymousBaselineOn.result }).access,
+				openTierAccess(
+					PRESENTED_CREDENTIAL,
+					withArtifactCreateAllowed({ records: ROWS.anonymousBaselineOn.result }),
+				).access,
 			);
 			return locals;
 		};
@@ -198,7 +202,7 @@ suite('the callback, as a pure function of the request store', () => {
 		});
 	});
 
-	const everyGrantResults = { records: ROWS.everyGrant.result };
+	const everyGrantResults = withArtifactCreateAllowed({ records: ROWS.everyGrant.result });
 	for (const [description, outcome] of [
 		['an anonymous principal', anonymousAccess(everyGrantResults)],
 		['a signed-in principal', signedInAccess('subject-ana', everyGrantResults)],
@@ -229,17 +233,22 @@ suite('the callback, as a pure function of the request store', () => {
 		for (const [description, value, shape] of [
 			[
 				'of another version',
-				{ ...anonymousAccess({ records: ROWS.everyGrant.result }).access, version: 2 },
+				{
+					...anonymousAccess(withArtifactCreateAllowed({ records: ROWS.everyGrant.result })).access,
+					version: 2,
+				},
 				'hidden',
 			],
 			[
 				'holding an unknown kind of result',
-				anonymousAccess({ records: { kind: 'grant-everything' } as unknown as Enforcement }).access,
+				anonymousAccess(
+					withArtifactCreateAllowed({ records: { kind: 'grant-everything' } as unknown as Enforcement }),
+				).access,
 				'hidden',
 			],
 			[
 				'not shaped as attachAccess leaves it',
-				anonymousAccess({ records: ROWS.everyGrant.result }).access,
+				anonymousAccess(withArtifactCreateAllowed({ records: ROWS.everyGrant.result })).access,
 				'enumerable',
 			],
 		] as const) {

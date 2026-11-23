@@ -688,6 +688,12 @@ const DENIALS = [
 		'The server could not apply its access control to catalogue "donor" because of a problem in its configuration, not in this request.',
 		'error',
 	],
+	[
+		'no-artifact-create',
+		'ACCESS_ENFORCEMENT_DENIED',
+		'Some of the records selected in catalogue "donor" can\'t be saved as a set: a set needs artifact.create on every record it holds.',
+		'info',
+	],
 ] as const;
 
 /** A filter callback denying the catalogue as `kind`, with a message of its own that no client may be given. */

@@ -76,11 +76,22 @@ suite('the logger shim', () => {
 			'error',
 		),
 		envelopeOf('category.unmapped', { catalogue: 'records', category: 'global.embargoed' }, 'critical'),
-		envelopeOf('catalogue.renderingMismatch', { catalogue: 'records' }, 'critical'),
-		envelopeOf('catalogue.filterLimit', { catalogue: 'records', filterClauseLimit: 1024 }, 'error'),
+		envelopeOf('catalogue.renderingMismatch', { capability: 'record.view', catalogue: 'records' }, 'critical'),
+		envelopeOf('catalogue.renderingMismatch', { capability: 'artifact.create', catalogue: 'records' }, 'critical'),
+		envelopeOf(
+			'catalogue.filterLimit',
+			{ capability: 'record.view', catalogue: 'records', filterClauseLimit: 1024 },
+			'error',
+		),
+		envelopeOf(
+			'catalogue.filterLimit',
+			{ capability: 'artifact.create', catalogue: 'records', filterClauseLimit: 1024 },
+			'error',
+		),
 	]) {
 		const scope = 'resourceId' in event.data ? ', scoped to a resource' : '';
-		test(`writes the bridge's ${event.type} event${scope} with every field it carries`, () => {
+		const capability = 'capability' in event.data ? `, for the ${event.data.capability} capability` : '';
+		test(`writes the bridge's ${event.type} event${scope}${capability} with every field it carries`, () => {
 			// Given the shim, writing to a recorder
 			const written: string[] = [];
 			const logger = createBridgeLogger({ write: (line: string) => written.push(line) });

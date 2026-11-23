@@ -11,6 +11,16 @@ export type LineWriter = (line: string) => void;
 /** Access enforcement over a set of catalogues: a filter callback for each, and the one verification of them all. */
 export type UsherAccessControl = Readonly<{
 	/**
+	 * The filter callback for the records `catalogueId` lets a requester create an artifact (a saved set) from. It is
+	 * read from the same request access as `filterFor`, and serves nothing until `verify` has checked that catalogue.
+	 * A deny is thrown as a `no-artifact-create` denial when the grants do not cover a record, or as misconfigured
+	 * for a result missing from the request.
+	 *
+	 * @throws {Error} naming the catalogue, when no registration is configured for it.
+	 */
+	artifactCreateFilterFor: (catalogueId: string) => UsherFilterCallback;
+
+	/**
 	 * The filter callback for `catalogueId`, which serves nothing until `verify` has checked that
 	 * catalogue and registered it.
 	 *
