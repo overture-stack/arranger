@@ -25,6 +25,7 @@ const config: ArrangerMcpConfig = {
 		host: '127.0.0.1',
 		port: 0,
 		path: '/mcp',
+		pingPath: '/ping',
 		allowedHosts: ['127.0.0.1'],
 		allowedOrigins: [],
 		requestStateSecret: TEST_SIGNING_KEY,

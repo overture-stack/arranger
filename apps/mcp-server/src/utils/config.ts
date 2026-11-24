@@ -104,6 +104,7 @@ const envSchema = zod.object({
 	MCP_HOST: zod.string().optional().default('0.0.0.0'),
 	MCP_PORT: zod.coerce.number().int().positive().max(65535, 'MCP_PORT cannot exceed 65535').optional().default(3100),
 	MCP_PATH: zod.string().optional().default('/mcp'),
+	PING_PATH: zod.string().optional().default('/ping'),
 	MCP_ALLOWED_HOSTS: zod.string().optional().default(''),
 	MCP_ALLOWED_ORIGINS: zod.string().optional().default(''),
 	// An empty value reads as unset rather than as a too-short key: `.env.schema` lists the variable
@@ -187,6 +188,7 @@ const ArrangerMcpConfig = envSchema
 			host: data.MCP_HOST,
 			port: data.MCP_PORT,
 			path: data.MCP_PATH,
+			pingPath: data.PING_PATH,
 			allowedHosts: resolveAllowedHosts(data.MCP_ALLOWED_HOSTS, data.MCP_HOST),
 			allowedOrigins: resolveAllowedOrigins(data.MCP_ALLOWED_ORIGINS, data.MCP_HOST),
 			requestStateSecret: data.MCP_REQUEST_STATE_SECRET,
@@ -198,6 +200,21 @@ const ArrangerMcpConfig = envSchema
 	// and in both cases a warning would be read as noise. A loopback bind needs neither variable and
 	// is asked for neither.
 	.superRefine(({ mcp }, ctx) => {
+		// A path without a leading slash never equals a request's pathname, so the probe would fail at
+		// deploy with a 404 rather than here, with the setting named.
+		if (!mcp.pingPath.startsWith('/')) {
+			ctx.addIssue(`PING_PATH must start with "/", but is "${mcp.pingPath}". Set it to a path such as "/ping".`);
+		}
+
+		// Both paths would answer the same request, so one of them would never be reached. Checked on
+		// every bind, since the collision is the same whichever interface the server listens on.
+		if (mcp.pingPath === mcp.path) {
+			ctx.addIssue(
+				`PING_PATH must differ from MCP_PATH, but both are "${mcp.path}". ` +
+					'Set PING_PATH to a different path for liveness probes.',
+			);
+		}
+
 		if (LOCALHOST_HOSTNAMES.includes(mcp.host)) {
 			return;
 		}

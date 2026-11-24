@@ -442,6 +442,15 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Fix:** After fetching each catalogue's introspection, check its `status`; if `failed`, either throw (matching the function's existing "throw on any problem" contract) or downgrade to a `logger.warn` listing which catalogues are down and their `error.code`/`error.message`, rather than treating a `failed` catalogue identically to a missing one. Needs the schema fix above first (or an inline check against the raw response) since the current `catalogueIntrospectionSchema` can't represent a `failed` response at all.
 **Standalone:** mostly yes; sequence after the schema fix above so it isn't done against data Zod would otherwise strip
 
+### The MCP server exits at startup when the search server is unreachable
+
+**File:** `apps/mcp-server/src/server.ts` (`startServer`); `apps/mcp-server/src/arranger/validation.ts`; `apps/mcp-server/src/http/server.ts` (the `PING_PATH` route)
+**Severity:** medium (availability in Kubernetes deployments)
+**Kind:** design gap
+**Issue:** `startServer` awaits `validateArrangerConnection`, which fetches `/introspection` from the search server, before it starts listening, and a failure ends the process ("Arranger connection validation failed: ... fetch failed"). In Kubernetes, a search server that is down or slow to start turns into a restart loop for the MCP server, with CrashLoopBackOff's growing delays continuing after the search server recovers, and the MCP server's availability depends on deploy order. Once running, `PING_PATH` checks no dependency, so losing the search server after startup is invisible to the probes.
+**Fix:** start serving whatever the search server's state, and retry the connection in the background; answer readiness on a route distinct from the liveness `PING_PATH`, not ready until the search server is reachable; answer tool calls with a clear "the search server is unavailable" error rather than exiting. A readiness route reporting dependency state sits behind the Host and Origin guards and the bearer check, or answers a status code with no detail; Kubernetes probes dial the pod IP and carry no token, so a route probes can reach takes the status-code-only form. The choice among these is a product decision. Settle it together with the entry above, whose "throw on any problem" contract this changes.
+**Standalone:** yes; related to the entry above
+
 ### `get_catalogue_fields`'s tool description and README promise a per-field `description` that doesn't exist anywhere in the pipeline
 
 **File:** `apps/mcp-server/src/mcp/tools.ts:58`; `apps/mcp-server/README.md:15`

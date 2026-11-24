@@ -8,6 +8,7 @@ const ENV_KEYS = [
 	'MCP_HOST',
 	'MCP_PORT',
 	'MCP_PATH',
+	'PING_PATH',
 	'MCP_ALLOWED_HOSTS',
 	'MCP_ALLOWED_ORIGINS',
 	'MCP_REQUEST_STATE_SECRET',
@@ -39,6 +40,7 @@ type ArrangerMcpConfig = {
 		host: string;
 		port: number;
 		path: string;
+		pingPath: string;
 		allowedHosts: 'any' | string[];
 		allowedOrigins: string[];
 		requestStateSecret: string | undefined;
@@ -132,6 +134,7 @@ suite('createArrangerMcpConfig', () => {
 				MCP_HOST: '127.0.0.1',
 				MCP_PORT: '4200',
 				MCP_PATH: '/custom-mcp',
+				PING_PATH: '/custom-ping',
 				MCP_ALLOWED_HOSTS: 'mcp.example.com, arranger-mcp',
 				MCP_ALLOWED_ORIGINS: 'portal.example.com',
 				MCP_REQUEST_STATE_SECRET: 'a-thirty-two-byte-or-longer-signing-key',
@@ -149,6 +152,7 @@ suite('createArrangerMcpConfig', () => {
 					host: '127.0.0.1',
 					port: 4200,
 					path: '/custom-mcp',
+					pingPath: '/custom-ping',
 					allowedHosts: ['mcp.example.com', 'arranger-mcp'],
 					allowedOrigins: ['portal.example.com'],
 					requestStateSecret: 'a-thirty-two-byte-or-longer-signing-key',
@@ -174,6 +178,7 @@ suite('createArrangerMcpConfig', () => {
 					host: '127.0.0.1',
 					port: 3100,
 					path: '/mcp',
+					pingPath: '/ping',
 					allowedHosts: LOCALHOST_ALLOWED,
 					allowedOrigins: LOCALHOST_ALLOWED,
 					requestStateSecret: undefined,
@@ -326,6 +331,43 @@ suite('createArrangerMcpConfig', () => {
 			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
 			assert.strictEqual(exitCode, 1);
 			assert.match(errorLogs.join(''), /MCP_PORT cannot exceed 65535/);
+		});
+
+		test('exits when PING_PATH equals MCP_PATH', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_PATH: '/probe',
+				PING_PATH: '/probe',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /PING_PATH must differ from MCP_PATH/);
+		});
+
+		test('exits when PING_PATH does not start with a slash', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				PING_PATH: 'ping',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /PING_PATH must start with "\/"/);
+		});
+
+		test('exits when MCP_PATH is /ping and PING_PATH is left at its default', () => {
+			setEnv({
+				ARRANGER_BASE_URL: 'https://arranger.example.com',
+				ARRANGER_CATALOGUES: 'catalogue-a',
+				MCP_PATH: '/ping',
+			});
+
+			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
+			assert.strictEqual(exitCode, 1);
+			assert.match(errorLogs.join(''), /PING_PATH must differ from MCP_PATH/);
 		});
 
 		test('exits when LOG_LEVEL is not one of the allowed values', () => {
