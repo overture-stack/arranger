@@ -20,6 +20,7 @@ const baseConfig = (mcp: Partial<ArrangerMcpConfig['mcp']>): ArrangerMcpConfig =
 		host: '127.0.0.1',
 		port: 0,
 		path: '/mcp',
+		pingPath: '/ping',
 		allowedHosts: ['arranger-mcp'],
 		allowedOrigins: [],
 		requestStateSecret: undefined,
@@ -31,7 +32,7 @@ const baseConfig = (mcp: Partial<ArrangerMcpConfig['mcp']>): ArrangerMcpConfig =
 /** A server with no registered surface: these tests assert transport behaviour, not tool behaviour. */
 const emptyServerFactory = () => new McpServer({ name: 'transport-test', version: '0.0.0-test' });
 
-type Response = { status: number; body: string };
+type Response = { status: number; body: string; contentType: string | undefined };
 
 /**
  * Sends a request with full control over the `Host` header, which `fetch` silently drops. A
@@ -80,7 +81,9 @@ const request = (
 			(res) => {
 				let collected = '';
 				res.on('data', (chunk) => (collected += chunk));
-				res.on('end', () => resolve({ status: res.statusCode ?? 0, body: collected }));
+				res.on('end', () =>
+					resolve({ status: res.statusCode ?? 0, body: collected, contentType: res.headers['content-type'] }),
+				);
 			},
 		);
 		req.on('error', reject);
@@ -234,6 +237,34 @@ suite('startMcpHttpServer', () => {
 		});
 	});
 
+	suite('liveness route', () => {
+		test('answers GET on the ping path with 200 when the Host header is not allowed', async () => {
+			const { status, body, contentType } = await request(port, {
+				method: 'GET',
+				path: '/ping',
+				headers: { host: 'evil.example.com' },
+			});
+
+			assert.equal(status, 200);
+			assert.equal(contentType, 'application/json');
+			assert.deepEqual(JSON.parse(body), { message: 'Reporting for duty...' });
+		});
+
+		test('answers HEAD on the ping path with 200 and no body', async () => {
+			const { status, body } = await request(port, { method: 'HEAD', path: '/ping' });
+
+			assert.equal(status, 200);
+			assert.equal(body, '');
+		});
+
+		test('does not answer POST on the ping path with the ping body', async () => {
+			const { status, body } = await request(port, { method: 'POST', path: '/ping', body: legacyInitialize });
+
+			assert.equal(status, 404);
+			assert.doesNotMatch(body, /Reporting for duty/);
+		});
+	});
+
 	suite('protocol era', () => {
 		test('refuses a 2025-era request, naming the revision this endpoint serves', async () => {
 			const { status, body } = await request(port, { body: legacyInitialize });
@@ -249,6 +280,34 @@ suite('startMcpHttpServer', () => {
 
 			assert.equal(status, 405);
 		});
+	});
+});
+
+suite('startMcpHttpServer with a custom ping path', () => {
+	let server: McpHttpServer;
+	let port: number;
+
+	before(async () => {
+		server = await startMcpHttpServer(baseConfig({ pingPath: '/healthz' }), emptyServerFactory);
+		port = (server.httpServer.address() as AddressInfo).port;
+	});
+
+	after(async () => {
+		await server.close();
+	});
+
+	test('answers GET on the configured ping path', async () => {
+		const { status, body } = await request(port, { method: 'GET', path: '/healthz' });
+
+		assert.equal(status, 200);
+		assert.deepEqual(JSON.parse(body), { message: 'Reporting for duty...' });
+	});
+
+	test('does not answer GET on the default ping path', async () => {
+		const { status, body } = await request(port, { method: 'GET', path: '/ping' });
+
+		assert.equal(status, 404);
+		assert.doesNotMatch(body, /Reporting for duty/);
 	});
 });
 
