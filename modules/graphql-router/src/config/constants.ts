@@ -1,4 +1,4 @@
-import { featureFlagDefaults, setsProperties } from '@overture-stack/arranger-types/configs';
+import { featureFlagDefaults } from '@overture-stack/arranger-types/configs';
 import {
 	chartsProperties,
 	configRootProperties,
@@ -12,7 +12,6 @@ import {
 // 0 is no limit: a deployment that sets none exports every row, as 3.0 did.
 const DOWNLOAD_MAX_ROWS = 0;
 const DOWNLOAD_STREAM_BUFFER_SIZE = 2000;
-const ES_ARRANGER_SETS = 'arranger-sets';
 
 // fallback configs for module start and testing
 const fallbackCatalogConfigs = {
@@ -24,9 +23,6 @@ const fallbackCatalogConfigs = {
 		[downloadProperties.STREAM_BUFFER_SIZE]: DOWNLOAD_STREAM_BUFFER_SIZE,
 	},
 	[configRootProperties.EXTENDED]: [],
-	[configRootProperties.SETS]: {
-		[setsProperties.TYPE]: ES_ARRANGER_SETS,
-	},
 	// dependent libraries
 	[configRootProperties.CHARTS]: {
 		[chartsProperties.QUERY]: '', // FIXME: is this supposed to be an array?

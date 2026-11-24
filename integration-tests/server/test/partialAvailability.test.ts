@@ -15,7 +15,6 @@ const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-testing-partial';
-const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-testing-partial';
 const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
 // Distinct port from integration-tests/server/test/index.test.ts (5678 default) so both files
 // can run concurrently without an EADDRINUSE collision.
@@ -63,7 +62,6 @@ suite('integration-tests/server: partial catalogue availability', { concurrency:
 			esClient,
 			serverPort,
 			setsIndex,
-			setsType,
 		});
 	});
 

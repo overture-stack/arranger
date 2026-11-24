@@ -29,7 +29,6 @@ const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-mcp-testing';
-const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-mcp-testing';
 const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
 // Distinct from integration-tests/server, which defaults to 5678 and 5679, so the two suites can run
 // concurrently. They are sequential under `npm run test --ws` today and would collide the moment
@@ -192,7 +191,6 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 				esClient,
 				serverPort: arrangerPort,
 				setsIndex,
-				setsType,
 			});
 		} catch (err) {
 			console.error('\n\n------------------------------------');

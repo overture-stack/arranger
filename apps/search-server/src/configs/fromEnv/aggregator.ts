@@ -36,7 +36,6 @@ const configsAggregator = (
 		readyPath,
 		serverPort,
 		setsIndex,
-		setsType,
 	} = externalConfigs;
 
 	const { enableAccessControl, ...envConfigs } = configsFromLocalEnv;
@@ -67,7 +66,6 @@ const configsAggregator = (
 				getServerSideFilter,
 				sets: {
 					index: setsIndex,
-					type: setsType,
 				},
 			},
 		},

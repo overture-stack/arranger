@@ -18,7 +18,6 @@ const EXPECTED_RENAMES: [previous: string, current: string][] = [
 	['CONFIG_PATH', 'CONFIGS_PATH'],
 	['DEBUG', 'ENABLE_DEBUG'],
 	['ES_ARRANGER_SET_INDEX', 'ES_ARRANGER_SETS_INDEX'],
-	['ES_ARRANGER_SET_TYPE', 'ES_ARRANGER_SETS_TYPE'],
 	['PORT', 'SERVER_PORT'],
 	['SEARCH_CLIENT_TYPE', 'SEARCH_ENGINE'],
 ];
@@ -159,11 +158,38 @@ suite('resolveRenamedEnvs: variables no longer read', () => {
 		});
 	});
 
-	test('covers the three 3.0 variables nothing reads in 3.1', () => {
+	test('covers the 3.0 variables nothing reads in 3.1', () => {
 		assert.deepEqual(
 			UNREAD_ENVS.map(({ name }) => name),
-			['ES_LOG', 'MAX_DOWNLOAD_ROWS', 'MAX_LIVE_VERSIONS'],
+			['ES_ARRANGER_SET_TYPE', 'ES_ARRANGER_SETS_TYPE', 'ES_LOG', 'MAX_DOWNLOAD_ROWS', 'MAX_LIVE_VERSIONS'],
 		);
+	});
+
+	['ES_ARRANGER_SET_TYPE', 'ES_ARRANGER_SETS_TYPE'].forEach((name) => {
+		test(`${name}, when set, warns once as unread with code ARRANGER_ENV_UNREAD, and is not read into config`, () => {
+			// Given a deployment still setting a saved set's type, which nothing reads
+			const environment = { [name]: 'arranger-sets' };
+
+			const { env, notices } = resolveRenamedEnvs(environment);
+
+			// Then exactly one unread warning names the variable, and no rename warning or alias follows
+			assert.equal(notices.length, 1);
+			assert.equal(notices[0]?.code, 'ARRANGER_ENV_UNREAD');
+			assert.match(notices[0]?.message ?? '', new RegExp(`^${name} is no longer read and has no effect`));
+			assert.deepEqual(env, environment);
+		});
+
+		test(`${name}, when blank, warns about nothing`, () => {
+			const { notices } = resolveRenamedEnvs({ [name]: '  ' });
+
+			assert.deepEqual(notices, []);
+		});
+
+		test(`${name}, when unset, warns about nothing`, () => {
+			const { notices } = resolveRenamedEnvs({});
+
+			assert.deepEqual(notices, []);
+		});
 	});
 
 	test('MAX_DOWNLOAD_ROWS, which 3.0 never applied, supplies no row limit and points at DOWNLOAD_MAX_ROWS', () => {

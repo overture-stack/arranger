@@ -31,7 +31,6 @@ const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-testing';
-const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-testing';
 const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
 const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
 const serverUrl = `http://localhost:${serverPort}`;
@@ -219,7 +218,6 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					}),
 					serverPort,
 					setsIndex,
-					setsType,
 				});
 			} catch (err) {
 				console.error('\n\n------------------------------------');
@@ -288,7 +286,6 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					}),
 					serverPort,
 					setsIndex,
-					setsType,
 				});
 			} catch (err) {
 				console.error('\n\n------------------------------------');
@@ -349,7 +346,6 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					esClient,
 					serverPort,
 					setsIndex,
-					setsType,
 				});
 			} catch (err) {
 				console.error('\n\n------------------------------------');
@@ -396,7 +392,6 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					esClient,
 					serverPort,
 					setsIndex,
-					setsType,
 				});
 			} catch (err) {
 				console.error('\n\n------------------------------------');
@@ -442,7 +437,6 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					esClient,
 					serverPort,
 					setsIndex,
-					setsType,
 				});
 			} catch (err) {
 				console.error('\n\n------------------------------------');
@@ -500,7 +494,6 @@ suite('integration-tests/server', { concurrency: false }, () => {
 					esClient,
 					serverPort,
 					setsIndex,
-					setsType,
 				});
 			} catch (err) {
 				console.error('\n\n------------------------------------');

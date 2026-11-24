@@ -93,7 +93,6 @@ export type ExternalConfigs = Partial<
 		getRequester: GetRequesterFn<any>;
 		searchEngine: SearchEngineType;
 		setsIndex: string;
-		setsType: string;
 		[configRootProperties.NETWORK_AGGREGATION]: ExternalNetworkConfig;
 		usher: UsherSeam;
 	} & BaseServerConfigs &

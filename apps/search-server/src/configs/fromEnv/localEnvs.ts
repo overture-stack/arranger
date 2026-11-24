@@ -106,7 +106,6 @@ const configsFromEnv = {
 			},
 			[configRootProperties.SETS]: {
 				[setsProperties.LEGACY_SHARED_INDEX]: legacySharedSetsIndex,
-				[setsProperties.TYPE]: env.ES_ARRANGER_SETS_TYPE || 'arranger-sets',
 			},
 		},
 	},

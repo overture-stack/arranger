@@ -106,6 +106,11 @@ export type SetsConfigs = {
 	 * exists and needs migrating, and a catalogue without `index` of its own is served from it while it does.
 	 */
 	[setsProperties.LEGACY_SHARED_INDEX]?: string;
+	/**
+	 * Accepted but has no effect: nothing reads a saved set's type.
+	 *
+	 * @deprecated Nothing reads it, so remove it from the config.
+	 */
 	[setsProperties.TYPE]?: string;
 };
 

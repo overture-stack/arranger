@@ -74,13 +74,14 @@ export const RENAMED_ENVS: RenamedEnv[] = [
 	// Other tools read DEBUG for settings of their own, such as `express:*`, and 3.0 read anything but `true` as false.
 	{ current: 'ENABLE_DEBUG', fromPrevious: fromVersion3Flag, isArrangerValue: isTrueToVersion3, previous: 'DEBUG' },
 	{ current: 'ES_ARRANGER_SETS_INDEX', fromPrevious: fromVersion3Text, previous: 'ES_ARRANGER_SET_INDEX' },
-	{ current: 'ES_ARRANGER_SETS_TYPE', fromPrevious: fromVersion3Text, previous: 'ES_ARRANGER_SET_TYPE' },
 	{ current: 'SERVER_PORT', fromPrevious: fromVersion3Number, previous: 'PORT' },
 	{ current: 'SEARCH_ENGINE', fromPrevious: fromVersion3Text, previous: 'SEARCH_CLIENT_TYPE' },
 ];
 
 /** Every 3.0 variable no longer read, by name. */
 export const UNREAD_ENVS: UnreadEnv[] = [
+	{ instead: "remove it, since nothing reads a saved set's type", name: 'ES_ARRANGER_SET_TYPE' },
+	{ instead: "remove it, since nothing reads a saved set's type", name: 'ES_ARRANGER_SETS_TYPE' },
 	{ instead: 'remove it', name: 'ES_LOG' },
 	// 3.0 read it, then looked for its value where it was never stored, so no 3.0 export was ever limited by it.
 	{ instead: '3.0 never applied it either, so set DOWNLOAD_MAX_ROWS to limit exports', name: 'MAX_DOWNLOAD_ROWS' },
