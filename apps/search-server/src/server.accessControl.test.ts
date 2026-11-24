@@ -117,6 +117,7 @@ const SILENT_LOGGER: BridgeLogger = { error: () => undefined, info: () => undefi
 const NAMED_CATALOGUE = 'catalogue-k7';
 const OPEN_CATALOGUE = 'catalogue-k8';
 const UNREGISTERED_CATALOGUE = 'missing-catalogue-k9';
+const SETS_OFF_CATALOGUE = 'catalogue-k10';
 
 const RECORD_REGISTRATION: KeyRegistration = {
 	categories: {
@@ -293,7 +294,7 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		});
 	}
 
-	test('refuses startup for a catalogue enabling saved sets, naming it, logged as access_enforcement.startup_refused, before the bridge is registered with or started', async (context) => {
+	test('starts, registering a catalogue enabling saved sets in its base.json, with no startup refusal logged', async (context) => {
 		// Given a registered catalogue enabling saved sets in its base.json
 		const errors = context.mock.method(console, 'error', () => undefined);
 		const configs = await writeCatalogues(path.join(workspace, 'sets-one'), {
@@ -304,20 +305,26 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 		});
 		const bridge = recordingBridge();
 
-		// When the image starts, Then it refuses with the rule for one catalogue, naming it and the way out
-		await assert.rejects(
-			() => startImage(configs, bridge.core),
-			(error: unknown) =>
-				describeRefusal(error) ===
-				`ENABLE_ACCESS_ENFORCEMENT is true, and saved sets are enabled for catalogue "${NAMED_CATALOGUE}". Access enforcement and saved sets cannot run together yet. To start with access enforcement, set enableSets to false in the catalogue's configuration, or, where it sets no enableSets, set ENABLE_SETS to false.`,
-		);
-		assert.ok(errors.mock.calls.some(({ arguments: [event] }) => event === 'access_enforcement.startup_refused'));
-		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
+		// When the image starts, Then it listens, having registered the catalogue and started the Bridge once, and
+		// logs no startup refusal
+		const server = await startImage(configs, bridge.core);
+
+		try {
+			assert.equal(server.listening, true);
+			assert.deepEqual(bridge.state.registered, [{ [NAMED_CATALOGUE]: RECORD_REGISTRATION }]);
+			assert.equal(bridge.state.started, 1);
+			assert.deepEqual(
+				errors.mock.calls.filter(({ arguments: [event] }) => event === 'access_enforcement.startup_refused'),
+				[],
+			);
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
 	});
 
-	test('names every catalogue enabling saved sets, in the plural form, before the bridge is registered with or started', async (context) => {
-		// Given two registered catalogues enabling saved sets, and one that does not
-		context.mock.method(console, 'error', () => undefined);
+	test('starts with several catalogues enabling saved sets, registering all of them, with no startup refusal logged', async (context) => {
+		// Given two registered catalogues enabling saved sets, and one registered catalogue that does not
+		const errors = context.mock.method(console, 'error', () => undefined);
 		const configs = await writeCatalogues(path.join(workspace, 'sets-several'), {
 			[NAMED_CATALOGUE]: {
 				'auth.json': { auth: RECORD_REGISTRATION },
@@ -327,30 +334,32 @@ suite('search-server image: startup with access enforcement on', { concurrency: 
 				'auth.json': { auth: { kind: 'open' } },
 				'base.json': { ...baseFor(OPEN_CATALOGUE), enableSets: true },
 			},
-			[UNREGISTERED_CATALOGUE]: {
-				'base.json': { ...baseFor(UNREGISTERED_CATALOGUE), enableSets: false },
+			[SETS_OFF_CATALOGUE]: {
+				'auth.json': { auth: { kind: 'open' } },
+				'base.json': { ...baseFor(SETS_OFF_CATALOGUE), enableSets: false },
 			},
 		});
 		const bridge = recordingBridge();
 
-		// When the image starts, Then it refuses with the rule for several catalogues, naming both that enable
-		// saved sets, and not the one that does not
-		await assert.rejects(
-			() => startImage(configs, bridge.core),
-			(error: unknown) => {
-				const message = describeRefusal(error);
-				return (
-					message.startsWith(
-						'ENABLE_ACCESS_ENFORCEMENT is true, and saved sets are enabled for catalogues "',
-					) &&
-					message.includes(NAMED_CATALOGUE) &&
-					message.includes(OPEN_CATALOGUE) &&
-					message.includes("set enableSets to false in each catalogue's configuration") &&
-					!message.includes(UNREGISTERED_CATALOGUE)
-				);
-			},
-		);
-		assert.deepEqual(bridge.state, { registered: [], resolved: 0, started: 0, stopped: 0 });
+		// When the image starts, Then it listens, having registered all three catalogues in one call and started the
+		// Bridge once, and logs no startup refusal
+		const server = await startImage(configs, bridge.core);
+
+		try {
+			assert.equal(server.listening, true);
+			assert.equal(bridge.state.registered.length, 1);
+			assert.deepEqual(
+				Object.keys(bridge.state.registered[0] ?? {}).sort(),
+				[NAMED_CATALOGUE, OPEN_CATALOGUE, SETS_OFF_CATALOGUE].sort(),
+			);
+			assert.equal(bridge.state.started, 1);
+			assert.deepEqual(
+				errors.mock.calls.filter(({ arguments: [event] }) => event === 'access_enforcement.startup_refused'),
+				[],
+			);
+		} finally {
+			await new Promise((resolve) => server.close(resolve));
+		}
 	});
 
 	test('does not refuse startup for catalogues with saved sets off, absent or false, and starts', async () => {
