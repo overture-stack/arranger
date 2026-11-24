@@ -6,10 +6,13 @@ import { setsMapping } from '#schema/index.js';
 
 import {
 	attributionOf,
+	catalogueScopeFilterFor,
 	mayReadStoredFilterOf,
 	mayUseSetById,
 	narrowsSetRecords,
 	ownerFilterFor,
+	type SetsScope,
+	setsVisibleFilterFor,
 	refuseUnusableSetFields,
 	requesterOf,
 	savedAttributionFor,
@@ -188,7 +191,16 @@ suite('usableSetFieldsOf', () => {
 		const usable = usableSetFieldsOf({ mapping: setsMapping, withheld: ['userId'] });
 
 		// Then every indexed field but userId is usable, and sqon, stored and never indexed, is not
-		assert.deepEqual([...usable].sort(), ['attribution', 'createdAt', 'ids', 'path', 'setId', 'size', 'type']);
+		assert.deepEqual([...usable].sort(), [
+			'attribution',
+			'catalogue',
+			'createdAt',
+			'ids',
+			'path',
+			'setId',
+			'size',
+			'type',
+		]);
 	});
 
 	test('leaves out any field its mapping stores and never indexes, whatever readers are given', () => {
@@ -362,31 +374,149 @@ suite('mayUseSetById', () => {
 	const PRINCIPAL = { id: 'subject-r1', kind: 'principal' } as const;
 	const OTHER = { id: 'subject-r2', kind: 'principal' } as const;
 	const ownedBy = (userId: string) => ({ attribution: 'principal', setId: SET_X, userId });
+	// The catalogue's own index, with no peers, so a document recording no catalogue belongs to it.
+	const OWN_SCOPE: SetsScope = { catalogue: 'catalogue-a', documentType: 'donor', ownIndex: true };
 
 	test('usable by its principal, and not by another principal, the document answering as a missing id does', () => {
-		assert.equal(mayUseSetById({ document: ownedBy('subject-r1'), requester: PRINCIPAL, setId: SET_X }), true);
-		assert.equal(mayUseSetById({ document: ownedBy('subject-r1'), requester: OTHER, setId: SET_X }), false);
+		assert.equal(
+			mayUseSetById({ document: ownedBy('subject-r1'), requester: PRINCIPAL, setId: SET_X, scope: OWN_SCOPE }),
+			true,
+		);
+		assert.equal(
+			mayUseSetById({ document: ownedBy('subject-r1'), requester: OTHER, setId: SET_X, scope: OWN_SCOPE }),
+			false,
+		);
 	});
 
 	test('usable by an anonymous reader only where the set is anonymous', () => {
 		assert.equal(
-			mayUseSetById({ document: { attribution: 'anonymous', setId: SET_X }, requester: OTHER, setId: SET_X }),
+			mayUseSetById({
+				document: { attribution: 'anonymous', setId: SET_X },
+				requester: OTHER,
+				scope: OWN_SCOPE,
+				setId: SET_X,
+			}),
 			true,
 		);
-		assert.equal(mayUseSetById({ document: ownedBy('subject-r1'), requester: OTHER, setId: SET_X }), false);
+		assert.equal(
+			mayUseSetById({ document: ownedBy('subject-r1'), requester: OTHER, setId: SET_X, scope: OWN_SCOPE }),
+			false,
+		);
 	});
 
 	test('usable by any reader when the set is unattributed or carries no attribution', () => {
 		for (const document of [{ attribution: 'unattributed', setId: SET_X }, { setId: SET_X }]) {
-			assert.equal(mayUseSetById({ document, requester: OTHER, setId: SET_X }), true);
-			assert.equal(mayUseSetById({ document, requester: { kind: 'anonymous' }, setId: SET_X }), true);
+			assert.equal(mayUseSetById({ document, requester: OTHER, setId: SET_X, scope: OWN_SCOPE }), true);
+			assert.equal(
+				mayUseSetById({ document, requester: { kind: 'anonymous' }, setId: SET_X, scope: OWN_SCOPE }),
+				true,
+			);
 		}
 	});
 
 	test('usable only under the id it is stored as, so a document naming another id is not usable', () => {
 		assert.equal(
-			mayUseSetById({ document: { attribution: 'anonymous', setId: SET_Y }, requester: OTHER, setId: SET_X }),
+			mayUseSetById({
+				document: { attribution: 'anonymous', setId: SET_Y },
+				requester: OTHER,
+				scope: OWN_SCOPE,
+				setId: SET_X,
+			}),
 			false,
 		);
+	});
+});
+
+suite('mayUseSetById under a catalogue scope', () => {
+	const ANONYMOUS = { kind: 'anonymous' } as const;
+
+	/** A set the reader may use as far as its owner goes, so only the catalogue scope decides. */
+	const listedSet = (fields: Record<string, unknown>) => ({ attribution: 'unattributed', setId: SET_X, ...fields });
+
+	test('usable where it records the scope catalogue, and not where it records another', () => {
+		const scope = { catalogue: 'catalogue-a', documentType: 'donor', ownIndex: false, peerDocumentTypes: [] };
+
+		assert.equal(
+			mayUseSetById({
+				document: listedSet({ catalogue: 'catalogue-a' }),
+				requester: ANONYMOUS,
+				scope,
+				setId: SET_X,
+			}),
+			true,
+		);
+		assert.equal(
+			mayUseSetById({
+				document: listedSet({ catalogue: 'catalogue-b' }),
+				requester: ANONYMOUS,
+				scope,
+				setId: SET_X,
+			}),
+			false,
+		);
+	});
+
+	test('an uncatalogued set belongs to a default-index catalogue with no peers, whatever its type', () => {
+		const scope = { catalogue: 'catalogue-a', documentType: 'donor', ownIndex: true };
+
+		assert.equal(
+			mayUseSetById({ document: listedSet({ type: 'protein' }), requester: ANONYMOUS, scope, setId: SET_X }),
+			true,
+		);
+	});
+
+	test('an uncatalogued set answers as missing for a non-default index given no peer information', () => {
+		const scope = { catalogue: 'catalogue-a', documentType: 'donor', ownIndex: false };
+
+		assert.equal(
+			mayUseSetById({ document: listedSet({ type: 'donor' }), requester: ANONYMOUS, scope, setId: SET_X }),
+			false,
+		);
+	});
+
+	test('an uncatalogued set belongs to a catalogue whose documentType no peer shares, and no other', () => {
+		const scope = {
+			catalogue: 'catalogue-a',
+			documentType: 'donor',
+			ownIndex: false,
+			peerDocumentTypes: ['protein'],
+		};
+
+		assert.equal(
+			mayUseSetById({ document: listedSet({ type: 'donor' }), requester: ANONYMOUS, scope, setId: SET_X }),
+			true,
+		);
+		assert.equal(
+			mayUseSetById({ document: listedSet({ type: 'protein' }), requester: ANONYMOUS, scope, setId: SET_X }),
+			false,
+		);
+	});
+
+	test('an uncatalogued set answers as missing where a peer shares its documentType', () => {
+		const scope = {
+			catalogue: 'catalogue-a',
+			documentType: 'records',
+			ownIndex: false,
+			peerDocumentTypes: ['records', 'protein'],
+		};
+
+		assert.equal(
+			mayUseSetById({ document: listedSet({ type: 'records' }), requester: ANONYMOUS, scope, setId: SET_X }),
+			false,
+		);
+	});
+});
+
+suite('setsVisibleFilterFor', () => {
+	test('composes the owner filter with the catalogue scope, under one and clause', () => {
+		const scope = { catalogue: 'catalogue-a', documentType: 'donor', ownIndex: true };
+		const filter = setsVisibleFilterFor({
+			clientFilter: undefined,
+			requester: { kind: 'anonymous' },
+			scope,
+		});
+
+		assert.equal(filter.op, 'and');
+		assert.deepEqual(filter.content?.[1], catalogueScopeFilterFor(scope));
 	});
 });

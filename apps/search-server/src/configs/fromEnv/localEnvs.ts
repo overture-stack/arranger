@@ -14,13 +14,15 @@ import { readLegacyNetworkEnv } from '#configs/legacyNetwork.js';
 
 import { adminFlagNotice } from './adminFlag.js';
 import { parseEnableAccessControl } from './enableAccessControl.js';
-import { resolveRenamedEnvs } from './renamedEnvs.js';
+import { resolveRenamedEnvs, setsIndexSharedNotice } from './renamedEnvs.js';
 
 // A 3.0 deployment's variable names keep working as deprecated aliases, each warned about once, at startup.
 const { env, notices } = resolveRenamedEnvs(process.env);
+// A shared sets index named here is only a legacy marker: each catalogue's own `sets.index` decides its index.
+const legacySharedSetsIndex = env.ES_ARRANGER_SETS_INDEX?.trim() ? env.ES_ARRANGER_SETS_INDEX : undefined;
 // Network search's 3.0 variables too, which each catalogue applies once its files are read.
 const { legacy: legacyNetwork, notices: networkNotices } = readLegacyNetworkEnv(env);
-[...notices, ...networkNotices].forEach(({ code, message }) =>
+[...notices, ...networkNotices, ...setsIndexSharedNotice(env)].forEach(({ code, message }) =>
 	process.emitWarning(message, { code, type: 'DeprecationWarning' }),
 );
 
@@ -103,7 +105,7 @@ const configsFromEnv = {
 				[downloadProperties.STREAM_BUFFER_SIZE]: stringToNumber(env.DOWNLOAD_STREAM_BUFFER_SIZE, 2000),
 			},
 			[configRootProperties.SETS]: {
-				[setsProperties.INDEX]: env.ES_ARRANGER_SETS_INDEX || 'arranger-sets',
+				[setsProperties.LEGACY_SHARED_INDEX]: legacySharedSetsIndex,
 				[setsProperties.TYPE]: env.ES_ARRANGER_SETS_TYPE || 'arranger-sets',
 			},
 		},

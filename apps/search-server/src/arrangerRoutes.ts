@@ -3,7 +3,10 @@ import arrangerRouter, {
 	classifyCatalogueFailureReason,
 	type IndexProbe,
 	logSeparator,
+	planSetsIndexes,
 	type SearchClient,
+	type SetsIndexPeer,
+	type SetsIndexResolution,
 } from '@overture-stack/arranger-graphql-router';
 import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
 import { Router, type Router as ExpressRouter } from 'express';
@@ -22,18 +25,27 @@ export type CatalogueMappingHook = (
 	indexProbe: IndexProbe,
 ) => void;
 
+/** A catalogue's sets index as the planning of every catalogue's sets settles it, before its router is built. */
+type PlannedSets = Readonly<{ peers: SetsIndexPeer[]; resolution?: SetsIndexResolution }>;
+
 export const buildCatalogueRouter = async ({
 	catalogueConfigs,
 	catalogueId,
 	enableDebug,
 	esClient,
 	onIndexMapping,
+	setsIndexPeers,
+	setsIndexResolution,
 }: {
 	catalogueConfigs: CataloguesMap[string];
 	catalogueId: string;
 	enableDebug: boolean;
 	esClient?: SearchClient;
 	onIndexMapping?: CatalogueMappingHook;
+	/** The catalogues that may hold saved sets in this one's sets index, as the planning of sets indexes groups them. */
+	setsIndexPeers?: readonly SetsIndexPeer[];
+	/** This catalogue's sets index as the planning of sets indexes resolved it. */
+	setsIndexResolution?: SetsIndexResolution;
 }): Promise<ExpressRouter> => {
 	const { getArtifactCreateFilter, getRequester, getServerSideFilter, ...configs } = catalogueConfigs;
 	return arrangerRouter({
@@ -43,6 +55,8 @@ export const buildCatalogueRouter = async ({
 		getArtifactCreateFilter,
 		getRequester,
 		getServerSideFilter,
+		setsIndexPeers,
+		setsIndexResolution,
 		...(onIndexMapping && {
 			onIndexMapping: (mappingFromIndex: Record<string, unknown>, indexProbe: IndexProbe) =>
 				onIndexMapping(catalogueId, mappingFromIndex, indexProbe),
@@ -76,6 +90,36 @@ const buildFailedCatalogueRouter = ({
 	return router;
 };
 
+/**
+ * Plans every catalogue's sets index before any router is built, so each router is given its resolution and the
+ * catalogues that may share its index. Without a search client, nothing is planned and each router resolves its own.
+ * A catalogue whose data index did not load keeps saved sets off, so its router makes no sets check, create or
+ * mapping update, even if the data index loads on its own read.
+ */
+const planSets = async ({
+	catalogs,
+	enableDebug,
+	esClient,
+}: {
+	catalogs: CataloguesMap;
+	enableDebug: boolean;
+	esClient?: SearchClient;
+}): Promise<Record<string, PlannedSets & { loaded: boolean }>> => {
+	if (!esClient) {
+		return {};
+	}
+
+	return planSetsIndexes({
+		catalogues: Object.entries(catalogs).map(([catalogueId, catalogueConfigs]) => {
+			const { getArtifactCreateFilter, getRequester, getServerSideFilter, ...configs } = catalogueConfigs;
+
+			return { catalogueId, configs, owned: getRequester !== undefined };
+		}),
+		enableDebug,
+		esClient,
+	});
+};
+
 export default async ({
 	buildCatalogueRouterFn = buildCatalogueRouter,
 	catalogs,
@@ -101,10 +145,23 @@ export default async ({
 		throw new Error('No catalogues configured');
 	}
 
+	const plan = await planSets({ catalogs, enableDebug, esClient });
+
 	const settledResults = await Promise.allSettled(
-		catalogueEntries.map(([catalogueId, catalogueConfigs]) =>
-			buildCatalogueRouterFn({ catalogueConfigs, catalogueId, enableDebug, esClient, onIndexMapping }),
-		),
+		catalogueEntries.map(([catalogueId, catalogueConfigs]) => {
+			const planned = plan[catalogueId];
+
+			return buildCatalogueRouterFn({
+				catalogueConfigs:
+					planned && !planned.loaded ? { ...catalogueConfigs, enableSets: false } : catalogueConfigs,
+				catalogueId,
+				enableDebug,
+				esClient,
+				onIndexMapping,
+				setsIndexPeers: planned?.peers,
+				setsIndexResolution: planned?.resolution,
+			});
+		}),
 	);
 
 	const catalogueResults = settledResults.map((result, index) => {

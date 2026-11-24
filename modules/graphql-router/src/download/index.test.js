@@ -19,7 +19,7 @@ import {
 import { wrapOpenSearchClient } from '#searchClient/index.js';
 import noopFn from '#utils/noops.js';
 
-import { SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
+import { SETS_DISABLED_MESSAGE, SETS_UNAVAILABLE_MESSAGE } from '#sets/SetsDisabledError.js';
 
 import { dataStream, InvalidExportRequestError } from './index.js';
 
@@ -309,12 +309,24 @@ const pause = (milliseconds) => new Promise((resume) => setTimeout(resume, milli
  * application's own routes mounted after it: `/alive`, and `/context`, which records the request
  * context the router built so a test can hand it to `dataStream` as an integration route would.
  */
-const startArranger = async ({ downloads, getServerSideFilter, ...engineOptions } = {}) => {
+const startArranger = async ({
+	downloads,
+	enableSets,
+	getServerSideFilter,
+	setsIndexResolution,
+	...engineOptions
+} = {}) => {
 	const engine = createSearchEngine(engineOptions);
 	const router = await arrangerRouter({
-		configs: { documentType: DOCUMENT_TYPE, esIndex: INDEX_NAME, ...(downloads ? { downloads } : {}) },
+		configs: {
+			documentType: DOCUMENT_TYPE,
+			esIndex: INDEX_NAME,
+			...(downloads ? { downloads } : {}),
+			...(enableSets ? { enableSets } : {}),
+		},
 		esClient: wrapOpenSearchClient(engine.client),
 		...(getServerSideFilter ? { getServerSideFilter } : {}),
+		...(setsIndexResolution ? { setsIndexResolution } : {}),
 	});
 
 	let lastContext;
@@ -854,6 +866,36 @@ suite('download', () => {
 			assertPlainTextError(response, 400);
 			assert.equal(response.text, SETS_DISABLED_MESSAGE);
 			assert.equal(arranger.engine.requests.length, requestsBefore, 'no engine request should be made');
+		});
+
+		test('refuses an export filtered by a saved set with the unavailable text where the catalogue has no usable sets index', async () => {
+			// Given a catalogue with saved sets enabled whose sets index could not be resolved
+			await withArranger(
+				{
+					enableSets: true,
+					setsIndexResolution: {
+						index: 'arranger-sets-donor',
+						kind: 'unavailable',
+						reason: 'index_check_refused',
+					},
+				},
+				async ({ server }) => {
+					// When the export is filtered by a saved set
+					const response = await postDownload(
+						server,
+						paramsWithFile({
+							sqon: {
+								content: [{ content: { fieldName: 'donor_id', value: ['set_id:abc'] }, op: 'in' }],
+								op: 'and',
+							},
+						}),
+					);
+
+					// Then it is answered as a bad request with the unavailable message
+					assertPlainTextError(response, 400);
+					assert.equal(response.text, SETS_UNAVAILABLE_MESSAGE);
+				},
+			);
 		});
 
 		test('answers JSON lines, header object first, when the file asks for json', async () => {

@@ -13,13 +13,27 @@ const makeEsClient = (existsStatusCode: number) =>
 	}) as any;
 
 const ATTRIBUTION_KEYWORD = { type: 'keyword' };
+const CATALOGUE_KEYWORD = { type: 'keyword' };
 
-/** The mapping the engine answers for `indexName`, its `sqon` and `attribution` properties as given, null leaving attribution out. */
-const mappingAnswer = (indexName: string, sqon: unknown, attribution: unknown = ATTRIBUTION_KEYWORD) => ({
+/**
+ * The mapping the engine answers for `indexName`, its `sqon`, `attribution` and `catalogue` properties as given, null
+ * leaving a mark out.
+ */
+const mappingAnswer = (
+	indexName: string,
+	sqon: unknown,
+	attribution: unknown = ATTRIBUTION_KEYWORD,
+	catalogue: unknown = CATALOGUE_KEYWORD,
+) => ({
 	body: {
 		[indexName]: {
 			mappings: {
-				properties: { ids: { type: 'keyword' }, sqon, ...(attribution === null ? {} : { attribution }) },
+				properties: {
+					ids: { type: 'keyword' },
+					sqon,
+					...(attribution === null ? {} : { attribution }),
+					...(catalogue === null ? {} : { catalogue }),
+				},
 			},
 		},
 	},
@@ -243,13 +257,17 @@ suite('initializeSets', () => {
 		);
 	});
 
-	/** An existing sets index storing filters as data, its attribution mapped as given, recording each mapping added. */
-	const existingIndexWith = (attribution: unknown, putMapping?: (request: unknown) => Promise<unknown>) => {
+	/** An existing sets index storing filters as data, its marks mapped as given, recording each mapping added. */
+	const existingIndexWith = (
+		attribution: unknown,
+		putMapping?: (request: unknown) => Promise<unknown>,
+		catalogue: unknown = CATALOGUE_KEYWORD,
+	) => {
 		const added: unknown[] = [];
 		const esClient = {
 			indices: {
 				exists: async () => ({ statusCode: 200 }),
-				getMapping: async () => mappingAnswer('arranger-sets', FILTER_AS_DATA, attribution),
+				getMapping: async () => mappingAnswer('arranger-sets', FILTER_AS_DATA, attribution, catalogue),
 				...(putMapping && {
 					putMapping: async (request: unknown) => {
 						added.push(request);
@@ -271,6 +289,35 @@ suite('initializeSets', () => {
 
 		assert.deepEqual(added, []);
 		assert.deepEqual(lines, []);
+	});
+
+	test('adds catalogue as a keyword to an existing sets index lacking it, warning nothing', async () => {
+		const { added, esClient } = existingIndexWith(ATTRIBUTION_KEYWORD, async () => ({ acknowledged: true }), null);
+
+		const lines = await withWarningsCaptured(() =>
+			initializeSets({ enableSets: true, esClient, setsIndex: 'arranger-sets' }),
+		);
+
+		assert.deepEqual(added, [{ body: { properties: { catalogue: CATALOGUE_KEYWORD } }, index: 'arranger-sets' }]);
+		assert.deepEqual(lines, []);
+	});
+
+	test('warns of an existing sets index whose catalogue cannot be added, naming the migration section, and starts', async () => {
+		const { esClient } = existingIndexWith(
+			ATTRIBUTION_KEYWORD,
+			async () => {
+				throw new Error('security_exception: action [indices:admin/mapping/put] is unauthorized');
+			},
+			null,
+		);
+
+		const lines = await withWarningsCaptured(() =>
+			initializeSets({ enableSets: true, esClient, setsIndex: 'arranger-sets' }),
+		);
+
+		assert.equal(lines.length, 1, JSON.stringify(lines));
+		assert.match(lines[0] ?? '', /sets\.index_mapping_outdated/u);
+		assert.match(lines[0] ?? '', /#sets-index-per-catalogue/u);
 	});
 
 	test('adds attribution as a keyword to an existing sets index lacking it, warning nothing', async () => {

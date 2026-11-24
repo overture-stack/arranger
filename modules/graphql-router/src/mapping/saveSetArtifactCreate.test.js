@@ -373,7 +373,13 @@ suite('saveSet artifact-create check, by saved value, path-less record, chunk an
 				getMapping: async () => ({
 					body: {
 						'arranger-sets': {
-							mappings: { properties: { attribution: { type: 'keyword' }, ids: { type: 'keyword' } } },
+							mappings: {
+								properties: {
+									attribution: { type: 'keyword' },
+									catalogue: { type: 'keyword' },
+									ids: { type: 'keyword' },
+								},
+							},
 						},
 					},
 				}),
@@ -392,6 +398,7 @@ suite('saveSet artifact-create check, by saved value, path-less record, chunk an
 				getRequester: () => ({ id: 'subject-r1', kind: 'principal' }),
 				getServerSideFilter: getDefaultServerSideFilter,
 				setsIndex: 'arranger-sets',
+				setsScope: { catalogue: 'catalogue-a', ownIndex: true },
 				types: SET_TYPES,
 			})(null, { path: 'submitter_donor_id', type: 'donor', userId: 'user-1' }, { esClient });
 

@@ -109,6 +109,8 @@ export const downloadProperties = {
 
 export const setsProperties = {
 	INDEX: 'index',
+	/** A shared sets index from before each catalogue had its own, read only to be migrated; see `SetsConfigs`. */
+	LEGACY_SHARED_INDEX: 'legacySharedIndex',
 	TYPE,
 } as const;
 

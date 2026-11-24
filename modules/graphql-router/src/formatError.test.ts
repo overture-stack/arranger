@@ -26,7 +26,7 @@ import {
 	WHOLE_QUERY_PAST_THE_LIMIT,
 } from '#searchClient/clauseLimit.fixture.js';
 import type { SearchClient } from '#searchClient/index.js';
-import { SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
+import { SETS_DISABLED_MESSAGE, SETS_UNAVAILABLE_MESSAGE } from '#sets/SetsDisabledError.js';
 
 const schema = new GraphQLSchema({
 	query: new GraphQLObjectType({
@@ -51,6 +51,9 @@ const stubSearchClient = ({ searchFailure }: { searchFailure?: Error } = {}): Se
 		cat: { aliases: async () => ({ body: [] }) },
 		index: async () => ({ body: { result: 'created' } }),
 		indices: {
+			// No sets index exists yet, so each catalogue's own default index is the one it resolves to.
+			create: async () => ({ acknowledged: true }),
+			exists: async () => ({ statusCode: 404 }),
 			getMapping: async ({ index }: { index: string }) => ({
 				body: {
 					[index]: {
@@ -271,7 +274,7 @@ const accessControlSchema = new GraphQLSchema({
 	}),
 });
 
-const buildDebugApp = async () => {
+const buildDebugApp = async ({ setsUnavailable = false }: { setsUnavailable?: boolean } = {}) => {
 	const endpoint = await withApolloDebugOn(() =>
 		withConsoleCaptured(() =>
 			createEndpoint({
@@ -279,6 +282,7 @@ const buildDebugApp = async () => {
 				enableDebug: true,
 				esClient: stubSearchClient(),
 				schema: accessControlSchema,
+				setsUnavailable,
 			}),
 		),
 	);
@@ -1051,6 +1055,20 @@ suite("a request's own mistake keeps its message", () => {
 		assert.deepEqual(
 			graphQLErrorsOf(response).errors.map(({ extensions, message, path }) => [extensions?.code, message, path]),
 			[['SETS_DISABLED', SETS_DISABLED_MESSAGE, ['savedSetsDisabled']]],
+		);
+	});
+
+	test('answers a saved-set filter on a catalogue whose sets are unavailable with SETS_DISABLED and the unavailable message', async () => {
+		// Given an endpoint of a catalogue whose saved sets are enabled but have no usable index
+		const app = await buildDebugApp({ setsUnavailable: true });
+
+		// When a field using a saved set is queried
+		const { result: response } = await postQuery(app, '{ savedSetsDisabled }');
+
+		// Then the client is told the unavailable message, under the same code as the disabled one
+		assert.deepEqual(
+			graphQLErrorsOf(response).errors.map(({ extensions, message, path }) => [extensions?.code, message, path]),
+			[['SETS_DISABLED', SETS_UNAVAILABLE_MESSAGE, ['savedSetsDisabled']]],
 		);
 	});
 

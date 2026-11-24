@@ -318,6 +318,7 @@ export default ({ getRequester, getServerSideFilter, Parallel, requiredSourceFie
 			esClient,
 			getRequester,
 			setsIndex: type.setsIndex,
+			setsScope: type.setsScope,
 		});
 		const compiledFilter = compileFilter({
 			clientSideFilter: filters || { op: 'and', content: [] },

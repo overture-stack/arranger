@@ -2,7 +2,7 @@ import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
 import { ALL_OP, IN_OP, NOT_IN_OP, REGEX, SET_ID, SOME_NOT_IN_OP } from '#middleware/constants.js';
 import type { SearchClient } from '#searchClient/types.js';
 
-import { mayUseSetById, requesterOf, type GetRequesterFn } from './setsAccess.js';
+import { mayUseSetById, requesterOf, type GetRequesterFn, type SetsScope } from './setsAccess.js';
 
 /** A stored set document, as the sets index holds it. */
 type SetDocument = Readonly<Record<string, unknown>>;
@@ -108,17 +108,20 @@ export const setFilterResolverFor = <Context>({
 	esClient,
 	getRequester,
 	setsIndex,
+	setsScope,
 }: {
 	context: Context;
 	enableSets: boolean | undefined;
 	esClient: SearchClient;
 	getRequester: GetRequesterFn<Context> | undefined;
 	setsIndex: string | undefined;
+	/** The catalogue the saved sets are scoped to, which a request under `getRequester` must be given. */
+	setsScope?: SetsScope;
 }): SetFilterResolver => {
 	// Held by this resolver, so one request's filters share each set's fetch.
 	const fetched = new Map<string, Promise<readonly string[] | null>>();
 
-	const idsFor = (setId: string): Promise<readonly string[] | null> => {
+	const idsFor = (setId: string, scope: SetsScope): Promise<readonly string[] | null> => {
 		const known = fetched.get(setId);
 
 		if (known) {
@@ -129,7 +132,7 @@ export const setFilterResolverFor = <Context>({
 			const requester = requesterOf({ context, getRequester: getRequester as GetRequesterFn<Context> });
 			const document = await fetchSet({ esClient, setId, setsIndex: setsIndex as string });
 
-			return document && mayUseSetById({ document, requester, setId }) && Array.isArray(document.ids)
+			return document && mayUseSetById({ document, requester, scope, setId }) && Array.isArray(document.ids)
 				? [...(document.ids as string[])]
 				: null;
 		})();
@@ -144,9 +147,18 @@ export const setFilterResolverFor = <Context>({
 			return undefined;
 		}
 
+		// Failing closed: without a scope, a set could be resolved by an id the catalogue does not own.
+		if (!setsScope) {
+			throw new Error(
+				'Saved sets are enabled under getRequester, but no catalogue scope was given to scope them by.',
+			);
+		}
+
 		const setIds = [...new Set(setIdsNamedBy(normalizeFilters(filter)))];
 
-		return new Map(await Promise.all(setIds.map(async (setId) => [setId, await idsFor(setId)] as const)));
+		return new Map(
+			await Promise.all(setIds.map(async (setId) => [setId, await idsFor(setId, setsScope)] as const)),
+		);
 	};
 };
 

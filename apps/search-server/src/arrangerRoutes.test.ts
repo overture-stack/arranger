@@ -275,3 +275,110 @@ suite('arrangerRoutes', () => {
 		assert.deepEqual(response.body.query, { foo: 'bar' });
 	});
 });
+
+suite('arrangerRoutes sets planning', () => {
+	/**
+	 * An engine holding the given data indices, answering each catalogue's mapping, and recording every call, so a test
+	 * can tell which sets index, if any, was checked, created or read.
+	 */
+	const planningEngine = ({ dataIndices }: { dataIndices: string[] }) => {
+		const calls: string[] = [];
+		const client = {
+			cat: { aliases: async () => ({ body: [] }) },
+			get: async ({ index }: { index: string }) => {
+				calls.push(`get ${index}`);
+				throw Object.assign(new Error('not found'), { meta: { statusCode: 404 } });
+			},
+			index: async ({ index }: { index: string }) => {
+				calls.push(`index ${index}`);
+				return { body: { result: 'created' } };
+			},
+			indices: {
+				create: async ({ index }: { index: string }) => {
+					calls.push(`create ${index}`);
+					return { acknowledged: true };
+				},
+				exists: async ({ index }: { index: string }) => {
+					calls.push(`exists ${index}`);
+					return { statusCode: 404 };
+				},
+				getMapping: async ({ index }: { index: string }) => {
+					if (!dataIndices.includes(index)) {
+						throw Object.assign(new Error('index_not_found_exception'), { meta: { statusCode: 404 } });
+					}
+
+					return { body: { [index]: { mappings: { properties: { study_id: { type: 'keyword' } } } } } };
+				},
+			},
+			search: async ({ index }: { index: string }) => {
+				calls.push(`search ${index}`);
+				return { body: { hits: { hits: [], total: { value: 0 } } } };
+			},
+		};
+
+		return { calls, client: client as unknown as SearchClient };
+	};
+
+	test('makes no sets engine call for a catalogue whose data index did not load, and builds it with saved sets off', async (context) => {
+		// Given a catalogue whose data index cannot be read, beside one that loads, both with saved sets enabled
+		context.mock.method(console, 'log', () => undefined);
+		context.mock.method(console, 'error', () => undefined);
+		context.mock.method(console, 'warn', () => undefined);
+		const { calls, client } = planningEngine({ dataIndices: ['loads_index'] });
+		const builtWith: Record<string, unknown> = {};
+
+		// When the routes are built with the real router builder
+		await arrangerRoutes({
+			buildCatalogueRouterFn: async (args) => {
+				builtWith[args.catalogueId] = args.catalogueConfigs.enableSets;
+				return fakeAvailableRouter();
+			},
+			catalogs: {
+				expression: { documentType: 'records', enableSets: true, esIndex: 'missing_index' },
+				loads: { documentType: 'records', enableSets: true, esIndex: 'loads_index' },
+			},
+			enableDebug: false,
+			esClient: client,
+		});
+
+		// Then the failed catalogue's router is built with saved sets off, and no sets index of it was checked
+		assert.deepEqual(builtWith, { expression: false, loads: true });
+		assert.equal(
+			calls.some((call) => call.includes('arranger-sets-expression')),
+			false,
+			calls.join('\n'),
+		);
+	});
+
+	test('hands each catalogue its resolved sets index and the catalogues that may share it', async (context) => {
+		// Given two catalogues whose data indices load, saved sets enabled, one naming its own sets index
+		context.mock.method(console, 'log', () => undefined);
+		context.mock.method(console, 'warn', () => undefined);
+		const { client } = planningEngine({ dataIndices: ['a_index', 'b_index'] });
+		const received: Record<string, { peers: unknown; resolution: unknown }> = {};
+
+		// When the routes are built
+		await arrangerRoutes({
+			buildCatalogueRouterFn: async (args) => {
+				received[args.catalogueId] = { peers: args.setsIndexPeers, resolution: args.setsIndexResolution };
+				return fakeAvailableRouter();
+			},
+			catalogs: {
+				alpha: { documentType: 'records', enableSets: true, esIndex: 'a_index' },
+				beta: { documentType: 'records', enableSets: true, esIndex: 'b_index', sets: { index: 'shared-sets' } },
+			},
+			enableDebug: false,
+			esClient: client,
+		});
+
+		// Then each one's resolution is its own, and each names the other as a possible sharer where they share one
+		assert.deepEqual(received.alpha?.resolution, {
+			index: 'arranger-sets-alpha',
+			kind: 'index',
+			origin: 'default',
+		});
+		assert.deepEqual(received.beta?.resolution, { index: 'shared-sets', kind: 'index', origin: 'configured' });
+		assert.deepEqual(received.alpha?.peers, []);
+		assert.deepEqual(received.beta?.peers, []);
+	});
+});

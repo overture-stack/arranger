@@ -2,14 +2,25 @@
 export const SETS_DISABLED_MESSAGE = 'Saved sets are not enabled on this server.';
 
 /**
- * A request used saved sets on a server where they are not enabled. Its message is fixed and never names the
- * request's values, so a route can show it to the client who sent the request.
+ * The fixed message a client is given when a request uses saved sets on a catalogue whose sets index could not be
+ * resolved, so they are unavailable though enabled.
+ */
+export const SETS_UNAVAILABLE_MESSAGE = 'Saved sets are unavailable on this server.';
+
+/**
+ * A request used saved sets on a server where they are not enabled, or on a catalogue whose saved sets are
+ * unavailable. Its message is fixed and never names the request's values, so a route can show it to the client who
+ * sent the request.
  */
 export class SetsDisabledError extends Error {
 	name = 'SetsDisabledError';
 
-	constructor() {
-		super(SETS_DISABLED_MESSAGE);
+	/**
+	 * @param options.unavailable whether the catalogue has saved sets enabled but no usable sets index, which takes
+	 *   the unavailable message rather than the disabled one.
+	 */
+	constructor({ unavailable = false }: { unavailable?: boolean } = {}) {
+		super(unavailable ? SETS_UNAVAILABLE_MESSAGE : SETS_DISABLED_MESSAGE);
 	}
 }
 

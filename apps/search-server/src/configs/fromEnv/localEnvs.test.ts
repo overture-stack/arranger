@@ -90,7 +90,10 @@ type ConfigsRead = {
 	configs: {
 		catalogueConfigsPath?: string;
 		catalogs: {
-			fromEnv: { downloads: { allowCustomMaxRows?: boolean; maxRows?: number }; sets: { index?: string } };
+			fromEnv: {
+				downloads: { allowCustomMaxRows?: boolean; maxRows?: number };
+				sets: { index?: string; legacySharedIndex?: string };
+			};
 		};
 		enableAdmin?: boolean;
 		enableDebug?: boolean;
@@ -200,17 +203,20 @@ suite('search-server image: environment variables renamed in 3.1', { concurrency
 			PORT: '6060',
 		});
 
-		// Then each value reaches the configuration under its new name
+		// Then each value reaches the configuration under its new name, the shared index as a legacy marker only
 		assert.equal(read.configs.catalogueConfigsPath, '/srv/catalogues', read.errorOutput);
 		assert.equal(read.configs.enableDebug, true);
-		assert.equal(read.configs.catalogs.fromEnv.sets.index, 'saved-sets');
+		assert.equal(read.configs.catalogs.fromEnv.sets.legacySharedIndex, 'saved-sets');
+		assert.equal(read.configs.catalogs.fromEnv.sets.index, undefined);
 		assert.equal(read.configs.serverPort, 6060);
 
-		// And Node printed one deprecation warning per variable, under the renamed-variable code
+		// And Node printed one deprecation warning per variable, under the renamed-variable code, and one for the
+		// shared sets index, which is not a rename
 		const warnings = deprecationWarnings(read);
-		assert.equal(warnings.length, 4, read.errorOutput);
-		assert.ok(
-			warnings.every((warning) => warning.includes('[ARRANGER_ENV_RENAMED]')),
+		assert.equal(warnings.length, 5, read.errorOutput);
+		assert.equal(
+			warnings.filter((warning) => warning.includes('[ARRANGER_ENV_RENAMED]')).length,
+			4,
 			read.errorOutput,
 		);
 	});
@@ -335,4 +341,45 @@ suite('search-server image: an ENABLE_ADMIN value 3.0 read as off', () => {
 		assert.equal(read.configs.enableAdmin, true, read.errorOutput);
 		assert.equal(read.errorOutput.includes(ADMIN_NOTICE_CODE), false, read.errorOutput);
 	});
+});
+
+suite('search-server image: ES_ARRANGER_SETS_INDEX as a shared sets index', { concurrency: 3 }, () => {
+	test('warns once, naming the variable and the per-catalogue sets index, when it is set', async () => {
+		const read = await readConfigs({ ES_ARRANGER_SETS_INDEX: 'shared-sets' });
+
+		assert.equal(read.configs.catalogs.fromEnv.sets.legacySharedIndex, 'shared-sets', read.errorOutput);
+		const warnings = deprecationWarnings(read).filter((warning) => warning.includes('ES_ARRANGER_SETS_INDEX'));
+		assert.equal(warnings.length, 1, read.errorOutput);
+		assert.match(warnings[0] ?? '', /sets-index-per-catalogue/u);
+		assert.match(warnings[0] ?? '', /sets\.index/u);
+	});
+
+	test('warns once for the rename and once for the shared index, when the 3.0 name is set', async () => {
+		const read = await readConfigs({ ES_ARRANGER_SET_INDEX: 'shared-sets' });
+
+		assert.equal(read.configs.catalogs.fromEnv.sets.legacySharedIndex, 'shared-sets', read.errorOutput);
+		const warnings = deprecationWarnings(read);
+		assert.equal(warnings.filter((warning) => warning.includes('ES_ARRANGER_SET_INDEX is deprecated')).length, 1);
+		assert.equal(
+			warnings.filter((warning) => warning.includes('sets-index-per-catalogue')).length,
+			1,
+			read.errorOutput,
+		);
+	});
+
+	for (const [description, environment] of [
+		['unset', {}],
+		['blank', { ES_ARRANGER_SETS_INDEX: '   ' }],
+	] as const) {
+		test(`does not warn, and names no shared index, when ES_ARRANGER_SETS_INDEX is ${description}`, async () => {
+			const read = await readConfigs(environment);
+
+			assert.equal(read.configs.catalogs.fromEnv.sets.legacySharedIndex, undefined, read.errorOutput);
+			assert.deepEqual(
+				deprecationWarnings(read).filter((warning) => warning.includes('ES_ARRANGER_SETS_INDEX')),
+				[],
+				read.errorOutput,
+			);
+		});
+	}
 });

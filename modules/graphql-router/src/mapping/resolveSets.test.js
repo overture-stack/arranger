@@ -188,7 +188,11 @@ suite('saveSet', () => {
 						body: {
 							'arranger-sets': {
 								mappings: {
-									properties: { ids: { type: 'keyword' }, ...(attribution && { attribution }) },
+									properties: {
+										catalogue: { type: 'keyword' },
+										ids: { type: 'keyword' },
+										...(attribution && { attribution }),
+									},
 								},
 							},
 						},
@@ -208,6 +212,7 @@ suite('saveSet', () => {
 				getRequester,
 				getServerSideFilter: getDefaultServerSideFilter,
 				setsIndex: 'arranger-sets',
+				setsScope: { catalogue: 'catalogue-a', ownIndex: true },
 				types: buildTypes(undefined),
 			})(
 				null,
@@ -558,5 +563,137 @@ suite('saveSet', () => {
 			);
 			assert.deepEqual(searchCalls, []);
 		});
+	});
+});
+
+suite('saveSet records the catalogue a set was saved from', () => {
+	/** A set the engine holds under `SET_ID`, saved from `catalogue`, with `ids`. */
+	const storedSet = (fields) => ({
+		_source: { ids: ['rec-1'], path: 'submitter_donor_id', type: 'donor', ...fields },
+	});
+
+	/**
+	 * Saves a set through the router's save path over an engine whose sets index maps `catalogue` as given, returning
+	 * what was indexed, each search run, and what the mutation answered or threw.
+	 */
+	const saveWith = async ({
+		catalogueMapping,
+		getRequester,
+		setsScope,
+		sqon = { content: [], op: 'and' },
+		stored = {},
+	}) => {
+		const indexCalls = [];
+		const searchCalls = [];
+		const esClient = {
+			get: async ({ id }) => {
+				if (!(id in stored)) {
+					throw Object.assign(new Error('not found'), { meta: { statusCode: 404 } });
+				}
+
+				return { body: { found: true, ...stored[id] } };
+			},
+			indices: {
+				getMapping: async () => ({
+					body: {
+						'arranger-sets': {
+							mappings: {
+								properties: {
+									attribution: { type: 'keyword' },
+									ids: { type: 'keyword' },
+									...(catalogueMapping && { catalogue: catalogueMapping }),
+								},
+							},
+						},
+					},
+				}),
+			},
+			index: async (params) => {
+				indexCalls.push(params);
+			},
+			search: async (params) => {
+				searchCalls.push(params);
+				return { body: { hits: { hits: [], total: { value: 0 } } } };
+			},
+		};
+
+		const answer = await saveSet({
+			enableSets: true,
+			getRequester,
+			getServerSideFilter: getDefaultServerSideFilter,
+			setsIndex: 'arranger-sets',
+			setsScope,
+			types: buildTypes(undefined),
+		})(null, { type: 'donor', userId: 'user-1', sqon, path: 'submitter_donor_id' }, { esClient }).then(
+			(saved) => ({ saved }),
+			(error) => ({ error }),
+		);
+
+		return { ...answer, indexCalls, searchCalls };
+	};
+
+	const PRINCIPAL = () => ({ id: 'subject-r1', kind: 'principal' });
+
+	test('records the scope catalogue on the saved set where the index maps catalogue as a keyword, without getRequester', async () => {
+		const { indexCalls } = await saveWith({
+			catalogueMapping: { type: 'keyword' },
+			setsScope: { catalogue: 'correlation', ownIndex: true },
+		});
+
+		assert.equal(indexCalls[0].body.catalogue, 'correlation');
+	});
+
+	test('records the scope catalogue, and the principal, under getRequester where the index maps catalogue as a keyword', async () => {
+		const { indexCalls } = await saveWith({
+			catalogueMapping: { type: 'keyword' },
+			getRequester: PRINCIPAL,
+			setsScope: { catalogue: 'correlation', ownIndex: true },
+		});
+
+		assert.equal(indexCalls[0].body.catalogue, 'correlation');
+		assert.equal(indexCalls[0].body.attribution, 'principal');
+	});
+
+	test('saves without a catalogue, with no getRequester, where the index does not map catalogue', async () => {
+		const { indexCalls, saved } = await saveWith({
+			catalogueMapping: undefined,
+			setsScope: { catalogue: 'correlation', ownIndex: true },
+		});
+
+		assert.equal(saved !== undefined, true);
+		assert.equal(Object.hasOwn(indexCalls[0].body, 'catalogue'), false);
+	});
+
+	test('refuses a save under getRequester where the index cannot record catalogue, naming it and the migration section, and stores nothing', async () => {
+		const { error, indexCalls } = await saveWith({
+			catalogueMapping: undefined,
+			getRequester: PRINCIPAL,
+			setsScope: { catalogue: 'correlation', ownIndex: true },
+		});
+
+		assert.match(error?.message ?? '', /catalogue/u);
+		assert.match(error?.message ?? '', /#sets-index-per-catalogue/u);
+		assert.equal(error?.name, 'AccessControlError');
+		assert.deepEqual(indexCalls, []);
+	});
+
+	test('answers a set_id clause naming a set saved from another catalogue as a missing set, so the save selects nothing of it', async () => {
+		// Given a set held under another catalogue, which the save's own filter names
+		const { searchCalls, saved } = await saveWith({
+			catalogueMapping: { type: 'keyword' },
+			getRequester: PRINCIPAL,
+			setsScope: { catalogue: 'correlation', documentType: 'donor', ownIndex: false, peerDocumentTypes: [] },
+			sqon: { content: { fieldName: 'submitter_donor_id', value: ['set_id:OTHER'] }, op: 'in' },
+			stored: {
+				OTHER: storedSet({ attribution: 'unattributed', catalogue: 'mutation', setId: 'OTHER', type: 'donor' }),
+			},
+		});
+
+		// Then the search compiles that set to no values at all
+		assert.equal(saved !== undefined, true);
+		assert.match(
+			JSON.stringify(searchCalls[0]?.body?.query ?? {}),
+			/"terms":\{"submitter_donor_id":\[\],"boost":0\}/u,
+		);
 	});
 });

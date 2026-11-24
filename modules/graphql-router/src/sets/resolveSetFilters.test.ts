@@ -5,6 +5,7 @@ import { buildQuery } from '#middleware/index.js';
 import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 
 import { setFilterResolverFor } from './resolveSetFilters.js';
+import type { SetsScope } from './setsAccess.js';
 
 const SET_X = 'a3a1c0de-0000-4000-8000-000000000001';
 const SET_Y = 'a3a1c0de-0000-4000-8000-000000000002';
@@ -35,10 +36,17 @@ const ownedBy = (userId: string, ids: string[] = RECORD_IDS) => ({
 const PRINCIPAL_R1 = { kind: 'principal', id: 'subject-r1' } as const;
 const PRINCIPAL_R2 = { kind: 'principal', id: 'subject-r2' } as const;
 const getRequesterAs = (requester: unknown) => () => requester as never;
+// The catalogue's own index with no peers, so the fixtures' sets, which record no catalogue, belong to it.
+const OWN_SCOPE: SetsScope = { catalogue: 'catalogue-a', documentType: 'donor', ownIndex: true };
 
 const resolverWith = (
 	documents: Record<string, Record<string, unknown>>,
-	{ requester = PRINCIPAL_R1 as unknown, enableSets = true, setsIndex = 'sets-index' as string | undefined } = {},
+	{
+		requester = PRINCIPAL_R1 as unknown,
+		enableSets = true,
+		setsIndex = 'sets-index' as string | undefined,
+		setsScope = OWN_SCOPE as SetsScope | undefined,
+	} = {},
 ) => {
 	const { esClient, get } = clientHolding(documents);
 	const resolve = setFilterResolverFor({
@@ -47,6 +55,7 @@ const resolverWith = (
 		esClient,
 		getRequester: getRequesterAs(requester),
 		setsIndex,
+		setsScope,
 	});
 
 	return { get, resolve };
@@ -131,6 +140,7 @@ suite('setFilterResolverFor under getRequester', () => {
 			esClient: esClient as never,
 			getRequester: getRequesterAs(PRINCIPAL_R1),
 			setsIndex: 'sets-index',
+			setsScope: OWN_SCOPE,
 		});
 
 		await assert.rejects(resolve(setIn(SET_X)), /unavailable/);
@@ -161,5 +171,76 @@ suite('setFilterResolverFor without getRequester, or with saved sets disabled', 
 			() => buildQuery({ caller: 'test', enableSets: false, filters: setIn(SET_X), setsIndex: 'sets-index' }),
 			SetsDisabledError,
 		);
+	});
+});
+
+suite('setFilterResolverFor scoped to a catalogue under getRequester', () => {
+	const SCOPE = {
+		catalogue: 'correlation',
+		documentType: 'records',
+		ownIndex: false,
+		peerDocumentTypes: [],
+	} satisfies SetsScope;
+
+	test('answers a set recorded in another catalogue as a missing id, so the filter names no record', async () => {
+		// Given a set the reader owns, saved from another catalogue
+		const { resolve } = resolverWith(
+			{ [SET_X]: { ...ownedBy('subject-r1'), catalogue: 'mutation', type: 'records' } },
+			{ setsScope: SCOPE },
+		);
+
+		// When a filter names it, Then it resolves to null, exactly as a missing id does
+		assert.deepEqual(await resolve(setIn(SET_X)), new Map([[SET_X, null]]));
+	});
+
+	test('resolves a set recorded in this catalogue to its ids', async () => {
+		const { resolve } = resolverWith(
+			{ [SET_X]: { ...ownedBy('subject-r1'), catalogue: 'correlation', type: 'records' } },
+			{ setsScope: SCOPE },
+		);
+
+		assert.deepEqual(await resolve(setIn(SET_X)), new Map([[SET_X, RECORD_IDS]]));
+	});
+
+	test('answers an uncatalogued set as a missing id where a peer shares its documentType', async () => {
+		// Given a set recording no catalogue, of a documentType a peer also holds
+		const { resolve } = resolverWith(
+			{ [SET_X]: { ...ownedBy('subject-r1'), type: 'records' } },
+			{ setsScope: { ...SCOPE, ownIndex: false, peerDocumentTypes: ['records'] } },
+		);
+
+		assert.deepEqual(await resolve(setIn(SET_X)), new Map([[SET_X, null]]));
+	});
+
+	test('answers an uncatalogued set as a missing id on a non-default index given no peer information', async () => {
+		const { resolve } = resolverWith(
+			{ [SET_X]: { ...ownedBy('subject-r1'), type: 'records' } },
+			{ setsScope: { catalogue: 'correlation', documentType: 'records', ownIndex: false } },
+		);
+
+		assert.deepEqual(await resolve(setIn(SET_X)), new Map([[SET_X, null]]));
+	});
+
+	test('resolves an uncatalogued set of the catalogue own default index', async () => {
+		const { resolve } = resolverWith(
+			{ [SET_X]: { ...ownedBy('subject-r1'), type: 'records' } },
+			{ setsScope: { catalogue: 'correlation', documentType: 'records', ownIndex: true } },
+		);
+
+		assert.deepEqual(await resolve(setIn(SET_X)), new Map([[SET_X, RECORD_IDS]]));
+	});
+
+	test('refuses to resolve under getRequester with no scope, rather than look a set up unscoped', async () => {
+		const { esClient } = clientHolding({ [SET_X]: ownedBy('subject-r1') });
+		const resolve = setFilterResolverFor({
+			context: {},
+			enableSets: true,
+			esClient,
+			getRequester: getRequesterAs(PRINCIPAL_R1),
+			setsIndex: 'sets-index',
+			setsScope: undefined,
+		});
+
+		await assert.rejects(resolve(setIn(SET_X)), /no catalogue scope/);
 	});
 });

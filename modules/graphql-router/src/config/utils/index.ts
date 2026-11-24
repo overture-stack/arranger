@@ -1,10 +1,24 @@
 import { setsMapping } from '#schema/index.js';
-import { attributionMappingOf } from '#sets/setsIndexMapping.js';
+import { fieldMappingOf } from '#sets/setsIndexMapping.js';
 import { logSeparator } from '#utils/label.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 import { type SearchClient } from '#searchClient/types.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/** The marks a saved set records, which an existing sets index must map as keywords to record them. */
+const MARKED_FIELDS = ['attribution', 'catalogue'] as const;
+type MarkedField = (typeof MARKED_FIELDS)[number];
+
+const MARK_DESCRIPTIONS: Record<MarkedField, string> = {
+	attribution: 'how each set was saved',
+	catalogue: 'which catalogue each set was saved from',
+};
+
+const MARK_MIGRATION_ANCHORS: Record<MarkedField, string> = {
+	attribution: 'sets-index-attribution',
+	catalogue: 'sets-index-per-catalogue',
+};
 
 /** Whether an index's mapping stores each saved set's filter as data, as the sets index this version creates does. */
 const storesFilterAsData = (indexMapping: unknown): boolean => {
@@ -19,8 +33,8 @@ const storesFilterAsData = (indexMapping: unknown): boolean => {
 /**
  * Checks an existing sets index, which keeps the mapping it was created with, against the one this version creates.
  * Where it does not store each saved set's filter as data, it is named in a warning pointing at the migration
- * section. Where it lacks `attribution`, the field is added as a keyword, which needs no reindex; where that cannot
- * be done, or `attribution` is mapped as anything but a keyword, it is named in the same warning. Each save reads
+ * section. Where it lacks `attribution` or `catalogue`, the field is added as a keyword, which needs no reindex; where
+ * that cannot be done, or the field is mapped as anything but a keyword, it is named in a warning. Each save reads
  * the mapping again, so no mark is written there until it is fixed. A mapping the engine will not show is reported
  * as unchecked. None of these stops startup.
  */
@@ -63,18 +77,41 @@ const checkExistingSetsIndex = async ({
 		);
 	}
 
-	const attributionMappings = indexMappings.map(([, indexMapping]) => attributionMappingOf(indexMapping));
+	for (const field of MARKED_FIELDS) {
+		await ensureKeywordField({ esClient, field, indexMappings, logFields: catalogue, setsIndexName });
+	}
+};
 
-	if (attributionMappings.every((mapping) => mapping === 'keyword')) {
+/**
+ * Adds a mark field to an existing sets index as a keyword when the index lacks it, which needs no reindex. Where the
+ * field is mapped as anything else, or cannot be added, it is named in a warning pointing at the migration section.
+ */
+const ensureKeywordField = async ({
+	esClient,
+	field,
+	indexMappings,
+	logFields,
+	setsIndexName,
+}: {
+	esClient: SearchClient;
+	field: MarkedField;
+	/** The catalogue this index is checked for, in log output, when the router has a label. */
+	logFields: { catalogue?: string };
+	indexMappings: [string, unknown][];
+	setsIndexName: string;
+}): Promise<void> => {
+	const fieldMappings = indexMappings.map(([, indexMapping]) => fieldMappingOf(indexMapping, field));
+
+	if (fieldMappings.every((mapping) => mapping === 'keyword')) {
 		return;
 	}
 
-	const attributionAdded =
-		attributionMappings.every((mapping) => mapping !== 'other') &&
+	const fieldAdded =
+		fieldMappings.every((mapping) => mapping !== 'other') &&
 		(await Promise.resolve()
 			.then(() =>
 				esClient.indices.putMapping({
-					body: { properties: { attribution: setsMapping.attribution } },
+					body: { properties: { [field]: setsMapping[field] } },
 					index: setsIndexName,
 				}),
 			)
@@ -83,11 +120,13 @@ const checkExistingSetsIndex = async ({
 				() => false,
 			));
 
-	if (!attributionAdded) {
+	if (!fieldAdded) {
+		const anchor = MARK_MIGRATION_ANCHORS[field];
+
 		console.warn(
 			'sets.index_mapping_outdated',
-			`The sets index "${setsIndexName}" cannot record how each set was saved, since its mapping lacks \`attribution\` as a keyword and it could not be added, so no set records it, and while saved sets have owners, none is saved. Add it as ${MIGRATION_GUIDE_URL}#sets-index-attribution describes.`,
-			catalogue,
+			`The sets index "${setsIndexName}" cannot record ${MARK_DESCRIPTIONS[field]}, since its mapping lacks \`${field}\` as a keyword and it could not be added, so no set records it, and while saved sets have owners, none is saved. Add it as ${MIGRATION_GUIDE_URL}#${anchor} describes.`,
+			logFields,
 		);
 	}
 };

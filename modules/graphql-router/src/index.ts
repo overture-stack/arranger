@@ -1,5 +1,7 @@
 export type { ConditionValidation, IndexProbe } from './indexProbe.js';
 export type { GetRequesterFn, RequesterAnswer } from './sets/setsAccess.js';
+export type { SetsIndexOrigin, SetsIndexResolution, SetsIndexUnavailableReason } from './sets/resolveSetsIndex.js';
+export type { SetsIndexPeer, SetsCatalogueSource, SetsPlanCatalogue } from './sets/setsIndexGroups.js';
 export type { ArrangerBaseContext } from './types.js';
 
 export {
@@ -31,4 +33,6 @@ export {
 	wrapOpenSearchClient,
 } from './searchClient/index.js';
 export { default as resolveCatalogueFields } from './mapping/resolveCatalogueFields.js';
+export { resolveSetsIndex } from './sets/resolveSetsIndex.js';
+export { groupSetsIndexes, planSetsIndexes } from './sets/setsIndexGroups.js';
 export * as utils from './utils/index.js';

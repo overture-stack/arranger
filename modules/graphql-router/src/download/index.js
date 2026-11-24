@@ -12,7 +12,7 @@ import {
 	isAccessControlUnavailableError,
 	isForbiddenDenialKind,
 } from '#accessControl/AccessControlError.js';
-import { isSetsDisabledError, SETS_DISABLED_MESSAGE } from '#sets/SetsDisabledError.js';
+import { isSetsDisabledError, SETS_DISABLED_MESSAGE, SETS_UNAVAILABLE_MESSAGE } from '#sets/SetsDisabledError.js';
 import { arrangerLocalsOf, exportStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
@@ -216,7 +216,7 @@ const paramsFrom = (body) => {
 // An invalid request is answered with the rule it broke: each rule's message is fixed text naming the
 // field at fault, never a value the client sent, and is logged at info as the client's own mistake. Any
 // other failure names only whose problem it is.
-const failureResponseFor = (error) => {
+const failureResponseFor = (error, { setsUnavailable = false } = {}) => {
 	if (error instanceof InvalidExportRequestError) {
 		return { event: 'download.invalid_request', log: console.info, status: 400, text: error.message };
 	}
@@ -249,7 +249,12 @@ const failureResponseFor = (error) => {
 	}
 
 	if (isSetsDisabledError(error)) {
-		return { event: 'download.invalid_request', log: console.warn, status: 400, text: SETS_DISABLED_MESSAGE };
+		return {
+			event: 'download.invalid_request',
+			log: console.warn,
+			status: 400,
+			text: setsUnavailable ? SETS_UNAVAILABLE_MESSAGE : SETS_DISABLED_MESSAGE,
+		};
 	}
 
 	if (isAccessControlQueryTooLargeError(error)) {
@@ -393,8 +398,9 @@ const pipeFromFirstChunk = ({ output, res, setHeaders }) =>
  * @param {object} [args]
  * @param {boolean} [args.enableAdmin] also serves `GET /fields`, the fields flattened from the mapping.
  * @param {Function} [args.getRequester] the host's answer to who made a request, given with saved sets that have owners.
+ * @param {boolean} [args.setsUnavailable] whether the catalogue's saved sets are unavailable, answered with their own text.
  */
-const download = ({ enableAdmin = false, getRequester } = {}) => {
+const download = ({ enableAdmin = false, getRequester, setsUnavailable = false } = {}) => {
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));
@@ -418,7 +424,7 @@ const download = ({ enableAdmin = false, getRequester } = {}) => {
 				},
 			});
 		} catch (error) {
-			sendFailure({ error, res });
+			sendFailure({ error, failure: failureResponseFor(error, { setsUnavailable }), res });
 		}
 	});
 

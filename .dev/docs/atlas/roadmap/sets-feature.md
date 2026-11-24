@@ -52,6 +52,22 @@ The plan:
 
 Measured on 5 million records, on both engines, with one shard: checking a 65,000-id set by lookup took about 100 to 140 ms warm, 10 checks at once cost 1.0 to 1.8 times one, and a 65,537-id set was refused on both engines, by lookup and inline alike.
 
+## Saved sets move into per-catalogue indices
+
+**The interim, decided by the developer on 2026-11-24.** A catalogue's sets index is its own `sets.index`, else the index the deprecated `ES_ARRANGER_SETS_INDEX` names, used only where it exists, else `arranger-sets-<catalogueId>`. Each new set records its catalogue as `catalogue`. A 3.0.x deployment that saved sets without naming an index keeps them by naming `arranger-sets`, which the v3.1 migration guide says, in its section on each catalogue keeping its saved sets in its own index.
+
+**Why a named index rather than a probe.** Finding pre-3.1 sets automatically means asking the search engine whether `arranger-sets` exists and holds sets, on every deployment, including ones that never had it. That makes startup depend on a privilege on an index the deployment may no longer use: a role granted only `arranger-sets-*` cannot answer, and the pattern does not match `arranger-sets` itself. Nothing the server can do with a refused answer is right for every deployment: refusing saved sets breaks new deployments, and falling through to the default splits an old deployment's sets without saying so. Naming the index makes the operator's knowledge the input, and keeps the engine away from any index nothing names.
+
+**What a migration covers.**
+
+| Case | Today | What a migration does |
+| --- | --- | --- |
+| A shared index named by `ES_ARRANGER_SETS_INDEX` or by several catalogues' `sets.index` | Read in place; under `getRequester` a set recording no catalogue resolves only where its `type` belongs to one catalogue sharing the index | Copies each set into its catalogue's own index with `catalogue` set, then lets the shared name be dropped |
+| A set whose `type` several sharing catalogues have | Answers as missing under `getRequester`; resolves as before without it | Needs a rule or an operator's mapping to decide its catalogue; `path` and the set's `ids` matched against each catalogue's index are candidate signals |
+| A set whose catalogue no longer exists, or failed to load | Not read | Reported, never moved silently |
+
+**Open decisions.** Whether it runs as an explicit command or at startup (writes at startup surprise operators, and the developer prefers no surprise); which privileges it needs on the source and each target, and how it fails without them; whether it is idempotent and resumable for large indices; how a deployment verifies counts per catalogue before retiring the shared index; and what a reader naming a set that moved is told, if its `setId` is kept.
+
 ## Set operations
 
 Compare two or three operands over one catalogue, and act on any region of their Venn diagram, or on a union of regions: count it, view it as the active filter, download it, or save it as a new set.

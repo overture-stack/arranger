@@ -63,11 +63,6 @@ Nothing on the filter-compilation path (`compileFilter`/`buildQuery`) carries an
 **Canonical entry:** `.dev/tech-debt.md` § graphql-router, "`ENABLE_SETS` flag does not fully gate the Sets query path"
 **Effect:** `set_id:` expansion runs regardless of the flag, and nothing reads the `userId` the sets index stores. Sets ABAC is downstream of this subsystem's model; the flag is not currently a kill switch. Binding a set to its owner is Phase 1 item 8.
 
-### A saved set must resolve only for its owner, and only within the catalogue it came from
-
-**Canonical entry:** `.dev/tech-debt.md` § graphql-router
-**Effect:** every path that reads or expands a set resolves it in its catalogue's configured sets index. Before enforcement relies on sets, each must also resolve it only for its owner, taken from the request's trusted context, and a deployment with access control needs a sets index per catalogue, since catalogues left on the default share one. Phase 1 item 8.
-
 ### Display labels on a field that access control keys on must be narrowed per principal
 
 **Canonical entry:** `.dev/tech-debt.md` § graphql-router

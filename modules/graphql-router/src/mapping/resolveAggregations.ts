@@ -104,6 +104,7 @@ const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 			esClient,
 			getRequester,
 			setsIndex: type.setsIndex,
+			setsScope: type.setsScope,
 		});
 		const resolvedSets = mergeResolvedSets(await resolveSets(filters), await resolveSets(serverSideFilter));
 

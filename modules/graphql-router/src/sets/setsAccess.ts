@@ -293,7 +293,8 @@ export const setIdsNamedBy = (clientFilter: unknown): string[] =>
 		? clientFilter.content.flatMap(setIdsOfClause)
 		: setIdsOfClause(clientFilter);
 
-const clauseIn = (fieldName: string, value: string[]) => ({ content: { fieldName, value }, op: 'in' });
+const clauseIn = (fieldName: string, value: string[]): SqonNode =>
+	({ content: { fieldName, value }, op: 'in' }) as SqonNode;
 
 /** The value an `in` names to match a set attribution the document does not hold. */
 const MISSING_ATTRIBUTION = '__missing__';
@@ -371,18 +372,88 @@ const matchesOwnerFilter = (filter: unknown, document: SetNode): boolean => {
 };
 
 /**
- * Whether a reader may use a saved set by its id, as a filter or as the sets connection lists it: the connection's
- * own predicate, `ownerFilterFor`, for a listing that names the id, applied to the set's stored document. A missing
- * set has no document, so it is not usable; the filter path and the connection both decide through this one check.
+ * Which catalogue a router's saved sets belong to, and how a set recording no catalogue is attributed to it at read
+ * time. `peerDocumentTypes` lists the documentTypes of the catalogues that may share this one's sets index, or is
+ * undefined where no peer information was given.
+ */
+export type SetsScope = Readonly<{
+	catalogue: string;
+	documentType?: string;
+	ownIndex: boolean;
+	peerDocumentTypes?: readonly string[];
+}>;
+
+/** The value an `in` names to match a set that records no catalogue. */
+const MISSING_CATALOGUE = '__missing__';
+
+/**
+ * The filter that holds a catalogue's own sets: those recording its id, and those recording none that belong to it.
+ * An uncatalogued set belongs to this catalogue when the index is its own (`ownIndex`) with no peers; or, given peer
+ * information, when its `type` is this catalogue's documentType and no peer shares that documentType. Otherwise an
+ * uncatalogued set is not this catalogue's, so it answers as a missing id.
  *
- * @param details the set's stored document, the id the reader names, and who is reading.
+ * @param scope the catalogue the router serves, and what is known of its sharers.
+ */
+export const catalogueScopeFilterFor = (scope: SetsScope): SqonNode => {
+	const { documentType, ownIndex, peerDocumentTypes } = scope;
+	const uncatalogued = ((): SqonNode | undefined => {
+		if (ownIndex && (peerDocumentTypes === undefined || peerDocumentTypes.length === 0)) {
+			return clauseIn('catalogue', [MISSING_CATALOGUE]);
+		}
+
+		if (peerDocumentTypes === undefined || documentType === undefined || peerDocumentTypes.includes(documentType)) {
+			return undefined;
+		}
+
+		return {
+			content: [clauseIn('catalogue', [MISSING_CATALOGUE]), clauseIn('type', [documentType])],
+			op: 'and',
+		} as SqonNode;
+	})();
+
+	return {
+		content: [clauseIn('catalogue', [scope.catalogue]), ...(uncatalogued ? [uncatalogued] : [])],
+		op: 'or',
+	} as SqonNode;
+};
+
+/**
+ * The filter a requester's sets are listed by, and used by id: the owner filter, `ownerFilterFor`, composed with the
+ * catalogue scope. Both the listing and the set-id check decide through it, so a count and a listing agree.
+ *
+ * @param details the client's filter on the sets connection, who made the request, and the catalogue scope.
+ */
+export const setsVisibleFilterFor = ({
+	clientFilter,
+	requester,
+	scope,
+}: {
+	clientFilter: unknown;
+	requester: Requester;
+	scope: SetsScope;
+}): SqonNode =>
+	({
+		content: [ownerFilterFor({ clientFilter, requester }), catalogueScopeFilterFor(scope)],
+		op: 'and',
+	}) as SqonNode;
+
+/**
+ * Whether a reader may use a saved set by its id, as a filter or as the sets connection lists it: the connection's
+ * own predicate, `setsVisibleFilterFor`, for a listing that names the id, applied to the set's stored document. A
+ * missing set has no document, so it is not usable; the filter path and the connection both decide through this one
+ * check.
+ *
+ * @param details the set's stored document, the id the reader names, who is reading, and the catalogue scope.
  */
 export const mayUseSetById = ({
 	document,
 	requester,
+	scope,
 	setId,
 }: {
 	document: SetNode;
 	requester: Requester;
+	scope: SetsScope;
 	setId: string;
-}): boolean => matchesOwnerFilter(ownerFilterFor({ clientFilter: clauseIn('setId', [setId]), requester }), document);
+}): boolean =>
+	matchesOwnerFilter(setsVisibleFilterFor({ clientFilter: clauseIn('setId', [setId]), requester, scope }), document);

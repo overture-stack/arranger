@@ -8,7 +8,7 @@ import Parallel from 'paralleljs';
 import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#searchClient/fetchMapping.js';
 import { createScopedSetsResolvers } from '#sets/scopedSetsResolvers.js';
-import { type GetRequesterFn, narrowsSetRecords } from '#sets/setsAccess.js';
+import { type GetRequesterFn, narrowsSetRecords, type SetsScope } from '#sets/setsAccess.js';
 import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 import type { ArrangerBaseContext } from '#types.js';
 
@@ -97,7 +97,8 @@ type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes: any[];
 	scalarTypes: any[];
-	setsIndex: string;
+	setsIndex?: string;
+	setsScope?: SetsScope;
 	types: SchemaTypesTuple[];
 };
 
@@ -113,6 +114,7 @@ const createTypeConnectionResolvers = <Context extends ArrangerBaseContext>({
 	getRequester,
 	getServerSideFilter,
 	narrowed,
+	setsScope,
 	type,
 }: {
 	catalogueTypes: SchemaTypesDefinition[];
@@ -121,6 +123,7 @@ const createTypeConnectionResolvers = <Context extends ArrangerBaseContext>({
 	getRequester: GetRequesterFn<Context> | undefined;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	narrowed: boolean;
+	setsScope?: SetsScope;
 	type: SchemaTypesDefinition;
 }): IResolvers<any, Context> => {
 	if (type.name !== 'sets') {
@@ -141,6 +144,7 @@ const createTypeConnectionResolvers = <Context extends ArrangerBaseContext>({
 		getServerSideFilter,
 		narrowed,
 		Parallel,
+		setsScope,
 		setsType: type,
 	});
 
@@ -173,6 +177,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 	rootTypes,
 	scalarTypes,
 	setsIndex,
+	setsScope,
 	types,
 }: CreateResolversArgs<Context>): IResolvers<any, Context> => {
 	// A filter callback narrows each set's records to its reader, and getRequester gives each set an owner.
@@ -242,6 +247,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 					getRequester,
 					getServerSideFilter,
 					narrowed: setRecordsNarrowed,
+					setsScope,
 					type,
 				}),
 			}),
@@ -269,6 +275,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 				getRequester,
 				getServerSideFilter,
 				setsIndex,
+				setsScope,
 				types,
 			}),
 		},

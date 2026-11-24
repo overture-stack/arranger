@@ -169,6 +169,9 @@ const createSearchEngine = () => {
 			return { body: { result: 'created' } };
 		},
 		indices: {
+			// No sets index exists yet, so each catalogue's own default index is the one it resolves to.
+			create: async () => ({ acknowledged: true }),
+			exists: async () => ({ statusCode: 404 }),
 			getMapping: async ({ index }: { index: string }) => ({
 				body: { [index]: { mappings: { properties: MAPPING } } },
 			}),
@@ -1380,5 +1383,86 @@ suite('arrangerRouter accepts only undefined or a non-async function as getArtif
 		// Then neither construction fails
 		assert.equal(omitted, undefined);
 		assert.equal(plain, undefined);
+	});
+});
+
+suite('saved sets whose index does not resolve', () => {
+	/** An engine recording every call the sets index could receive, so a test can tell whether saved sets were touched. */
+	const engineRecordingSetsCalls = () => {
+		const calls: string[] = [];
+		const engine = createSearchEngine();
+		const client = {
+			...engine.client,
+			get: async ({ index }: { index: string }) => {
+				calls.push(`get ${index}`);
+				throw Object.assign(new Error('not found'), { meta: { statusCode: 404 } });
+			},
+			index: async ({ index }: { index: string }) => {
+				calls.push(`index ${index}`);
+				return { body: { result: 'created' } };
+			},
+			indices: {
+				...engine.client.indices,
+				create: async ({ index }: { index: string }) => {
+					calls.push(`create ${index}`);
+					return { acknowledged: true };
+				},
+				exists: async ({ index }: { index: string }) => {
+					calls.push(`exists ${index}`);
+					return { statusCode: 404 };
+				},
+			},
+		};
+
+		return { calls, client: client as unknown as SearchClient };
+	};
+
+	test('makes no sets call and logs sets.unavailable with the reason, where the catalogue resolved no sets index', async () => {
+		// Given a catalogue whose sets index the router could not resolve
+		const { calls, client } = engineRecordingSetsCalls();
+
+		// When the router is built
+		const { lines } = await withConsoleCaptured(() =>
+			arrangerRouter({
+				configs: CATALOGUE_CONFIGS,
+				esClient: client,
+				setsIndexResolution: {
+					index: 'arranger-sets-donor',
+					kind: 'unavailable',
+					reason: 'index_check_refused',
+				},
+			}),
+		);
+
+		// Then no sets index was checked, created or read, and the unavailability is logged with its reason
+		assert.deepEqual(
+			calls.filter((call) => /^(exists|create|get|index) /u.test(call)),
+			[],
+		);
+		assert.ok(
+			lines.some((line) => line.startsWith('sets.unavailable') && line.includes('index_check_refused')),
+			JSON.stringify(lines),
+		);
+	});
+
+	test('initializes the resolved sets index, and makes no unavailability log, where the catalogue resolved one', async () => {
+		// Given a catalogue whose sets index resolved to its own
+		const { calls, client } = engineRecordingSetsCalls();
+
+		// When the router is built
+		const { lines } = await withConsoleCaptured(() =>
+			arrangerRouter({
+				configs: CATALOGUE_CONFIGS,
+				esClient: client,
+				setsIndexResolution: { index: 'arranger-sets-donor', kind: 'index', origin: 'default' },
+			}),
+		);
+
+		// Then that index is the one initialized, and nothing is logged as unavailable
+		assert.ok(calls.includes('exists arranger-sets-donor'));
+		assert.equal(
+			lines.some((line) => line.includes('sets.unavailable')),
+			false,
+		);
 	});
 });

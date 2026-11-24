@@ -99,7 +99,13 @@ export type MatchBoxConfigs = {
 };
 
 export type SetsConfigs = {
+	/** The catalogue's own sets index. Absent, the router picks one; see `resolveSetsIndex` in the router package. */
 	[setsProperties.INDEX]?: string;
+	/**
+	 * A sets index shared by catalogues before each had its own. It is a legacy marker: it names an index that
+	 * exists and needs migrating, and a catalogue without `index` of its own is served from it while it does.
+	 */
+	[setsProperties.LEGACY_SHARED_INDEX]?: string;
 	[setsProperties.TYPE]?: string;
 };
 

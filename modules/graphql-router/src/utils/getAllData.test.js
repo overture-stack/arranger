@@ -835,8 +835,11 @@ suite('getAllData', () => {
 			);
 		});
 
-		test('looks the set up in the default sets index when a context built without the router names none', async () => {
-			assert.equal(await lookupIndexOf(buildConfigs({ enableSets: true })), 'arranger-sets');
+		test('refuses a saved-set filter in a context naming no sets index, rather than assuming a shared one', async () => {
+			// Given a context built without the router, carrying no sets index
+			// When an export filters by a saved set
+			// Then the export is refused, since no index is known to look the set up in
+			await assert.rejects(() => lookupIndexOf(buildConfigs({ enableSets: true })), /could not be compiled/);
 		});
 
 		/** Starts an export of `setFilter` over a context with `configs`, and settles it as a rejection or a stream. */

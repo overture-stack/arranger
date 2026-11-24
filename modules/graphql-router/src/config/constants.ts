@@ -25,7 +25,6 @@ const fallbackCatalogConfigs = {
 	},
 	[configRootProperties.EXTENDED]: [],
 	[configRootProperties.SETS]: {
-		[setsProperties.INDEX]: ES_ARRANGER_SETS,
 		[setsProperties.TYPE]: ES_ARRANGER_SETS,
 	},
 	// dependent libraries

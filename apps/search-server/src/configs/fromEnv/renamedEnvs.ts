@@ -26,7 +26,7 @@ type UnreadEnv = {
 
 /** A deprecation warning to print at startup, under a code an operator can filter or search for. */
 export type EnvNotice = {
-	code: 'ARRANGER_ENV_RENAMED' | 'ARRANGER_ENV_UNREAD';
+	code: 'ARRANGER_ENV_RENAMED' | 'ARRANGER_ENV_SETS_INDEX_SHARED' | 'ARRANGER_ENV_UNREAD';
 	message: string;
 };
 
@@ -129,6 +129,23 @@ const unreadNotice = ({ instead, name }: UnreadEnv, env: NodeJS.ProcessEnv): Env
 				{
 					code: 'ARRANGER_ENV_UNREAD',
 					message: `${name} is no longer read and has no effect: ${instead}. See ${ENV_MIGRATION_URL}#environment-variables-no-longer-read`,
+				},
+			]
+		: [];
+
+/**
+ * The deprecation notice for `ES_ARRANGER_SETS_INDEX`, which names a shared sets index no catalogue now has by default.
+ * Given the environment as `resolveRenamedEnvs` returns it, so the 3.0 name the alias reads is named here as the
+ * variable the server reads, and warned about once.
+ *
+ * @param env the environment the server reads.
+ */
+export const setsIndexSharedNotice = (env: NodeJS.ProcessEnv): EnvNotice[] =>
+	isSet(env.ES_ARRANGER_SETS_INDEX)
+		? [
+				{
+					code: 'ARRANGER_ENV_SETS_INDEX_SHARED',
+					message: `ES_ARRANGER_SETS_INDEX is deprecated: each catalogue now gets its own sets index, so set \`sets.index\` in a catalogue's config to choose one. Until it does, a catalogue with no sets index of its own reads the shared index named here, if that index exists. See ${ENV_MIGRATION_URL}#sets-index-per-catalogue`,
 				},
 			]
 		: [];

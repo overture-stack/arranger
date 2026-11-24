@@ -2,7 +2,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { applyMiddleware } from 'graphql-middleware';
 
-import type { GetRequesterFn } from '#sets/setsAccess.js';
+import type { GetRequesterFn, SetsScope } from '#sets/setsAccess.js';
 import type { ArrangerBaseContext, GraphQLEndpointMiddleware } from '#types.js';
 
 import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root.js';
@@ -14,6 +14,7 @@ import type { SchemaTypesTuple } from './types.js';
  */
 export const setsMapping = {
 	attribution: { type: 'keyword' },
+	catalogue: { type: 'keyword' },
 	userId: { type: 'keyword' },
 	sqon: { enabled: false, type: 'object' },
 	ids: { type: 'keyword' },
@@ -30,7 +31,7 @@ export const setsMapping = {
  * The Sets type is only dependent on the `setsIndex`, which is the string name of the index in the
  * search engine that will store sets.
  */
-export const createSetsType = (setsIndex: string): SchemaTypesTuple => {
+export const createSetsType = (setsIndex: string | undefined): SchemaTypesTuple => {
 	return [
 		'sets',
 		{
@@ -66,6 +67,7 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	rootTypes = [],
 	scalarTypes = [],
 	setsIndex,
+	setsScope,
 	types, // ['documentName', {configs, mapping, index, etc..}]
 }: {
 	debug?: boolean;
@@ -76,7 +78,8 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	rootTypes?: any[];
 	scalarTypes?: any[];
-	setsIndex: string;
+	setsIndex?: string;
+	setsScope?: SetsScope;
 	types: SchemaTypesTuple;
 }) => {
 	const typesWithSets = [types, createSetsType(setsIndex)];
@@ -91,6 +94,7 @@ export const createCatalogueResolvers = <Context extends ArrangerBaseContext>({
 		rootTypes,
 		scalarTypes,
 		setsIndex,
+		setsScope,
 		types: typesWithSets,
 	});
 

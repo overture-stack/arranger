@@ -262,15 +262,15 @@ export default async ({
 	// Export is a read path like any other, so the access-control filter has to be composed here
 	// too. Without this the caller's SQON reaches Elasticsearch alone and the export returns every
 	// document the query matches, whatever the deployment's filter says.
-	// A context the router built carries the catalogue's own sets index; one built elsewhere gets the
-	// index a catalogue with no sets configuration uses.
-	const setsIndex = configs.setsIndex ?? fallbackConfigs.sets.index;
+	// A context the router built carries the catalogue's own sets index and scope; one built elsewhere carries
+	// neither, so saved sets resolve to nothing under `getRequester`.
 	const resolveSets = setFilterResolverFor({
 		context: ctx,
 		enableSets: configs.enableSets ?? false,
 		esClient,
 		getRequester,
-		setsIndex,
+		setsIndex: configs.setsIndex,
+		setsScope: configs.setsScope,
 	});
 	const compiledFilter = compileFilter({
 		clientSideFilter: sqon,
@@ -285,7 +285,7 @@ export default async ({
 		legacyDateFieldNames: configs.legacyDateFieldNames,
 		nestedFieldNames: configs.nested_fieldNames,
 		nestingPrefix,
-		setsIndex,
+		setsIndex: configs.setsIndex,
 	});
 
 	const esSort = exportSort

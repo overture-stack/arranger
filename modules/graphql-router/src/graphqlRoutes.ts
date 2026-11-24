@@ -35,7 +35,7 @@ import {
 	isForbiddenDenialKind,
 } from '#accessControl/AccessControlError.js';
 import { assertFilterCallback } from '#accessControl/filterCallback.js';
-import fallbackConfigs, { initializeSets } from '#config/index.js';
+import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
 import { addMappingsToTypes, resolveExtendedFields } from '#mapping/index.js';
@@ -47,11 +47,15 @@ import type { LocalCatalogueSchemaData } from '#network/types.js';
 import { createCatalogueResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
 import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
-import type { GetRequesterFn } from '#sets/setsAccess.js';
-import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
+import type { GetRequesterFn, SetsScope } from '#sets/setsAccess.js';
+import { isSetsDisabledError, SETS_UNAVAILABLE_MESSAGE } from '#sets/SetsDisabledError.js';
+import type { SetsIndexPeer } from '#sets/setsIndexGroups.js';
+import type { SetsIndexResolution } from '#sets/resolveSetsIndex.js';
+import { setsWiringFor } from '#sets/setsWiring.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
+import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
 
@@ -69,6 +73,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 	label,
 	mappingFromIndex,
 	setsIndex,
+	setsScope,
 }: {
 	enableDebug: boolean;
 	/** Whether saved sets are enabled; a read path refuses a saved set while this is false. */
@@ -77,8 +82,10 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 	label?: string;
 	mappingFromIndex: any;
 	configs: ConfigsObject<Context>;
-	/** The catalogue's own sets index, where every read path looks up a saved set. */
-	setsIndex: string;
+	/** The catalogue's own sets index, where every read path looks up a saved set. Absent while saved sets are not enabled. */
+	setsIndex?: string;
+	/** The catalogue a saved set is scoped to, under `getRequester`. */
+	setsScope?: SetsScope;
 }) => {
 	if (Object.keys(configs).length > 0) {
 		try {
@@ -169,6 +176,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 					label,
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 					setsIndex,
+					setsScope,
 				},
 				mapping: mappingFromIndex,
 				registry: graphqlNameRegistry,
@@ -208,6 +216,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
+	setsScope,
 	types,
 }: {
 	enableDebug?: boolean;
@@ -217,7 +226,8 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	getRequester?: GetRequesterFn<Context>;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
-	setsIndex: string;
+	setsIndex?: string;
+	setsScope?: SetsScope;
 	types: SchemaTypesTuple;
 }): { schema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
 	const { resolvers, typesWithSets } = createCatalogueResolvers({
@@ -228,6 +238,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 		getRequester,
 		getServerSideFilter,
 		setsIndex,
+		setsScope,
 		types,
 	});
 
@@ -373,12 +384,15 @@ const answerRequestMistake = ({
 	cause,
 	code,
 	error,
+	message: givenMessage,
 }: {
 	cause?: unknown;
 	code: string;
 	error: GraphQLError;
+	/** Replaces the error's own message, for a refusal whose text the catalogue sets. */
+	message?: string;
 }): GraphQLFormattedError => {
-	const message = error.message.replace(FIELD_SUGGESTION_SUFFIX, '');
+	const message = givenMessage ?? error.message.replace(FIELD_SUGGESTION_SUFFIX, '');
 
 	console.info('graphql.invalid_request', { ...(cause !== undefined && { cause }), code, message, path: error.path });
 
@@ -398,7 +412,7 @@ const answerServerProblem = (error: GraphQLError, label?: string): GraphQLFormat
 	});
 };
 
-const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError => {
+const answerFor = (error: GraphQLError, label?: string, setsUnavailable = false): GraphQLFormattedError => {
 	// Widened, so each check narrows it on its own: every refusal class has Error's shape.
 	const originalError: unknown = error.originalError;
 
@@ -423,7 +437,11 @@ const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError =
 	}
 
 	if (isSetsDisabledError(originalError)) {
-		return answerRequestMistake({ code: SETS_DISABLED_CODE, error });
+		return answerRequestMistake({
+			code: SETS_DISABLED_CODE,
+			error,
+			...(setsUnavailable && { message: SETS_UNAVAILABLE_MESSAGE }),
+		});
 	}
 
 	if (isRequestMistake(error)) {
@@ -440,10 +458,10 @@ const answerFor = (error: GraphQLError, label?: string): GraphQLFormattedError =
  * @param label the catalogue's label, naming it in the server log.
  */
 const formatErrorFor =
-	(label?: string) =>
+	(label?: string, setsUnavailable = false) =>
 	(error: GraphQLError): GraphQLFormattedError => {
 		try {
-			return answerFor(error, label);
+			return answerFor(error, label, setsUnavailable);
 		} catch (formattingError) {
 			console.error('graphql.format_failed', formattingError, { ...(label && { catalogue: label }) });
 
@@ -463,6 +481,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	maxAliases,
 	maxDepth,
 	schema,
+	setsUnavailable = false,
 }: {
 	disableClientFilters?: boolean;
 	disableGraphQLIntrospection?: boolean;
@@ -476,6 +495,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	maxAliases?: number;
 	maxDepth?: number;
 	schema: GraphQLSchema;
+	/** Whether the catalogue has saved sets enabled but no usable sets index, so they are answered as unavailable. */
+	setsUnavailable?: boolean;
 }) => {
 	const mainPath = '/graphql';
 	const router = Router();
@@ -529,7 +550,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 				allowBatchedHttpRequests: enableGraphQLBatching,
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
-				formatError: formatErrorFor(label),
+				formatError: formatErrorFor(label, setsUnavailable),
 				introspection: !disableGraphQLIntrospection,
 				schema,
 				validationRules,
@@ -583,6 +604,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	label,
 	mappingFromIndex,
 	setsIndex,
+	setsScope,
 }: {
 	configs: ConfigsObject<Context>;
 	enableDebug?: boolean;
@@ -598,7 +620,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
 	mappingFromIndex: Record<string, unknown>;
-	setsIndex: string;
+	setsIndex?: string;
+	setsScope?: SetsScope;
 }) => {
 	assertFilterCallback({ getServerSideFilter, receiver: 'createSchemasFromConfigs' });
 
@@ -614,6 +637,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			label,
 			mappingFromIndex,
 			setsIndex,
+			setsScope,
 		});
 
 		const { schema, resolvers } = await createSchema({
@@ -625,6 +649,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
+			setsScope,
 			types: typesWithMappings,
 		});
 
@@ -716,6 +741,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 };
 
 export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
+	/** The catalogue's id, which a saved set is recorded and scoped by; the label stands in without it. */
+	catalogueId?: string;
 	configs: ConfigsObject<Context>;
 	enableAdmin?: boolean;
 	enableDebug?: boolean;
@@ -728,11 +755,28 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. */
 	label?: string;
 	mappingFromIndex: Record<string, unknown>;
+	/** The catalogues that may hold saved sets in this one's sets index, given with `setsIndexResolution`. */
+	setsIndexPeers?: readonly SetsIndexPeer[];
+	/** The catalogue's resolved sets index, given by a host that resolved it. Resolved here when absent. */
+	setsIndexResolution?: SetsIndexResolution;
 	/** When true, a schema/endpoint build failure is rethrown instead of caught and turned into a 500-responding handler. Off by default so direct callers of this function keep today's contract (never rejects); `arrangerRouter` opts in, since it already classifies and reports a rejected catalogue as `failed` rather than crashing. */
 	rethrowOnError?: boolean;
 };
 
+/** The reason a catalogue's saved sets are unavailable, in words a log reader can act on. */
+const describeSetsUnavailable = (resolution: Extract<SetsIndexResolution, { kind: 'unavailable' }>): string => {
+	switch (resolution.reason) {
+		case 'legacy_index_missing':
+			return `the shared sets index "${resolution.index}" named by ES_ARRANGER_SETS_INDEX does not exist`;
+		case 'index_check_refused':
+			return `the search engine refused a check of the sets index "${resolution.index ?? 'unknown'}"`;
+		case 'missing_catalogue_id':
+			return 'saved sets are scoped by catalogue under getRequester, and this catalogue has no catalogue id';
+	}
+};
+
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
+	catalogueId,
 	configs,
 	enableAdmin,
 	enableDebug,
@@ -744,21 +788,34 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	label = configs[configRootProperties.DOCUMENT_TYPE] || FALLBACK_LABEL,
 	mappingFromIndex,
 	rethrowOnError = false,
+	setsIndexPeers,
+	setsIndexResolution: givenSetsIndexResolution,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// Ahead of the try, so even with rethrowOnError off an unusable filter fails the build instead of
 	// turning into a handler that answers every request with a 500.
 	assertFilterCallback({ getServerSideFilter, receiver: 'getGraphQLRoutes' });
 
-	// TODO: surfacing this variable to be reused later
-	const setsIndex = configs[configOptionalProperties.SETS]?.index || fallbackConfigs.sets.index;
 	const enableSets = configs[configFeatureFlagProperties.ENABLE_SETS] ?? false;
 
 	try {
+		const { resolution: setsIndexResolution, scope: setsScope } = await setsWiringFor({
+			catalogueId,
+			configs,
+			enableSets,
+			esClient,
+			label,
+			owned: getRequester !== undefined,
+			setsIndexPeers,
+			setsIndexResolution: givenSetsIndexResolution,
+		});
+		const setsResolved = setsIndexResolution?.kind === 'index';
+		const setsIndex = setsIndexResolution?.kind === 'index' ? setsIndexResolution.index : undefined;
+
 		const { fieldsFromMapping, schema, typesWithMappings } = await createSchemasFromConfigs({
 			configs,
 			enableDebug,
 			enableAdmin,
-			enableSets,
+			enableSets: enableSets && setsResolved,
 			esClient,
 			getArtifactCreateFilter,
 			getRequester,
@@ -767,6 +824,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			label,
 			mappingFromIndex,
 			setsIndex,
+			setsScope,
 		});
 
 		const graphQLEndpoints = await createEndpoint({
@@ -781,21 +839,38 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
 			maxDepth: configs[configOptionalProperties.GRAPHQL_MAX_DEPTH],
 			schema,
+			setsUnavailable: enableSets && setsIndexResolution?.kind === 'unavailable',
 		});
 
-		try {
-			await initializeSets({
-				enableSets,
-				enableDebug,
-				esClient,
-				label,
-				setsIndex,
-			});
-		} catch (setsError) {
-			const message = setsError instanceof Error ? setsError.message : `${setsError}`;
+		if (enableSets && setsIndexResolution?.kind === 'unavailable') {
+			const catalogue = setsScope?.catalogue ?? label;
+
 			console.error(
-				`\n${logSeparator(label)}\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+				'sets.unavailable',
+				`Saved sets of "${catalogue}" are unavailable, since ${describeSetsUnavailable(setsIndexResolution)}. The catalogue answers saved-set requests as unavailable. See ${MIGRATION_GUIDE_URL}#sets-index-per-catalogue`,
+				{
+					catalogue,
+					reason: setsIndexResolution.reason,
+					...(setsIndexResolution.index !== undefined && { index: setsIndexResolution.index }),
+				},
 			);
+		}
+
+		if (setsIndexResolution?.kind === 'index') {
+			try {
+				await initializeSets({
+					enableSets: enableSets && setsResolved,
+					enableDebug,
+					esClient,
+					label,
+					setsIndex: setsIndexResolution.index,
+				});
+			} catch (setsError) {
+				const message = setsError instanceof Error ? setsError.message : `${setsError}`;
+				console.error(
+					`\n${logSeparator(label)}\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+				);
+			}
 		}
 
 		return [

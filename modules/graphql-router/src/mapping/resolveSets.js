@@ -15,7 +15,7 @@ import { setFilterResolverFor } from '#sets/resolveSetFilters.js';
 import { requesterOf, savedAttributionFor } from '#sets/setsAccess.js';
 import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 import { exactAnswerOf, SET_CHECK_CHUNK_SIZE } from '#sets/narrowSet.js';
-import { recordsAttribution } from '#sets/setsIndexMapping.js';
+import { recordsAttribution, recordsCatalogue } from '#sets/setsIndexMapping.js';
 import { chunksOf, setValuesTermsOf } from '#sets/setValues.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
@@ -191,7 +191,8 @@ const anyRecordOutsideCreateFilter = async ({
  *   lower it. Defaults to `SET_CHECK_CHUNK_SIZE`.
  * @param {Function} [args.getArtifactCreateFilter] the records the requester may create an artifact from. Absent, no
  *   creation check runs; given, the set is refused when any of its records falls outside it.
- * @param {string} args.setsIndex the catalogue's own sets index.
+ * @param {string} [args.setsIndex] the catalogue's own sets index, absent while saved sets are not enabled.
+ * @param {object} [args.setsScope] the catalogue the saved set is recorded as belonging to, and scoped by under `getRequester`.
  * @param {Array} args.types the catalogue's types.
  * @throws {SetsDisabledError} while saved sets are not enabled, before any engine call.
  * @throws {AccessControlUnavailableError} for a suspended principal, before anything is read or stored.
@@ -208,6 +209,7 @@ export const saveSet =
 		getRequester,
 		getServerSideFilter,
 		setsIndex,
+		setsScope,
 		types,
 	}) =>
 	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
@@ -233,6 +235,15 @@ export const saveSet =
 			);
 		}
 
+		const catalogue = setsScope?.catalogue;
+		const catalogueRecorded = catalogue !== undefined && (await recordsCatalogue({ esClient, setsIndex }));
+
+		if (requester && !catalogueRecorded) {
+			throw new AccessControlError(
+				`The sets index "${setsIndex}" does not map catalogue as a keyword, so it cannot record which catalogue a set was saved from, and no set is saved while saved sets have owners. Add it as ${MIGRATION_GUIDE_URL}#sets-index-per-catalogue describes.`,
+			);
+		}
+
 		const { attribution, userId: savedUserId } = savedAttributionFor({ clientUserId: userId, requester });
 
 		const catalogueType = types.find(([, x]) => x.name === type)[1];
@@ -243,7 +254,7 @@ export const saveSet =
 			? evaluateFilterCallback({ context, getServerSideFilter: getArtifactCreateFilter, readPath: 'sets' })
 			: includeEverything(context);
 
-		const resolveSets = setFilterResolverFor({ context, enableSets, esClient, getRequester, setsIndex });
+		const resolveSets = setFilterResolverFor({ context, enableSets, esClient, getRequester, setsIndex, setsScope });
 		const compiledFilter = compileFilter({
 			clientSideFilter: sqon,
 			disableClientFilters: context.disableClientFilters,
@@ -320,6 +331,7 @@ export const saveSet =
 			// A set records the client's filter only where that filter selected its ids.
 			sqon: context.disableClientFilters ? null : sqon,
 			...(marksRecorded && { attribution }),
+			...(catalogueRecorded && { catalogue }),
 			userId: savedUserId,
 			size: ids.length,
 		};

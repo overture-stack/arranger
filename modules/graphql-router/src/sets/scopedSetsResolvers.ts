@@ -16,9 +16,10 @@ import { type SetFilterResolver, setFilterResolverFor } from './resolveSetFilter
 import {
 	type GetRequesterFn,
 	mayReadStoredFilterOf,
-	ownerFilterFor,
 	refuseUnusableSetFields,
 	requesterOf,
+	type SetsScope,
+	setsVisibleFilterFor,
 	usableSetFieldsOf,
 	withheldSetFieldsFor,
 } from './setsAccess.js';
@@ -39,7 +40,8 @@ const isString = (value: unknown): value is string => typeof value === 'string';
  * field the sets index stores and never indexes (`usableSetFieldsOf`).
  *
  * With `getRequester`, sets have owners, read from each set's `attribution`: a page lists a principal's own sets,
- * the sets with no owner and the sets the client names by id, and its aggregations count the same sets. A set's
+ * the sets with no owner and the sets the client names by id, and its aggregations count the same sets. Each is also
+ * scoped to `setsScope`'s catalogue, so a set saved from another catalogue is listed to no one here. A set's
  * stored filter is given to the principal that saved it, and to everyone for a set with no owner. A suspended
  * principal reads as an anonymous request. Without it, every set is listed to everyone, with its filter.
  *
@@ -57,6 +59,7 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 	getServerSideFilter,
 	narrowed,
 	Parallel: ParallelRunner,
+	setsScope,
 	setsType,
 }: {
 	catalogueTypes: SchemaTypesDefinition[];
@@ -65,6 +68,8 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	narrowed: boolean;
 	Parallel: typeof Parallel;
+	/** The catalogue this router serves, which its sets are scoped to under `getRequester`. */
+	setsScope: SetsScope | undefined;
 	setsType: SchemaTypesDefinition;
 }): IResolvers<any, Context> => {
 	const connection = createConnectionResolvers<Context>({
@@ -76,10 +81,22 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 	});
 
 	// The sets a request is listed: with owners, by each set's attribution, and those it names; without, every set.
-	const listingFilterOf = (context: Context, clientFilter: unknown): GetServerSideFilterFn<Context> =>
-		getRequester
-			? () => ownerFilterFor({ clientFilter, requester: requesterOf({ context, getRequester }) })
-			: includeEverything;
+	const listingFilterOf = (context: Context, clientFilter: unknown): GetServerSideFilterFn<Context> => {
+		if (!getRequester) {
+			return includeEverything;
+		}
+
+		// Failing closed: without a scope, a principal would be listed sets from any catalogue.
+		if (!setsScope) {
+			throw new Error(
+				'Saved sets are listed under getRequester, but no catalogue scope was given to scope them by.',
+			);
+		}
+
+		const scope = setsScope;
+
+		return () => setsVisibleFilterFor({ clientFilter, requester: requesterOf({ context, getRequester }), scope });
+	};
 
 	const withheld = withheldSetFieldsFor({ narrowed, owned: getRequester !== undefined });
 	const usable = usableSetFieldsOf({ mapping: setsType.mapping ?? {}, withheld });
@@ -115,6 +132,7 @@ export const createScopedSetsResolvers = <Context extends ArrangerBaseContext>({
 			esClient: context.esClient,
 			getRequester,
 			setsIndex: catalogueType.setsIndex,
+			setsScope: catalogueType.setsScope,
 		});
 		byCatalogue.set(catalogueType.name, resolver);
 

@@ -25,7 +25,10 @@ import getNestedFields from '#mapping/getNestedFields.js';
 import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
 import { getIndexMapping } from '#searchClient/index.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
+import type { SetsIndexPeer } from '#sets/setsIndexGroups.js';
+import type { SetsIndexResolution } from '#sets/resolveSetsIndex.js';
 import { type GetRequesterFn, narrowsSetRecords } from '#sets/setsAccess.js';
+import { setsWiringFor } from '#sets/setsWiring.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addArrangerLocals, keepRequestContextView } from '#utils/context.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
@@ -77,6 +80,10 @@ export const createRequestPreprocessingMiddleware = <Context extends ArrangerBas
  *   id, an anonymous request or a suspended principal. Given, saved sets have owners: each set records how it was
  *   saved, the sets connection lists a principal its own sets and the sets with no owner, and a principal's set's
  *   stored filter and creator go to that principal alone. Without it, sets have no owners, as in 3.0.x.
+ * @param setsIndexPeers the other catalogues that may hold saved sets in this catalogue's sets index, with their
+ *   documentTypes, as `planSetsIndexes` groups them. Given with `setsIndexResolution`; absent, no peer is known.
+ * @param setsIndexResolution this catalogue's resolved sets index, as `planSetsIndexes` resolves it. Absent, the
+ *   router resolves it itself, with no peer information.
  */
 const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	catalogueId,
@@ -88,6 +95,8 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	getServerSideFilter,
 	graphqlOptions = {},
 	onIndexMapping,
+	setsIndexPeers,
+	setsIndexResolution,
 }: {
 	/** Identifies this catalogue in log output, so concurrent multicatalogue loads are distinguishable. Falls back to `documentType` when not provided. */
 	catalogueId?: string;
@@ -108,6 +117,8 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	 * probe stays usable after the hook returns. A throw fails this router's construction.
 	 */
 	onIndexMapping?: (mappingFromIndex: Record<string, unknown>, indexProbe: IndexProbe) => void;
+	setsIndexPeers?: readonly SetsIndexPeer[];
+	setsIndexResolution?: SetsIndexResolution;
 }): Promise<Router> => {
 	// A router given only a path would start with no configuration, so that case is refused; beside
 	// `configs`, the path is ignored and the router builds from them.
@@ -199,6 +210,18 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			}),
 		);
 
+		const enableSets = configs[configFeatureFlagProperties.ENABLE_SETS] ?? false;
+		const setsWiring = await setsWiringFor({
+			catalogueId,
+			configs,
+			enableSets,
+			esClient,
+			label,
+			owned: getRequester !== undefined,
+			setsIndexPeers,
+			setsIndexResolution,
+		});
+
 		const resolvedFields = resolveCatalogueFields(
 			mappingFromIndex,
 			configs[configOptionalProperties.EXTENDED] ?? [],
@@ -218,6 +241,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		router.get('/introspection', (_req, res) => res.json(introspectionBody));
 
 		const graphQLRoutes = await getGraphQLRoutes({
+			catalogueId,
 			configs,
 			enableAdmin,
 			enableDebug,
@@ -229,6 +253,8 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			label,
 			mappingFromIndex,
 			rethrowOnError: true,
+			setsIndexPeers,
+			setsIndexResolution: setsWiring.resolution,
 		});
 
 		router.use('/', graphQLRoutes);
@@ -236,7 +262,10 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			`/download`,
 			configs[configFeatureFlagProperties.DISABLE_DOWNLOADS]
 				? refuseDisabledDownloads()
-				: downloadRoutes({ getRequester }),
+				: downloadRoutes({
+						getRequester,
+						setsUnavailable: enableSets && setsWiring.resolution?.kind === 'unavailable',
+					}),
 		);
 		router.get('/favicon.ico', (req, res) => res.status(204));
 

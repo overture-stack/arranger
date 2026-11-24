@@ -412,6 +412,14 @@ A saved set is used as a filter by looking up its id list inside one query, and 
 
 [Detail: the chunked set document, the startup check, and what reads the chunks](docs/atlas/roadmap/sets-feature.md#saved-sets-of-any-size-usable-as-filters)
 
+### Saved sets move into per-catalogue indices
+
+_Priority: not set. Every deployment with saved sets from before 3.1._
+
+Each catalogue keeps its saved sets in its own index from 3.1, and each new set records its catalogue. Sets saved earlier sit in one shared `arranger-sets`, which a deployment keeps reading by naming it, through the deprecated `ES_ARRANGER_SETS_INDEX` or each catalogue's `sets.index`; under `getRequester`, those sets resolve only where their catalogue can be told from their `type`. Until a migration exists, that manual step is the behaviour. Open: who runs the move and with which privileges, which catalogue a set whose `type` several catalogues share goes to, and how the move is verified before the shared index is retired.
+
+[Detail: why the interim is a named index rather than a probe, the cases a migration covers, and its open decisions](docs/atlas/roadmap/sets-feature.md#saved-sets-move-into-per-catalogue-indices)
+
 ### Set operations
 
 _Priority: low. Builds on the two entries above._
