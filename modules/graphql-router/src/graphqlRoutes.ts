@@ -41,6 +41,7 @@ import type { SchemaTypesTuple } from '#schema/types.js';
 import { SCHEMA_BUILD_ERROR_NAME, type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
+import { engineErrorDetailsOf } from '#utils/engineErrorDetails.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
@@ -722,6 +723,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			const message = setsError instanceof Error ? setsError.message : `${setsError}`;
 			console.error(
 				`\n${logSeparator(label)}\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+				{ ...(label && { catalogue: label }), ...engineErrorDetailsOf(setsError) },
 			);
 		}
 
