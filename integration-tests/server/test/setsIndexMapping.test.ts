@@ -23,6 +23,7 @@ const esClient = await buildSearchClient({
 const DOCUMENT_TYPE = 'record';
 const RUN = randomUUID();
 const ES_INDEX = `testing-sets-index-mapping-${RUN}`;
+const CATALOGUE_ID = `testing-sets-index-mapping-${RUN}`;
 const SETS_INDEX = `testing-sets-index-mapping-sets-${RUN}`;
 const EARLIER_SETS_INDEX = `testing-sets-index-mapping-earlier-sets-${RUN}`;
 const TEXT_ATTRIBUTION_SETS_INDEX = `testing-sets-index-mapping-text-attribution-sets-${RUN}`;
@@ -72,6 +73,7 @@ const serveRouterOn = async (
 	getRequester?: () => { id: string; kind: 'principal' },
 ): Promise<Served> => {
 	const router = await arrangerRouter({
+		catalogueId: CATALOGUE_ID,
 		configs: { documentType: DOCUMENT_TYPE, enableSets: true, esIndex: ES_INDEX, sets: { index: setsIndex } },
 		esClient,
 		...(getRequester && { getRequester }),

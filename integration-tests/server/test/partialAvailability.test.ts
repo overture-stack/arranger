@@ -70,11 +70,14 @@ suite('integration-tests/server: partial catalogue availability', { concurrency:
 	after(async () => {
 		serverApp?.close();
 
-		try {
-			await esClient.indices.delete({ index: healthyIndex });
-		} catch {
-			// ignore
-		}
+		await Promise.all(
+			[
+				healthyIndex,
+				setsIndex,
+				'arranger-sets-catalogue-partial-healthy',
+				'arranger-sets-catalogue-partial-broken',
+			].map((index) => esClient.indices.delete({ index }).catch(() => undefined)),
+		);
 	});
 
 	test('server introspection reports the healthy catalogue as available and the broken one as failed, with a degraded aggregate', async () => {

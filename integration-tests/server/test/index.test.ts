@@ -93,6 +93,7 @@ const cleanup = async (caller = '') => {
 	// Clean up all known test indices to ensure no leftovers
 	const allTestIndices = [
 		...catalogueConfigs.map((c) => c.esIndex), // multicatalogue indices
+		...catalogueConfigs.map((c) => `arranger-sets-${c.catalogId}`), // each catalogue's default sets index, where it names none
 		setsIndex, // sets index
 	];
 

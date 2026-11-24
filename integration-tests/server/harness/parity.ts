@@ -244,6 +244,7 @@ export const serve = async (app: Express): Promise<Served> => {
  */
 export const startRouter = async ({
 	before = [],
+	catalogueId,
 	documentType,
 	esClient,
 	esIndex,
@@ -253,6 +254,8 @@ export const startRouter = async ({
 	setsIndex,
 }: {
 	before?: RequestHandler[];
+	/** The catalogue this router serves, required with `getRequester`: a router under it serves no saved sets without one. */
+	catalogueId?: string;
 	documentType: string;
 	esClient: SearchClient;
 	esIndex: string;
@@ -263,7 +266,10 @@ export const startRouter = async ({
 	network?: boolean;
 	setsIndex: string;
 }): Promise<Served> => {
+	assert.ok(!getRequester || catalogueId, 'a router under getRequester needs a catalogueId to serve saved sets');
+
 	const router = await arrangerRouter({
+		catalogueId,
 		configs: {
 			documentType,
 			enableSets: true,

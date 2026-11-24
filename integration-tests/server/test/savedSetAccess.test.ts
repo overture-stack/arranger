@@ -33,6 +33,7 @@ const esClient = await searchClientFromEnv();
 
 const DOCUMENT_TYPE = 'record';
 const esIndex = 'testing-saved-set-access';
+const CATALOGUE_ID = 'testing-saved-set-access';
 const setsIndex = 'testing-saved-set-access-sets';
 
 const MAPPINGS = {
@@ -160,6 +161,7 @@ suite('saved sets', { concurrency: false }, () => {
 		const start = (getServerSideFilter?: Filter, getRequester?: (context: unknown) => unknown) =>
 			startRouter({
 				before: [keepRequester],
+				catalogueId: CATALOGUE_ID,
 				documentType: DOCUMENT_TYPE,
 				esClient,
 				esIndex,
@@ -353,6 +355,7 @@ suite('saved sets', { concurrency: false }, () => {
 		const setId = 'a3a1c0de-0000-4000-8000-0000000000bb';
 		await esClient.index({
 			body: {
+				catalogue: CATALOGUE_ID,
 				ids: ['p1', 'p3', 'p6'],
 				path: 'name',
 				setId,
@@ -385,7 +388,16 @@ suite('saved sets', { concurrency: false }, () => {
 		// Given a set stored for a type this router serves no catalogue of
 		const setId = 'a3a1c0de-0000-4000-8000-0000000000aa';
 		await esClient.index({
-			body: { ids: ['p1'], path: 'name', setId, size: 1, sqon: null, type: 'unknown-type', userId: R1 },
+			body: {
+				catalogue: CATALOGUE_ID,
+				ids: ['p1'],
+				path: 'name',
+				setId,
+				size: 1,
+				sqon: null,
+				type: 'unknown-type',
+				userId: R1,
+			},
 			id: setId,
 			index: setsIndex,
 			refresh: true,

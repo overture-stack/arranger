@@ -33,6 +33,7 @@ const esClient = await searchClientFromEnv();
 
 const DOCUMENT_TYPE = 'record';
 const esIndex = 'testing-set-id-filter-ownership';
+const CATALOGUE_ID = 'testing-set-id-filter-ownership';
 const setsIndex = 'testing-set-id-filter-ownership-sets';
 
 const MAPPINGS = {
@@ -148,6 +149,7 @@ suite('a set_id filter under getRequester', { concurrency: false }, () => {
 			documentType: DOCUMENT_TYPE,
 			esClient,
 			esIndex,
+			catalogueId: CATALOGUE_ID,
 			getRequester: requesterFromLocals,
 			getServerSideFilter: EVERY_RESOURCE,
 			setsIndex,
@@ -155,6 +157,7 @@ suite('a set_id filter under getRequester', { concurrency: false }, () => {
 		// No getRequester: sets have no owner, and a set_id filter keeps the engine terms lookup.
 		routers.unowned = await startRouter({
 			before: [keepRequester],
+			catalogueId: CATALOGUE_ID,
 			documentType: DOCUMENT_TYPE,
 			esClient,
 			esIndex,
@@ -178,6 +181,42 @@ suite('a set_id filter under getRequester', { concurrency: false }, () => {
 
 		assert.deepEqual(other, missing);
 		assert.equal(other.hits && (other.hits as { total: number }).total, 0);
+	});
+
+	test('a set recording no catalogue, owned by the reader, answers as a missing id on hits and is not listed', async () => {
+		// Given a set the reader owns, stored in the sets index with no catalogue, as one saved before catalogues were recorded is
+		const uncataloguedSetId = 'a3a1c0de-0000-4000-8000-0000000000cc';
+		await esClient.index({
+			body: {
+				attribution: 'principal',
+				ids: ['p1', 'p3', 'p6'],
+				path: 'name',
+				setId: uncataloguedSetId,
+				size: 3,
+				sqon: CATEGORY_X,
+				type: DOCUMENT_TYPE,
+				userId: R1,
+			},
+			id: uncataloguedSetId,
+			index: setsIndex,
+			refresh: true,
+		});
+
+		// When the owner reads it by its id on hits, and then lists the sets
+		const named = await graphql(as(routers.owned, R1), HITS, { filters: setFilter(uncataloguedSetId) });
+		const missing = await graphql(as(routers.owned, R1), HITS, { filters: setFilter(MISSING_SET_ID) });
+		const listed = await graphql(
+			as(routers.owned, R1),
+			'query { sets { hits(first: 100) { edges { node { setId } } } } }',
+			{},
+		);
+		const listedIds = listed.sets.hits.edges.map(({ node }) => node.setId);
+
+		// Then it answers exactly as a missing id does, and is not listed, while the reader's catalogue set is
+		assert.deepEqual(named, missing);
+		assert.equal(named.record.hits.total, 0);
+		assert.ok(listedIds.includes(ownSetId), "the listing holds the reader's own set");
+		assert.ok(!listedIds.includes(uncataloguedSetId), 'the listing holds the uncatalogued set');
 	});
 
 	test('the owner of a set reads its records on every read path', async () => {
@@ -259,6 +298,7 @@ suite('a server filter naming a saved set, under getRequester', { concurrency: f
 
 		routers.unowned = await startRouter({
 			before: [keepRequester],
+			catalogueId: CATALOGUE_ID,
 			documentType: DOCUMENT_TYPE,
 			esClient,
 			esIndex,
@@ -270,6 +310,7 @@ suite('a server filter naming a saved set, under getRequester', { concurrency: f
 			documentType: DOCUMENT_TYPE,
 			esClient,
 			esIndex,
+			catalogueId: CATALOGUE_ID,
 			getRequester: requesterFromLocals,
 			getServerSideFilter: EVERY_RESOURCE,
 			setsIndex,
@@ -279,6 +320,7 @@ suite('a server filter naming a saved set, under getRequester', { concurrency: f
 			documentType: DOCUMENT_TYPE,
 			esClient,
 			esIndex,
+			catalogueId: CATALOGUE_ID,
 			getRequester: requesterFromLocals,
 			getServerSideFilter: () => asUisSend(clause('in', 'name', [`set_id:${serverFilter.setId}`])) as Sqon,
 			setsIndex,
