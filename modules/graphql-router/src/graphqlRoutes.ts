@@ -54,6 +54,7 @@ import type { SetsIndexResolution } from '#sets/resolveSetsIndex.js';
 import { setsWiringFor } from '#sets/setsWiring.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
+import { engineErrorDetailsOf } from '#utils/engineErrorDetails.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
@@ -869,6 +870,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 				const message = setsError instanceof Error ? setsError.message : `${setsError}`;
 				console.error(
 					`\n${logSeparator(label)}\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`,
+					{ ...(label && { catalogue: label }), ...engineErrorDetailsOf(setsError) },
 				);
 			}
 		}
