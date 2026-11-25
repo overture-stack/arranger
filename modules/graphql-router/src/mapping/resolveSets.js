@@ -217,8 +217,14 @@ export const saveSet =
 			throw new SetsDisabledError();
 		}
 
+		// The host's callbacks answer first, so a refusal they make is logged by the host, with its own detail.
+		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' });
+		const artifactCreateFilter = getArtifactCreateFilter
+			? evaluateFilterCallback({ context, getServerSideFilter: getArtifactCreateFilter, readPath: 'sets' })
+			: includeEverything(context);
 		const requester = getRequester ? requesterOf({ context, getRequester }) : undefined;
 
+		// A backstop for a host whose callbacks serve a suspended principal: a set cannot be given its creator yet.
 		if (requester?.kind === 'suspended') {
 			throw new AccessControlUnavailableError(
 				'The requester is signed in but not confirmed, so no saved set can be given its creator yet.',
@@ -249,10 +255,6 @@ export const saveSet =
 		const catalogueType = types.find(([, x]) => x.name === type)[1];
 		const { nested_fieldNames: nestedFieldNames, index, config } = catalogueType;
 		const nestingPrefix = config?.[configOptionalProperties.NESTING_PREFIX];
-		const serverSideFilter = evaluateFilterCallback({ context, getServerSideFilter, readPath: 'sets' });
-		const artifactCreateFilter = getArtifactCreateFilter
-			? evaluateFilterCallback({ context, getServerSideFilter: getArtifactCreateFilter, readPath: 'sets' })
-			: includeEverything(context);
 
 		const resolveSets = setFilterResolverFor({ context, enableSets, esClient, getRequester, setsIndex, setsScope });
 		const compiledFilter = compileFilter({

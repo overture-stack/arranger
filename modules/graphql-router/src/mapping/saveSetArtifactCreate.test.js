@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { mock, suite, test } from 'node:test';
 
-import { AccessControlDeniedError, isAccessControlDeniedError } from '#accessControl/AccessControlError.js';
+import {
+	AccessControlDeniedError,
+	AccessControlUnavailableError,
+	isAccessControlDeniedError,
+} from '#accessControl/AccessControlError.js';
 import getDefaultServerSideFilter from '#accessControl/getDefaultServerSideFilter.js';
 
 import { saveSet } from './resolveSets.js';
@@ -409,5 +413,52 @@ suite('saveSet artifact-create check, by saved value, path-less record, chunk an
 		} finally {
 			logged.mock.restore();
 		}
+	});
+});
+
+suite('saveSet for a suspended principal', () => {
+	const saveAsSuspended = ({ client, getArtifactCreateFilter, getServerSideFilter }) =>
+		saveSet({
+			enableSets: true,
+			getArtifactCreateFilter,
+			getRequester: () => ({ kind: 'suspended', retryAfterSeconds: 5 }),
+			getServerSideFilter,
+			setsIndex: 'arranger-sets',
+			types: SET_TYPES,
+		})(null, { path: 'submitter_donor_id', type: 'donor' }, { esClient: client.esClient });
+
+	test("answers the host's own refusal, so the host's event is the one logged", async () => {
+		// Given a host whose filter refuses a suspended principal itself
+		const client = fakeSearchClient({ ids: ['DO_1'] });
+		const refusal = new AccessControlUnavailableError('suspended', { retryAfterSeconds: 7 });
+		const getServerSideFilter = mock.fn(() => {
+			throw refusal;
+		});
+
+		// When a suspended principal saves a set
+		// Then the host's refusal is the one thrown, and nothing reaches the engine
+		await assert.rejects(
+			saveAsSuspended({ client, getArtifactCreateFilter: STUDY_B_ONLY, getServerSideFilter }),
+			refusal,
+		);
+		assert.equal(getServerSideFilter.mock.callCount(), 1);
+		assert.deepEqual([client.searches, client.indexes], [[], []]);
+	});
+
+	test('still refuses where the host serves a suspended principal, before the engine is reached', async () => {
+		// Given a host whose callbacks serve everyone
+		const client = fakeSearchClient({ ids: ['DO_1'] });
+
+		// When a suspended principal saves a set
+		// Then the GraphQL router refuses it as unavailable, and nothing reaches the engine
+		await assert.rejects(
+			saveAsSuspended({
+				client,
+				getArtifactCreateFilter: undefined,
+				getServerSideFilter: getDefaultServerSideFilter,
+			}),
+			(error) => error instanceof AccessControlUnavailableError && error.retryAfterSeconds === 5,
+		);
+		assert.deepEqual([client.searches, client.indexes], [[], []]);
 	});
 });
