@@ -33,10 +33,13 @@ export type FakeBridgeMode =
 	| Readonly<{ kind: 'refused' }>
 	| Readonly<{ kind: 'uncertain' }>;
 
-/** What the fake answers: the open tier's results, and each signed-in principal's by credential. */
+/**
+ * What the fake answers: the open tier's results, and each signed-in principal's by credential. A
+ * principal's `artifactCreate` defaults to allowing every catalogue its `results` name.
+ */
 export type FakeBridgeTable = Readonly<{
 	anonymous: Results;
-	principals: Readonly<Record<string, Readonly<{ results: Results; subject: string }>>>;
+	principals: Readonly<Record<string, Readonly<{ artifactCreate?: Results; results: Results; subject: string }>>>;
 }>;
 
 /**
@@ -88,7 +91,12 @@ export const createFakeBridge = (table: FakeBridgeTable, mode: FakeBridgeMode = 
 		}
 		return principal === undefined
 			? anonymousAccess(withArtifactCreateAllowed(table.anonymous))
-			: signedInAccess(principal.subject, withArtifactCreateAllowed(principal.results));
+			: signedInAccess(
+					principal.subject,
+					principal.artifactCreate === undefined
+						? withArtifactCreateAllowed(principal.results)
+						: { artifactCreate: principal.artifactCreate, results: principal.results },
+				);
 	};
 
 	const core: BridgeCore = {

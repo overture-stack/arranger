@@ -25,7 +25,14 @@ export {
 export { createRecordingLogger } from './createRecordingLogger.js';
 export { createRegisterRecorder } from './createRegisterRecorder.js';
 export { createStubProbe } from './createStubProbe.js';
-export { ABSENT_CATEGORIES_UNMARKED, CONTROLLED_ONLY_ANONYMOUS, DENIAL_KINDS, DENY_REASONS, ROWS } from './results.js';
+export {
+	ABSENT_CATEGORIES_UNMARKED,
+	ARTIFACT_CREATE,
+	CONTROLLED_ONLY_ANONYMOUS,
+	DENIAL_KINDS,
+	DENY_REASONS,
+	ROWS,
+} from './results.js';
 export type {
 	CatalogueRecord,
 	DenialKind,

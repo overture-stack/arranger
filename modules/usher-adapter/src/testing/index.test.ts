@@ -6,6 +6,7 @@ suite("the testing module's surface", () => {
 		assert.deepEqual(Object.keys(await import('./index.js')).toSorted(), [
 			'ABSENT_CATEGORIES_REGISTRATION',
 			'ABSENT_CATEGORIES_UNMARKED',
+			'ARTIFACT_CREATE',
 			'CATEGORY_CONDITIONS',
 			'CATEGORY_FIELD',
 			'CONTROLLED_ONLY_ANONYMOUS',

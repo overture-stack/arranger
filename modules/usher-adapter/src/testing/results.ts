@@ -132,6 +132,14 @@ export const ROWS = {
 } as const;
 
 /**
+ * `artifactCreate` beside a row's view result: a viewer grant creates from its category alone, never
+ * from what a rule such as the baseline reaches.
+ */
+export const ARTIFACT_CREATE = {
+	heartControlledGrant: narrowing([held('HEART_STUDY', ['global.controlled'], false)]),
+} as const;
+
+/**
  * The anonymous row for the catalogue registered again as `controlledOnly`, defining `controlled` alone,
  * where the unmarked records of HEART_STUDY and LUNG_COHORT are open and REEF_ARCHIVE is withheld whole.
  */

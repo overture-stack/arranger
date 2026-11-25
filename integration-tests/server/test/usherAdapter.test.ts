@@ -17,6 +17,7 @@ import express, { type RequestHandler } from 'express';
 
 import arrangerRouter, {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
+	ACCESS_ENFORCEMENT_DENIED_CODE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
 } from '../../../modules/graphql-router/src/index.js';
 import { type CatalogueIndex, createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
@@ -29,6 +30,7 @@ import {
 import {
 	ABSENT_CATEGORIES_REGISTRATION,
 	ABSENT_CATEGORIES_UNMARKED,
+	ARTIFACT_CREATE,
 	CATEGORY_CONDITIONS,
 	CATEGORY_FIELD,
 	categoryCondition,
@@ -115,7 +117,20 @@ const PRINCIPALS: FakeBridgeTable['principals'] = Object.fromEntries(
 	Object.entries(ROWS).map(([name, row]) => [name, { results: { records: row.result }, subject: `subject-${name}` }]),
 );
 
-const TABLE: FakeBridgeTable = { anonymous: { records: ROWS.anonymousBaselineOn.result }, principals: PRINCIPALS };
+/** A principal viewing as `heartControlledGrant` does, who may save sets from its granted category alone. */
+const SAVES_FROM_GRANT = 'savesFromGrant';
+
+const TABLE: FakeBridgeTable = {
+	anonymous: { records: ROWS.anonymousBaselineOn.result },
+	principals: {
+		...PRINCIPALS,
+		[SAVES_FROM_GRANT]: {
+			artifactCreate: { records: ARTIFACT_CREATE.heartControlledGrant },
+			results: { records: ROWS.heartControlledGrant.result },
+			subject: `subject-${SAVES_FROM_GRANT}`,
+		},
+	},
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
@@ -196,6 +211,7 @@ const startUsherHost = async ({
 		Object.entries(catalogues).map(async ([id, { esIndex, setsIndex }]) => ({
 			id,
 			router: await arrangerRouter({
+				catalogueId: id,
 				configs: {
 					documentType: DOCUMENT_TYPE,
 					enableSets: true,
@@ -204,6 +220,7 @@ const startUsherHost = async ({
 					...(downloads && { downloads }),
 				},
 				esClient: client,
+				getArtifactCreateFilter: accessControl.artifactCreateFilterFor(id),
 				getServerSideFilter: accessControl.filterFor(id),
 				onIndexMapping: (mapping, probe) => {
 					indices[id] = { mapping, probe };
@@ -600,6 +617,40 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 				assert.deepEqual(allowed, shown);
 			});
 		}
+	});
+
+	suite('saving a set needs artifact.create on every record', () => {
+		test('saves records of the granted category', async () => {
+			// Given a principal who may save from HEART_STUDY's controlled records, h1 among them
+			// When it saves h1
+			const answer = await postGraphql(host.targetFor('records', SAVES_FROM_GRANT), SAVE_SET_MUTATION, {
+				sqon: naming(['h1']),
+			});
+
+			// Then the set holds h1
+			assert.deepEqual(errorsOf(answer), []);
+			assert.equal(answer.data.data?.saveSet?.size, 1);
+		});
+
+		test('refuses records it views only through the baseline, and writes nothing', async () => {
+			// Given the same principal, who views h2 through the baseline alone
+			// When it saves h2
+			const { answer, calls } = await during(host, () =>
+				postGraphql(host.targetFor('records', SAVES_FROM_GRANT), SAVE_SET_MUTATION, { sqon: naming(['h2']) }),
+			);
+
+			// Then the save is refused naming artifact.create, and nothing reaches the sets index
+			assert.deepEqual(errorsOf(answer), [
+				[
+					ACCESS_ENFORCEMENT_DENIED_CODE,
+					'Some of the records selected in catalogue "records" can\'t be saved as a set: a set needs artifact.create on every record it holds.',
+				],
+			]);
+			assert.deepEqual(
+				calls.filter(({ method }) => method === 'index'),
+				[],
+			);
+		});
 	});
 
 	suite('an export cut short by the row limit', () => {
