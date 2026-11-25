@@ -134,7 +134,7 @@ These correct behaviour that only the 3.1 release candidates had, so a deploymen
 
 ### Access control
 
-- **The server-side filter is now applied on every read path**: record queries, aggregations, the export route, and federated queries. It was previously composed per call site, which meant a read path could be added without it. a facet that does not filter itself removes its own field's clauses from the caller's filter alone and restates the server-side filter whole, the export route composes it through the same `compileFilter` as GraphQL reads, and federated queries forward it to remote nodes in the outgoing query variables.
+- **The server-side filter is now applied on every read path**: record queries, aggregations, the export route, and federated queries. It was previously composed per call site, which meant a read path could be added without it. A facet that does not filter itself removes its own field's clauses from the caller's filter alone and restates the server-side filter whole, the export route composes it through the same `compileFilter` as GraphQL reads, and federated queries forward it to remote nodes in the outgoing query variables.
 
 - **Federation forwards the filter rather than enforcing it.** A remote node applies the SQON it receives; a node that ignores it applies nothing, and the querying node cannot detect that. Treat federated results as trusted only to the extent the remote nodes are.
 

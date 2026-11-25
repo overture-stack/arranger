@@ -69,6 +69,7 @@ suite('a nested facet refuses a saved-set filter when saved sets are not enabled
 			() =>
 				buildAggregations({
 					aggregationsFilterThemselves: true,
+					clientSideQuery: {},
 					enableSets: false,
 					graphqlFields: {
 						donors__gender: {
@@ -79,7 +80,6 @@ suite('a nested facet refuses a saved-set filter when saved sets are not enabled
 						},
 					},
 					nestedFieldNames: NESTED_FIELD_NAMES,
-					query: {},
 					serverSideQuery: {},
 					setsIndex: SETS_INDEX,
 					sqon: SET_FILTER,
