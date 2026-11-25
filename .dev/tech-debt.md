@@ -257,6 +257,15 @@ Two consumers need updating in the same pass: `dev:check` (which just calls `tes
 **Fix:** Add a root `typecheck` script that runs `npm run typecheck --workspaces --if-present`, and run it in the pipeline beside the tests.
 **Standalone:** yes
 
+### `integration-tests/server` does not typecheck, and carries 23 type errors
+
+**File:** `integration-tests/server/tsconfig.json`; `test/index.test.ts`, `setsIndexMapping.test.ts`, `accessFilterSize.test.ts`, `emptyCombinations.test.ts`, `jsonFields.test.ts`
+**Severity:** low (the suites pass)
+**Kind:** test infrastructure gap
+**Issue:** `npx tsc --noEmit -p integration-tests/server` reports 23 errors. Nine are in the suites themselves. The other fourteen are in source the suites import, checked under this project's compiler options: `modules/graphql-router/src` (twelve, among them `graphqlRoutes.ts`, `router.ts` and the network resolvers), `apps/search-server/src/configs/legacyNetwork.ts` and `modules/usher-adapter/src/requesterOf.ts`. The search server and the adapter typecheck clean in their own projects; `modules/graphql-router`'s own project reports 46 errors separately. `tsx --test` strips types unchecked, so none of these is reported.
+**Fix:** Fix the nine in the suites, decide whether the fourteen in imported source come from this project's options or from the source, and add a `typecheck` script to the project, which the entry above would then run.
+**Standalone:** yes
+
 ### Only graphql-router has a test keeping `removeComments` off in its release build
 
 **File:** `modules/components/tsconfig.release.json`, `modules/types/tsconfig.release.json`, `modules/sqon/tsconfig.release.json`

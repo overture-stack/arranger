@@ -15,11 +15,13 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import express, { type RequestHandler } from 'express';
 
-import arrangerRouter, {
+import {
 	ACCESS_CONTROL_FAILURE_MESSAGE,
 	ACCESS_ENFORCEMENT_DENIED_CODE,
 	ACCESS_ENFORCEMENT_UNAVAILABLE_MESSAGE,
 } from '../../../modules/graphql-router/src/index.js';
+import { buildCatalogueRouter } from '../../../apps/search-server/src/arrangerRoutes.js';
+import { withUsherFilters } from '../../../apps/search-server/src/usher.js';
 import { type CatalogueIndex, createUsherAccessControl } from '../../../modules/usher-adapter/src/index.js';
 import {
 	createFakeBridge,
@@ -192,7 +194,7 @@ const startUsherHost = async ({
 	table,
 }: {
 	catalogues: Readonly<Record<string, Catalogue>>;
-	downloads?: Readonly<{ maxRows: number }>;
+	downloads?: Readonly<{ allowCustomMaxRows?: boolean; maxRows: number }>;
 	recording?: ReturnType<typeof createRecordingLogger>;
 	routersAheadOfBridge?: boolean;
 	table: FakeBridgeTable;
@@ -206,24 +208,33 @@ const startUsherHost = async ({
 		logger,
 	});
 	const indices: Record<string, CatalogueIndex> = {};
-
-	const outcomes = await Promise.allSettled(
-		Object.entries(catalogues).map(async ([id, { esIndex, setsIndex }]) => ({
-			id,
-			router: await arrangerRouter({
-				catalogueId: id,
-				configs: {
+	// Each router gets what the image gives it, through the image's own wiring, so the two cannot drift.
+	const usherCatalogs = withUsherFilters(
+		Object.fromEntries(
+			Object.entries(catalogues).map(([id, { esIndex, setsIndex }]) => [
+				id,
+				{
 					documentType: DOCUMENT_TYPE,
 					enableSets: true,
 					esIndex,
 					sets: { index: setsIndex },
 					...(downloads && { downloads }),
 				},
+			]),
+		),
+		accessControl,
+	);
+
+	const outcomes = await Promise.allSettled(
+		Object.entries(catalogues).map(async ([id, { esIndex, setsIndex }]) => ({
+			id,
+			router: await buildCatalogueRouter({
+				catalogueConfigs: usherCatalogs[id],
+				catalogueId: id,
+				enableDebug: false,
 				esClient: client,
-				getArtifactCreateFilter: accessControl.artifactCreateFilterFor(id),
-				getServerSideFilter: accessControl.filterFor(id),
-				onIndexMapping: (mapping, probe) => {
-					indices[id] = { mapping, probe };
+				onIndexMapping: (catalogueId, mapping, probe) => {
+					indices[catalogueId] = { mapping, probe };
 				},
 			}),
 		})),
@@ -288,8 +299,8 @@ const SAVE_SET_MUTATION = `mutation ($sqon: JSON!) { saveSet(type: ${DOCUMENT_TY
 const postGraphql = (target: Target, query: string, variables: Record<string, unknown> = {}) =>
 	axios.post(`${target.base}/graphql`, { query, variables }, { headers: target.headers, validateStatus: () => true });
 
-/** Posts an export of the identifying column and returns the whole response, whatever its status. */
-const postExport = (target: Target) =>
+/** Posts an export of the identifying column, asking for `maxRows` when given, and returns the whole response. */
+const postExport = (target: Target, maxRows?: number) =>
 	axios.post(
 		`${target.base}/download`,
 		new URLSearchParams({
@@ -315,6 +326,7 @@ const postExport = (target: Target) =>
 						],
 						fileName: 'usher.tsv',
 						fileType: 'tsv',
+						...(maxRows !== undefined && { maxRows }),
 						sqon: null,
 					},
 				],
@@ -653,6 +665,33 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 		});
 	});
 
+	suite('a saved set belongs to whoever saved it', () => {
+		const SET_HITS_QUERY = `query ($sqon: JSON) { ${DOCUMENT_TYPE} { hits(first: 100, filters: $sqon) { total } } }`;
+		const bySet = (setId: string) => ({
+			sqon: { content: [{ content: { fieldName: ID_FIELD, value: [`set_id:${setId}`] }, op: 'in' }], op: 'and' },
+		});
+
+		test('answers as a missing id to another principal', async () => {
+			// Given a set everyGrant saved of h1 and h2, which heartControlledGrant also sees
+			const saved = await postGraphql(host.targetFor('records', 'everyGrant'), SAVE_SET_MUTATION, {
+				sqon: naming(['h1', 'h2']),
+			});
+			const setId = saved.data.data?.saveSet?.setId;
+			assert.equal(typeof setId, 'string', JSON.stringify(saved.data));
+
+			// When each filters by it
+			const [owner, other] = await Promise.all(
+				['everyGrant', 'heartControlledGrant'].map((credential) =>
+					postGraphql(host.targetFor('records', credential), SET_HITS_QUERY, bySet(setId)),
+				),
+			);
+
+			// Then the owner finds both records, and the other principal none
+			assert.equal(owner.data.data?.[DOCUMENT_TYPE]?.hits?.total, 2);
+			assert.equal(other.data.data?.[DOCUMENT_TYPE]?.hits?.total, 0);
+		});
+	});
+
 	suite('an export cut short by the row limit', () => {
 		const cutSetsIndex = 'testing-usher-adapter-cut-sets';
 		let cutting: UsherHost;
@@ -660,7 +699,7 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 		before(async () => {
 			cutting = await startUsherHost({
 				catalogues: { records: { esIndex, registration: RECORDS_REGISTRATION, setsIndex: cutSetsIndex } },
-				downloads: { maxRows: 2 },
+				downloads: { allowCustomMaxRows: true, maxRows: 2 },
 				table: TABLE,
 			});
 		});
@@ -680,6 +719,16 @@ suite('the Usher adapter through the GraphQL router', { concurrency: false }, ()
 			assert.equal(String(response.data).split('\n').filter(Boolean).length - 1, 2);
 			assert.equal(response.headers['arranger-export-truncated'], 'true');
 			assert.equal(response.headers['arranger-export-matching-total'], String(ROWS.everyGrant.visible.length));
+		});
+
+		test('holds a request asking for more rows to the configured limit', async () => {
+			// Given a host whose exports stop at two rows, letting a request ask for its own limit
+			// When a principal seeing six records asks for five
+			const response = await postExport(cutting.targetFor('records', 'everyGrant'), 5);
+
+			// Then two rows arrive, since the configured limit is a ceiling
+			assert.equal(response.status, 200, response.data);
+			assert.equal(String(response.data).split('\n').filter(Boolean).length - 1, 2);
 		});
 
 		test("names the file it is saved under by the rows it holds and the principal's matching total", async () => {
