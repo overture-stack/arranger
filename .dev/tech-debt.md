@@ -468,7 +468,7 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Issue:** These sites serialize with `JSON.stringify(data, null, 2)`, so every response carries newlines and two spaces per nesting level. No human reads a tool result, and a model parses compact JSON exactly as well, so the whitespace buys nothing on the `get_catalogue_fields` path. Measured on a synthesized catalogue introspection body of 47 fields, that count taken from `integration-tests/server/test/assets/model_centric_1.mappings.json` rather than from any mcp-server fixture: 7063 characters pretty against 4896 compact, a 31 percent reduction. The MCP specification has a tool that returns `structuredContent` also return the serialized JSON as a text block for backwards compatibility, so the same payload ships twice and the saving applies on both, roughly 4300 characters per call on a tool invoked by a model before nearly every query. The MCP host plan's Phase 0 measured it in tokens: on a 10-field synthetic catalogue, 718 prompt tokens pretty against 376 compact, 48 percent less ([results](docs/mcp-host/phase0-results.md#context-length)).
 **Fix:** Drop the indent argument at `tools.ts:71`, which is read only by a model. The three `resources.ts` sites are a judgement call rather than an obvious win, since a client may render a resource for a person to read, and indentation is the only thing making that legible. Decide those deliberately rather than sweeping the pattern.
 
-**Do not change `executeQueryTool.ts:199`.** It looks identical and is not: that call formats the GraphQL variables inside `server.server.elicitInput()`, the confirmation prompt read by a person before a query runs. Its indentation is the feature. A regex sweep of `JSON.stringify(.*null, 2)` breaks it, which is why this entry names sites individually rather than describing a pattern.
+**Do not change `executeQueryTool.ts:432`.** It looks identical and is not: that call formats the GraphQL variables in the confirmation message, which `resolveConfirmation` sends through `inputRequired.elicit` for a person to read before the query runs. Its indentation is the feature. A regex sweep of `JSON.stringify(.*null, 2)` breaks it, which is why this entry names sites individually rather than describing a pattern.
 **Standalone:** yes; one argument removed, plus a decision on the resource sites
 
 ### `execute_query`'s confirmation state is bound to the OAuth client, not the user
@@ -514,6 +514,15 @@ Either way, an LLM using either surface has no way to know a listed catalogue is
 **Kind:** model-facing wording
 **Issue:** A declined confirmation returns `successResult` with `executed: false` and a `message` saying the user declined, so the model gets an ordinary, non-error tool result shaped like a real one. Through `mcp-host-core` against a local Arranger, `gemma4:e4b` answered "1,234,567 files" for an index holding 486, and `qwen3:14b` told the person the query was still waiting for their confirmation.
 **Fix:** Return the decline as `isError: true` with text that leads with the outcome and states what to do next, such as "Not run: the user declined this query. No data was returned. Do not state a result. Ask whether to change the query or stop." Then rerun the decline scenario on both models.
+**Standalone:** yes
+
+### `execute_query` aggregations return every bucket up to Elasticsearch's limit
+
+**File:** `apps/mcp-server/src/arranger/queryBuilder.ts` (the `buckets` selection); `apps/mcp-server/src/mcp/executeQueryTool.ts` (input schema)
+**Severity:** medium (one call can exceed any model's context; not a disclosure issue)
+**Kind:** missing resource limit
+**Issue:** `buckets` gets no `max`, so Arranger requests its fallback of 300,000 terms. Only Elasticsearch's `search.max_buckets` bounds the result: 65,536 by default, more on a cluster that raises it. Past it, the query fails with a GraphQL error. At the default, a response is 7.9 MiB with 8-character keys and 14.9 MiB with 64-character keys, computed from synthetic results serialized as the server does. The CRE desktop app sizes its response limit against this ceiling, so a lower bound here lets that limit come down. Arranger's fallback itself is the "`MAX_AGGREGATION_SIZE` is a default rather than a maximum" entry.
+**Fix:** Pass `buckets` a bounded `max` from a `maxBuckets` input with a default and a ceiling, as `first` has. Request one bucket past the bound, and if it arrives, drop it and mark the result truncated. `bucket_count` cannot signal this, since it counts only the buckets returned (`modules/graphql-router/src/middleware/flattenAggregations.js:28`). Optionally select `cardinality` to tell the model roughly how many values were left out. The default bound and the truncation wording are model-facing, so measure both with the evaluation harness once it exists.
 **Standalone:** yes
 
 ## apps/search-server
