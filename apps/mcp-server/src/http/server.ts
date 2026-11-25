@@ -47,6 +47,9 @@ const REQUEST_PATH_BASE = 'http://request.invalid';
 export const hostAsUrlAuthority = (host: string): string =>
 	host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
 
+/** Body of the liveness answer, matching the search server's ping route so both apps read the same. */
+const PING_MESSAGE = 'Reporting for duty...';
+
 const writeJsonRpcError = (res: ServerResponse, status: number, code: number, message: string): void => {
 	res.writeHead(status, { 'Content-Type': 'application/json' });
 	res.end(JSON.stringify({ jsonrpc: '2.0', error: { code, message }, id: null }));
@@ -84,6 +87,12 @@ const createGuards = ({ allowedHosts, allowedOrigins }: ArrangerMcpConfig['mcp']
  * a degraded session: per-request legacy serving cannot receive server-to-client requests, so
  * `execute_query` could not obtain its confirmation on that path.
  *
+ * The liveness route at `config.mcp.pingPath` is answered before the Host and Origin guards and before
+ * the body is read. A Kubernetes HTTP probe dials the pod IP and sends no Host that the allowlist
+ * would admit, so a guarded route would refuse every probe. The route reports process liveness only
+ * and checks no dependency. It answers `GET` and `HEAD` on that exact path, and every other request
+ * on it takes the same route as any other path.
+ *
  * @param config - Validated server configuration.
  * @param serverFactory - Produces a fresh `McpServer` for each request the handler serves.
  * @returns The listening server and a shutdown function.
@@ -92,7 +101,7 @@ export const startMcpHttpServer = async (
 	config: ArrangerMcpConfig,
 	serverFactory: McpServerFactory,
 ): Promise<McpHttpServer> => {
-	const { host, port, path, maxBodyBytes } = config.mcp;
+	const { host, port, path, pingPath, maxBodyBytes } = config.mcp;
 
 	const handler = createMcpHandler(serverFactory, {
 		legacy: 'reject',
@@ -109,6 +118,16 @@ export const startMcpHttpServer = async (
 	const httpServer = http.createServer((req, res) => {
 		void (async () => {
 			try {
+				const { pathname } = new URL(req.url ?? '/', REQUEST_PATH_BASE);
+
+				// Ahead of the guards: a probe carries no allowed Host, and it needs no body.
+				if (pathname === pingPath && (req.method === 'GET' || req.method === 'HEAD')) {
+					logger.debug('Answering liveness probe');
+					res.writeHead(200, { 'Content-Type': 'application/json' });
+					res.end(JSON.stringify({ message: PING_MESSAGE }));
+					return;
+				}
+
 				// Before anything reads the body: a refused request should never cost us the payload.
 				for (const guard of guards) {
 					if (!guard(req, res)) {
@@ -116,7 +135,6 @@ export const startMcpHttpServer = async (
 					}
 				}
 
-				const { pathname } = new URL(req.url ?? '/', REQUEST_PATH_BASE);
 				if (pathname !== path) {
 					writeJsonRpcError(res, 404, TRANSPORT_REJECTION, `Not found. The MCP endpoint is ${path}.`);
 					return;
