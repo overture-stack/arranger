@@ -8,7 +8,12 @@ import morgan from 'morgan';
 // TODO: add winston in module and import here
 
 import arrangerRoutes from '#arrangerRoutes.js';
-import { computeAggregateServerStatus, serverAggregateStatuses, startEngineProbe } from '#availability/index.js';
+import {
+	computeAggregateServerStatus,
+	createReadinessChangeDetector,
+	serverAggregateStatuses,
+	startEngineProbe,
+} from '#availability/index.js';
 import loadAllConfigs from '#configs/index.js';
 import type { ExternalConfigs } from '#configs/types/index.js';
 import createIntrospectionRoutes from '#introspection/index.js';
@@ -70,12 +75,11 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 
 		app.use(
 			morgan('dev', {
-				skip: (req, res) => {
-					// log everything on debug mode. errors only otherwise
-					return enableDebug || enableLogs
-						? [health.pingPath].some((endpoint) => req.originalUrl.includes(endpoint))
-						: res.statusCode < 400;
-				},
+				// Health checks never log per probe, in either mode: a readiness change logs once, as
+				// `readiness.changed`. Otherwise everything logs in debug mode, and only errors outside it.
+				skip: (req, res) =>
+					[health.pingPath, health.readyPath].includes(req.path) ||
+					!(enableDebug || enableLogs || res.statusCode >= 400),
 			}),
 		);
 
@@ -130,13 +134,31 @@ const arrangerServer = async ({ esClient, usher: usherSeam, ...externalConfigs }
 		// Readiness: reflects whether this replica can usefully serve traffic right now. Only
 		// `unhealthy` (zero enabled catalogues available) should pull the pod out of rotation;
 		// `degraded` still serves real traffic for its available catalogues.
+		const readinessChanged = createReadinessChangeDetector();
+
 		app.get(health.readyPath, (_req, res) => {
 			const status = computeAggregateServerStatus(catalogueStatuses);
 			const engineReachable = engineProbe.isReachable();
 			// A Bridge before its first check answers 503 to every request, so the pod takes no traffic until
 			// then; in every other mode, uncertain included, the open tier keeps serving.
-			const bridgeServing = usher?.bridge.mode() !== 'cold';
-			const ready = engineReachable && bridgeServing && status !== serverAggregateStatuses.UNHEALTHY;
+			const bridgeMode = usher?.bridge.mode();
+			const bridgeServing = bridgeMode !== 'cold';
+			const causes = [
+				...(engineReachable ? [] : ['search engine unreachable']),
+				...(bridgeServing ? [] : ['Bridge not yet serving']),
+				...(status === serverAggregateStatuses.UNHEALTHY ? ['no catalogue available'] : []),
+			];
+			const ready = causes.length === 0;
+
+			const observation = { ...(usher && { bridgeMode }), causes, engineReachable, ready, status };
+
+			if (readinessChanged(observation)) {
+				if (ready) {
+					console.log('readiness.changed', 'Ready to serve traffic.', observation);
+				} else {
+					console.warn('readiness.changed', `Not ready to serve traffic: ${causes.join(', ')}.`, observation);
+				}
+			}
 
 			res.status(ready ? 200 : 503).json({ status, engineReachable });
 		});
