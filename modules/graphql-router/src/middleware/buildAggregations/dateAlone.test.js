@@ -33,11 +33,11 @@ suite('middleware/buildAggregations: a date alone means its whole day', () => {
 			// When the facet's aggregation is built
 			const aggregations = buildAggregations({
 				aggregationsFilterThemselves: false,
+				clientSideQuery: buildQuery({ filters: sqon, legacyDateFieldNames, nestedFieldNames, nestingPrefix }),
 				graphqlFields: { visits__kind: { buckets: { key: {} } } },
 				legacyDateFieldNames,
 				nestedFieldNames,
 				nestingPrefix,
-				query: buildQuery({ filters: sqon, legacyDateFieldNames, nestedFieldNames, nestingPrefix }),
 				sqon,
 			});
 
@@ -57,12 +57,12 @@ suite('middleware/buildAggregations: a date alone means its whole day', () => {
 		// When the facet's aggregation is built
 		const aggregations = buildAggregations({
 			aggregationsFilterThemselves: false,
+			clientSideQuery: {},
 			graphqlFields: {
 				kind: { buckets: { filter_by_term: { __arguments: [{ filter: { value: filterByTerm } }] }, key: {} } },
 			},
 			legacyDateFieldNames: ['diagnosed'],
 			nestedFieldNames: [],
-			query: {},
 			sqon: null,
 		});
 

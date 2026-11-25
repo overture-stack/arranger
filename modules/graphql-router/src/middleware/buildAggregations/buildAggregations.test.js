@@ -34,6 +34,7 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
+			clientSideQuery: buildQuery({ nestedFieldNames, filters: {} }),
 			graphqlFields: {
 				access: { buckets: { key: {} } },
 				cases__samples__portions__is_ffpe: { buckets: { key: {} } },
@@ -45,7 +46,6 @@ suite('middleware/buildAggregations', () => {
 				},
 			},
 			nestedFieldNames,
-			query: buildQuery({ nestedFieldNames, filters: {} }),
 			sqon: null,
 		};
 
@@ -170,11 +170,7 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
-			graphqlFields: {
-				participants__kf_id: { buckets: { key: {} } },
-			},
-			nestedFieldNames,
-			query: {
+			clientSideQuery: {
 				bool: {
 					must: [
 						{
@@ -197,6 +193,10 @@ suite('middleware/buildAggregations', () => {
 					],
 				},
 			},
+			graphqlFields: {
+				participants__kf_id: { buckets: { key: {} } },
+			},
+			nestedFieldNames,
 			sqon: {
 				content: [
 					{
@@ -251,12 +251,7 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
-			graphqlFields: {
-				biomarker__alc: { buckets: { key: {} } },
-			},
-			nestedFieldNames,
-			nestingPrefix: 'data',
-			query: {
+			clientSideQuery: {
 				bool: {
 					must: [
 						{
@@ -279,6 +274,11 @@ suite('middleware/buildAggregations', () => {
 					],
 				},
 			},
+			graphqlFields: {
+				biomarker__alc: { buckets: { key: {} } },
+			},
+			nestedFieldNames,
+			nestingPrefix: 'data',
 			sqon: {
 				content: [
 					{
@@ -331,12 +331,12 @@ suite('middleware/buildAggregations', () => {
 	test('2c.buildAggregations correctly wraps a real nested-within-nested field (e.g. treatment.chemotherapy), matching donor.yaml\'s actual structure', () => {
 		const input = {
 			aggregationsFilterThemselves: false,
+			clientSideQuery: {},
 			graphqlFields: {
 				treatment__chemotherapy__drug_name: { buckets: { key: {} } },
 			},
 			nestedFieldNames: ['treatment', 'treatment.chemotherapy'],
 			nestingPrefix: 'data',
-			query: {},
 			sqon: { op: 'and', content: [] },
 		};
 
@@ -396,11 +396,11 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
-			nestedFieldNames: [],
-			query: buildQuery({
+			clientSideQuery: buildQuery({
 				filters: sqon,
 				nestedFieldNames: [],
 			}),
+			nestedFieldNames: [],
 			sqon,
 			graphqlFields: {
 				acl: {
@@ -487,6 +487,7 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: true,
+			clientSideQuery: buildQuery({ nestedFieldNames: [], filters: sqon }),
 			graphqlFields: {
 				acl: {
 					buckets: {
@@ -503,7 +504,6 @@ suite('middleware/buildAggregations', () => {
 			},
 			nestedFieldNames: [],
 			sqon,
-			query: buildQuery({ nestedFieldNames: [], filters: sqon }),
 		};
 
 		const expected = {
@@ -535,13 +535,13 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
+			clientSideQuery: buildQuery({ nestedFieldNames, filters: sqon }),
 			graphqlFields: {
 				access: { buckets: { key: {} } },
 				case: { buckets: { key: {} } },
 			},
 			nestedFieldNames,
 			sqon,
-			query: buildQuery({ nestedFieldNames, filters: sqon }),
 		};
 
 		const expectedOutput = {
@@ -579,12 +579,12 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
+			clientSideQuery: buildQuery({ nestedFieldNames, filters: sqon }),
 			graphqlFields: {
 				participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
 			},
 			nestedFieldNames,
 			sqon,
-			query: buildQuery({ nestedFieldNames, filters: sqon }),
 		};
 
 		const expectedOutput = {
@@ -671,12 +671,12 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: false,
+			clientSideQuery: buildQuery({ nestedFieldNames, filters: sqon }),
 			graphqlFields: {
 				participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
 			},
 			nestedFieldNames,
 			sqon,
-			query: buildQuery({ nestedFieldNames, filters: sqon }),
 		};
 
 		const expectedOutput = {
@@ -806,12 +806,12 @@ suite('middleware/buildAggregations', () => {
 
 		const input = {
 			aggregationsFilterThemselves: true,
+			clientSideQuery: buildQuery({ nestedFieldNames, filters: sqon }),
 			graphqlFields: {
 				participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
 			},
 			nestedFieldNames,
 			sqon,
-			query: buildQuery({ nestedFieldNames, filters: sqon }),
 		};
 
 		const expectedOutput = {

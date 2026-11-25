@@ -23,6 +23,12 @@ const lookupsIn = (node) =>
 const aggregationsFor = (aggregationsFilterThemselves) =>
 	buildAggregations({
 		aggregationsFilterThemselves,
+		clientSideQuery: buildQuery({
+			enableSets: true,
+			filters: SET_FILTER,
+			nestedFieldNames: NESTED_FIELD_NAMES,
+			setsIndex: SETS_INDEX,
+		}),
 		enableSets: true,
 		graphqlFields: {
 			donors__gender: {
@@ -33,12 +39,6 @@ const aggregationsFor = (aggregationsFilterThemselves) =>
 			},
 		},
 		nestedFieldNames: NESTED_FIELD_NAMES,
-		query: buildQuery({
-			enableSets: true,
-			filters: SET_FILTER,
-			nestedFieldNames: NESTED_FIELD_NAMES,
-			setsIndex: SETS_INDEX,
-		}),
 		setsIndex: SETS_INDEX,
 		sqon: SET_FILTER,
 	});
@@ -69,6 +69,7 @@ suite('a nested facet refuses a saved-set filter when saved sets are not enabled
 			() =>
 				buildAggregations({
 					aggregationsFilterThemselves: true,
+					clientSideQuery: {},
 					enableSets: false,
 					graphqlFields: {
 						donors__gender: {
@@ -79,7 +80,6 @@ suite('a nested facet refuses a saved-set filter when saved sets are not enabled
 						},
 					},
 					nestedFieldNames: NESTED_FIELD_NAMES,
-					query: {},
 					serverSideQuery: {},
 					setsIndex: SETS_INDEX,
 					sqon: SET_FILTER,
