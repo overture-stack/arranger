@@ -6,7 +6,11 @@ import { inspect } from 'node:util';
 import express from 'express';
 import request from 'supertest';
 
-import { AccessControlDeniedError, AccessControlUnavailableError } from '#accessControl/AccessControlError.js';
+import {
+	AccessControlDeniedError,
+	AccessControlError,
+	AccessControlUnavailableError,
+} from '#accessControl/AccessControlError.js';
 import includeEverything from '#accessControl/includeEverything.js';
 import { denyAllFilter, restrictingFilter } from '#accessControl/serverSideFilters.fixture.js';
 import { serveOnLoopback } from '#loopbackServer.fixture.js';
@@ -452,11 +456,28 @@ const captureConsole = () => {
 	const methods = ['debug', 'error', 'info', 'log', 'warn'];
 	const spies = methods.map((method) => mock.method(console, method, () => {}));
 
+	// A router event is one JSON line, read back as [event, fields] after checking its level names the method it was
+	// written with; any other call keeps its arguments.
+	const argumentsOf = (method, call) => {
+		const [line] = call.arguments;
+
+		if (call.arguments.length !== 1 || typeof line !== 'string' || !line.startsWith('{')) {
+			assert.ok(!/^[a-z_]+\.[a-z_]+$/u.test(String(line)), `${line} was logged as plain text, not a JSON line`);
+			return call.arguments;
+		}
+
+		const { event, level, time, ...fields } = JSON.parse(line);
+		assert.equal(level, method);
+		assert.equal(new Date(time).toISOString(), time);
+
+		return Object.keys(fields).length > 0 ? [event, fields] : [event];
+	};
+
 	return {
-		/** The arguments of every call to `method`. */
-		callsAt: (method) => spies[methods.indexOf(method)].mock.calls.map((call) => call.arguments),
-		/** The event name, the first argument, of every call to `method`. */
-		eventsAt: (method) => spies[methods.indexOf(method)].mock.calls.map((call) => call.arguments[0]),
+		/** The arguments of every call to `method`, a router event's line read back as its name and fields. */
+		callsAt: (method) => spies[methods.indexOf(method)].mock.calls.map((call) => argumentsOf(method, call)),
+		/** The event name of every call to `method`. */
+		eventsAt: (method) => spies[methods.indexOf(method)].mock.calls.map((call) => argumentsOf(method, call)[0]),
 		loggedText: () =>
 			spies
 				.flatMap((spy) => spy.mock.calls.flatMap((call) => call.arguments))
@@ -1843,12 +1864,17 @@ suite('download', () => {
 					try {
 						// When the stock form is posted
 						await postDownload(server, paramsWithFile());
-						const logged = consoleCapture.loggedText();
 
 						// Then the failed download carries a reason naming access control, and the access-control event is logged too
-						assert.match(logged, /download\.failed/);
-						assert.match(logged, /reason: 'access_enforcement'/);
-						assert.match(logged, /access_enforcement\.evaluation_failed/);
+						assert.deepEqual(
+							consoleCapture
+								.callsAt('error')
+								.map(([event, fields]) => [event, fields?.reason ?? fields?.route]),
+							[
+								['download.failed', 'access_enforcement'],
+								['access_enforcement.evaluation_failed', 'download'],
+							],
+						);
 					} finally {
 						consoleCapture.restore();
 					}
@@ -2928,4 +2954,100 @@ suite('download', () => {
 			);
 		});
 	});
+});
+
+suite("the export route's event lines", () => {
+	const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiJ9.credential-under-test.signature';
+	const throwingForExports = (error) => (context, details) => {
+		if (details?.readPath === 'export') {
+			throw error;
+		}
+
+		return includeEverything(context);
+	};
+
+	for (const [description, options, form, events] of [
+		[
+			'params that are not JSON',
+			{},
+			{ params: 'not json' },
+			{ error: [], info: ['download.invalid_request'], warn: [] },
+		],
+		[
+			'a filter callback failing',
+			{ getServerSideFilter: throwingForExports(new AccessControlError('grants unreadable')) },
+			{},
+			{ error: ['download.failed', 'access_enforcement.evaluation_failed'], info: [], warn: [] },
+		],
+		[
+			'a filter callback denying the catalogue',
+			{
+				getServerSideFilter: throwingForExports(
+					new AccessControlDeniedError({ catalogue: 'donor', kind: 'no-access' }),
+				),
+			},
+			{},
+			{ error: [], info: ['access_enforcement.denial_answered'], warn: [] },
+		],
+		[
+			'a filter callback refusing to serve the export yet',
+			{
+				getServerSideFilter: throwingForExports(
+					new AccessControlUnavailableError('grants paused', { retryAfterSeconds: 7 }),
+				),
+			},
+			{},
+			{ error: [], info: [], warn: ['access_enforcement.unavailable_answered'] },
+		],
+		[
+			'the engine refusing a restricted export past its clause limit',
+			{
+				failOnRequest: 1,
+				failure: CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT),
+				getServerSideFilter: restrictingFilter({ fieldName: 'study', values: ['A'] }),
+			},
+			{},
+			{ error: ['download.failed', 'access_enforcement.query_too_large'], info: [], warn: [] },
+		],
+		[
+			'the engine failing the first search',
+			{ failOnRequest: 1, failure: new Error('engine down') },
+			{},
+			{ error: ['download.failed'], info: [], warn: [] },
+		],
+	]) {
+		test(`logs ${description} as JSON lines, without the request's credential`, async () => {
+			await withArranger(options, async ({ server }) => {
+				// Given a router whose export answers as described
+				const consoleCapture = captureConsole();
+
+				try {
+					// When the stock form is posted with a bearer token
+					await request(server)
+						.post('/download')
+						.set('Authorization', `Bearer ${BEARER_TOKEN}`)
+						.type('form')
+						.send({
+							downloadKey: 'download-key',
+							httpHeaders: '{}',
+							params: JSON.stringify(paramsWithFile()),
+							...form,
+						});
+
+					// Then each event is one JSON line at its level, and nothing logged carries the credential
+					assert.deepEqual(
+						{
+							error: consoleCapture.eventsAt('error'),
+							info: consoleCapture.eventsAt('info'),
+							warn: consoleCapture.eventsAt('warn'),
+						},
+						events,
+					);
+					assert.ok(!consoleCapture.loggedText().includes(BEARER_TOKEN));
+				} finally {
+					consoleCapture.restore();
+				}
+			});
+		});
+	}
 });

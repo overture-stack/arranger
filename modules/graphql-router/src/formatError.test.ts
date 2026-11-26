@@ -671,6 +671,28 @@ const withConsoleCalls = async <Result>(
 	}
 };
 
+/** The event a console call names: the `event` field of a router's JSON line, else its first argument. */
+const eventNameOf = ({ args: [first] }: ConsoleCall): unknown => {
+	if (typeof first === 'string' && first.startsWith('{')) {
+		return (JSON.parse(first) as { event?: unknown }).event;
+	}
+
+	return first;
+};
+
+/** Each JSON line logged as `event`, as [method, name, fields]; asserts its level matches the method and its time is ISO. */
+const loggedEvents = (calls: ConsoleCall[], event: string): unknown[][] =>
+	calls
+		.filter((call) => eventNameOf(call) === event)
+		.map(({ args: [line], method }) => {
+			const { event: name, level, time, ...fields } = JSON.parse(String(line)) as Record<string, unknown>;
+
+			assert.equal(level, method);
+			assert.equal(new Date(String(time)).toISOString(), time);
+
+			return [method, name, fields];
+		});
+
 const QUERY_TOO_LARGE_MESSAGE =
 	'The search engine refused this request to catalogue "donor" as larger than it accepts once the catalogue\'s access filter was applied.';
 
@@ -812,16 +834,11 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 
 			// Then the local node reports the router's text for each read, and each answer is logged with the node
 			assertNodeAnswered(response, { details: [], name: 'local node', reads: 2, text });
-			assert.deepEqual(
-				calls
-					.filter(({ args: [event] }) => event === 'access_enforcement.denial_answered')
-					.map(({ args, method }) => [method, ...args]),
-				[
-					[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, node: 'local node' }],
-					[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, node: 'local node' }],
-				],
-			);
-			assert.ok(!calls.some(({ args: [event] }) => event === 'access_enforcement.evaluation_failed'));
+			assert.deepEqual(loggedEvents(calls, 'access_enforcement.denial_answered'), [
+				[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, node: 'local node' }],
+				[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, node: 'local node' }],
+			]);
+			assert.ok(!calls.some((call) => eventNameOf(call) === 'access_enforcement.evaluation_failed'));
 		});
 	}
 
@@ -847,9 +864,7 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 			text: QUERY_TOO_LARGE_MESSAGE,
 		});
 		assert.deepEqual(
-			calls
-				.filter(({ args: [event] }) => event === 'access_enforcement.query_too_large')
-				.map(({ args, method }) => [method, ...args]),
+			loggedEvents(calls, 'access_enforcement.query_too_large'),
 			['hits', 'aggregations'].map((readPath) => [
 				'error',
 				'access_enforcement.query_too_large',
@@ -908,7 +923,7 @@ suite("network search answers each node's failure as the GraphQL endpoint answer
 		);
 
 		// Then each of its logs is at info, a client's ordinary mistake
-		const levels = calls.filter(({ args }) => args[0] === 'network.invalid_request').map(({ method }) => method);
+		const levels = loggedEvents(calls, 'network.invalid_request').map(([method]) => method);
 		assert.ok(levels.length > 0, JSON.stringify(calls));
 		assert.deepEqual([...new Set(levels)], ['info']);
 	});
@@ -1079,7 +1094,7 @@ suite("a request's own mistake keeps its message", () => {
 		);
 
 		assert.deepEqual(
-			calls.filter(({ args }) => args[0] === 'graphql.invalid_request').map(({ method }) => method),
+			loggedEvents(calls, 'graphql.invalid_request').map(([method]) => method),
 			['info'],
 		);
 	});
@@ -1091,7 +1106,7 @@ suite("a request's own mistake keeps its message", () => {
 		);
 
 		assert.deepEqual(
-			calls.filter(({ args }) => args[0] === 'graphql.invalid_request').map(({ method }) => method),
+			loggedEvents(calls, 'graphql.invalid_request').map(([method]) => method),
 			['info'],
 		);
 	});
@@ -1266,15 +1281,12 @@ suite("a filter callback's denial of the catalogue, on the GraphQL endpoint", ()
 					[[code, text, path]],
 				);
 				assert.ok(!bodyText.includes(DENIAL_DETAIL), `the response carried "${DENIAL_DETAIL}": ${bodyText}`);
-				assert.deepEqual(
-					calls
-						.filter(({ args: [event] }) => event === 'access_enforcement.denial_answered')
-						.map(({ args, method }) => [method, ...args]),
-					[[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, path }]],
-				);
+				assert.deepEqual(loggedEvents(calls, 'access_enforcement.denial_answered'), [
+					[level, 'access_enforcement.denial_answered', { catalogue: 'donor', kind, path }],
+				]);
 				assert.ok(
-					!calls.some(({ args: [event] }) =>
-						['access_enforcement.evaluation_failed', 'graphql.failed'].includes(String(event)),
+					!calls.some((call) =>
+						['access_enforcement.evaluation_failed', 'graphql.failed'].includes(String(eventNameOf(call))),
 					),
 					inspect(calls),
 				);
@@ -1305,18 +1317,13 @@ suite("the search engine's refusal of a read past its clause limit, on the Graph
 					errors.map(({ extensions, message, path: errorPath }) => [extensions?.code, message, errorPath]),
 					[['ACCESS_ENFORCEMENT_QUERY_TOO_LARGE', QUERY_TOO_LARGE_MESSAGE, path]],
 				);
-				assert.deepEqual(
-					calls
-						.filter(({ args: [event] }) => event === 'access_enforcement.query_too_large')
-						.map(({ args, method }) => [method, ...args]),
+				assert.deepEqual(loggedEvents(calls, 'access_enforcement.query_too_large'), [
 					[
-						[
-							'error',
-							'access_enforcement.query_too_large',
-							{ catalogue: 'donor', clauseLimit: 1024, path, readPath },
-						],
+						'error',
+						'access_enforcement.query_too_large',
+						{ catalogue: 'donor', clauseLimit: 1024, path, readPath },
 					],
-				);
+				]);
 			});
 		}
 	}
@@ -1343,6 +1350,225 @@ suite("the search engine's refusal of a read past its clause limit, on the Graph
 				[['BAD_USER_INPUT', CLAUSE_LIMIT_RULE]],
 			);
 			assert.ok(!lines.some((line) => line.includes('access_enforcement.query_too_large')), inspect(lines));
+		});
+	}
+});
+
+const BEARER_TOKEN = 'eyJhbGciOiJSUzI1NiJ9.credential-under-test.signature';
+
+/** A field for each event the endpoint logs while answering a request, named by its event. */
+const EVENT_FIELDS = {
+	'access_enforcement.denial_answered': () => {
+		throw new AccessControlDeniedError({ catalogue: 'donor', kind: 'no-access' });
+	},
+	'access_enforcement.evaluation_failed': () => {
+		throw new AccessControlErrorFromAnotherCopy(SECRET_DETAIL);
+	},
+	'access_enforcement.query_too_large': () => {
+		throw new AccessControlQueryTooLargeError({
+			catalogue: 'donor',
+			cause: CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT),
+			clauseLimit: 1024,
+			readPath: 'hits',
+		});
+	},
+	'access_enforcement.unavailable_answered': () => {
+		throw new AccessControlUnavailableError(UNAVAILABLE_DETAIL, { retryAfterSeconds: 7 });
+	},
+	'graphql.failed': () => {
+		throw new Error(ENGINE_FAILURE);
+	},
+	'graphql.invalid_request': () =>
+		buildQuery({
+			filters: { content: { fieldName: 'study', value: ['A'] }, op: 'no-such-operator' },
+			nestedFieldNames: [],
+		}),
+} satisfies Record<string, () => unknown>;
+
+const fieldNameOf = (event: string): string => event.replace(/\./gu, '_');
+
+const eventSchema = new GraphQLSchema({
+	query: new GraphQLObjectType({
+		fields: Object.fromEntries(
+			Object.entries(EVENT_FIELDS).map(([event, resolve]) => [
+				fieldNameOf(event),
+				{ resolve, type: GraphQLString },
+			]),
+		),
+		name: 'Query',
+	}),
+});
+
+suite("the endpoint's event lines", () => {
+	for (const event of Object.keys(EVENT_FIELDS)) {
+		test(`logs ${event} as one JSON line naming the event, its level and time, without the request's credential`, async () => {
+			// Given an endpoint whose field leads to the event
+			const endpoint = await withConsoleCaptured(() =>
+				createEndpoint({ disablePlayground: true, esClient: stubSearchClient(), schema: eventSchema }),
+			);
+			const app = express().use(endpoint.result);
+
+			// When the field is queried with a bearer token
+			const { calls } = await withConsoleCalls(() =>
+				withLoopbackServer(app, (request) =>
+					request
+						.post('/graphql')
+						.set('Authorization', `Bearer ${BEARER_TOKEN}`)
+						.send({ query: `{ ${fieldNameOf(event)} }` }),
+				),
+			);
+
+			// Then the event is logged once, as a single JSON line, and no line carries the credential
+			assert.equal(loggedEvents(calls, event).length, 1, inspect(calls));
+			const lines = calls.map(({ args }) => format(...args));
+			assert.ok(
+				calls
+					.filter((call) => eventNameOf(call) === event)
+					.every(({ args }) => args.length === 1 && !String(args[0]).includes('\n')),
+				inspect(calls),
+			);
+			assert.ok(!lines.some((line) => line.includes(BEARER_TOKEN)), inspect(lines));
+		});
+	}
+
+	test("logs graphql.format_failed as one JSON line with the formatter's failure, without the request's credential", async () => {
+		// Given an endpoint whose field is denied, answered with a log line at info that fails to be written
+		const endpoint = await withConsoleCaptured(() =>
+			createEndpoint({ disablePlayground: true, esClient: stubSearchClient(), schema: eventSchema }),
+		);
+		const app = express().use(endpoint.result);
+		const errors: string[] = [];
+		const mocks = [
+			mock.method(console, 'info', () => {
+				throw new Error('log write failed');
+			}),
+			mock.method(console, 'error', (line: unknown) => {
+				errors.push(String(line));
+			}),
+		];
+
+		// When the field is queried with a bearer token
+		try {
+			await withLoopbackServer(app, (request) =>
+				request
+					.post('/graphql')
+					.set('Authorization', `Bearer ${BEARER_TOKEN}`)
+					.send({ query: `{ ${fieldNameOf('access_enforcement.denial_answered')} }` }),
+			);
+		} finally {
+			mocks.forEach((mocked) => mocked.mock.restore());
+		}
+
+		// Then the formatter's failure is logged as one JSON line with the error serialized, and no line carries the credential
+		const lines = errors.map((line) => JSON.parse(line) as Record<string, unknown>);
+		assert.deepEqual(
+			lines.map(({ error, event, level }) => [event, level, (error as Record<string, unknown>)['message']]),
+			[['graphql.format_failed', 'error', 'log write failed']],
+		);
+		assert.match(String((lines[0]?.['error'] as Record<string, unknown>)['stack']), /log write failed/u);
+		assert.ok(!errors.some((line) => line.includes(BEARER_TOKEN)), inspect(errors));
+	});
+
+	test('logs the failure behind graphql.failed with its name, message and stack', async () => {
+		// Given an endpoint whose field fails for a reason unrelated to access control
+		const endpoint = await withConsoleCaptured(() =>
+			createEndpoint({ disablePlayground: true, esClient: stubSearchClient(), schema: eventSchema }),
+		);
+		const app = express().use(endpoint.result);
+
+		// When the field is queried
+		const { calls } = await withConsoleCalls(() =>
+			withLoopbackServer(app, (request) => request.post('/graphql').send({ query: '{ graphql_failed }' })),
+		);
+
+		// Then the line carries the error serialized, stack included
+		const [[, , fields]] = loggedEvents(calls, 'graphql.failed') as [
+			[string, string, { error: Record<string, unknown> }],
+		];
+		assert.equal(fields.error['name'], 'Error');
+		assert.equal(fields.error['message'], ENGINE_FAILURE);
+		assert.match(String(fields.error['stack']), /formatError\.test\.ts/u);
+	});
+});
+
+const NETWORK_QUERY_WITH_FILTERS = `query ($filters: JSON) { network(filters: $filters) { nodes { errors hits name status } aggregations { study { buckets { key doc_count } } } } }`;
+
+/** A filter pivoting on a field that is not nested, which breaks a rule of SQON. */
+const PIVOT_ON_UNNESTED_FIELD = {
+	content: [{ content: { fieldName: 'study', value: ['A'] }, op: 'in' }],
+	op: 'and',
+	pivot: 'study',
+};
+
+/** For each event network search logs while answering for the local node, the router and filters that lead to it. */
+const NETWORK_EVENT_CASES = [
+	[
+		'access_enforcement.denial_answered',
+		{ getServerSideFilter: refusingTheLocalNode(denyingAs('no-access')) },
+		undefined,
+	],
+	[
+		'access_enforcement.evaluation_failed',
+		{
+			getServerSideFilter: refusingTheLocalNode(() => {
+				throw new AccessControlErrorFromAnotherCopy(SECRET_DETAIL);
+			}),
+		},
+		undefined,
+	],
+	[
+		'access_enforcement.query_too_large',
+		{
+			esClient: stubSearchClient({ searchFailure: CLIENTS.OpenSearch(WHOLE_QUERY_PAST_THE_LIMIT) }),
+			getServerSideFilter: STUDY_A,
+		},
+		undefined,
+	],
+	[
+		'access_enforcement.unavailable_answered',
+		{
+			getServerSideFilter: refusingTheLocalNode(() => {
+				throw new AccessControlUnavailableError(UNAVAILABLE_DETAIL, { retryAfterSeconds: 7 });
+			}),
+		},
+		undefined,
+	],
+	['network.invalid_request', { getServerSideFilter: STUDY_A }, PIVOT_ON_UNNESTED_FIELD],
+	[
+		'network.node_failed',
+		{ esClient: stubSearchClient({ searchFailure: new Error(ENGINE_FAILURE) }), getServerSideFilter: STUDY_A },
+		undefined,
+	],
+] as const;
+
+suite("network search's event lines", () => {
+	for (const [event, routerOptions, filters] of NETWORK_EVENT_CASES) {
+		test(`logs ${event} for the local node as JSON lines naming the node, without the request's credential`, async () => {
+			// Given a router whose local node's reads lead to the event
+			const app = await buildRouterApp(routerOptions);
+
+			// When network search is queried with a bearer token
+			const { calls } = await withConsoleCalls(() =>
+				withLoopbackServer(app, (request) =>
+					request
+						.post('/graphql')
+						.set('Authorization', `Bearer ${BEARER_TOKEN}`)
+						.send({ query: NETWORK_QUERY_WITH_FILTERS, variables: { filters } }),
+				),
+			);
+
+			// Then each read's event is one JSON line naming the node, no event is plain text, and nothing carries the credential
+			const logged = loggedEvents(calls, event);
+			assert.ok(logged.length > 0, inspect(calls));
+			assert.ok(
+				logged.every(([, , fields]) => (fields as { node?: unknown }).node === 'local node'),
+				inspect(logged),
+			);
+			assert.ok(
+				!calls.some(({ args: [first] }) => typeof first === 'string' && /^[a-z_]+\.[a-z_]+$/u.test(first)),
+				inspect(calls),
+			);
+			assert.ok(!calls.some(({ args }) => format(...args).includes(BEARER_TOKEN)), inspect(calls));
 		});
 	}
 });

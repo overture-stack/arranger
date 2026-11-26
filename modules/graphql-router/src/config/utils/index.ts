@@ -1,6 +1,7 @@
 import { setsMapping } from '#schema/index.js';
 import { fieldMappingOf } from '#sets/setsIndexMapping.js';
 import { logSeparator } from '#utils/label.js';
+import { logEvent } from '#utils/logEvent.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 import { type SearchClient } from '#searchClient/types.js';
 
@@ -52,11 +53,11 @@ const checkExistingSetsIndex = async ({
 		.getMapping({ index: setsIndexName })
 		.then(({ body }) => Object.entries(isRecord(body) ? body : {}))
 		.catch((cause: unknown) => {
-			console.warn(
-				'sets.index_mapping_unchecked',
-				`The mapping of the sets index "${setsIndexName}" could not be read, so whether it stores each saved set's filter as data, and can record how each set was saved, is unchecked.`,
-				{ ...catalogue, cause: cause instanceof Error ? cause.message : String(cause) },
-			);
+			logEvent('warn', 'sets.index_mapping_unchecked', {
+				...catalogue,
+				cause: cause instanceof Error ? cause.message : String(cause),
+				message: `The mapping of the sets index "${setsIndexName}" could not be read, so whether it stores each saved set's filter as data, and can record how each set was saved, is unchecked.`,
+			});
 
 			return undefined;
 		});
@@ -70,11 +71,11 @@ const checkExistingSetsIndex = async ({
 		.map(([indexName]) => indexName);
 
 	if (filterOutdated.length > 0) {
-		console.warn(
-			'sets.index_mapping_outdated',
-			`The sets index "${setsIndexName}" (${filterOutdated.join(', ')}) does not store each saved set's filter as data, as a sets index this version creates does. Recreate it as ${MIGRATION_GUIDE_URL}#sets-index-filter-as-data describes.`,
-			{ ...catalogue, indices: filterOutdated },
-		);
+		logEvent('warn', 'sets.index_mapping_outdated', {
+			...catalogue,
+			indices: filterOutdated,
+			message: `The sets index "${setsIndexName}" (${filterOutdated.join(', ')}) does not store each saved set's filter as data, as a sets index this version creates does. Recreate it as ${MIGRATION_GUIDE_URL}#sets-index-filter-as-data describes.`,
+		});
 	}
 
 	for (const field of MARKED_FIELDS) {
@@ -123,11 +124,10 @@ const ensureKeywordField = async ({
 	if (!fieldAdded) {
 		const anchor = MARK_MIGRATION_ANCHORS[field];
 
-		console.warn(
-			'sets.index_mapping_outdated',
-			`The sets index "${setsIndexName}" cannot record ${MARK_DESCRIPTIONS[field]}, since its mapping lacks \`${field}\` as a keyword and it could not be added, so no set records it, and while saved sets have owners, none is saved. Add it as ${MIGRATION_GUIDE_URL}#${anchor} describes.`,
-			logFields,
-		);
+		logEvent('warn', 'sets.index_mapping_outdated', {
+			...logFields,
+			message: `The sets index "${setsIndexName}" cannot record ${MARK_DESCRIPTIONS[field]}, since its mapping lacks \`${field}\` as a keyword and it could not be added, so no set records it, and while saved sets have owners, none is saved. Add it as ${MIGRATION_GUIDE_URL}#${anchor} describes.`,
+		});
 	}
 };
 

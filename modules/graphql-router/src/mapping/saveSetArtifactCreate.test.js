@@ -331,7 +331,9 @@ suite('saveSet artifact-create check, by saved value, path-less record, chunk an
 			// Then the save fails as an ordinary error rather than a denial, and the failure is logged
 			await assert.rejects(attempt, (error) => error instanceof Error && !isAccessControlDeniedError(error));
 			assert.ok(
-				logged.mock.calls.some((call) => call.arguments[0] === 'sets.artifact_create_check_failed'),
+				logged.mock.calls.some(
+					(call) => JSON.parse(String(call.arguments[0])).event === 'sets.artifact_create_check_failed',
+				),
 				'expected the failed check to be logged',
 			);
 		} finally {
@@ -361,7 +363,11 @@ suite('saveSet artifact-create check, by saved value, path-less record, chunk an
 			// Then the save is refused as an ordinary error, nothing is indexed, and the failure is logged
 			await assert.rejects(attempt, (error) => error instanceof Error && !isAccessControlDeniedError(error));
 			assert.equal(client.indexes.length, 0);
-			assert.ok(logged.mock.calls.some((call) => call.arguments[0] === 'sets.artifact_create_check_failed'));
+			assert.ok(
+				logged.mock.calls.some(
+					(call) => JSON.parse(String(call.arguments[0])).event === 'sets.artifact_create_check_failed',
+				),
+			);
 		} finally {
 			logged.mock.restore();
 		}
@@ -409,7 +415,11 @@ suite('saveSet artifact-create check, by saved value, path-less record, chunk an
 			// Then the save throws, nothing is indexed, and the failure is logged
 			await assert.rejects(attempt, Error);
 			assert.equal(client.indexes.length, 0);
-			assert.ok(logged.mock.calls.some((call) => call.arguments[0] === 'sets.artifact_create_check_failed'));
+			assert.ok(
+				logged.mock.calls.some(
+					(call) => JSON.parse(String(call.arguments[0])).event === 'sets.artifact_create_check_failed',
+				),
+			);
 		} finally {
 			logged.mock.restore();
 		}

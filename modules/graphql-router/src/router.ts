@@ -31,6 +31,7 @@ import { type GetRequesterFn, narrowsSetRecords } from '#sets/setsAccess.js';
 import { setsWiringFor } from '#sets/setsWiring.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addArrangerLocals, keepRequestContextView } from '#utils/context.js';
+import { logEvent } from '#utils/logEvent.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
 export const mergeConfigs = <Context extends ArrangerBaseContext>(
@@ -156,11 +157,10 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		const accessControlRecord = createAccessControlRecord(getServerSideFilter);
 
-		console.log(
-			'server_side_filter.startup',
-			`server-side filter: ${describeAccessControlRecord(accessControlRecord)}`,
-			{ catalogue: label },
-		);
+		logEvent('info', 'server_side_filter.startup', {
+			catalogue: label,
+			message: `server-side filter: ${describeAccessControlRecord(accessControlRecord)}`,
+		});
 
 		if (getRequester !== undefined && typeof getRequester !== 'function') {
 			throw new Error(
@@ -169,11 +169,11 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 		}
 
 		if (narrowsSetRecords(accessControlRecord.getServerSideFilter) && getRequester === undefined) {
-			console.info(
-				'sets.unowned',
-				"No getRequester is given, so saved sets have no owner: every reader is listed every set with its filter, while each set's records stay narrowed by the server-side filter.",
-				{ catalogue: label },
-			);
+			logEvent('info', 'sets.unowned', {
+				catalogue: label,
+				message:
+					"No getRequester is given, so saved sets have no owner: every reader is listed every set with its filter, while each set's records stay narrowed by the server-side filter.",
+			});
 		}
 
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(

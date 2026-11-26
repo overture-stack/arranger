@@ -88,10 +88,16 @@ suite('resolveSetsIndex', () => {
 		assert.deepEqual(resolution, { index: 'saved-sets', kind: 'index', origin: 'legacy-shared' });
 		assert.deepEqual(calls, ['exists saved-sets']);
 		assert.equal(warnings.length, 1);
-		assert.equal(warnings[0]?.[0], 'sets.index_legacy_shared');
-		assert.match(String(warnings[0]?.[1]), /saved-sets/u);
-		assert.match(String(warnings[0]?.[1]), new RegExp(`${MIGRATION_GUIDE_URL}#sets-index-per-catalogue`, 'u'));
-		assert.deepEqual(warnings[0]?.[2], { catalogue: 'correlation', index: 'saved-sets' });
+		assert.equal(warnings[0]?.length, 1);
+		const { event, level, message, time, ...fields } = JSON.parse(String(warnings[0]?.[0])) as Record<
+			string,
+			unknown
+		>;
+		assert.deepEqual([event, level], ['sets.index_legacy_shared', 'warn']);
+		assert.match(String(message), /saved-sets/u);
+		assert.match(String(message), new RegExp(`${MIGRATION_GUIDE_URL}#sets-index-per-catalogue`, 'u'));
+		assert.equal(new Date(String(time)).toISOString(), time);
+		assert.deepEqual(fields, { catalogue: 'correlation', index: 'saved-sets' });
 	});
 
 	test('is unavailable, naming the legacy index, where the legacy shared index does not exist, and never creates it', async () => {

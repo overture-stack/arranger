@@ -25,12 +25,16 @@ const assertFailure = (
 ) => {
 	assert.deepEqual(result, { case: 'ERROR', data: text, success: false });
 	assert.ok(
-		lines.some(
-			(line) =>
-				line.includes('network.node_failed') &&
-				line.includes(NODE_NAME) &&
-				details.every((detail) => line.includes(detail)),
-		),
+		lines
+			.filter((line) => line.startsWith('{'))
+			.some((line) => {
+				const { event, node } = JSON.parse(line) as Record<string, unknown>;
+				return (
+					event === 'network.node_failed' &&
+					node === NODE_NAME &&
+					details.every((detail) => line.includes(detail))
+				);
+			}),
 		`expected a network.node_failed line naming the node and carrying ${JSON.stringify(details)}, got ${JSON.stringify(lines)}`,
 	);
 };

@@ -1439,9 +1439,13 @@ suite('saved sets whose index does not resolve', () => {
 			calls.filter((call) => /^(exists|create|get|index) /u.test(call)),
 			[],
 		);
-		assert.ok(
-			lines.some((line) => line.startsWith('sets.unavailable') && line.includes('index_check_refused')),
-			JSON.stringify(lines),
+		assert.deepEqual(
+			lines
+				.filter((line) => line.startsWith('{'))
+				.map((line) => JSON.parse(line) as Record<string, unknown>)
+				.filter(({ event }) => event === 'sets.unavailable')
+				.map(({ catalogue, level, reason }) => ({ catalogue, level, reason })),
+			[{ catalogue: 'donor', level: 'error', reason: 'index_check_refused' }],
 		);
 	});
 

@@ -269,6 +269,10 @@ const naming = (names: readonly string[]): Sqon | null => asUisSend(clause('in',
 
 const sorted = (values: readonly string[]): string[] => [...values].sort();
 
+/** The event a console call logged: the `event` of the router's JSON line, else its first argument. */
+const eventOf = ({ arguments: [first] }: { arguments: unknown[] }): unknown =>
+	typeof first === 'string' && first.startsWith('{') ? (JSON.parse(first) as { event?: unknown }).event : first;
+
 /** Asserts that the hits, saved set and export in `answer` hold exactly the records named in `visible`. */
 const assertRecordsAre = (answer: RecordAnswers, visible: readonly string[]): void => {
 	assert.deepEqual(sorted(answer.hits.ids), sorted(visible));
@@ -1050,11 +1054,7 @@ suite('the failure cases', { concurrency: false }, () => {
 					]),
 					[[EVENTS.unavailable, 'export', true, null]],
 				);
-				assert.ok(
-					errors.mock.calls.every(
-						({ arguments: [event] }) => event !== 'access_enforcement.evaluation_failed',
-					),
-				);
+				assert.ok(errors.mock.calls.every((call) => eventOf(call) !== 'access_enforcement.evaluation_failed'));
 			});
 
 			test('saving a set answers the unavailable GraphQL error with null data, and saves nothing', async (context) => {
@@ -1084,11 +1084,7 @@ suite('the failure cases', { concurrency: false }, () => {
 					lines.map(({ fields, message }) => [message, fields['readPath'], fields['suspended']]),
 					[[EVENTS.unavailable, 'sets', true]],
 				);
-				assert.ok(
-					errors.mock.calls.every(
-						({ arguments: [event] }) => event !== 'access_enforcement.evaluation_failed',
-					),
-				);
+				assert.ok(errors.mock.calls.every((call) => eventOf(call) !== 'access_enforcement.evaluation_failed'));
 			});
 
 			test("an anonymous principal's export is served as normal, since nothing is reduced for it", async () => {
@@ -1206,7 +1202,7 @@ suite('the failure cases', { concurrency: false }, () => {
 		assert.match(String(exported.headers['content-type']), /^text\/plain/);
 		assert.equal(exported.headers['x-content-type-options'], 'nosniff');
 		assert.ok(
-			errors.mock.calls.some(({ arguments: [event] }) => event === 'access_enforcement.evaluation_failed'),
+			errors.mock.calls.some((call) => eventOf(call) === 'access_enforcement.evaluation_failed'),
 			'access_enforcement.evaluation_failed was never logged',
 		);
 	});

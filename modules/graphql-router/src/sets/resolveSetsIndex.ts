@@ -2,6 +2,7 @@ import type { SetsConfigs } from '@overture-stack/arranger-types/configs';
 import { setsProperties } from '@overture-stack/arranger-types/configs/constants';
 
 import type { SearchClient } from '#searchClient/types.js';
+import { logEvent } from '#utils/logEvent.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
 /** Where a catalogue's sets index came from: its own configuration, a legacy shared index, or the default name. */
@@ -99,11 +100,11 @@ export const resolveSetsIndex = async ({
 			return { index: legacySharedIndex, kind: 'unavailable', reason: 'legacy_index_missing' };
 		}
 
-		console.warn(
-			'sets.index_legacy_shared',
-			`Saved sets of "${catalogue}" are read from the shared sets index "${legacySharedIndex}", which is deprecated. Give each catalogue its own sets index as ${SETS_INDEX_PER_CATALOGUE_URL} describes.`,
-			{ catalogue, index: legacySharedIndex },
-		);
+		logEvent('warn', 'sets.index_legacy_shared', {
+			catalogue,
+			index: legacySharedIndex,
+			message: `Saved sets of "${catalogue}" are read from the shared sets index "${legacySharedIndex}", which is deprecated. Give each catalogue its own sets index as ${SETS_INDEX_PER_CATALOGUE_URL} describes.`,
+		});
 
 		return { index: legacySharedIndex, kind: 'index', origin: 'legacy-shared' };
 	}

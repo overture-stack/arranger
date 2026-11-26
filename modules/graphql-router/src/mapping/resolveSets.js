@@ -17,6 +17,7 @@ import { SetsDisabledError } from '#sets/SetsDisabledError.js';
 import { exactAnswerOf, SET_CHECK_CHUNK_SIZE } from '#sets/narrowSet.js';
 import { recordsAttribution, recordsCatalogue } from '#sets/setsIndexMapping.js';
 import { chunksOf, setValuesTermsOf } from '#sets/setValues.js';
+import { logEvent } from '#utils/logEvent.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 
 import compileFilter from './utils/compileFilter.js';
@@ -315,7 +316,7 @@ export const saveSet =
 				serverSideFilter,
 				setsIndex,
 			}).catch((error) => {
-				console.error('sets.artifact_create_check_failed', { catalogue, message: error.message, path });
+				logEvent('error', 'sets.artifact_create_check_failed', { catalogue, message: error.message, path });
 				throw error;
 			});
 

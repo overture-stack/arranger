@@ -16,6 +16,7 @@ import { isSetsDisabledError, SETS_DISABLED_MESSAGE, SETS_UNAVAILABLE_MESSAGE } 
 import { arrangerLocalsOf, exportStateOf } from '#utils/context.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData, { InvalidExportRequestError, isExportSort } from '#utils/getAllData.js';
+import { logEvent, serializeError } from '#utils/logEvent.js';
 import noopFn from '#utils/noops.js';
 
 export { InvalidExportRequestError };
@@ -218,7 +219,7 @@ const paramsFrom = (body) => {
 // other failure names only whose problem it is.
 const failureResponseFor = (error, { setsUnavailable = false } = {}) => {
 	if (error instanceof InvalidExportRequestError) {
-		return { event: 'download.invalid_request', log: console.info, status: 400, text: error.message };
+		return { event: 'download.invalid_request', level: 'info', status: 400, text: error.message };
 	}
 
 	// The callback's denial of the catalogue: forbidden where the person may raise it, a fault on the server
@@ -231,7 +232,7 @@ const failureResponseFor = (error, { setsUnavailable = false } = {}) => {
 			: {
 					denial,
 					event: 'download.failed',
-					log: console.error,
+					level: 'error',
 					reason: 'access_enforcement_denied',
 					status: 500,
 					text: denial.text,
@@ -251,7 +252,7 @@ const failureResponseFor = (error, { setsUnavailable = false } = {}) => {
 	if (isSetsDisabledError(error)) {
 		return {
 			event: 'download.invalid_request',
-			log: console.warn,
+			level: 'warn',
 			status: 400,
 			text: setsUnavailable ? SETS_UNAVAILABLE_MESSAGE : SETS_DISABLED_MESSAGE,
 		};
@@ -260,7 +261,7 @@ const failureResponseFor = (error, { setsUnavailable = false } = {}) => {
 	if (isAccessControlQueryTooLargeError(error)) {
 		return {
 			event: 'download.failed',
-			log: console.error,
+			level: 'error',
 			reason: 'access_enforcement_query_too_large',
 			status: 500,
 			text: error.message,
@@ -270,12 +271,12 @@ const failureResponseFor = (error, { setsUnavailable = false } = {}) => {
 	return isAccessControlError(error)
 		? {
 				event: 'download.failed',
-				log: console.error,
+				level: 'error',
 				reason: 'access_enforcement',
 				status: 500,
 				text: ACCESS_CONTROL_FAILURE_MESSAGE,
 			}
-		: { event: 'download.failed', log: console.error, status: 500, text: SERVER_FAULT_TEXT };
+		: { event: 'download.failed', level: 'error', status: 500, text: SERVER_FAULT_TEXT };
 };
 
 const isClientErrorStatus = (status) => Number.isInteger(status) && status >= 400 && status < 500;
@@ -284,17 +285,17 @@ const unreadableBodyResponseFor = (error) =>
 	isClientErrorStatus(error?.status)
 		? {
 				event: 'download.invalid_request',
-				log: console.info,
+				level: 'info',
 				status: error.status,
 				text: BODY_RULES.get(error.type) ?? UNREADABLE_BODY_TEXT,
 			}
 		: failureResponseFor(error);
 
 const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
-	const { denial, event, log, reason, retryAfterSeconds, status, text } = failure;
+	const { denial, event, level, reason, retryAfterSeconds, status, text } = failure;
 
-	if (log) {
-		log(event, error, ...(reason ? [{ reason }] : []));
+	if (level) {
+		logEvent(level, event, { error: serializeError(error, { stack: true }), ...(reason && { reason }) });
 	}
 
 	if (Number.isSafeInteger(retryAfterSeconds) && retryAfterSeconds >= 0) {
@@ -304,12 +305,16 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 	if (reason === 'access_enforcement') {
 		// Also the event GraphQL and network search log for the same failure, so one alert covers every
 		// read path while an alert already counting failed downloads keeps firing.
-		console.error('access_enforcement.evaluation_failed', error.message, { cause: error.cause, route: 'download' });
+		logEvent('error', 'access_enforcement.evaluation_failed', {
+			cause: error.cause,
+			message: error.message,
+			route: 'download',
+		});
 	}
 
 	if (reason === 'access_enforcement_query_too_large') {
 		// Also the event GraphQL logs for the same refusal, for the same reason.
-		console.error('access_enforcement.query_too_large', {
+		logEvent('error', 'access_enforcement.query_too_large', {
 			catalogue: error.catalogue,
 			clauseLimit: error.clauseLimit,
 			readPath: error.readPath,
@@ -319,8 +324,7 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 
 	if (reason === 'access_enforcement_denied') {
 		// The event GraphQL logs for the same answer, raising an alert only where the operator has something to fix.
-		const logDenial = isForbiddenDenialKind(denial.kind) ? console.info : console.error;
-		logDenial('access_enforcement.denial_answered', {
+		logEvent(isForbiddenDenialKind(denial.kind) ? 'info' : 'error', 'access_enforcement.denial_answered', {
 			catalogue: denial.catalogue,
 			kind: denial.kind,
 			route: 'download',
@@ -329,7 +333,8 @@ const sendFailure = ({ error, failure = failureResponseFor(error), res }) => {
 
 	if (reason === 'access_enforcement_unavailable') {
 		// The event GraphQL logs for the same answer. Nothing is misconfigured, so it raises no alert.
-		console.warn('access_enforcement.unavailable_answered', error.message, {
+		logEvent('warn', 'access_enforcement.unavailable_answered', {
+			message: error.message,
 			retryAfterSeconds: error.retryAfterSeconds,
 			route: 'download',
 		});
@@ -351,9 +356,9 @@ const markCutExport = ({ res, totals }) => {
 // failing after that is logged by the export itself, since nothing reads it here.
 const logStreamEnd = (error) => {
 	if (error?.code === 'ERR_STREAM_PREMATURE_CLOSE') {
-		console.info('download.client_disconnected');
+		logEvent('info', 'download.client_disconnected');
 	} else if (error) {
-		console.error('download.stream_failed', error);
+		logEvent('error', 'download.stream_failed', { error: serializeError(error, { stack: true }) });
 	}
 };
 

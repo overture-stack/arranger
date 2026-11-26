@@ -32,7 +32,13 @@ const assertFailedNode = (
 ) => {
 	assert.deepEqual(outcome, { config: remoteNodeAt(url), message: text, result });
 	assert.ok(
-		lines.some((line) => line.includes('network.node_failed') && line.includes(NODE_NAME) && line.includes(url)),
+		lines
+			.filter((line) => line.startsWith('{'))
+			.map((line) => JSON.parse(line) as Record<string, unknown>)
+			.some(
+				({ event, node, url: loggedUrl }) =>
+					event === 'network.node_failed' && node === NODE_NAME && loggedUrl === url,
+			),
 		`expected a network.node_failed line naming the node and its URL, got ${JSON.stringify(lines)}`,
 	);
 };

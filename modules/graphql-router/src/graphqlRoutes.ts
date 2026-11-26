@@ -56,6 +56,7 @@ import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps }
 import { addArrangerLocals, keepRequestContextView, requestStateOf } from '#utils/context.js';
 import { engineErrorDetailsOf } from '#utils/engineErrorDetails.js';
 import { FALLBACK_LABEL, isFallbackLabel, logSeparator } from '#utils/label.js';
+import { logEvent, serializeError } from '#utils/logEvent.js';
 import { MIGRATION_GUIDE_URL } from '#utils/migrationGuide.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
@@ -325,8 +326,9 @@ const answerWith = ({
 });
 
 const maskAccessControlError = (error: GraphQLError, accessControlError: AccessControlError): GraphQLFormattedError => {
-	console.error('access_enforcement.evaluation_failed', accessControlError.message, {
+	logEvent('error', 'access_enforcement.evaluation_failed', {
 		cause: accessControlError.cause,
+		message: accessControlError.message,
 		path: error.path,
 	});
 
@@ -340,7 +342,8 @@ const maskAccessControlError = (error: GraphQLError, accessControlError: AccessC
 // The callback's refusal to serve the request yet: its own code and the router's text, never the configuration
 // failure's, logged as neither an evaluation failure nor at error, since nothing is misconfigured.
 const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavailableError): GraphQLFormattedError => {
-	console.warn('access_enforcement.unavailable_answered', unavailable.message, {
+	logEvent('warn', 'access_enforcement.unavailable_answered', {
+		message: unavailable.message,
 		path: error.path,
 		retryAfterSeconds: unavailable.retryAfterSeconds,
 	});
@@ -357,9 +360,8 @@ const answerUnavailable = (error: GraphQLError, unavailable: AccessControlUnavai
 const answerDenied = (error: GraphQLError, denied: AccessControlDeniedError): GraphQLFormattedError => {
 	const { catalogue, kind, text } = denialAnswerOf(denied);
 	const forbidden = isForbiddenDenialKind(kind);
-	const log = forbidden ? console.info : console.error;
 
-	log('access_enforcement.denial_answered', { catalogue, kind, path: error.path });
+	logEvent(forbidden ? 'info' : 'error', 'access_enforcement.denial_answered', { catalogue, kind, path: error.path });
 
 	return answerWith({
 		code: forbidden ? ACCESS_ENFORCEMENT_DENIED_CODE : INTERNAL_SERVER_ERROR_CODE,
@@ -369,7 +371,7 @@ const answerDenied = (error: GraphQLError, denied: AccessControlDeniedError): Gr
 };
 
 const answerQueryTooLarge = (error: GraphQLError, tooLarge: AccessControlQueryTooLargeError): GraphQLFormattedError => {
-	console.error('access_enforcement.query_too_large', {
+	logEvent('error', 'access_enforcement.query_too_large', {
 		catalogue: tooLarge.catalogue,
 		clauseLimit: tooLarge.clauseLimit,
 		path: error.path,
@@ -395,14 +397,20 @@ const answerRequestMistake = ({
 }): GraphQLFormattedError => {
 	const message = givenMessage ?? error.message.replace(FIELD_SUGGESTION_SUFFIX, '');
 
-	console.info('graphql.invalid_request', { ...(cause !== undefined && { cause }), code, message, path: error.path });
+	logEvent('info', 'graphql.invalid_request', {
+		...(cause !== undefined && { cause }),
+		code,
+		message,
+		path: error.path,
+	});
 
 	return answerWith({ code, error, message });
 };
 
 const answerServerProblem = (error: GraphQLError, label?: string): GraphQLFormattedError => {
-	console.error('graphql.failed', error.originalError ?? error, {
+	logEvent('error', 'graphql.failed', {
 		...(label && { catalogue: label }),
+		error: serializeError(error.originalError ?? error, { stack: true }),
 		path: error.path,
 	});
 
@@ -464,7 +472,10 @@ const formatErrorFor =
 		try {
 			return answerFor(error, label, setsUnavailable);
 		} catch (formattingError) {
-			console.error('graphql.format_failed', formattingError, { ...(label && { catalogue: label }) });
+			logEvent('error', 'graphql.format_failed', {
+				...(label && { catalogue: label }),
+				error: serializeError(formattingError, { stack: true }),
+			});
 
 			return { extensions: { code: INTERNAL_SERVER_ERROR_CODE }, message: SERVER_PROBLEM_MESSAGE };
 		}
@@ -846,15 +857,12 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		if (enableSets && setsIndexResolution?.kind === 'unavailable') {
 			const catalogue = setsScope?.catalogue ?? label;
 
-			console.error(
-				'sets.unavailable',
-				`Saved sets of "${catalogue}" are unavailable, since ${describeSetsUnavailable(setsIndexResolution)}. The catalogue answers saved-set requests as unavailable. See ${MIGRATION_GUIDE_URL}#sets-index-per-catalogue`,
-				{
-					catalogue,
-					reason: setsIndexResolution.reason,
-					...(setsIndexResolution.index !== undefined && { index: setsIndexResolution.index }),
-				},
-			);
+			logEvent('error', 'sets.unavailable', {
+				catalogue,
+				...(setsIndexResolution.index !== undefined && { index: setsIndexResolution.index }),
+				message: `Saved sets of "${catalogue}" are unavailable, since ${describeSetsUnavailable(setsIndexResolution)}. The catalogue answers saved-set requests as unavailable. See ${MIGRATION_GUIDE_URL}#sets-index-per-catalogue`,
+				reason: setsIndexResolution.reason,
+			});
 		}
 
 		if (setsIndexResolution?.kind === 'index') {

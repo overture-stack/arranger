@@ -8,6 +8,7 @@ import {
 } from '#network/remoteNodeFailure.js';
 import { type AggregationField, type NetworkRemoteNode } from '#network/types/setup.js';
 import { isFulfilledPromise } from '#network/utils/promise.js';
+import { logEvent } from '#utils/logEvent.js';
 
 type NetworkQueryResult = PromiseFulfilledResult<{
 	config: NetworkRemoteNode;
@@ -120,7 +121,7 @@ const fetchNodeAggregations = async (config: RemoteNodeConfig): Promise<FetchAgg
 		);
 		const kind = remoteNodeFailureKindOf(error);
 
-		console.error('network.node_failed', {
+		logEvent('error', 'network.node_failed', {
 			...remoteNodeFailureDetailsOf(error),
 			kind: kind ?? 'unreadable',
 			node: config.displayName,

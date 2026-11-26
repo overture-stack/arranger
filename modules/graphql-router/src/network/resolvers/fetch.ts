@@ -10,6 +10,7 @@ import {
 import { type NetworkQueryVariables } from '#network/resolvers/index.js';
 import { type AsyncResult, failure, success } from '#network/result.js';
 import { ASTtoString } from '#network/utils/gql.js';
+import { logEvent } from '#utils/logEvent.js';
 import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
 
 export type RemoteNodeQueryParams = {
@@ -53,7 +54,7 @@ export const fetchData = async (query: RemoteNodeQueryParams): AsyncResult<unkno
 		}
 
 		// axios throws on an error status, so this is an answer of another success status
-		console.error('network.node_failed', {
+		logEvent('error', 'network.node_failed', {
 			kind: 'unreadable',
 			node: nodeName,
 			status: response.status,
@@ -64,7 +65,7 @@ export const fetchData = async (query: RemoteNodeQueryParams): AsyncResult<unkno
 	} catch (error) {
 		const kind = remoteNodeFailureKindOf(error);
 
-		console.error('network.node_failed', {
+		logEvent('error', 'network.node_failed', {
 			...remoteNodeFailureDetailsOf(error),
 			kind: kind ?? 'server',
 			node: nodeName,

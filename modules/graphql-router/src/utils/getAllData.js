@@ -18,6 +18,7 @@ import { CLAUSE_LIMIT_RULE, findClauseLimitRefusal } from '#searchClient/clauseL
 import { setFilterResolverFor } from '#sets/resolveSetFilters.js';
 import { isSetsDisabledError } from '#sets/SetsDisabledError.js';
 import { exportStateOf } from '#utils/context.js';
+import { logEvent, serializeError } from '#utils/logEvent.js';
 
 /**
  * An export refused for what its caller sent rather than for a fault on the server. The message names
@@ -310,7 +311,7 @@ export default async ({
 			searchPage: (pageArguments) =>
 				searchPage(pageArguments).catch((error) => {
 					if (chunks.destroyed) {
-						console.error('download.stream_failed', error);
+						logEvent('error', 'download.stream_failed', { error: serializeError(error, { stack: true }) });
 					}
 
 					throw error;

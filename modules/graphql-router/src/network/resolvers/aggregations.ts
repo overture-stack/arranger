@@ -21,6 +21,7 @@ import { type Hits } from '#network/types/hits.js';
 import type { NetworkLocalNode, NetworkRemoteNode } from '#network/types/setup.js';
 import type { RequestedFieldsMap } from '#network/utils/gql.js';
 import type { ArrangerBaseContext } from '#types.js';
+import { logEvent, serializeError } from '#utils/logEvent.js';
 import { SERVER_PROBLEM_MESSAGE } from '#utils/serverProblem.js';
 
 export const CONNECTION_STATUS = {
@@ -59,14 +60,17 @@ const nodeErrorMessageFor = ({
 }): string => {
 	if (isAccessControlDeniedError(error)) {
 		const { catalogue, kind, text } = denialAnswerOf(error);
-		const log = isForbiddenDenialKind(kind) ? console.info : console.error;
-
-		log('access_enforcement.denial_answered', { catalogue, kind, node: nodeName });
+		logEvent(isForbiddenDenialKind(kind) ? 'info' : 'error', 'access_enforcement.denial_answered', {
+			catalogue,
+			kind,
+			node: nodeName,
+		});
 		return text;
 	}
 
 	if (isAccessControlUnavailableError(error)) {
-		console.warn('access_enforcement.unavailable_answered', error.message, {
+		logEvent('warn', 'access_enforcement.unavailable_answered', {
+			message: error.message,
 			node: nodeName,
 			retryAfterSeconds: error.retryAfterSeconds,
 		});
@@ -74,7 +78,7 @@ const nodeErrorMessageFor = ({
 	}
 
 	if (isAccessControlQueryTooLargeError(error)) {
-		console.error('access_enforcement.query_too_large', {
+		logEvent('error', 'access_enforcement.query_too_large', {
 			catalogue: error.catalogue,
 			clauseLimit: error.clauseLimit,
 			node: nodeName,
@@ -84,16 +88,24 @@ const nodeErrorMessageFor = ({
 	}
 
 	if (isAccessControlError(error)) {
-		console.error('access_enforcement.evaluation_failed', error.message, { cause: error.cause, node: nodeName });
+		logEvent('error', 'access_enforcement.evaluation_failed', {
+			cause: error.cause,
+			message: error.message,
+			node: nodeName,
+		});
 		return ACCESS_CONTROL_FAILURE_MESSAGE;
 	}
 
 	if (isInvalidFilterError(error)) {
-		console.info('network.invalid_request', { cause: error.cause, message: error.message, node: nodeName });
+		logEvent('info', 'network.invalid_request', { cause: error.cause, message: error.message, node: nodeName });
 		return error.message;
 	}
 
-	console.error('network.node_failed', error, { ...details, node: nodeName });
+	logEvent('error', 'network.node_failed', {
+		...details,
+		error: serializeError(error, { stack: true }),
+		node: nodeName,
+	});
 	return SERVER_PROBLEM_MESSAGE;
 };
 
